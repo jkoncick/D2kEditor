@@ -553,6 +553,12 @@ object MainWindow: TMainWindow
         ShortCut = 16457
         OnClick = Useallocationindexes1Click
       end
+      object Showeventmarkers1: TMenuItem
+        Caption = 'Show event markers'
+        Checked = True
+        ShortCut = 16453
+        OnClick = Showeventmarkers1Click
+      end
       object N6: TMenuItem
         Caption = '-'
       end

@@ -79,6 +79,16 @@ const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,57
 const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
 
 type
+   EventMarkerType = (emNone, emReinforcement, emHarvester, emSpawn, emTileTrigger);
+
+type
+  TEventMarker = record
+    emtype: EventMarkerType;
+    player: word;
+    index: word;
+  end;
+
+type
   TMainWindow = class(TForm)
     MapCanvas: TImage;
     MapScrollH: TScrollBar;
@@ -162,6 +172,7 @@ type
     Useallocationindexes1: TMenuItem;
     N6: TMenuItem;
     N7: TMenuItem;
+    Showeventmarkers1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -184,6 +195,7 @@ type
     procedure ShowGrid1Click(Sender: TObject);
     procedure Marktiles1Click(Sender: TObject);
     procedure Useallocationindexes1Click(Sender: TObject);
+    procedure Showeventmarkers1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
@@ -240,6 +252,7 @@ type
     map_tileset: word;
 
     // Mis file variables
+    mis_map_markers: array[0..127, 0..127] of TEventMarker;
     mis_alloc_index: array[0..cnt_mis_players] of byte;
 
     power: array[0..cnt_players-1] of Word;
@@ -470,6 +483,12 @@ procedure TMainWindow.Useallocationindexes1Click(Sender: TObject);
 begin
   Useallocationindexes1.Checked := not Useallocationindexes1.Checked;
   render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.Showeventmarkers1Click(Sender: TObject);
+begin
+  Showeventmarkers1.Checked := not Showeventmarkers1.Checked;
   render_map;
 end;
 
@@ -788,6 +807,7 @@ var
   dest_rect: TRect;
   src_rect: TRect;
   tile_attr: TileType;
+  event_marker: ^TEventMarker;
 begin
   if not map_loaded then
     exit;
@@ -985,6 +1005,40 @@ begin
       end;
     end;
   end;
+  // Draw event markers
+  if Showeventmarkers1.Checked then
+  begin
+    for y:= 0 to map_canvas_height - 1 do
+    begin
+      for x:= 0 to map_canvas_width - 1 do
+      begin
+        event_marker := addr(mis_map_markers[x + map_canvas_left, y + map_canvas_top]);
+        if (event_marker.emtype = emReinforcement) or (event_marker.emtype = emHarvester) or (event_marker.emtype = emSpawn) then
+        begin
+          MapCanvas.Canvas.Pen.Color := mmap_player_colors[event_marker.player];
+          MapCanvas.Canvas.Brush.Color := mmap_player_colors[event_marker.player];
+          MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
+          MapCanvas.Canvas.Pen.Color := clBlack;
+          if event_marker.emtype = emReinforcement then
+            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'R')
+          else if event_marker.emtype = emHarvester then
+            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'H')
+          else if event_marker.emtype = emSpawn then
+            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'S');
+          MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
+        end
+        else if event_marker.emtype = emTileTrigger then
+        begin
+          MapCanvas.Canvas.Pen.Color := clGray;
+          MapCanvas.Canvas.Brush.Color := clGray;
+          MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
+          MapCanvas.Canvas.Pen.Color := clBlack;
+          MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'T');
+          MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
+        end;
+      end;
+    end;
+  end;
   // Draw grid
   MapCanvas.Canvas.Pen.Color := clBlack;
   MapCanvas.Canvas.Pen.Width := 1;
@@ -1062,6 +1116,7 @@ var
   map_file: file of word;
   mis_filename: String;
   i: integer;
+  x, y: integer;
 begin
   // Reading map file
   AssignFile(map_file, filename);
@@ -1071,6 +1126,10 @@ begin
   for i := 0 to map_width * map_height * 2 - 1 do
     Read(map_file, map_data[i]);
   CloseFile(map_file);
+  // Reset event markers
+  for x := 0 to 127 do
+    for y := 0 to 127 do
+      mis_map_markers[x,y].emtype := emNone;
   // Setting variables and status bar
   map_loaded := true;
   map_filename := filename;
@@ -1107,6 +1166,10 @@ var
   mis_file: file of byte;
   tileset_name_buf: array[0..7] of char;
   tileset_name: String;
+  num_events, num_conds: byte;
+  event: array[0..71] of byte;
+  condition: array[0..27] of byte;
+  x, y: byte;
   i: integer;
 begin
   if not FileExists(filename) then
@@ -1128,6 +1191,44 @@ begin
   // Load allocation indexes
   Seek(mis_file,$50);
   BlockRead(mis_file,mis_alloc_index,8);
+
+  // Load map markers (reinforcement destinations etc)
+  Seek(mis_file,$10728);
+  Read(mis_file,num_events);
+  Read(mis_file,num_conds);
+  Seek(mis_file,$EE58);
+  for i:= 0 to num_events - 1 do
+  begin
+    BlockRead(mis_file,event,72);
+    if (event[13] = 0) or (event[13] = 18) then
+    begin
+      // Reinforcement, spawn
+      x := event[0];
+      y := event[4];
+      if event[13] = 18 then
+        mis_map_markers[x][y].emtype := emSpawn
+      else if (event[14] = 1) and (event[47] = 8) then
+        mis_map_markers[x][y].emtype := emHarvester
+      else
+        mis_map_markers[x][y].emtype := emReinforcement;
+      mis_map_markers[x][y].player := event[15];
+      mis_map_markers[x][y].index := i;
+    end;
+  end;
+  Seek(mis_file,$10058);
+  for i:= 0 to num_conds - 1 do
+  begin
+    BlockRead(mis_file,condition,28);
+    if condition[25] = 7 then
+    begin
+      // Unit in tile
+      x := condition[12];
+      y := condition[16];
+      mis_map_markers[x][y].emtype := emTileTrigger;
+      mis_map_markers[x][y].index := i;
+    end;
+  end;
+
   CloseFile(mis_file);
 end;
 
@@ -1426,6 +1527,7 @@ end;
 procedure TMainWindow.new_map(new_width, new_height: integer);
 var
   index: integer;
+  x, y: integer;
 begin
   map_width := new_width;
   map_height := new_height;
@@ -1434,6 +1536,10 @@ begin
     map_data[index * 2] := tiles_sand[random(10)];
     map_data[index * 2 + 1] := 0;
   end;
+  // Reset event markers
+  for x := 0 to 127 do
+    for y := 0 to 127 do
+      mis_map_markers[x,y].emtype := emNone;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';
