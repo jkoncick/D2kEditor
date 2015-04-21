@@ -9,6 +9,7 @@ uses
 
 const cnt_tilesets = 7;
 const cnt_players = 7;
+const cnt_mis_players = 8;
 const size_tileatr = 800;
 
 type
@@ -158,6 +159,9 @@ type
     N5: TMenuItem;
     MiniMapFrame: TBevel;
     Marktiles1: TMenuItem;
+    Useallocationindexes1: TMenuItem;
+    N6: TMenuItem;
+    N7: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -179,6 +183,7 @@ type
     procedure Loadtileset1Click(Sender: TObject);
     procedure ShowGrid1Click(Sender: TObject);
     procedure Marktiles1Click(Sender: TObject);
+    procedure Useallocationindexes1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
@@ -212,7 +217,6 @@ type
     procedure OpenTilesetClick(Sender: TObject);
     procedure BlockUndoClick(Sender: TObject);
 
-
   public
 
     current_dir: String;
@@ -234,6 +238,9 @@ type
     map_width: word;
     map_height: word;
     map_tileset: word;
+
+    // Mis file variables
+    mis_alloc_index: array[0..cnt_mis_players] of byte;
 
     power: array[0..cnt_players-1] of Word;
 
@@ -267,6 +274,7 @@ type
     procedure render_minimap;
     procedure load_map(filename: String);
     procedure save_map(filename: String);
+    procedure load_misfile(filename: String);
     procedure load_tileatr(tileset: integer);
     function get_tile_type(value: integer): TileType;
     procedure structure_params_to_value;
@@ -455,6 +463,13 @@ end;
 procedure TMainWindow.Marktiles1Click(Sender: TObject);
 begin
   Marktiles1.Checked := not Marktiles1.Checked;
+  render_map;
+end;
+
+procedure TMainWindow.Useallocationindexes1Click(Sender: TObject);
+begin
+  Useallocationindexes1.Checked := not Useallocationindexes1.Checked;
+  render_minimap;
   render_map;
 end;
 
@@ -881,6 +896,11 @@ begin
         begin
           // Value is structure
           dest_rect := rect(x*32,y*32,x*32+structure_params[index].size_x*32,y*32+structure_params[index].size_y*32);
+          // Translate player number according to allocation index
+          if Useallocationindexes1.Checked then
+            player := mis_alloc_index[player];
+          if player >= cnt_players then
+            player := 0;
           if index = 0 then
           begin
             // Structure is wall
@@ -1023,6 +1043,12 @@ begin
         MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_misc_objects_colors[index];
       end else
       begin
+        // Translate player number according to allocation index
+        if Useallocationindexes1.Checked then
+          player := mis_alloc_index[player];
+        if player >= cnt_players then
+          player := 0;
+        // Render structure on map
         MiniMapTmp.Canvas.Pen.Color := mmap_player_colors[player];
         MiniMapTmp.Canvas.Brush.Color := mmap_player_colors[player];
         MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_player_colors[player];
@@ -1035,9 +1061,6 @@ procedure TMainWindow.load_map(filename: String);
 var
   map_file: file of word;
   mis_filename: String;
-  mis_file: file of char;
-  tileset_name_buf: array[0..7] of char;
-  tileset_name: String;
   i: integer;
 begin
   // Reading map file
@@ -1057,20 +1080,7 @@ begin
   mis_filename := ExtractFileDir(filename)+'\_'+ExtractFileName(filename);
   mis_filename[length(mis_filename)-1]:= 'I';
   mis_filename[length(mis_filename)]:= 'S';
-  if Detectfrommis1.Checked and FileExists(mis_filename) then
-  begin
-    AssignFile(mis_file, mis_filename);
-    Reset(mis_file);
-    Seek(mis_file,$10598);
-    BlockRead(mis_file,tileset_name_buf,8);
-    tileset_name := String(tileset_name_buf);
-    CloseFile(mis_file);
-    for i:= 1 to cnt_tilesets do
-    begin
-      if tileset_name = tilesets[i] then
-        change_tileset(i);
-    end;
-  end;
+  load_misfile(mis_filename);
   // Rendering
   resize_map_canvas;
   render_minimap;
@@ -1090,6 +1100,35 @@ begin
   for i := 0 to map_width * map_height * 2 - 1 do
     Write(map_file, map_data[i]);
   CloseFile(map_file);
+end;
+
+procedure TMainWindow.load_misfile(filename: String);
+var
+  mis_file: file of byte;
+  tileset_name_buf: array[0..7] of char;
+  tileset_name: String;
+  i: integer;
+begin
+  if not FileExists(filename) then
+    exit;
+  AssignFile(mis_file, filename);
+  Reset(mis_file);
+  // Load tileset
+  if Detectfrommis1.Checked then
+  begin
+    Seek(mis_file,$10598);
+    BlockRead(mis_file,tileset_name_buf,8);
+    tileset_name := String(tileset_name_buf);
+    for i:= 1 to cnt_tilesets do
+    begin
+      if tileset_name = tilesets[i] then
+        change_tileset(i);
+    end;
+  end;
+  // Load allocation indexes
+  Seek(mis_file,$50);
+  BlockRead(mis_file,mis_alloc_index,8);
+  CloseFile(mis_file);
 end;
 
 procedure TMainWindow.load_tileatr(tileset: integer);

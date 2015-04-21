@@ -541,9 +541,20 @@ object MainWindow: TMainWindow
         OnClick = ShowGrid1Click
       end
       object Marktiles1: TMenuItem
-        Caption = 'Mark tiles'
+        Caption = 'Mark impassable tiles'
         ShortCut = 16461
         OnClick = Marktiles1Click
+      end
+      object N7: TMenuItem
+        Caption = '-'
+      end
+      object Useallocationindexes1: TMenuItem
+        Caption = 'Use allocation indexes'
+        ShortCut = 16457
+        OnClick = Useallocationindexes1Click
+      end
+      object N6: TMenuItem
+        Caption = '-'
       end
       object Fastrendering1: TMenuItem
         AutoCheck = True
