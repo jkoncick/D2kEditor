@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, set_dialog, tileset_dialog, Math,
-  Spin;
+  Spin, Buttons;
 
 const cnt_tilesets = 7;
 const cnt_players = 7;
@@ -163,6 +163,10 @@ type
     procedure FormResize(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure FormMouseWheelUp(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
+    procedure FormMouseWheelDown(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
     // Main menu events
     procedure Newmap1Click(Sender: TObject);
     procedure Openmap1Click(Sender: TObject);
@@ -340,6 +344,34 @@ begin
   82: RbRock.Checked := true;
   83: RbSand.Checked := true;
   90: BlockUndoClick(nil);
+  end;
+end;
+
+procedure TMainWindow.FormMouseWheelUp(Sender: TObject; Shift: TShiftState;
+  MousePos: TPoint; var Handled: Boolean);
+begin
+  if (MousePos.X - left) < (mapCanvas.Width + 30) then
+  begin
+    if (MousePos.Y - top) < (mapCanvas.Height - 30)
+    then
+      MapScrollV.Position := MapScrollV.Position - 2
+    else
+      MapScrollH.Position := MapScrollH.Position - 2;
+    Handled := true;
+  end;
+end;
+
+procedure TMainWindow.FormMouseWheelDown(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if (MousePos.X - left) < (mapCanvas.Width + 30) then
+  begin
+    if (MousePos.Y - top) < (mapCanvas.Height - 30)
+    then
+      MapScrollV.Position := MapScrollV.Position + 2
+    else
+      MapScrollH.Position := MapScrollH.Position + 2;
+    Handled := true;
   end;
 end;
 

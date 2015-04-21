@@ -21,6 +21,8 @@ object MainWindow: TMainWindow
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnMouseMove = FormMouseMove
+  OnMouseWheelDown = FormMouseWheelDown
+  OnMouseWheelUp = FormMouseWheelUp
   OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
