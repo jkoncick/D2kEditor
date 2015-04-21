@@ -1,0 +1,1337 @@
+unit main;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, set_dialog, tileset_dialog, Math,
+  Spin;
+
+const cnt_tilesets = 7;
+const cnt_players = 7;
+const size_tileatr = 800;
+
+type
+  TStructureParams = record
+    offs_x: word; // X-offset in image
+    offs_y: word; // Y-offset in image
+    size_x: word; // Structure width
+    size_y: word; // Structure height
+    overfl: word; // Sprite overflow (1 = up (for buildings), 2 = infantry, 3 = wide (harvester, MCV))
+    lnwall: boolean;  // Structure links with wall
+    power: SmallInt; // Power the structure gives/needs
+    values: array[0..cnt_players-1] of word; // Map special values
+  end;
+
+const structure_params: array[0..31] of TStructureParams =
+  (
+    (offs_x:  0; offs_y: 0; size_x: 1; size_y: 1; overfl:  0; lnwall:  true; power:   0; values:(  4,204,404,580,620,660,700)), // Wall
+    (offs_x:  1; offs_y: 0; size_x: 2; size_y: 3; overfl:  1; lnwall: false; power:-200; values:(  5,205,405,581,621,661,701)), // Wind trap
+    (offs_x:  3; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: -20; values:(  8,208,408,582,622,662,702)), // Construction Yard
+    (offs_x:  6; offs_y: 0; size_x: 2; size_y: 3; overfl:  1; lnwall: false; power:  30; values:( 11,211,411,583,623,663,703)), // Barracks
+    (offs_x:  8; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power:  75; values:( 14,214,414,584,624,664,704)), // Refinery
+    (offs_x: 11; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 125; values:( 17,217,417,585,625,665,705)), // Outpost
+    (offs_x: 14; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 125; values:( 63,263,463,587,627,667,707)), // Light Factory
+    (offs_x: 17; offs_y: 0; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:  15; values:( 69,269,469,589,629,668,708)), // Silo
+    (offs_x: 18; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power: 150; values:( 72,272,472,590,630,669,709)), // Heavy Factory
+    (offs_x: 21; offs_y: 0; size_x: 3; size_y: 3; overfl:  0; lnwall: false; power:  50; values:( 75,275,475,591,631,670,710)), // Repair Pad
+    (offs_x: 24; offs_y: 0; size_x: 1; size_y: 1; overfl:  1; lnwall:  true; power:  50; values:( 78,278,478,592,632,671,711)), // Gun Turret
+    (offs_x: 25; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power:  75; values:(120,320,520,593,633,672,712)), // High Tech Factory
+    (offs_x: 28; offs_y: 0; size_x: 1; size_y: 1; overfl:  1; lnwall:  true; power:  60; values:(123,323,523,594,634,673,713)), // Rocket Turret
+    (offs_x: 29; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power: 175; values:(126,326,526,595,635,674,714)), // IX Research Centre
+    (offs_x: 32; offs_y: 0; size_x: 3; size_y: 3; overfl:  0; lnwall: false; power: 150; values:(129,329,529,596,636,675,715)), // Starport
+    (offs_x: 35; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 200; values:(132,332,532,588,628,676,716)), // Palace
+    (offs_x: 38; offs_y: 0; size_x: 2; size_y: 2; overfl:  0; lnwall: false; power:  50; values:(  0,  0,  0,597,637,  0,  0)), // Sietch
+    (offs_x: 40; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 100; values:(  0,218,418,  0,  0,666,  0)), // Modified Outpost
+    (offs_x: 43; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(180,360,560,598,638,677,717)), // Light Infantry
+    (offs_x: 44; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(181,361,561,599,639,678,718)), // Trooper
+    (offs_x: 45; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(182,362,562,600,640,679,719)), // St. Fremen / Saboteur
+    (offs_x: 46; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(183,363,563,601,641,  0,  0)), // Sardakaur / Fremen
+    (offs_x: 47; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(184,364,564,602,642,680,720)), // Engineer
+    (offs_x: 44; offs_y: 1; size_x: 1; size_y: 1; overfl:  3; lnwall: false; power:   0; values:(185,365,565,603,643,681,721)), // Harvester
+    (offs_x: 46; offs_y: 1; size_x: 1; size_y: 1; overfl:  3; lnwall: false; power:   0; values:(186,366,566,604,644,682,722)), // MCV
+    (offs_x: 43; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(187,367,567,605,645,683,723)), // Trike / Raider
+    (offs_x: 44; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(188,368,568,606,646,684,724)), // Quad
+    (offs_x: 45; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(189,369,569,607,647,685,725)), // Combat Tank
+    (offs_x: 46; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(190,370,570,608,648,686,726)), // Missile Tank
+    (offs_x: 47; offs_y: 3; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(191,371,571,609,649,687,727)), // Siege Tank
+    (offs_x: 17; offs_y: 1; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(192,372,572,610,650,688,728)), // Carryall
+    (offs_x: 47; offs_y: 1; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(194,374,574,  0,652,  0,  0))  // House Special Tank
+  );
+
+const misc_obj_values: array[0..5] of word = (0,1,2,20,23,45);
+const misc_objects_colors: array[1..5] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF);
+
+const player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
+
+const tilesets: array[1..cnt_tilesets] of String = ('BLOXBASE','BLOXBAT','BLOXBGBS','BLOXICE','BLOXTREE','BLOXWAST','BLOXXMAS');
+const tileatr_filenames: array[1..cnt_tilesets] of String = ('tileatr2.bin','tileatr6.bin','tileatr3.bin','tileatr5.bin','tileatr1.bin','tileatr4.bin','tileatr7.bin');
+
+const block_presets: array[1..8,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
+
+const tiles_sand: array[0..9] of word = (48,49,50,51,52,68,69,70,71,72);
+const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,576,592,593,594,595,596);
+const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
+
+type
+  TMainWindow = class(TForm)
+    MapCanvas: TImage;
+    MapScrollH: TScrollBar;
+    MapScrollV: TScrollBar;
+    AppMenu: TMainMenu;
+    File1: TMenuItem;
+    StatusBar: TStatusBar;
+    EditorMenu: TPanel;
+    Openmap1: TMenuItem;
+    MapOpenDialog: TOpenDialog;
+    Savemap1: TMenuItem;
+    ileset1: TMenuItem;
+    Loadtileset1: TMenuItem;
+    TilesetOpenDialog: TOpenDialog;
+    MapSaveDialog: TSaveDialog;
+    Selecttileset1: TMenuItem;
+    BLOXBASE1: TMenuItem;
+    BLOXBAT1: TMenuItem;
+    BLOXBGBS1: TMenuItem;
+    BLOXICE1: TMenuItem;
+    BLOXTREE1: TMenuItem;
+    BLOXWAST1: TMenuItem;
+    BLOXXMAS1: TMenuItem;
+    MiniMap: TImage;
+    MiniMapTmp: TImage;
+    Settings1: TMenuItem;
+    ShowGrid1: TMenuItem;
+    XPManifest1: TXPManifest;
+    Reopenmap1: TMenuItem;
+    N1: TMenuItem;
+    Savemapas1: TMenuItem;
+    N2: TMenuItem;
+    Exit1: TMenuItem;
+    Detectfrommis1: TMenuItem;
+    Selectnext1: TMenuItem;
+    N3: TMenuItem;
+    Map1: TMenuItem;
+    Setmapsize1: TMenuItem;
+    Shiftmap1: TMenuItem;
+    Changestructureowner1: TMenuItem;
+    Fastrendering1: TMenuItem;
+    EditorPages: TPageControl;
+    PageStructures: TTabSheet;
+    PageTerrain: TTabSheet;
+    LbStructureValue: TLabel;
+    StructureValue: TEdit;
+    LbMiscObjList: TLabel;
+    MiscObjList: TListBox;
+    LbPlayerSelect: TLabel;
+    PlayerSelect: TComboBox;
+    LbStructureList: TLabel;
+    StructureList: TListBox;
+    RbCustomBlock: TRadioButton;
+    RbSand: TRadioButton;
+    RbRock: TRadioButton;
+    RbDunes: TRadioButton;
+    LbBlockSize: TLabel;
+    BlockWidth: TSpinEdit;
+    BlockHeight: TSpinEdit;
+    LbX: TLabel;
+    Block11: TButton;
+    Block22: TButton;
+    Block33: TButton;
+    Block44: TButton;
+    OpenTileset: TButton;
+    BlockUndo: TButton;
+    BlockImage: TImage;
+    Block21: TButton;
+    Block12: TButton;
+    Block32: TButton;
+    Block23: TButton;
+    Newmap1: TMenuItem;
+    N4: TMenuItem;
+    Help1: TMenuItem;
+    KeyShortcuts1: TMenuItem;
+    About1: TMenuItem;
+    Mouseactions1: TMenuItem;
+    N5: TMenuItem;
+    // Main form events
+    procedure FormCreate(Sender: TObject);
+    procedure FormResize(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    // Main menu events
+    procedure Newmap1Click(Sender: TObject);
+    procedure Openmap1Click(Sender: TObject);
+    procedure Reopenmap1Click(Sender: TObject);
+    procedure Savemap1Click(Sender: TObject);
+    procedure Savemapas1Click(Sender: TObject);
+    procedure Exit1Click(Sender: TObject);
+    procedure SelectTileset(Sender: TObject);
+    procedure Selectnext1Click(Sender: TObject);
+    procedure Loadtileset1Click(Sender: TObject);
+    procedure ShowGrid1Click(Sender: TObject);
+    procedure Setmapsize1Click(Sender: TObject);
+    procedure Shiftmap1Click(Sender: TObject);
+    procedure Changestructureowner1Click(Sender: TObject);
+    procedure KeyShortcuts1Click(Sender: TObject);
+    procedure Mouseactions1Click(Sender: TObject);
+    procedure About1Click(Sender: TObject);
+    // Main form components events
+    procedure MapScrollHChange(Sender: TObject);
+    procedure MapScrollVChange(Sender: TObject);
+    procedure MapScrollHKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure MapScrollVKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure MapCanvasMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure MapCanvasMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    // Editor menu components events
+    procedure MiniMapMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure MiniMapMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    // Structure editor
+    procedure StructureListClick(Sender: TObject);
+    procedure PlayerSelectChange(Sender: TObject);
+    procedure MiscObjListClick(Sender: TObject);
+    //Terrain editor
+    procedure SetBlockSize(Sender: TObject);
+    procedure OpenTilesetClick(Sender: TObject);
+    procedure BlockUndoClick(Sender: TObject);
+
+  public
+
+    current_dir: String;
+    tileset_menuitems: array[1..cnt_tilesets] of TMenuItem;
+
+    // Graphic data
+    graphics_tileset: TPicture;
+    graphics_structures: TPicture;
+    graphics_structures_mask: TPicture;
+    graphics_misc_objects: TPicture;
+
+    // Tileset data
+    tileset_attributes: array[0..size_tileatr-1] of integer;
+
+    // Map variables
+    map_data: array[0..32767] of word;
+    map_loaded: boolean;
+    map_filename: String;
+    map_width: word;
+    map_height: word;
+    map_tileset: word;
+
+    power: array[0..cnt_players-1] of Word;
+
+    // Map canvas variables
+    map_canvas_width: word;
+    map_canvas_height: word;
+    map_canvas_left: word;
+    map_canvas_top: word;
+    map_canvas_old_left: word;
+    map_canvas_old_top: word;
+    mouse_old_x: word;
+    mouse_old_y: word;
+
+    // Minimap variables
+    mmap_border_x: word;
+    mmap_border_y: word;
+
+    // Tile block variables
+    block_width: word;
+    block_height: word;
+    block_data: array[0..3,0..3] of word;
+    old_block_width: word;
+    old_block_height: word;
+    old_block_x: word;
+    old_block_y: word;
+    old_block_data: array[0..3,0..3] of word;
+
+    // Procedures and functions
+    procedure resize_map_canvas;
+    procedure render_map;
+    procedure render_minimap;
+    procedure load_map(filename: String);
+    procedure save_map(filename: String);
+    procedure load_tileatr(tileset: integer);
+    procedure structure_params_to_value;
+    function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
+    procedure change_tileset(index: integer);
+    procedure calculate_power;
+    procedure show_power;
+
+    // Procedures called from other dialog
+    procedure set_map_size(new_width, new_height: integer);
+    procedure shift_map(direction, num_tiles: integer);
+    procedure change_structure_owner(player_from, player_to: integer; swap: boolean);
+    procedure new_map(new_width, new_height: integer);
+  end;
+
+var
+  MainWindow: TMainWindow;
+
+implementation
+
+{$R *.dfm}
+
+procedure TMainWindow.FormCreate(Sender: TObject);
+begin
+  randomize;
+  tileset_menuitems[1] := BLOXBASE1;
+  tileset_menuitems[2] := BLOXBAT1;
+  tileset_menuitems[3] := BLOXBGBS1;
+  tileset_menuitems[4] := BLOXICE1;
+  tileset_menuitems[5] := BLOXTREE1;
+  tileset_menuitems[6] := BLOXWAST1;
+  tileset_menuitems[7] := BLOXXMAS1;
+  current_dir := GetCurrentDir;
+  graphics_tileset := TPicture.Create;
+  change_tileset(3);
+  graphics_structures := TPicture.Create;
+  graphics_structures_mask := TPicture.Create;
+  graphics_misc_objects := TPicture.Create;
+  graphics_structures_mask.bitmap.pixelformat := pf1bit;
+  graphics_structures.LoadFromFile('graphics/structures.bmp');
+  graphics_structures_mask.LoadFromFile('graphics/structures_mask.bmp');
+  graphics_misc_objects.LoadFromFile('graphics/misc_objects.bmp');
+  map_loaded := false;
+  map_width := 20;
+  map_height := 20;
+  map_tileset := 3;
+  map_canvas_left := 0;
+  map_canvas_top := 0;
+  map_canvas_old_left := 0;
+  map_canvas_old_top := 0;
+  MapCanvas.Canvas.Rectangle(1,1,1,1);
+  resize_map_canvas;
+end;
+
+procedure TMainWindow.FormResize(Sender: TObject);
+begin
+  resize_map_canvas;
+  EditorMenu.Left := ClientWidth - 168;
+  EditorMenu.Height := Height - 72;
+  StructureList.Height := EditorMenu.Height - 354;
+  EditorPages.Height := Height - 214;
+end;
+
+procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  case key of
+  32: begin
+        OpenTilesetClick(nil);
+        key := 0;
+      end;
+  49: SetBlockSize(Block11);
+  50: SetBlockSize(Block22);
+  51: SetBlockSize(Block33);
+  52: SetBlockSize(Block44);
+  53: SetBlockSize(Block21);
+  54: SetBlockSize(Block12);
+  55: SetBlockSize(Block32);
+  56: SetBlockSize(Block23);
+  66: RbCustomBlock.Checked := true;
+  68: RbDunes.Checked := true;
+  82: RbRock.Checked := true;
+  83: RbSand.Checked := true;
+  90: BlockUndoClick(nil);
+  end;
+end;
+
+procedure TMainWindow.Newmap1Click(Sender: TObject);
+begin
+  SetDialog.select_menu(4);
+end;
+
+procedure TMainWindow.Openmap1Click(Sender: TObject);
+begin
+  if MapOpenDialog.Execute then
+  begin
+    load_map(MapOpenDialog.FileName);
+  end;
+end;
+
+
+procedure TMainWindow.Reopenmap1Click(Sender: TObject);
+begin
+  if map_loaded then
+    load_map(map_filename);
+end;
+
+procedure TMainWindow.Savemap1Click(Sender: TObject);
+begin
+  if map_loaded then
+    save_map(map_filename);
+end;
+
+procedure TMainWindow.Savemapas1Click(Sender: TObject);
+begin
+  if MapSaveDialog.Execute then
+  begin
+    save_map(MapSaveDialog.FileName);
+  end;
+end;
+
+procedure TMainWindow.Exit1Click(Sender: TObject);
+begin
+  application.Terminate;
+end;
+
+procedure TMainWindow.SelectTileset(Sender: TObject);
+begin
+  change_tileset((sender as TMenuItem).Tag)
+end;
+
+procedure TMainWindow.Selectnext1Click(Sender: TObject);
+begin
+  map_tileset := map_tileset + 1;
+  if map_tileset > cnt_tilesets then
+    map_tileset := 1;
+  change_tileset(map_tileset);  
+end;
+
+procedure TMainWindow.Loadtileset1Click(Sender: TObject);
+begin
+  if TilesetOpenDialog.Execute then
+  begin
+    graphics_tileset.LoadFromFile(TilesetOpenDialog.FileName);
+    tileset_menuitems[map_tileset].Checked := False;
+    map_tileset := 0;
+    load_tileatr(3);
+    StatusBar.Panels[1].Text := 'Tileset File';
+    render_map;
+  end;
+end;
+
+procedure TMainWindow.ShowGrid1Click(Sender: TObject);
+begin
+  ShowGrid1.Checked := not ShowGrid1.Checked;
+  render_map;
+end;
+
+procedure TMainWindow.Setmapsize1Click(Sender: TObject);
+begin
+  SetDialog.SetMapSize_Width.Value := map_width;
+  SetDialog.SetMapSize_Height.Value := map_height;
+  SetDialog.select_menu(1);
+end;
+
+procedure TMainWindow.Shiftmap1Click(Sender: TObject);
+begin
+  SetDialog.select_menu(2);
+end;
+
+procedure TMainWindow.Changestructureowner1Click(Sender: TObject);
+begin
+  SetDialog.select_menu(3);
+end;
+
+procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
+begin
+  ShowMessage('Key Shortcuts:'+chr(13)+chr(13)+'space = Open tileset'+chr(13)+'1 - 8 = Block size preset'+chr(13)+'B = Tile block'+chr(13)+'S = Paint sand'+chr(13)+'R = Paint rock'+chr(13)+'D = Paint dunes'+chr(13)+'Z = Undo last block'+chr(13)+'Esc = Close tileset');
+end;
+
+procedure TMainWindow.Mouseactions1Click(Sender: TObject);
+begin
+  ShowMessage('Mouse actions'+chr(13)+chr(13)+'When editing structures:'+chr(13)+'Left = Place structure'+chr(13)+'Right = Remove structure'+chr(13)+'Middle = Copy structure'+chr(13)+chr(13)+'When editing terrain:'+chr(13)+'Left = Place block'+chr(13)+'Right = Copy block');
+end;
+
+procedure TMainWindow.About1Click(Sender: TObject);
+begin
+  ShowMessage('Dune 2000 Campaign Map Editor'+chr(13)+chr(13)+'Part of D2K+ Editing tools'+chr(13)+chr(13)+'Made by Klofkac'+chr(13)+'Version 0.3'+chr(13)+'Date: 2011-08-10');
+end;
+
+procedure TMainWindow.MapScrollHChange(Sender: TObject);
+begin
+  map_canvas_left := MapScrollH.Position;
+  render_map;
+end;
+
+procedure TMainWindow.MapScrollVChange(Sender: TObject);
+begin
+  map_canvas_top := MapScrollV.Position;
+  render_map;
+end;
+
+procedure TMainWindow.MapScrollHKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  // Keyboard control of map shifting
+  if key = 38 then
+  begin
+    key := 0;
+    MapScrollV.Position := MapScrollV.Position-1;
+  end;
+  if key = 40 then
+  begin
+    key := 0;
+    MapScrollV.Position := MapScrollV.Position+1;
+  end;
+end;
+
+procedure TMainWindow.MapScrollVKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  // Keyboard control of map shifting
+  if key = 37 then
+  begin
+    MapScrollH.Position := MapScrollH.Position-1;
+    key := 0;
+  end;
+  if key = 39 then
+  begin
+    MapScrollH.Position := MapScrollH.Position+1;
+    key := 0;
+  end;
+end;
+
+procedure TMainWindow.MapCanvasMouseMove(Sender: TObject;
+  Shift: TShiftState; X, Y: Integer);
+var
+map_x, map_y: integer;
+begin
+  map_x := X div 32 + map_canvas_left;
+  map_y := Y div 32 + map_canvas_top;
+  if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
+    exit;
+  mouse_old_x := map_x;
+  mouse_old_y := map_y;
+  StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
+  if (ssLeft in shift) and (((EditorPages.TabIndex = 1) and (not RbCustomBlock.Checked)) or ((EditorPages.TabIndex = 0) and (strtoint(StructureValue.Text) <= 2))) then
+    MapCanvasMouseDown(sender,mbLeft,Shift,x,y);
+end;
+
+procedure TMainWindow.MapCanvasMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  block_x, block_y: integer;
+  border_x, border_y: integer;
+  value: word;
+  map_x, map_y: integer;
+  index, player: word;
+  is_misc: boolean;
+begin
+  map_x := x div 32 + map_canvas_left;
+  map_y := y div 32 + map_canvas_top;
+  if EditorPages.TabIndex = 0 then
+    begin
+    // Editing structures
+    if Button = mbLeft then
+      // Put structure on map
+      map_data[(map_y * map_width + map_x) * 2 + 1] := strtoint(StructureValue.Text)
+    else if Button = mbRight then
+      // Delete structure from map
+      map_data[(map_y * map_width + map_x) * 2 + 1] := 0
+    else if Button = mbMiddle then
+    begin
+      // Get structure parameters on position and set them in menu
+      StructureValue.text := inttostr(map_data[(map_y * map_width + map_x) * 2 + 1]);
+      if structure_value_to_params(map_data[(map_y * map_width + map_x) * 2 + 1],player,index,is_misc) then
+      begin
+        if is_misc then
+        begin
+          MiscObjList.ItemIndex := index;
+          StructureList.ItemIndex := -1;
+        end else
+        begin
+          MiscObjList.ItemIndex := -1;
+          StructureList.ItemIndex := index;
+          PlayerSelect.ItemIndex := player;
+        end;
+      end else
+      begin
+        MiscObjList.ItemIndex := -1;
+        StructureList.ItemIndex := -1;
+        exit;
+      end;
+      exit;
+    end;
+    calculate_power;
+  end else
+  begin
+    // Editing terrain
+    if button = mbLeft then
+    begin
+      if RbCustomBlock.Checked then
+      begin
+        // Draw selected block
+        old_block_width := block_width;
+        old_block_height := block_height;
+        old_block_x := map_x;
+        old_block_y := map_y;
+        for block_x := 0 to block_width - 1 do
+          for block_y := 0 to block_height - 1 do
+            if (map_x + block_x < map_width) and (map_y + block_y < map_height) then
+            begin
+              index := ((map_y + block_y) * map_width + map_x + block_x)*2;
+              old_block_data[block_x,block_y] := map_data[index];
+              map_data[index] := block_data[block_x,block_y];
+              map_data[index+1] := 0;
+            end;
+      end else
+      begin
+        // Paint Sand/Rock/Dunes
+        for block_x := map_x to map_x + BlockWidth.Value - 1 do
+          for block_y := map_y to map_y + BlockHeight.Value - 1 do
+          begin
+            if (block_x >= map_width) or (block_y >= map_height) then
+              continue;
+            if RbSand.Checked then
+              map_data[(block_y*map_width+block_x)*2] := tiles_sand[random(10)]
+            else if RbRock.Checked then
+              map_data[(block_y*map_width+block_x)*2] := tiles_rock[random(15)]
+            else if RbDunes.Checked then
+              map_data[(block_y*map_width+block_x)*2] := tiles_dunes[random(8)];
+            map_data[(block_y*map_width+block_x)*2+1] := 0;
+          end;
+      end;
+    end
+    else if button = mbRight then
+    begin
+      // Copy selected block
+      block_width := BlockWidth.Value;
+      block_height := BlockHeight.Value;
+      border_x := (128 - block_width * 32) div 2;
+      border_y := (128 - block_height * 32) div 2;
+      BlockImage.Canvas.Brush.Color := clBtnFace;
+      BlockImage.Canvas.Rectangle(0,0,128,128);
+      RbCustomBlock.Checked := True;
+      for block_x := 0 to block_width - 1 do
+        for block_y := 0 to block_height - 1 do
+        begin
+          if (map_x + block_x < map_width) and (map_y + block_y < map_height) then
+            value := map_data[((map_y + block_y) * map_width + map_x + block_x)*2]
+          else
+            value := 0;
+          block_data[block_x,block_y] := value;
+          BlockImage.Canvas.CopyRect(rect(block_x*32+border_x,block_y*32+border_y,block_x*32+32+border_x,block_y*32+32+border_y),graphics_tileset.Bitmap.Canvas,rect((value mod 20) * 32,(value div 20) * 32,(value mod 20) * 32 + 32,(value div 20) * 32 + 32));
+        end;
+    end;
+  end;
+  render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.FormMouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+begin
+  StatusBar.Panels[0].Text := '';
+end;
+
+procedure TMainWindow.MiniMapMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if not map_loaded then
+    exit;
+  if (x < mmap_border_x) or (y < mmap_border_y) or (x > 128 - mmap_border_x) or (y > 128 - mmap_border_y) then
+    exit;
+  MapScrollH.Position := x - mmap_border_x - (map_canvas_width div 2);
+  MapScrollV.Position := y - mmap_border_y - (map_canvas_height div 2);
+end;
+
+procedure TMainWindow.MiniMapMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  if not (ssLeft in Shift) or not map_loaded then
+    exit;
+  if (x < mmap_border_x) or (y < mmap_border_y) or (x > 128 - mmap_border_x) or (y > 128 - mmap_border_y) then
+    exit;
+  MapScrollH.Position := x - mmap_border_x - (map_canvas_width div 2);
+  MapScrollV.Position := y - mmap_border_y - (map_canvas_height div 2);
+end;
+
+procedure TMainWindow.StructureListClick(Sender: TObject);
+begin
+  MiscObjList.ItemIndex := -1;
+  structure_params_to_value;
+end;
+
+procedure TMainWindow.PlayerSelectChange(Sender: TObject);
+begin
+  structure_params_to_value;
+  show_power;
+end;
+
+procedure TMainWindow.MiscObjListClick(Sender: TObject);
+begin
+  StructureList.ItemIndex := -1;
+  structure_params_to_value;
+end;
+
+procedure TMainWindow.SetBlockSize(Sender: TObject);
+begin
+  BlockWidth.Value := block_presets[(Sender as TButton).Tag,1];
+  BlockHeight.Value := block_presets[(Sender as TButton).Tag,2];
+end;
+
+procedure TMainWindow.OpenTilesetClick(Sender: TObject);
+begin
+  TilesetDialog.Show;
+end;
+
+procedure TMainWindow.BlockUndoClick(Sender: TObject);
+var
+  x,y: integer;
+begin
+  for x := 0 to old_block_width - 1 do
+    for y := 0 to old_block_height - 1 do
+    begin
+      map_data[((old_block_y+y)*map_width+(old_block_x+x))*2] := old_block_data[x,y];
+    end;
+  render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.resize_map_canvas;
+begin
+  map_canvas_width := (ClientWidth - 200) div 32;
+  if map_canvas_width > map_width then
+    map_canvas_width := map_width;
+  map_canvas_height := (ClientHeight - 50) div 32;
+  if map_canvas_height > map_height then
+    map_canvas_height := map_height;
+  MapCanvas.Width := map_canvas_width * 32;
+  MapCanvas.Height := map_canvas_height * 32;
+  MapScrollH.Top := map_canvas_height * 32 + 8;
+  MapScrollH.Width := map_canvas_width * 32;
+  MapScrollH.Max := map_width - map_canvas_width;
+  if map_width = map_canvas_width then
+    MapScrollH.Enabled := False
+  else
+    MapScrollH.Enabled := True;
+  MapScrollV.Left := map_canvas_width * 32 + 8;
+  MapScrollV.Height := map_canvas_height * 32;
+  MapScrollV.Max := map_height - map_canvas_height;
+  if map_height = map_canvas_height then
+    MapScrollV.Enabled := False
+  else
+    MapScrollV.Enabled := True;
+  render_map;
+end;
+
+
+procedure TMainWindow.render_map;
+var
+  min_x, min_y, max_x, max_y: integer;
+  max_y_plus: word;
+  shift_count: word;
+  x, y: integer;
+  tile_index: integer;
+  tile_index_temp: integer;
+  tile: word;
+  value: word;
+  player, index: word;
+  is_misc: boolean;
+  wall_bitmap: word;
+  dest_rect: TRect;
+  src_rect: TRect;
+begin
+  if not map_loaded then
+    exit;
+  min_x := 0;
+  min_y := 0;
+  max_x := map_canvas_width - 1;
+  max_y := map_canvas_height - 1;
+  max_y_plus := 1;
+  // Scrolling optimization
+  if Fastrendering1.Checked then
+  begin
+    // Horizontal scroll
+    if (map_canvas_left <> map_canvas_old_left) and (abs(map_canvas_left - map_canvas_old_left) < map_canvas_width)  then
+    begin
+      shift_count := abs(map_canvas_left - map_canvas_old_left);
+      if map_canvas_left < map_canvas_old_left then
+      begin
+        // Scrolling left
+        max_x := shift_count - 1;
+        dest_rect := rect(shift_count*32,0,map_canvas_width*32,map_canvas_height*32);
+        src_rect := rect(0,0,map_canvas_width*32-shift_count*32,map_canvas_height*32);
+      end else
+      begin
+        // Scrolling right
+        min_x := max_x - shift_count + 1;
+        src_rect := rect(shift_count*32,0,map_canvas_width*32,map_canvas_height*32);
+        dest_rect := rect(0,0,map_canvas_width*32-shift_count*32,map_canvas_height*32);
+      end;
+      // Shifting part of map canvas
+      MapCanvas.Canvas.CopyRect(dest_rect,MapCanvas.Canvas,src_rect);
+    end;
+    // Vertical scroll
+    if (map_canvas_top <> map_canvas_old_top) and (abs(map_canvas_top - map_canvas_old_top) < map_canvas_height)  then
+    begin
+      shift_count := abs(map_canvas_top - map_canvas_old_top);
+      if map_canvas_top < map_canvas_old_top then
+      begin
+        // Scrolling up
+        max_y := shift_count - 1;
+        max_y_plus := 4;
+        dest_rect := rect(0,shift_count*32,map_canvas_width*32,map_canvas_height*32);
+        src_rect := rect(0,0,map_canvas_width*32,map_canvas_height*32-shift_count*32);
+      end else
+      begin
+        // Scrolling down
+        min_y := max_y - shift_count + 1;
+        src_rect := rect(0,shift_count*32,map_canvas_width*32,map_canvas_height*32);
+        dest_rect := rect(0,0,map_canvas_width*32,map_canvas_height*32-shift_count*32);
+      end;
+      // Shifting part of map canvas
+      MapCanvas.Canvas.CopyRect(dest_rect,MapCanvas.Canvas,src_rect);
+    end;
+  end;
+  map_canvas_old_left := map_canvas_left;
+  map_canvas_old_top := map_canvas_top;
+  // Draw terrain
+  for y:= min_y to max_y do
+  begin
+    for x:= min_x to max_x do
+    begin
+      tile_index := (y + map_canvas_top) * map_width + x + map_canvas_left;
+      tile := map_data[tile_index * 2];
+      MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),graphics_tileset.Bitmap.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
+    end;
+  end;
+  // Draw structures
+  for y:= min_y -3 to max_y + max_y_plus do
+  begin
+    for x:= min_x -2 to max_x do
+    begin
+      // Index in map_data
+      tile_index := (y + map_canvas_top) * map_width + x + map_canvas_left;
+      // If tile_index is out of map
+      if (tile_index < 0) or (((tile_index mod map_width) >= (map_width - 2)) and (x < 0)) or (y > (map_width - 1)) then
+        continue;
+      value := map_data[tile_index * 2 + 1];
+      // Getting structure parameters
+      if structure_value_to_params(value,player,index,is_misc) then
+      begin
+        // Structure is not empty
+        if is_misc then
+        begin
+          // Value is misc
+          src_rect := rect((index-1)*32,0,(index-1)*32+32,32);
+          dest_rect := rect(x*32,y*32,x*32+32,y*32+32);
+          MapCanvas.Canvas.CopyMode:=cmSrcCopy;
+          MapCanvas.Canvas.CopyRect(dest_rect,graphics_misc_objects.Bitmap.Canvas,src_rect);
+        end else
+        begin
+          // Value is structure
+          dest_rect := rect(x*32,y*32,x*32+structure_params[index].size_x*32,y*32+structure_params[index].size_y*32);
+          if index = 0 then
+          begin
+            // Structure is wall
+            wall_bitmap := 0;
+            // Checking left of wall
+            if ((tile_index - 1) mod map_width) < (map_width -1) then
+            begin
+              tile_index_temp := tile_index - 1;
+              value := map_data[tile_index_temp * 2 + 1];
+              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+                wall_bitmap := wall_bitmap + 1
+            end;
+            // Checking up of wall
+            if (tile_index - map_width) >= 0 then
+            begin
+              tile_index_temp := tile_index - map_width;
+              value := map_data[tile_index_temp * 2 + 1];
+              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+                wall_bitmap := wall_bitmap + 2
+            end;
+            // Checking right of wall
+            if ((tile_index + 1) mod map_width) > 0 then
+            begin
+              tile_index_temp := tile_index + 1;
+              value := map_data[tile_index_temp * 2 + 1];
+              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+                wall_bitmap := wall_bitmap + 4
+            end;
+            // Checking down of wall
+            if (tile_index + map_width) < (map_width * map_height) then
+            begin
+              tile_index_temp := tile_index + map_width;
+              value := map_data[tile_index_temp * 2 + 1];
+              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+                wall_bitmap := wall_bitmap + 8
+            end;
+            // Wall source rect
+            src_rect := rect(0,wall_bitmap*32,32,wall_bitmap*32+32);
+            index := 0;
+          end else
+            // Structure is not wall
+            src_rect := rect(structure_params[index].offs_x*32,32+player*128+structure_params[index].offs_y*32,structure_params[index].offs_x*32+structure_params[index].size_x*32,32+player*128+structure_params[index].offs_y*32+structure_params[index].size_y*32);
+          // Buildings / units overflows
+          // Overflow up (buildings)
+          if structure_params[index].overfl = 1 then
+          begin
+            src_rect.Top := src_rect.Top - 16;
+            dest_rect.Top := dest_rect.Top - 16;
+          end else
+          // Overflow down (infantry)
+          if structure_params[index].overfl = 2 then
+          begin
+            src_rect.Bottom := src_rect.Bottom - 16;
+            dest_rect.Bottom := dest_rect.Bottom - 16;
+          end else
+          // Overflow to all sides (harvester, MCV)
+          if structure_params[index].overfl = 3 then
+          begin
+            src_rect.Top := src_rect.Top - 4;
+            dest_rect.Top := dest_rect.Top - 4;
+            src_rect.Bottom := src_rect.Bottom + 4;
+            dest_rect.Bottom := dest_rect.Bottom + 4;
+            src_rect.Left := src_rect.Left - 4;
+            dest_rect.Left := dest_rect.Left - 4;
+            src_rect.Right := src_rect.Right + 4;
+            dest_rect.Right := dest_rect.Right + 4;
+          end;
+          // Drawing only overflow up when under map canvas
+          if (y > max_y) then
+          begin
+            if structure_params[index].overfl <> 1 then
+              continue;
+            src_rect.Bottom := 32+player*128+structure_params[index].offs_y*32;
+            dest_rect.Bottom := y*32;
+          end;
+          // Drawing structure
+          MapCanvas.Canvas.CopyMode := cmSrcAnd;
+          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures_mask.Bitmap.Canvas,src_rect);
+          MapCanvas.Canvas.CopyMode := cmSrcPaint;
+          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures.Bitmap.Canvas,src_rect);
+        end;
+      end;
+    end;
+  end;
+  // Draw grid
+  if ShowGrid1.Checked then
+  begin
+    for x:= 0 to map_canvas_width do
+    begin
+      MapCanvas.Canvas.MoveTo(x*32,0);
+      MapCanvas.Canvas.LineTo(x*32,map_canvas_height*32);
+    end;
+    for y:= 0 to map_canvas_height do
+    begin
+      MapCanvas.Canvas.MoveTo(0,y*32);
+      MapCanvas.Canvas.LineTo(map_canvas_width*32,y*32);
+    end;
+  end;
+  MapCanvas.Canvas.CopyMode:=cmSrcCopy;
+  MiniMap.Canvas.CopyRect(rect(0,0,128,128),MiniMapTmp.Canvas,rect(0,0,128,128));
+  MiniMap.Canvas.Pen.Color:= $00FF00;
+  MiniMap.Canvas.Brush.Style := bsClear;
+  MiniMap.Canvas.Rectangle(mmap_border_x + map_canvas_left,mmap_border_y + map_canvas_top,mmap_border_x + map_canvas_left + map_canvas_width,mmap_border_y + map_canvas_top + map_canvas_height);
+  MiniMap.Canvas.Brush.Style := bsSolid;
+end;
+
+procedure TMainWindow.render_minimap;
+var
+  x, y: integer;
+  value: integer;
+  player, index: word;
+  is_misc: boolean;
+begin
+  if not map_loaded then
+    exit;
+  MiniMapTmp.Canvas.Brush.Color := ClBtnFace;
+  MiniMapTmp.Canvas.Pen.Color := ClBtnFace;
+  MiniMapTmp.Canvas.Rectangle(0,0,128,128);
+  mmap_border_x := (128 - map_width) div 2;
+  mmap_border_y := (128 - map_height) div 2;
+  MiniMapTmp.Canvas.Brush.Color := $8CDFEF;
+  MiniMapTmp.Canvas.Pen.Color := $8CDFEF;
+  MiniMapTmp.Canvas.Rectangle(mmap_border_x,mmap_border_y,mmap_border_x+map_width,mmap_border_y+map_height);
+  // Rendering terrain
+  for y:= 0 to map_height - 1 do
+    for x:= 0 to map_width - 1 do
+    begin
+      value := tileset_attributes[map_data[(y * map_width + x) * 2]];
+      // Impassable (ridges)
+      if value = 0 then
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $29285A
+      // Infantry only
+      else if (value and $00006000) = $00004000 then
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $375582
+      // Sand dunes (slow down)
+      else if (value and $40000000) = $40000000 then
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $ACDFEF
+      // Rock
+      else if (value and $20000000) = $20000000 then
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $58A4E4;
+    end;
+  // Rendering structures
+  for y:= 0 to map_height - 1 do
+    for x:= 0 to map_width - 1 do
+    begin
+      value := map_data[(y * map_width + x) * 2 + 1];
+      if not structure_value_to_params(value,player,index,is_misc) then
+        continue
+      else if is_misc then
+      begin
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := misc_objects_colors[index];
+      end else
+      begin
+        MiniMapTmp.Canvas.Pen.Color := player_colors[player];
+        MiniMapTmp.Canvas.Brush.Color := player_colors[player];
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := player_colors[player];
+        MiniMapTmp.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+structure_params[index].size_x,y+mmap_border_y+structure_params[index].size_y);
+      end;
+    end;
+end;
+
+procedure TMainWindow.load_map(filename: String);
+var
+  map_file: file of word;
+  mis_filename: String;
+  mis_file: file of char;
+  tileset_name_buf: array[0..7] of char;
+  tileset_name: String;
+  i: integer;
+begin
+  // Reading map file
+  AssignFile(map_file, filename);
+  Reset(map_file);
+  Read(map_file, map_width);
+  Read(map_file, map_height);
+  for i := 0 to map_width * map_height * 2 - 1 do
+    Read(map_file, map_data[i]);
+  CloseFile(map_file);
+  // Setting variables and status bar
+  map_loaded := true;
+  map_filename := filename;
+  StatusBar.Panels[3].Text := filename;
+  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  // Attempting to detect tileset from .mis file
+  mis_filename := ExtractFileDir(filename)+'\_'+ExtractFileName(filename);
+  mis_filename[length(mis_filename)-1]:= 'I';
+  mis_filename[length(mis_filename)]:= 'S';
+  if Detectfrommis1.Checked and FileExists(mis_filename) then
+  begin
+    AssignFile(mis_file, mis_filename);
+    Reset(mis_file);
+    Seek(mis_file,$10598);
+    BlockRead(mis_file,tileset_name_buf,8);
+    tileset_name := String(tileset_name_buf);
+    CloseFile(mis_file);
+    for i:= 1 to cnt_tilesets do
+    begin
+      if tileset_name = tilesets[i] then
+        change_tileset(i);
+    end;
+  end;
+  // Rendering
+  resize_map_canvas;
+  render_minimap;
+  render_map;
+  calculate_power;
+end;
+
+procedure TMainWindow.save_map(filename: String);
+var
+  map_file: file of word;
+  i: integer;
+begin
+  AssignFile(map_file, filename);
+  ReWrite(map_file);
+  Write(map_file, map_width);
+  Write(map_file, map_height);
+  for i := 0 to map_width * map_height * 2 - 1 do
+    Write(map_file, map_data[i]);
+  CloseFile(map_file);
+end;
+
+procedure TMainWindow.load_tileatr(tileset: integer);
+var
+  tileatr_file: file of integer;
+begin
+  if not FileExists(current_dir+'/tilesets/'+tileatr_filenames[tileset]) then
+    exit;
+  AssignFile(tileatr_file, current_dir+'/tilesets/'+tileatr_filenames[tileset]);
+  Reset(tileatr_file);
+  BlockRead(tileatr_file, tileset_attributes, size_tileatr);
+  CloseFile(tileatr_file);
+end;
+
+procedure TMainWindow.structure_params_to_value;
+var
+  value: word;
+begin
+  if MiscObjList.ItemIndex > -1 then
+    value := misc_obj_values[MiscObjList.ItemIndex]
+  else
+    value := structure_params[StructureList.ItemIndex].values[PlayerSelect.ItemIndex];
+  StructureValue.Text := inttostr(value);
+end;
+
+
+function TMainWindow.structure_value_to_params(value: word; var player,
+  index: word; var is_misc: boolean): boolean;
+var i, j: integer;
+begin
+  if value = 0 then
+  begin
+    result := false;
+    exit;
+  end;
+  for i:= 0 to 5 do
+  begin
+    if value = misc_obj_values[i] then
+    begin
+      index := i;
+      is_misc := true;
+      result := true;
+      exit;
+    end;
+  end;
+  for i := 0 to 31 do
+  begin
+    for j:= 0 to cnt_players - 1 do
+    begin
+      if value = structure_params[i].values[j] then
+      begin
+        player := j;
+        index := i;
+        is_misc := false;
+        result := true;
+        exit;
+      end;
+    end;
+  end;
+  result := false;
+end;
+
+procedure TMainWindow.change_tileset(index: integer);
+begin
+  map_tileset := index;
+  tileset_menuitems[map_tileset].Checked := true;
+  // Load tileset graphics
+  if FileExists(current_dir+'/tilesets/d2k_'+tilesets[map_tileset]+'.bmp') then
+    graphics_tileset.LoadFromFile(current_dir+'/tilesets/d2k_'+tilesets[map_tileset]+'.bmp');
+  // Load tileset attributes
+  load_tileatr(map_tileset);
+  StatusBar.Panels[1].Text := tilesets[map_tileset];
+  render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.calculate_power;
+var
+  output, need: array[0..cnt_players-1] of integer;
+  x, y: integer;
+  player, index: word;
+  is_misc: boolean;
+  tmp_power: integer;
+begin
+  for x := 0 to cnt_players - 1 do
+  begin
+    output[x] := 0;
+    need[x] := 0;
+  end;
+  for y := 0 to map_height - 1 do
+    for x := 0 to map_width -1 do
+    begin
+      if structure_value_to_params(map_data[(y * map_width + x)* 2 + 1],player,index,is_misc) and (not is_misc) then
+      begin
+        tmp_power := structure_params[index].power;
+        if tmp_power > 0 then
+          need[player] := need[player] + tmp_power
+        else if tmp_power < 0 then
+          output[player] := output[player] - tmp_power;
+      end;
+    end;
+  for x := 0 to cnt_players - 1 do
+  begin
+    if (output[x] > 0) and (need[x] = 0) then
+      power[x] := output[x] div 2 + 100
+    else if (output[x] = 0) then
+      power[x] := 0
+    else
+      power[x] := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
+  end;
+  show_power;
+end;
+
+procedure TMainWindow.show_power;
+begin
+  StatusBar.Panels[4].Text := 'Power: '+inttostr(power[PlayerSelect.ItemIndex])+'%';
+end;
+
+procedure TMainWindow.set_map_size(new_width, new_height: integer);
+var
+  x, y: integer;
+begin
+  if (map_width = new_width) and (map_height = new_height) then
+    exit;
+  if (new_width * new_height) > (map_width * map_height) then
+  begin
+    // New size is larger
+    for y:= new_height -1 downto 0 do
+      for x:= new_width -1 downto 0 do
+      begin
+        if (x < map_width) and (y < map_height) then
+        begin
+          map_data[(y * new_width + x) * 2] := map_data[(y * map_width + x) * 2];
+          map_data[(y * new_width + x) * 2 + 1] := map_data[(y * map_width + x) * 2 + 1];
+        end else
+        begin
+          map_data[(y * new_width + x) * 2] := 0;
+          map_data[(y * new_width + x) * 2 + 1] := 0;
+        end;
+      end;
+  end else
+  begin
+    // New size is smaller
+    for y:= 0 to new_height -1 do
+      for x:= 0 to new_width -1 do
+      begin
+        if (x < map_width) and (y < map_height) then
+        begin
+          map_data[(y * new_width + x) * 2] := map_data[(y * map_width + x) * 2];
+          map_data[(y * new_width + x) * 2 + 1] := map_data[(y * map_width + x) * 2 + 1];
+        end else
+        begin
+          map_data[(y * new_width + x) * 2] := 0;
+          map_data[(y * new_width + x) * 2 + 1] := 0;
+        end;
+      end;
+  end;
+  map_width := new_width;
+  map_height := new_height;
+  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  resize_map_canvas;
+  render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.shift_map(direction, num_tiles: integer);
+var
+  x, y: integer;
+  src_x, src_y: integer;
+  src_index, dest_index: integer;
+begin
+  case direction of
+    1:  begin // Left
+          for y := 0 to map_height - 1 do
+            for x := 0 to map_width - 1 do
+            begin
+              src_x := x + num_tiles;
+              src_index := (y * map_width + src_x) * 2;
+              dest_index := (y * map_width + x) * 2;
+              if (src_x < map_width) then
+              begin
+                map_data[dest_index] := map_data[src_index];
+                map_data[dest_index+1] := map_data[src_index+1];
+              end else
+              begin
+                map_data[dest_index] := 0;
+                map_data[dest_index+1] := 0;
+              end;
+            end;
+        end;
+    2:  begin // Up
+          for y := 0 to map_height - 1 do
+            for x := 0 to map_width - 1 do
+            begin
+              src_y := y + num_tiles;
+              src_index := (src_y * map_width + x) * 2;
+              dest_index := (y * map_width + x) * 2;
+              if (src_y < map_height) then
+              begin
+                map_data[dest_index] := map_data[src_index];
+                map_data[dest_index+1] := map_data[src_index+1];
+              end else
+              begin
+                map_data[dest_index] := 0;
+                map_data[dest_index+1] := 0;
+              end;
+            end;
+        end;
+    3:  begin // Right
+          for y := map_height - 1 downto 0 do
+            for x := map_width - 1 downto 0 do
+            begin
+              src_x := x - num_tiles;
+              src_index := (y * map_width + src_x) * 2;
+              dest_index := (y * map_width + x) * 2;
+              if (src_x >= 0) then
+              begin
+                map_data[dest_index] := map_data[src_index];
+                map_data[dest_index+1] := map_data[src_index+1];
+              end else
+              begin
+                map_data[dest_index] := 0;
+                map_data[dest_index+1] := 0;
+              end;
+            end;
+        end;
+    4:  begin
+          for y := map_height - 1 downto 0 do
+            for x := map_width - 1 downto 0 do
+            begin
+              src_y := y - num_tiles;
+              src_index := (src_y * map_width + x) * 2;
+              dest_index := (y * map_width + x) * 2;
+              if (src_y >= 0) then
+              begin
+                map_data[dest_index] := map_data[src_index];
+                map_data[dest_index+1] := map_data[src_index+1];
+              end else
+              begin
+                map_data[dest_index] := 0;
+                map_data[dest_index+1] := 0;
+              end;
+            end;
+        end;
+  end;
+  render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.change_structure_owner(player_from,
+  player_to: integer; swap: boolean);
+var
+  x,y: integer;
+  tile_index: integer;
+  player, index: word;
+  is_misc: boolean;
+begin
+  for y:= 0 to map_height - 1 do
+    for x := 0 to map_width - 1 do
+    begin
+      tile_index := (y * map_width + x) * 2 + 1;
+      if structure_value_to_params(map_data[tile_index], player, index, is_misc) and (not is_misc) then
+      begin
+        // Change from -> to
+        if player = player_from then
+        begin
+          if player_to = cnt_players then
+            map_data[tile_index] := 0
+          else
+            map_data[tile_index] := structure_params[index].values[player_to];
+        end;
+        // Swap is checked (change to -> from)
+        if (player = player_to) and swap then
+            map_data[tile_index] := structure_params[index].values[player_from];
+      end;
+    end;
+  render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.new_map(new_width, new_height: integer);
+var
+  index: integer;
+begin
+  map_width := new_width;
+  map_height := new_height;
+  for index := 0 to map_width * map_height * 2 - 1 do
+    map_data[index] := 0;
+  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  map_loaded := true;
+  resize_map_canvas;
+  render_minimap;
+  render_map;
+end;
+
+end.
