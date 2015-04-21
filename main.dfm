@@ -1,8 +1,8 @@
 object MainWindow: TMainWindow
   Left = 193
   Top = 109
-  Width = 711
-  Height = 548
+  Width = 950
+  Height = 650
   HorzScrollBar.Visible = False
   VertScrollBar.Visible = False
   Caption = 'Dune 2000 Campaign Map Editor'
@@ -27,8 +27,8 @@ object MainWindow: TMainWindow
   object MapCanvas: TImage
     Left = 4
     Top = 4
-    Width = 1280
-    Height = 960
+    Width = 1
+    Height = 1
     OnMouseDown = MapCanvasMouseDown
     OnMouseMove = MapCanvasMouseMove
   end
@@ -57,8 +57,8 @@ object MainWindow: TMainWindow
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 964
-    Width = 1284
+    Top = 577
+    Width = 942
     Height = 19
     Panels = <
       item
@@ -81,7 +81,7 @@ object MainWindow: TMainWindow
       end
       item
         Text = 'alpha 0.3'
-        Width = 50
+        Width = 0
       end>
   end
   object EditorMenu: TPanel
@@ -90,6 +90,14 @@ object MainWindow: TMainWindow
     Width = 168
     Height = 475
     TabOrder = 3
+    object MiniMapFrame: TBevel
+      Left = 18
+      Top = 6
+      Width = 132
+      Height = 132
+      Shape = bsFrame
+      Style = bsRaised
+    end
     object MiniMap: TImage
       Left = 20
       Top = 8
@@ -529,6 +537,11 @@ object MainWindow: TMainWindow
         Caption = 'Show Grid'
         ShortCut = 16455
         OnClick = ShowGrid1Click
+      end
+      object Marktiles1: TMenuItem
+        Caption = 'Mark tiles'
+        ShortCut = 16461
+        OnClick = Marktiles1Click
       end
       object Fastrendering1: TMenuItem
         AutoCheck = True

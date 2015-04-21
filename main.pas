@@ -12,6 +12,9 @@ const cnt_players = 7;
 const size_tileatr = 800;
 
 type
+   TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttBuildable);
+
+type
   TStructureParams = record
     offs_x: word; // X-offset in image
     offs_y: word; // Y-offset in image
@@ -60,9 +63,10 @@ const structure_params: array[0..31] of TStructureParams =
   );
 
 const misc_obj_values: array[0..5] of word = (0,1,2,20,23,45);
-const misc_objects_colors: array[1..5] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF);
 
-const player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
+const mmap_misc_objects_colors: array[1..5] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF);
+const mmap_tile_colors: array[0..4] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4);
+const mmap_player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
 
 const tilesets: array[1..cnt_tilesets] of String = ('BLOXBASE','BLOXBAT','BLOXBGBS','BLOXICE','BLOXTREE','BLOXWAST','BLOXXMAS');
 const tileatr_filenames: array[1..cnt_tilesets] of String = ('tileatr2.bin','tileatr6.bin','tileatr3.bin','tileatr5.bin','tileatr1.bin','tileatr4.bin','tileatr7.bin');
@@ -152,6 +156,8 @@ type
     About1: TMenuItem;
     Mouseactions1: TMenuItem;
     N5: TMenuItem;
+    MiniMapFrame: TBevel;
+    Marktiles1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -168,6 +174,7 @@ type
     procedure Selectnext1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
     procedure ShowGrid1Click(Sender: TObject);
+    procedure Marktiles1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
@@ -200,6 +207,7 @@ type
     procedure SetBlockSize(Sender: TObject);
     procedure OpenTilesetClick(Sender: TObject);
     procedure BlockUndoClick(Sender: TObject);
+
 
   public
 
@@ -256,6 +264,7 @@ type
     procedure load_map(filename: String);
     procedure save_map(filename: String);
     procedure load_tileatr(tileset: integer);
+    function get_tile_type(value: integer): TileType;
     procedure structure_params_to_value;
     function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
     procedure change_tileset(index: integer);
@@ -297,15 +306,7 @@ begin
   graphics_structures_mask.LoadFromFile('graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile('graphics/misc_objects.bmp');
   map_loaded := false;
-  map_width := 20;
-  map_height := 20;
-  map_tileset := 3;
-  map_canvas_left := 0;
-  map_canvas_top := 0;
-  map_canvas_old_left := 0;
-  map_canvas_old_top := 0;
-  MapCanvas.Canvas.Rectangle(1,1,1,1);
-  resize_map_canvas;
+  top := 60;
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
@@ -315,6 +316,7 @@ begin
   EditorMenu.Height := Height - 72;
   StructureList.Height := EditorMenu.Height - 354;
   EditorPages.Height := Height - 214;
+  StatusBar.Panels[3].Width := ClientWidth - 350;
 end;
 
 procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
@@ -357,18 +359,24 @@ end;
 
 procedure TMainWindow.Reopenmap1Click(Sender: TObject);
 begin
-  if map_loaded then
+  if map_loaded and (map_filename <> '') then
     load_map(map_filename);
 end;
 
 procedure TMainWindow.Savemap1Click(Sender: TObject);
 begin
-  if map_loaded then
+  if not map_loaded then
+    exit;
+  if map_filename = '' then
+    Savemapas1Click(Sender)
+  else
     save_map(map_filename);
 end;
 
 procedure TMainWindow.Savemapas1Click(Sender: TObject);
 begin
+  if not map_loaded then
+    exit;
   if MapSaveDialog.Execute then
   begin
     save_map(MapSaveDialog.FileName);
@@ -409,6 +417,12 @@ end;
 procedure TMainWindow.ShowGrid1Click(Sender: TObject);
 begin
   ShowGrid1.Checked := not ShowGrid1.Checked;
+  render_map;
+end;
+
+procedure TMainWindow.Marktiles1Click(Sender: TObject);
+begin
+  Marktiles1.Checked := not Marktiles1.Checked;
   render_map;
 end;
 
@@ -635,12 +649,8 @@ end;
 procedure TMainWindow.MiniMapMouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
 begin
-  if not (ssLeft in Shift) or not map_loaded then
-    exit;
-  if (x < mmap_border_x) or (y < mmap_border_y) or (x > 128 - mmap_border_x) or (y > 128 - mmap_border_y) then
-    exit;
-  MapScrollH.Position := x - mmap_border_x - (map_canvas_width div 2);
-  MapScrollV.Position := y - mmap_border_y - (map_canvas_height div 2);
+  if ssLeft in Shift then
+    MiniMapMouseDown(Sender, mbLeft, Shift, X, Y);
 end;
 
 procedure TMainWindow.StructureListClick(Sender: TObject);
@@ -693,6 +703,8 @@ begin
   map_canvas_height := (ClientHeight - 50) div 32;
   if map_canvas_height > map_height then
     map_canvas_height := map_height;
+  MapCanvas.Picture.Bitmap.Width := map_canvas_width * 32;
+  MapCanvas.Picture.Bitmap.Height := map_canvas_height * 32;
   MapCanvas.Width := map_canvas_width * 32;
   MapCanvas.Height := map_canvas_height * 32;
   MapScrollH.Top := map_canvas_height * 32 + 8;
@@ -728,6 +740,7 @@ var
   wall_bitmap: word;
   dest_rect: TRect;
   src_rect: TRect;
+  tile_attr: TileType;
 begin
   if not map_loaded then
     exit;
@@ -791,6 +804,23 @@ begin
       tile_index := (y + map_canvas_top) * map_width + x + map_canvas_left;
       tile := map_data[tile_index * 2];
       MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),graphics_tileset.Bitmap.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
+      // Draw tile attribute markers
+      if Marktiles1.Checked then
+      begin
+        tile_attr := get_tile_type(tileset_attributes[tile]);
+        if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) then
+        begin
+          if (tile_attr = ttImpassable) then
+            MapCanvas.Canvas.Pen.Color := clRed
+          else if (tile_attr = ttInfantryOnly) then
+            MapCanvas.Canvas.Pen.Color := $4080FF;
+          MapCanvas.Canvas.Pen.Width := 2;
+          MapCanvas.Canvas.MoveTo(x*32, y*32);
+          MapCanvas.Canvas.LineTo(x*32+31, y*32+31);
+          MapCanvas.Canvas.MoveTo(x*32+31, y*32);
+          MapCanvas.Canvas.LineTo(x*32, y*32+31);
+        end;
+      end;
     end;
   end;
   // Draw structures
@@ -904,6 +934,8 @@ begin
     end;
   end;
   // Draw grid
+  MapCanvas.Canvas.Pen.Color := clBlack;
+  MapCanvas.Canvas.Pen.Width := 1;
   if ShowGrid1.Checked then
   begin
     for x:= 0 to map_canvas_width do
@@ -931,6 +963,7 @@ var
   value: integer;
   player, index: word;
   is_misc: boolean;
+  tile_attr: TileType;
 begin
   if not map_loaded then
     exit;
@@ -939,26 +972,12 @@ begin
   MiniMapTmp.Canvas.Rectangle(0,0,128,128);
   mmap_border_x := (128 - map_width) div 2;
   mmap_border_y := (128 - map_height) div 2;
-  MiniMapTmp.Canvas.Brush.Color := $8CDFEF;
-  MiniMapTmp.Canvas.Pen.Color := $8CDFEF;
-  MiniMapTmp.Canvas.Rectangle(mmap_border_x,mmap_border_y,mmap_border_x+map_width,mmap_border_y+map_height);
   // Rendering terrain
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
-      value := tileset_attributes[map_data[(y * map_width + x) * 2]];
-      // Impassable (ridges)
-      if value = 0 then
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $29285A
-      // Infantry only
-      else if (value and $00006000) = $00004000 then
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $375582
-      // Sand dunes (slow down)
-      else if (value and $40000000) = $40000000 then
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $ACDFEF
-      // Rock
-      else if (value and $20000000) = $20000000 then
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := $58A4E4;
+      tile_attr := get_tile_type(tileset_attributes[map_data[(y * map_width + x) * 2]]);
+      MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_colors[ord(tile_attr)];
     end;
   // Rendering structures
   for y:= 0 to map_height - 1 do
@@ -969,12 +988,12 @@ begin
         continue
       else if is_misc then
       begin
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := misc_objects_colors[index];
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_misc_objects_colors[index];
       end else
       begin
-        MiniMapTmp.Canvas.Pen.Color := player_colors[player];
-        MiniMapTmp.Canvas.Brush.Color := player_colors[player];
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := player_colors[player];
+        MiniMapTmp.Canvas.Pen.Color := mmap_player_colors[player];
+        MiniMapTmp.Canvas.Brush.Color := mmap_player_colors[player];
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_player_colors[player];
         MiniMapTmp.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+structure_params[index].size_x,y+mmap_border_y+structure_params[index].size_y);
       end;
     end;
@@ -1051,6 +1070,20 @@ begin
   Reset(tileatr_file);
   BlockRead(tileatr_file, tileset_attributes, size_tileatr);
   CloseFile(tileatr_file);
+end;
+
+function TMainWindow.get_tile_type(value: integer): TileType;
+begin
+  if value = 0 then
+    result := ttImpassable
+  else if (value and $00006000) = $00004000 then
+    result := ttInfantryOnly
+  else if (value and $40000000) = $40000000 then
+    result := ttSlowdown
+  else if (value and $20000000) = $20000000 then
+    result := ttBuildable
+  else
+    result := ttNormal
 end;
 
 procedure TMainWindow.structure_params_to_value;
@@ -1325,9 +1358,14 @@ var
 begin
   map_width := new_width;
   map_height := new_height;
-  for index := 0 to map_width * map_height * 2 - 1 do
-    map_data[index] := 0;
+  for index := 0 to map_width * map_height - 1 do
+  begin
+    map_data[index * 2] := tiles_sand[random(10)];
+    map_data[index * 2 + 1] := 0;
+  end;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  StatusBar.Panels[3].Text := 'Map not saved';
+  map_filename := '';
   map_loaded := true;
   resize_map_canvas;
   render_minimap;

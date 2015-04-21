@@ -1,5 +1,5 @@
 object TilesetDialog: TTilesetDialog
-  Left = 192
+  Left = 320
   Top = 107
   BorderStyle = bsDialog
   Caption = 'Tile block selection'
