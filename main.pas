@@ -293,7 +293,7 @@ type
     procedure structure_params_to_value;
     function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
     procedure change_tileset(index: integer);
-    procedure calculate_power;
+    procedure calculate_power_and_statistics;
     procedure show_power;
 
     // Procedures called from other dialog
@@ -341,7 +341,7 @@ begin
   EditorMenu.Height := Height - 72;
   StructureList.Height := EditorMenu.Height - 354;
   EditorPages.Height := Height - 214;
-  StatusBar.Panels[3].Width := ClientWidth - 350;
+  StatusBar.Panels[3].Width := ClientWidth - 440;
 end;
 
 procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
@@ -629,7 +629,7 @@ begin
       end;
       exit;
     end;
-    calculate_power;
+    calculate_power_and_statistics;
   end else
   begin
     // Editing terrain
@@ -1144,7 +1144,7 @@ begin
   resize_map_canvas;
   render_minimap;
   render_map;
-  calculate_power;
+  calculate_power_and_statistics;
 end;
 
 procedure TMainWindow.save_map(filename: String);
@@ -1320,14 +1320,18 @@ begin
   render_map;
 end;
 
-procedure TMainWindow.calculate_power;
+procedure TMainWindow.calculate_power_and_statistics;
 var
   output, need: array[0..cnt_players-1] of integer;
   x, y: integer;
   player, index: word;
   is_misc: boolean;
   tmp_power: integer;
+  cnt_worm_spawners, cnt_player_starts, cnt_spice_blooms: integer;
 begin
+  cnt_worm_spawners := 0;
+  cnt_player_starts := 0;
+  cnt_spice_blooms := 0;
   for x := 0 to cnt_players - 1 do
   begin
     output[x] := 0;
@@ -1336,13 +1340,24 @@ begin
   for y := 0 to map_height - 1 do
     for x := 0 to map_width -1 do
     begin
-      if structure_value_to_params(map_data[(y * map_width + x)* 2 + 1],player,index,is_misc) and (not is_misc) then
+      if structure_value_to_params(map_data[(y * map_width + x)* 2 + 1],player,index,is_misc) then
       begin
-        tmp_power := structure_params[index].power;
-        if tmp_power > 0 then
-          need[player] := need[player] + tmp_power
-        else if tmp_power < 0 then
-          output[player] := output[player] - tmp_power;
+        if is_misc then
+        begin
+          if index = 3 then
+            inc(cnt_worm_spawners)
+          else if index = 4 then
+            inc(cnt_player_starts)
+          else if (index >= 5) and (index <= 9) then
+            inc(cnt_spice_blooms)
+        end else
+        begin
+          tmp_power := structure_params[index].power;
+          if tmp_power > 0 then
+            need[player] := need[player] + tmp_power
+          else if tmp_power < 0 then
+            output[player] := output[player] - tmp_power;
+        end;
       end;
     end;
   for x := 0 to cnt_players - 1 do
@@ -1354,12 +1369,13 @@ begin
     else
       power[x] := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
   end;
+  StatusBar.Panels[4].Text := 'W: '+inttostr(cnt_worm_spawners)+'  S: '+inttostr(cnt_player_starts)+'  B: '+inttostr(cnt_spice_blooms);
   show_power;
 end;
 
 procedure TMainWindow.show_power;
 begin
-  StatusBar.Panels[4].Text := 'Power: '+inttostr(power[PlayerSelect.ItemIndex])+'%';
+  StatusBar.Panels[5].Text := 'Power: '+inttostr(power[PlayerSelect.ItemIndex])+'%';
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);
@@ -1544,6 +1560,7 @@ begin
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';
   map_loaded := true;
+  calculate_power_and_statistics;
   resize_map_canvas;
   render_minimap;
   render_map;

@@ -75,7 +75,11 @@ object MainWindow: TMainWindow
       end
       item
         Text = 'No map loaded'
-        Width = 320
+        Width = 230
+      end
+      item
+        Text = 'W: 0  S: 0  B: 0'
+        Width = 90
       end
       item
         Text = 'Power: 0%'
