@@ -63,9 +63,9 @@ const structure_params: array[0..31] of TStructureParams =
     (offs_x: 47; offs_y: 1; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(194,374,574,  0,652,  0,  0))  // House Special Tank
   );
 
-const misc_obj_values: array[0..5] of word = (0,1,2,20,23,45);
+const misc_obj_values: array[0..9] of word = (0,1,2,20,23,45,41,42,43,44);
 
-const mmap_misc_objects_colors: array[1..5] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF);
+const mmap_misc_objects_colors: array[1..9] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF,$0000B0,$0000C0,$0000D0,$0000E0);
 const mmap_tile_colors: array[0..4] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4);
 const mmap_player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
 
@@ -1279,7 +1279,7 @@ begin
     result := false;
     exit;
   end;
-  for i:= 0 to 5 do
+  for i:= 0 to 9 do
   begin
     if value = misc_obj_values[i] then
     begin

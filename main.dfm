@@ -173,7 +173,11 @@ object MainWindow: TMainWindow
             'Thick Spice'
             'Worm Spawner'
             'Player Start'
-            'Spice Bloom')
+            'Spice Bloom'
+            'Spice Bloom (Finite 41)'
+            'Spice Bloom (Finite 42)'
+            'Spice Bloom (Finite 43)'
+            'Spice Bloom (Finite 44)')
           TabOrder = 1
           OnClick = MiscObjListClick
         end
@@ -225,7 +229,7 @@ object MainWindow: TMainWindow
             'Light Infantry'
             'Trooper'
             'St. Fremen / Saboteur'
-            'Sardakaur / Fremen'
+            'Sardaukar / Fremen'
             'Engineer'
             'Harvester'
             'MCV'
