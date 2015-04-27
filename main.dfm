@@ -79,11 +79,11 @@ object MainWindow: TMainWindow
       end
       item
         Text = 'W: 0  S: 0  B: 0'
-        Width = 90
+        Width = 100
       end
       item
-        Text = 'Power: 0%'
-        Width = 80
+        Text = 'Power: 0%   (0/0)'
+        Width = 150
       end
       item
         Text = 'alpha 0.3'

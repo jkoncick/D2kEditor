@@ -89,6 +89,13 @@ type
   end;
 
 type
+  TPlayerStats = record
+    power_percent: word;
+    power_output: word;
+    power_need: word;
+  end;
+
+type
   TMainWindow = class(TForm)
     MapCanvas: TImage;
     MapScrollH: TScrollBar;
@@ -255,7 +262,11 @@ type
     mis_map_markers: array[0..127, 0..127] of TEventMarker;
     mis_alloc_index: array[0..cnt_mis_players] of byte;
 
-    power: array[0..cnt_players-1] of Word;
+    // Statistics variables
+    mstat_player: array[0..cnt_players-1] of TPlayerStats;
+    mstat_num_worm_spawners: word;
+    mstat_num_player_starts: word;
+    mstat_num_spice_blooms: word;
 
     // Map canvas variables
     map_canvas_width: word;
@@ -289,6 +300,7 @@ type
     procedure save_map(filename: String);
     procedure load_misfile(filename: String);
     procedure load_tileatr(tileset: integer);
+    procedure check_map_errors;
     function get_tile_type(value: integer): TileType;
     procedure structure_params_to_value;
     function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
@@ -341,7 +353,7 @@ begin
   EditorMenu.Height := Height - 72;
   StructureList.Height := EditorMenu.Height - 354;
   EditorPages.Height := Height - 214;
-  StatusBar.Panels[3].Width := ClientWidth - 440;
+  StatusBar.Panels[3].Width := ClientWidth - 520;
 end;
 
 procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
@@ -349,6 +361,7 @@ procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
 begin
   case key of
   32: begin
+        EditorPages.TabIndex := 1;
         OpenTilesetClick(nil);
         key := 0;
       end;
@@ -422,16 +435,21 @@ begin
     exit;
   if map_filename = '' then
     Savemapas1Click(Sender)
-  else
+  else begin
+    check_map_errors;
     save_map(map_filename);
+  end;
 end;
 
 procedure TMainWindow.Savemapas1Click(Sender: TObject);
 begin
   if not map_loaded then
     exit;
+  check_map_errors;
   if MapSaveDialog.Execute then
   begin
+    map_filename := MapSaveDialog.FileName;
+    StatusBar.Panels[3].Text := MapSaveDialog.FileName;
     save_map(MapSaveDialog.FileName);
   end;
 end;
@@ -1244,6 +1262,14 @@ begin
   CloseFile(tileatr_file);
 end;
 
+procedure TMainWindow.check_map_errors;
+begin
+  if mstat_num_worm_spawners = 0 then
+    Application.MessageBox('You must place at least one Worm Spawner.', 'Map error', MB_ICONWARNING);
+  if (mstat_num_player_starts <> 0) and (mstat_num_player_starts <> 8) then
+    Application.MessageBox('Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', 'Map error', MB_ICONWARNING);
+end;
+
 function TMainWindow.get_tile_type(value: integer): TileType;
 begin
   if value = 0 then
@@ -1327,11 +1353,10 @@ var
   player, index: word;
   is_misc: boolean;
   tmp_power: integer;
-  cnt_worm_spawners, cnt_player_starts, cnt_spice_blooms: integer;
 begin
-  cnt_worm_spawners := 0;
-  cnt_player_starts := 0;
-  cnt_spice_blooms := 0;
+  mstat_num_worm_spawners := 0;
+  mstat_num_player_starts := 0;
+  mstat_num_spice_blooms := 0;
   for x := 0 to cnt_players - 1 do
   begin
     output[x] := 0;
@@ -1345,11 +1370,11 @@ begin
         if is_misc then
         begin
           if index = 3 then
-            inc(cnt_worm_spawners)
+            inc(mstat_num_worm_spawners)
           else if index = 4 then
-            inc(cnt_player_starts)
+            inc(mstat_num_player_starts)
           else if (index >= 5) and (index <= 9) then
-            inc(cnt_spice_blooms)
+            inc(mstat_num_spice_blooms)
         end else
         begin
           tmp_power := structure_params[index].power;
@@ -1363,19 +1388,24 @@ begin
   for x := 0 to cnt_players - 1 do
   begin
     if (output[x] > 0) and (need[x] = 0) then
-      power[x] := output[x] div 2 + 100
+      mstat_player[x].power_percent := output[x] div 2 + 100
     else if (output[x] = 0) then
-      power[x] := 0
+      mstat_player[x].power_percent := 0
     else
-      power[x] := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
+      mstat_player[x].power_percent := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
+    mstat_player[x].power_output := output[x];
+    mstat_player[x].power_need := need[x];
   end;
-  StatusBar.Panels[4].Text := 'W: '+inttostr(cnt_worm_spawners)+'  S: '+inttostr(cnt_player_starts)+'  B: '+inttostr(cnt_spice_blooms);
+  StatusBar.Panels[4].Text := 'W: '+inttostr(mstat_num_worm_spawners)+'  S: '+inttostr(mstat_num_player_starts)+'  B: '+inttostr(mstat_num_spice_blooms);
   show_power;
 end;
 
 procedure TMainWindow.show_power;
+var
+  i: integer;
 begin
-  StatusBar.Panels[5].Text := 'Power: '+inttostr(power[PlayerSelect.ItemIndex])+'%';
+  i := PlayerSelect.ItemIndex;
+  StatusBar.Panels[5].Text := 'Power: '+inttostr(mstat_player[i].power_percent)+'%   ('+inttostr(mstat_player[i].power_output)+'/'+inttostr(mstat_player[i].power_need)+')';
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);

@@ -29,7 +29,6 @@ type
     procedure TilesetImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure SetBlockSize(Sender: TObject);
-    procedure TilesetImageDblClick(Sender: TObject);
   private
     { Private declarations }
     tileset_top: word;
@@ -58,7 +57,7 @@ var
   x,y: integer;
 begin
   tileset_top := TilesetScroll.Position;
-  TilesetImage.Canvas.CopyRect(rect(0,0,640,512),MainWindow.graphics_tileset.Bitmap.Canvas,rect(0,tileset_top*32,640,tileset_top*32+512));
+  TilesetImage.Canvas.CopyRect(rect(0,0,640,576),MainWindow.graphics_tileset.Bitmap.Canvas,rect(0,tileset_top*32,640,tileset_top*32+576));
   if TilesetGrid.Checked then
   begin
     TilesetImage.Canvas.Pen.Color:= clBlack;
@@ -66,9 +65,9 @@ begin
     for x:= 0 to 20-1 do
     begin
       TilesetImage.Canvas.MoveTo(x*32,0);
-      TilesetImage.Canvas.LineTo(x*32,512);
+      TilesetImage.Canvas.LineTo(x*32,576);
     end;
-    for y:= 0 to 16-1 do
+    for y:= 0 to 18-1 do
     begin
       TilesetImage.Canvas.MoveTo(0,y*32);
       TilesetImage.Canvas.LineTo(640,y*32);
@@ -137,17 +136,16 @@ begin
       MainWindow.BlockImage.Canvas.CopyRect(rect(block_x*32+border_x,block_y*32+border_y,block_x*32+32+border_x,block_y*32+32+border_y),MainWindow.graphics_tileset.Bitmap.Canvas,rect((block_left+block_x)*32,(block_top+block_y)*32,(block_left+block_x)*32+32,(block_top+block_y)*32+32));
     end;
   DrawTileset(nil);
+  if Button = mbLeft then
+  begin
+    MainWindow.RbCustomBlock.Checked := True;
+    close;
+  end;
 end;
 
 procedure TTilesetDialog.SetBlockSize(Sender: TObject);
 begin
   MainWindow.SetBlockSize(sender);
-end;
-
-procedure TTilesetDialog.TilesetImageDblClick(Sender: TObject);
-begin
-  MainWindow.RbCustomBlock.Checked := True;
-  close;
 end;
 
 end.

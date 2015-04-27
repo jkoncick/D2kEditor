@@ -1,9 +1,9 @@
 object TilesetDialog: TTilesetDialog
-  Left = 320
-  Top = 107
+  Left = 326
+  Top = 66
   BorderStyle = bsDialog
   Caption = 'Tile block selection'
-  ClientHeight = 544
+  ClientHeight = 608
   ClientWidth = 674
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -23,17 +23,16 @@ object TilesetDialog: TTilesetDialog
     Left = 8
     Top = 24
     Width = 640
-    Height = 512
-    OnDblClick = TilesetImageDblClick
+    Height = 576
     OnMouseDown = TilesetImageMouseDown
   end
   object TilesetScroll: TScrollBar
     Left = 648
     Top = 24
     Width = 16
-    Height = 512
+    Height = 576
     Kind = sbVertical
-    Max = 24
+    Max = 22
     PageSize = 0
     TabOrder = 0
     OnChange = DrawTileset
