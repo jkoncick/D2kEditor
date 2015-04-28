@@ -56,5 +56,6 @@ __history/
 # Castalia statistics file
 *.stat
 
-graphics
+*.zip
 tilesets
+graphics/Thumbs.db

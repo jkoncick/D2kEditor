@@ -1,0 +1,49 @@
+D2kEditor changelog
+
+
+Alpha 0.4 (released 2015-04-28)
+-------------------------------
+
+Fixed: All map is now properly rendered on high resolutions. Resolution is now unlimited.
+Fixed: Added missing support for finite spice bloom types.
+Fixed: Stealth Fremen are now shown on map.
+Added: "Use allocation indexes" feature: the structures are rendered as belonging to in-game house. 
+       Indexes are loaded from .mis file. Values higher than 6 default to 0.
+Added: "Mark impassable tiles" feature: you can now see which tiles are impassable or infantry-only.
+Added: "Show event markers" feature: you can now see positions of reinforcements and other events on map.
+       Supported events are: Reinforcement(R), Harvester replacement(H), Unit spawn(S), Unit in tile(T),
+       Reveal map(M). Also event number is shown.
+       Markers are loaded from .mis file and cannot be edited, use Reload map after editing mis file.
+Added: Number of Worm spawners, Player starts and Spice blooms is shown.
+Added: Warning when trying to save map without Worm spawners or wrong number of Player starts.
+Added: Value of produced and needed power is shown along with power percentage.
+Added: "Save map image" feature (to .bmp file, Delphi 7 has not native support for png)
+Added: Map can be scrolled with mouse wheel
+Changed: Single click (instead of double click) for selecting tile block from tileset.
+Changed: Other minor improvements to user interface.
+
+
+Alpha 0.3 (released 2011-08-10)
+-------------------------------
+Added: Terrain editing support (you can place a tile block of chosen size, you select the block from
+       tileset or copy from map, sand/rock/dunes paint support)
+Added: You can see terrain on minimap (TILEATR files used for this purpose)
+Added: "Change structures owner" feature
+Added: Simple Help and About
+Added: Now distributed with tileset files
+
+
+Alpha 0.2 (released 2011-08-04)
+-------------------------------
+Added: You can scroll map also with keyboard arrows and by clicking into minimap. Scrolling should be smoother now
+Added: Carryall and worm spawn/spice bloom sprites
+Added: Auto detecting tileset from .mis file
+Added: Key shortcuts, Reload map, direct Save map
+Added: "Resize map" and "Shift map" feature
+Added: Power percentage calculator (not working properly, I need to find correct power calculation formula)
+
+
+Alpha 0.1 (released 2011-07-29)
+-------------------------------
+Open map, Save map, Minimap, Select tileset, place or remove buildings or units for 7 players, 
+edit spice and pawn points, Show grid      

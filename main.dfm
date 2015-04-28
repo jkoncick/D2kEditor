@@ -86,7 +86,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'alpha 0.3'
+        Text = 'alpha 0.4'
         Width = 0
       end>
   end

@@ -568,7 +568,7 @@ end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
 begin
-  ShowMessage('Dune 2000 Campaign Map Editor'+chr(13)+chr(13)+'Part of D2K+ Editing tools'+chr(13)+chr(13)+'Made by Klofkac'+chr(13)+'Version 0.3'+chr(13)+'Date: 2011-08-10');
+  ShowMessage('Dune 2000 Campaign Map Editor'+chr(13)+chr(13)+'Part of D2K+ Editing tools'+chr(13)+chr(13)+'Made by Klofkac'+chr(13)+'Version 0.4'+chr(13)+'Date: 2015-04-28'+chr(13)+chr(13)+'http://github.com/jkoncick/D2kEditor');
 end;
 
 procedure TMainWindow.MapScrollHChange(Sender: TObject);
@@ -1062,8 +1062,11 @@ begin
         event_marker := addr(mis_map_markers[x + map_canvas_left, y + map_canvas_top]);
         if (event_marker.emtype = emReinforcement) or (event_marker.emtype = emHarvester) or (event_marker.emtype = emSpawn) then
         begin
-          MapCanvas.Canvas.Pen.Color := mmap_player_colors[event_marker.player];
-          MapCanvas.Canvas.Brush.Color := mmap_player_colors[event_marker.player];
+          player := event_marker.player;
+          if player >= cnt_players then
+            player := 0;
+          MapCanvas.Canvas.Pen.Color := mmap_player_colors[player];
+          MapCanvas.Canvas.Brush.Color := mmap_player_colors[player];
           MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
           MapCanvas.Canvas.Pen.Color := clBlack;
           if event_marker.emtype = emReinforcement then
@@ -1168,6 +1171,12 @@ var
   i: integer;
   x, y: integer;
 begin
+  // Reset map data and event markers
+  for x := 0 to 32767 do
+    map_data[x] := 0;
+  for x := 0 to 127 do
+    for y := 0 to 127 do
+      mis_map_markers[x,y].emtype := emNone;
   // Reading map file
   AssignFile(map_file, filename);
   Reset(map_file);
@@ -1176,10 +1185,6 @@ begin
   for i := 0 to map_width * map_height * 2 - 1 do
     Read(map_file, map_data[i]);
   CloseFile(map_file);
-  // Reset event markers
-  for x := 0 to 127 do
-    for y := 0 to 127 do
-      mis_map_markers[x,y].emtype := emNone;
   // Setting variables and status bar
   map_loaded := true;
   map_filename := filename;
@@ -1609,6 +1614,12 @@ var
   index: integer;
   x, y: integer;
 begin
+  // Reset map data and event markers
+  for x := 0 to 32767 do
+    map_data[x] := 0;
+  for x := 0 to 127 do
+    for y := 0 to 127 do
+      mis_map_markers[x,y].emtype := emNone;
   map_width := new_width;
   map_height := new_height;
   for index := 0 to map_width * map_height - 1 do
@@ -1616,10 +1627,6 @@ begin
     map_data[index * 2] := tiles_sand[random(10)];
     map_data[index * 2 + 1] := 0;
   end;
-  // Reset event markers
-  for x := 0 to 127 do
-    for y := 0 to 127 do
-      mis_map_markers[x,y].emtype := emNone;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';
