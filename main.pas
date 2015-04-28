@@ -79,7 +79,7 @@ const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,57
 const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
 
 type
-   EventMarkerType = (emNone, emReinforcement, emHarvester, emSpawn, emTileTrigger);
+   EventMarkerType = (emNone, emReinforcement, emHarvester, emSpawn, emTileTrigger, emRevealMap);
 
 type
   TEventMarker = record
@@ -1074,13 +1074,16 @@ begin
             MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'S');
           MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
         end
-        else if event_marker.emtype = emTileTrigger then
+        else if (event_marker.emtype = emTileTrigger) or (event_marker.emtype = emRevealMap) then
         begin
           MapCanvas.Canvas.Pen.Color := clGray;
           MapCanvas.Canvas.Brush.Color := clGray;
           MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
           MapCanvas.Canvas.Pen.Color := clBlack;
-          MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'T');
+          if event_marker.emtype = emTileTrigger then
+            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'T')
+          else if event_marker.emtype = emRevealMap then
+            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'M');
           MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
         end;
       end;
@@ -1247,13 +1250,15 @@ begin
   for i:= 0 to num_events - 1 do
   begin
     BlockRead(mis_file,event,72);
-    if (event[13] = 0) or (event[13] = 18) then
+    if (event[13] = 0) or (event[13] = 18) or (event[13] = 14) then
     begin
-      // Reinforcement, spawn
+      // Reinforcement, spawn, Reveal map
       x := event[0];
       y := event[4];
       if event[13] = 18 then
         mis_map_markers[x][y].emtype := emSpawn
+      else if event[13] = 14 then
+         mis_map_markers[x][y].emtype := emRevealMap
       else if (event[14] = 1) and (event[47] = 8) then
         mis_map_markers[x][y].emtype := emHarvester
       else
