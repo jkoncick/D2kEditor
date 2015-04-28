@@ -180,6 +180,9 @@ type
     N6: TMenuItem;
     N7: TMenuItem;
     Showeventmarkers1: TMenuItem;
+    Savemapimage1: TMenuItem;
+    N8: TMenuItem;
+    MapImageSaveDialog: TSaveDialog;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -195,6 +198,7 @@ type
     procedure Reopenmap1Click(Sender: TObject);
     procedure Savemap1Click(Sender: TObject);
     procedure Savemapas1Click(Sender: TObject);
+    procedure Savemapimage1Click(Sender: TObject);
     procedure Exit1Click(Sender: TObject);
     procedure SelectTileset(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
@@ -451,6 +455,31 @@ begin
     map_filename := MapSaveDialog.FileName;
     StatusBar.Panels[3].Text := MapSaveDialog.FileName;
     save_map(MapSaveDialog.FileName);
+  end;
+end;
+
+procedure TMainWindow.Savemapimage1Click(Sender: TObject);
+var
+  fast_rendering: boolean;
+begin
+  if not map_loaded then
+    exit;
+  if MapImageSaveDialog.Execute then
+  begin
+    map_canvas_left := 0;
+    map_canvas_top := 0;
+    map_canvas_width := map_width;
+    map_canvas_height := map_height;
+    MapCanvas.Picture.Bitmap.Width := map_canvas_width * 32;
+    MapCanvas.Picture.Bitmap.Height := map_canvas_height * 32;
+    fast_rendering := Fastrendering1.Checked;
+    Fastrendering1.Checked := false;
+    render_map;
+    MapCanvas.Picture.Bitmap.SaveToFile(MapImageSaveDialog.FileName);
+    map_canvas_left := MapScrollH.Position;
+    map_canvas_top := MapScrollV.Position;
+    resize_map_canvas;
+    Fastrendering1.Checked := fast_rendering;
   end;
 end;
 

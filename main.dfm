@@ -460,6 +460,13 @@ object MainWindow: TMainWindow
         Caption = 'Save map as'
         OnClick = Savemapas1Click
       end
+      object N8: TMenuItem
+        Caption = '-'
+      end
+      object Savemapimage1: TMenuItem
+        Caption = 'Save map image'
+        OnClick = Savemapimage1Click
+      end
       object N2: TMenuItem
         Caption = '-'
       end
@@ -630,6 +637,12 @@ object MainWindow: TMainWindow
     Left = 64
   end
   object XPManifest1: TXPManifest
+    Left = 160
+  end
+  object MapImageSaveDialog: TSaveDialog
+    DefaultExt = 'bmp'
+    Filter = 'Image (*.bmp)|*.bmp'
+    Title = 'Save map image'
     Left = 128
   end
 end
