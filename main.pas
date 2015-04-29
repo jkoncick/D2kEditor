@@ -79,6 +79,12 @@ const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,57
 const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
 
 type
+  TMapTile = record
+    tile: word;
+    special: word;
+  end;
+
+type
    EventMarkerType = (emNone, emReinforcement, emHarvester, emSpawn, emTileTrigger, emRevealMap);
 
 type
@@ -255,7 +261,7 @@ type
     tileset_attributes: array[0..size_tileatr-1] of integer;
 
     // Map variables
-    map_data: array[0..32767] of word;
+    map_data: array[0..127, 0..127] of TMapTile;
     map_loaded: boolean;
     map_filename: String;
     map_width: word;
@@ -648,15 +654,15 @@ begin
     // Editing structures
     if Button = mbLeft then
       // Put structure on map
-      map_data[(map_y * map_width + map_x) * 2 + 1] := strtoint(StructureValue.Text)
+      map_data[map_x, map_y].special := strtoint(StructureValue.Text)
     else if Button = mbRight then
       // Delete structure from map
-      map_data[(map_y * map_width + map_x) * 2 + 1] := 0
+      map_data[map_x, map_y].special := 0
     else if Button = mbMiddle then
     begin
       // Get structure parameters on position and set them in menu
-      StructureValue.text := inttostr(map_data[(map_y * map_width + map_x) * 2 + 1]);
-      if structure_value_to_params(map_data[(map_y * map_width + map_x) * 2 + 1],player,index,is_misc) then
+      StructureValue.text := inttostr(map_data[map_x, map_y].special);
+      if structure_value_to_params(map_data[map_x, map_y].special, player, index, is_misc) then
       begin
         if is_misc then
         begin
@@ -693,10 +699,9 @@ begin
           for block_y := 0 to block_height - 1 do
             if (map_x + block_x < map_width) and (map_y + block_y < map_height) then
             begin
-              index := ((map_y + block_y) * map_width + map_x + block_x)*2;
-              old_block_data[block_x,block_y] := map_data[index];
-              map_data[index] := block_data[block_x,block_y];
-              map_data[index+1] := 0;
+              old_block_data[block_x,block_y] := map_data[map_x + block_x, map_y + block_y].tile;
+              map_data[map_x + block_x, map_y + block_y].tile := block_data[block_x, block_y];
+              map_data[map_x + block_x, map_y + block_y].special := 0;
             end;
       end else
       begin
@@ -707,12 +712,12 @@ begin
             if (block_x >= map_width) or (block_y >= map_height) then
               continue;
             if RbSand.Checked then
-              map_data[(block_y*map_width+block_x)*2] := tiles_sand[random(10)]
+              map_data[block_x, block_y].tile := tiles_sand[random(10)]
             else if RbRock.Checked then
-              map_data[(block_y*map_width+block_x)*2] := tiles_rock[random(15)]
+              map_data[block_x, block_y].tile := tiles_rock[random(15)]
             else if RbDunes.Checked then
-              map_data[(block_y*map_width+block_x)*2] := tiles_dunes[random(8)];
-            map_data[(block_y*map_width+block_x)*2+1] := 0;
+              map_data[block_x, block_y].tile := tiles_dunes[random(8)];
+            map_data[block_x, block_y].special := 0;
           end;
       end;
     end
@@ -730,7 +735,7 @@ begin
         for block_y := 0 to block_height - 1 do
         begin
           if (map_x + block_x < map_width) and (map_y + block_y < map_height) then
-            value := map_data[((map_y + block_y) * map_width + map_x + block_x)*2]
+            value := map_data[map_x + block_x, map_y + block_y].tile
           else
             value := 0;
           block_data[block_x,block_y] := value;
@@ -802,7 +807,7 @@ begin
   for x := 0 to old_block_width - 1 do
     for y := 0 to old_block_height - 1 do
     begin
-      map_data[((old_block_y+y)*map_width+(old_block_x+x))*2] := old_block_data[x,y];
+      map_data[old_block_x+x, old_block_y+y].tile := old_block_data[x,y];
     end;
   render_minimap;
   render_map;
@@ -844,8 +849,7 @@ var
   max_y_plus: word;
   shift_count: word;
   x, y: integer;
-  tile_index: integer;
-  tile_index_temp: integer;
+  actual_x, actual_y: integer;
   tile: word;
   value: word;
   player, index: word;
@@ -915,8 +919,7 @@ begin
   begin
     for x:= min_x to max_x do
     begin
-      tile_index := (y + map_canvas_top) * map_width + x + map_canvas_left;
-      tile := map_data[tile_index * 2];
+      tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
       MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),graphics_tileset.Bitmap.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
       // Draw tile attribute markers
       if Marktiles1.Checked then
@@ -937,17 +940,18 @@ begin
       end;
     end;
   end;
+  MapCanvas.Canvas.Pen.Width := 1;
   // Draw structures
   for y:= min_y -3 to max_y + max_y_plus do
   begin
     for x:= min_x -2 to max_x do
     begin
-      // Index in map_data
-      tile_index := (y + map_canvas_top) * map_width + x + map_canvas_left;
-      // If tile_index is out of map
-      if (tile_index < 0) or (((tile_index mod map_width) >= (map_width - 2)) and (x < 0)) or (y > (map_width - 1)) then
+      actual_x := x + map_canvas_left;
+      actual_y := y + map_canvas_top;
+      // If tile is out of map
+      if (actual_x < 0) or (actual_x >= map_width) or (actual_y < 0) or (actual_y >= map_height) then
         continue;
-      value := map_data[tile_index * 2 + 1];
+      value := map_data[actual_x, actual_y].special;
       // Getting structure parameters
       if structure_value_to_params(value,player,index,is_misc) then
       begin
@@ -973,34 +977,30 @@ begin
             // Structure is wall
             wall_bitmap := 0;
             // Checking left of wall
-            if ((tile_index - 1) mod map_width) < (map_width -1) then
+            if (actual_x - 1) >= 0 then
             begin
-              tile_index_temp := tile_index - 1;
-              value := map_data[tile_index_temp * 2 + 1];
+              value := map_data[actual_x - 1, actual_y].special;
               if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 1
             end;
             // Checking up of wall
-            if (tile_index - map_width) >= 0 then
+            if (actual_y - 1) >= 0 then
             begin
-              tile_index_temp := tile_index - map_width;
-              value := map_data[tile_index_temp * 2 + 1];
+              value := map_data[actual_x, actual_y - 1].special;
               if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 2
             end;
             // Checking right of wall
-            if ((tile_index + 1) mod map_width) > 0 then
+            if (actual_x + 1) < map_width then
             begin
-              tile_index_temp := tile_index + 1;
-              value := map_data[tile_index_temp * 2 + 1];
+              value := map_data[actual_x + 1, actual_y].special;
               if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 4
             end;
             // Checking down of wall
-            if (tile_index + map_width) < (map_width * map_height) then
+            if (actual_y + 1) < map_height then
             begin
-              tile_index_temp := tile_index + map_width;
-              value := map_data[tile_index_temp * 2 + 1];
+              value := map_data[actual_x, actual_y + 1].special;
               if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 8
             end;
@@ -1135,14 +1135,14 @@ begin
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
-      tile_attr := get_tile_type(tileset_attributes[map_data[(y * map_width + x) * 2]]);
+      tile_attr := get_tile_type(tileset_attributes[map_data[x,y].tile]);
       MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_colors[ord(tile_attr)];
     end;
   // Rendering structures
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
-      value := map_data[(y * map_width + x) * 2 + 1];
+      value := map_data[x,y].special;
       if not structure_value_to_params(value,player,index,is_misc) then
         continue
       else if is_misc then
@@ -1168,22 +1168,27 @@ procedure TMainWindow.load_map(filename: String);
 var
   map_file: file of word;
   mis_filename: String;
-  i: integer;
   x, y: integer;
 begin
   // Reset map data and event markers
-  for x := 0 to 32767 do
-    map_data[x] := 0;
   for x := 0 to 127 do
     for y := 0 to 127 do
+    begin
+      map_data[x,y].tile := 0;
+      map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
+    end;
   // Reading map file
   AssignFile(map_file, filename);
   Reset(map_file);
   Read(map_file, map_width);
   Read(map_file, map_height);
-  for i := 0 to map_width * map_height * 2 - 1 do
-    Read(map_file, map_data[i]);
+  for y := 0 to map_height - 1 do
+    for x := 0 to map_width - 1 do
+    begin
+      Read(map_file, map_data[x,y].tile);
+      Read(map_file, map_data[x,y].special);
+    end;
   CloseFile(map_file);
   // Setting variables and status bar
   map_loaded := true;
@@ -1205,14 +1210,18 @@ end;
 procedure TMainWindow.save_map(filename: String);
 var
   map_file: file of word;
-  i: integer;
+  x, y: integer;
 begin
   AssignFile(map_file, filename);
   ReWrite(map_file);
   Write(map_file, map_width);
   Write(map_file, map_height);
-  for i := 0 to map_width * map_height * 2 - 1 do
-    Write(map_file, map_data[i]);
+  for y := 0 to map_height - 1 do
+    for x := 0 to map_width - 1 do
+    begin
+      Write(map_file, map_data[x,y].tile);
+      Write(map_file, map_data[x,y].special);
+    end;
   CloseFile(map_file);
 end;
 
@@ -1404,7 +1413,7 @@ begin
   for y := 0 to map_height - 1 do
     for x := 0 to map_width -1 do
     begin
-      if structure_value_to_params(map_data[(y * map_width + x)* 2 + 1],player,index,is_misc) then
+      if structure_value_to_params(map_data[x,y].special,player,index,is_misc) then
       begin
         if is_misc then
         begin
@@ -1448,44 +1457,9 @@ begin
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);
-var
-  x, y: integer;
 begin
   if (map_width = new_width) and (map_height = new_height) then
     exit;
-  if (new_width * new_height) > (map_width * map_height) then
-  begin
-    // New size is larger
-    for y:= new_height -1 downto 0 do
-      for x:= new_width -1 downto 0 do
-      begin
-        if (x < map_width) and (y < map_height) then
-        begin
-          map_data[(y * new_width + x) * 2] := map_data[(y * map_width + x) * 2];
-          map_data[(y * new_width + x) * 2 + 1] := map_data[(y * map_width + x) * 2 + 1];
-        end else
-        begin
-          map_data[(y * new_width + x) * 2] := 0;
-          map_data[(y * new_width + x) * 2 + 1] := 0;
-        end;
-      end;
-  end else
-  begin
-    // New size is smaller
-    for y:= 0 to new_height -1 do
-      for x:= 0 to new_width -1 do
-      begin
-        if (x < map_width) and (y < map_height) then
-        begin
-          map_data[(y * new_width + x) * 2] := map_data[(y * map_width + x) * 2];
-          map_data[(y * new_width + x) * 2 + 1] := map_data[(y * map_width + x) * 2 + 1];
-        end else
-        begin
-          map_data[(y * new_width + x) * 2] := 0;
-          map_data[(y * new_width + x) * 2 + 1] := 0;
-        end;
-      end;
-  end;
   map_width := new_width;
   map_height := new_height;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
@@ -1498,7 +1472,6 @@ procedure TMainWindow.shift_map(direction, num_tiles: integer);
 var
   x, y: integer;
   src_x, src_y: integer;
-  src_index, dest_index: integer;
 begin
   case direction of
     1:  begin // Left
@@ -1506,16 +1479,12 @@ begin
             for x := 0 to map_width - 1 do
             begin
               src_x := x + num_tiles;
-              src_index := (y * map_width + src_x) * 2;
-              dest_index := (y * map_width + x) * 2;
               if (src_x < map_width) then
+                map_data[x,y] := map_data[src_x,y]
+              else
               begin
-                map_data[dest_index] := map_data[src_index];
-                map_data[dest_index+1] := map_data[src_index+1];
-              end else
-              begin
-                map_data[dest_index] := 0;
-                map_data[dest_index+1] := 0;
+                map_data[x,y].tile := 0;
+                map_data[x,y].special := 0;
               end;
             end;
         end;
@@ -1524,16 +1493,12 @@ begin
             for x := 0 to map_width - 1 do
             begin
               src_y := y + num_tiles;
-              src_index := (src_y * map_width + x) * 2;
-              dest_index := (y * map_width + x) * 2;
               if (src_y < map_height) then
+                map_data[x,y] := map_data[x,src_y]
+              else
               begin
-                map_data[dest_index] := map_data[src_index];
-                map_data[dest_index+1] := map_data[src_index+1];
-              end else
-              begin
-                map_data[dest_index] := 0;
-                map_data[dest_index+1] := 0;
+                map_data[x,y].tile := 0;
+                map_data[x,y].special := 0;
               end;
             end;
         end;
@@ -1542,16 +1507,12 @@ begin
             for x := map_width - 1 downto 0 do
             begin
               src_x := x - num_tiles;
-              src_index := (y * map_width + src_x) * 2;
-              dest_index := (y * map_width + x) * 2;
               if (src_x >= 0) then
+                map_data[x,y] := map_data[src_x,y]
+              else
               begin
-                map_data[dest_index] := map_data[src_index];
-                map_data[dest_index+1] := map_data[src_index+1];
-              end else
-              begin
-                map_data[dest_index] := 0;
-                map_data[dest_index+1] := 0;
+                map_data[x,y].tile := 0;
+                map_data[x,y].special := 0;
               end;
             end;
         end;
@@ -1560,16 +1521,12 @@ begin
             for x := map_width - 1 downto 0 do
             begin
               src_y := y - num_tiles;
-              src_index := (src_y * map_width + x) * 2;
-              dest_index := (y * map_width + x) * 2;
               if (src_y >= 0) then
+                map_data[x,y] := map_data[x,src_y]
+              else
               begin
-                map_data[dest_index] := map_data[src_index];
-                map_data[dest_index+1] := map_data[src_index+1];
-              end else
-              begin
-                map_data[dest_index] := 0;
-                map_data[dest_index+1] := 0;
+                map_data[x,y].tile := 0;
+                map_data[x,y].special := 0;
               end;
             end;
         end;
@@ -1582,27 +1539,25 @@ procedure TMainWindow.change_structure_owner(player_from,
   player_to: integer; swap: boolean);
 var
   x,y: integer;
-  tile_index: integer;
   player, index: word;
   is_misc: boolean;
 begin
   for y:= 0 to map_height - 1 do
     for x := 0 to map_width - 1 do
     begin
-      tile_index := (y * map_width + x) * 2 + 1;
-      if structure_value_to_params(map_data[tile_index], player, index, is_misc) and (not is_misc) then
+      if structure_value_to_params(map_data[x,y].special, player, index, is_misc) and (not is_misc) then
       begin
         // Change from -> to
         if player = player_from then
         begin
           if player_to = cnt_players then
-            map_data[tile_index] := 0
+            map_data[x,y].special := 0
           else
-            map_data[tile_index] := structure_params[index].values[player_to];
+            map_data[x,y].special := structure_params[index].values[player_to];
         end;
         // Swap is checked (change to -> from)
         if (player = player_to) and swap then
-            map_data[tile_index] := structure_params[index].values[player_from];
+            map_data[x,y].special := structure_params[index].values[player_from];
       end;
     end;
   render_minimap;
@@ -1611,22 +1566,24 @@ end;
 
 procedure TMainWindow.new_map(new_width, new_height: integer);
 var
-  index: integer;
   x, y: integer;
 begin
   // Reset map data and event markers
-  for x := 0 to 32767 do
-    map_data[x] := 0;
   for x := 0 to 127 do
     for y := 0 to 127 do
+    begin
+      map_data[x,y].tile := 0;
+      map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
+    end;
   map_width := new_width;
   map_height := new_height;
-  for index := 0 to map_width * map_height - 1 do
-  begin
-    map_data[index * 2] := tiles_sand[random(10)];
-    map_data[index * 2 + 1] := 0;
-  end;
+  for x := 0 to map_width - 1 do
+    for y := 0 to map_height - 1 do
+    begin
+      map_data[x,y].tile := tiles_sand[random(10)];
+      map_data[x,y].special := 0;
+    end;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';
