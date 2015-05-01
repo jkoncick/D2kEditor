@@ -32,12 +32,12 @@ type
   private
     { Private declarations }
     tileset_top: word;
+  public
+    { Public declarations }
     block_width: word;
     block_height: word;
     block_left: word;
     block_top: word;
-  public
-    { Public declarations }
   end;
 
 var
@@ -99,47 +99,35 @@ end;
 procedure TTilesetDialog.FormMouseWheelDown(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
-  TilesetScroll.Position := TilesetScroll.Position+1;
+  TilesetScroll.Position := TilesetScroll.Position + 2;
+  Handled := true;
 end;
 
 procedure TTilesetDialog.FormMouseWheelUp(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
-  TilesetScroll.Position := TilesetScroll.Position-1;
+  TilesetScroll.Position := TilesetScroll.Position - 2;
+  Handled := true;
 end;
 
 procedure TTilesetDialog.TilesetImageMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-  tile_x, tile_y: word;
-  block_x, block_y: integer;
-  border_x, border_y: integer;
+  b_left, b_top: word;
+  b_width, b_height: word;
 begin
-  tile_x := x div 32;
-  tile_y := y div 32 + tileset_top;
-  if (tile_x + block_width > 20) or (tile_y + block_height > 40) then
+  b_left := X div 32;
+  b_top := Y div 32 + tileset_top;
+  b_width := MainWindow.BlockWidth.Value;
+  b_height := MainWindow.BlockHeight.Value;
+  if (b_left + b_width > 20) or (b_top + b_height > 40) then
     exit;
-  block_width := MainWindow.BlockWidth.Value;
-  block_height := MainWindow.BlockHeight.Value;
-  MainWindow.block_width := block_width;
-  MainWindow.block_height := block_height;
-  block_left := tile_x;
-  block_top := tile_y;
-  border_x := (128 - block_width * 32) div 2;
-  border_y := (128 - block_height * 32) div 2;
-  MainWindow.BlockImage.Canvas.Brush.Color := clBtnFace;
-  MainWindow.BlockImage.Canvas.Rectangle(0,0,128,128);
-  for block_x:= 0 to block_width-1 do
-    for block_y := 0 to block_height-1 do
-    begin
-      MainWindow.block_data[block_x,block_y] := (block_top+block_y)*20+block_left+block_x;
-      MainWindow.BlockImage.Canvas.CopyRect(rect(block_x*32+border_x,block_y*32+border_y,block_x*32+32+border_x,block_y*32+32+border_y),MainWindow.graphics_tileset.Bitmap.Canvas,rect((block_left+block_x)*32,(block_top+block_y)*32,(block_left+block_x)*32+32,(block_top+block_y)*32+32));
-    end;
+  MainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top);
   DrawTileset(nil);
   if Button = mbLeft then
   begin
-    MainWindow.RbCustomBlock.Checked := True;
     close;
+    MainWindow.RbCustomBlock.Checked := True;
   end;
 end;
 

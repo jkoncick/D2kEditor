@@ -34,6 +34,15 @@ object MainWindow: TMainWindow
     OnMouseDown = MapCanvasMouseDown
     OnMouseMove = MapCanvasMouseMove
   end
+  object CursorImage: TImage
+    Left = 4
+    Top = 4
+    Width = 1
+    Height = 1
+    Visible = False
+    OnMouseDown = CursorImageMouseDown
+    OnMouseMove = CursorImageMouseMove
+  end
   object MapScrollH: TScrollBar
     Left = 4
     Top = 456
@@ -96,6 +105,7 @@ object MainWindow: TMainWindow
     Width = 168
     Height = 475
     TabOrder = 3
+    OnMouseMove = FormMouseMove
     object MiniMapFrame: TBevel
       Left = 18
       Top = 6
@@ -281,6 +291,7 @@ object MainWindow: TMainWindow
           Checked = True
           TabOrder = 0
           TabStop = True
+          OnClick = SetCursorImageVisibility
         end
         object RbSand: TRadioButton
           Left = 8
@@ -289,6 +300,7 @@ object MainWindow: TMainWindow
           Height = 17
           Caption = 'Paint Sand'
           TabOrder = 1
+          OnClick = SetCursorImageVisibility
         end
         object RbRock: TRadioButton
           Left = 8
@@ -297,6 +309,7 @@ object MainWindow: TMainWindow
           Height = 17
           Caption = 'Paint Rock'
           TabOrder = 2
+          OnClick = SetCursorImageVisibility
         end
         object RbDunes: TRadioButton
           Left = 8
@@ -305,6 +318,7 @@ object MainWindow: TMainWindow
           Height = 17
           Caption = 'Paint Dunes'
           TabOrder = 3
+          OnClick = SetCursorImageVisibility
         end
         object BlockWidth: TSpinEdit
           Left = 56

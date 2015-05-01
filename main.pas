@@ -189,6 +189,7 @@ type
     Savemapimage1: TMenuItem;
     N8: TMenuItem;
     MapImageSaveDialog: TSaveDialog;
+    CursorImage: TImage;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -230,6 +231,10 @@ type
       Y: Integer);
     procedure MapCanvasMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure CursorImageMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure CursorImageMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
     // Editor menu components events
@@ -241,10 +246,11 @@ type
     procedure StructureListClick(Sender: TObject);
     procedure PlayerSelectChange(Sender: TObject);
     procedure MiscObjListClick(Sender: TObject);
-    //Terrain editor
+    // Terrain editor
     procedure SetBlockSize(Sender: TObject);
     procedure OpenTilesetClick(Sender: TObject);
     procedure BlockUndoClick(Sender: TObject);
+    procedure SetCursorImageVisibility(Sender: TObject);
 
   public
 
@@ -317,6 +323,11 @@ type
     procedure change_tileset(index: integer);
     procedure calculate_power_and_statistics;
     procedure show_power;
+
+    // Procedures related to drawing tiles/terrain and cursor image
+    procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
+    procedure resize_cursor_image;
+    procedure draw_cursor_image;
 
     // Procedures called from other dialog
     procedure set_map_size(new_width, new_height: integer);
@@ -624,15 +635,38 @@ end;
 procedure TMainWindow.MapCanvasMouseMove(Sender: TObject;
   Shift: TShiftState; X, Y: Integer);
 var
+canvas_x, canvas_y: integer;
 map_x, map_y: integer;
 begin
-  map_x := X div 32 + map_canvas_left;
-  map_y := Y div 32 + map_canvas_top;
+  // Get tile coordinates
+  canvas_x := X div 32;
+  canvas_y := Y div 32;
+  map_x := canvas_x + map_canvas_left;
+  map_y := canvas_y + map_canvas_top;
+  // Write coordinates on status bar
+  StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
+  // Show cursor image if needed
+  SetCursorImageVisibility(Sender);
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
-  mouse_old_x := map_x;
-  mouse_old_y := map_y;
-  StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
+  // Scroll map while holding right button
+  if (ssRight in shift) and (EditorPages.TabIndex = 1) then
+  begin
+    MapScrollH.Position := map_canvas_left + (mouse_old_x - map_x);
+    MapScrollV.Position := map_canvas_top + (mouse_old_y - map_y);
+  end else
+  begin
+    mouse_old_x := map_x;
+    mouse_old_y := map_y;
+  end;
+  // Move cursor image and resize if exceeding map canvas border
+  if CursorImage.Visible then
+  begin
+    CursorImage.Left := canvas_x * 32 + MapCanvas.Left;
+    CursorImage.Top := canvas_y * 32 + MapCanvas.Top;
+    resize_cursor_image;
+  end;
+  // If left button is held, paint sand/rock/dunes/spice during mouse move
   if (ssLeft in shift) and (((EditorPages.TabIndex = 1) and (not RbCustomBlock.Checked)) or ((EditorPages.TabIndex = 0) and (strtoint(StructureValue.Text) <= 2))) then
     MapCanvasMouseDown(sender,mbLeft,Shift,x,y);
 end;
@@ -641,7 +675,6 @@ procedure TMainWindow.MapCanvasMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   block_x, block_y: integer;
-  border_x, border_y: integer;
   value: word;
   map_x, map_y: integer;
   index, player: word;
@@ -721,16 +754,11 @@ begin
           end;
       end;
     end
-    else if button = mbRight then
+    else if button = mbMiddle then
     begin
       // Copy selected block
       block_width := BlockWidth.Value;
       block_height := BlockHeight.Value;
-      border_x := (128 - block_width * 32) div 2;
-      border_y := (128 - block_height * 32) div 2;
-      BlockImage.Canvas.Brush.Color := clBtnFace;
-      BlockImage.Canvas.Rectangle(0,0,128,128);
-      RbCustomBlock.Checked := True;
       for block_x := 0 to block_width - 1 do
         for block_y := 0 to block_height - 1 do
         begin
@@ -739,18 +767,33 @@ begin
           else
             value := 0;
           block_data[block_x,block_y] := value;
-          BlockImage.Canvas.CopyRect(rect(block_x*32+border_x,block_y*32+border_y,block_x*32+32+border_x,block_y*32+32+border_y),graphics_tileset.Bitmap.Canvas,rect((value mod 20) * 32,(value div 20) * 32,(value mod 20) * 32 + 32,(value div 20) * 32 + 32));
         end;
+      draw_cursor_image;
+      RbCustomBlock.Checked := True;
+      exit;
     end;
   end;
   render_minimap;
   render_map;
 end;
 
+procedure TMainWindow.CursorImageMouseMove(Sender: TObject;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  MapCanvasMouseMove(Sender, Shift, X + CursorImage.Left - MapCanvas.Left, Y + CursorImage.Top - MapCanvas.Top);
+end;
+
+procedure TMainWindow.CursorImageMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  MapCanvasMousedown(Sender, Button, Shift, X + CursorImage.Left - MapCanvas.Left, Y + CursorImage.Top - MapCanvas.Top);
+end;
+
 procedure TMainWindow.FormMouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 begin
   StatusBar.Panels[0].Text := '';
+  CursorImage.Visible := false;
 end;
 
 procedure TMainWindow.MiniMapMouseDown(Sender: TObject;
@@ -811,6 +854,14 @@ begin
     end;
   render_minimap;
   render_map;
+end;
+
+procedure TMainWindow.SetCursorImageVisibility(Sender: TObject);
+begin
+  if RbCustomBlock.Checked and (EditorPages.TabIndex = 1) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
+    CursorImage.Visible := true
+  else
+    CursorImage.Visible := false;
 end;
 
 procedure TMainWindow.resize_map_canvas;
@@ -1454,6 +1505,73 @@ var
 begin
   i := PlayerSelect.ItemIndex;
   StatusBar.Panels[5].Text := 'Power: '+inttostr(mstat_player[i].power_percent)+'%   ('+inttostr(mstat_player[i].power_output)+'/'+inttostr(mstat_player[i].power_need)+')';
+end;
+
+procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left,
+  b_top: word);
+var
+  x, y: integer;
+begin
+  TilesetDialog.block_width := b_width;
+  TilesetDialog.block_height := b_height;
+  TilesetDialog.block_left := b_left;
+  TilesetDialog.block_top := b_top;
+  block_width := b_width;
+  block_height := b_height;
+  for x:= 0 to b_width - 1 do
+    for y := 0 to b_height - 1 do
+    begin
+      block_data[x,y] := (b_top + y) * 20 + b_left + x;
+    end;
+  draw_cursor_image;
+end;
+
+procedure TMainWindow.resize_cursor_image;
+var
+  cursor_image_left: word;
+  cursor_image_top: word;
+begin
+  cursor_image_left := (CursorImage.Left - MapCanvas.Left) div 32;
+  cursor_image_top := (CursorImage.Top - MapCanvas.Top) div 32;
+  if (cursor_image_left + block_width) > map_canvas_width then
+    CursorImage.Width := (map_canvas_width - cursor_image_left) * 32
+  else
+    CursorImage.Width := block_width * 32 + 1;
+  if (cursor_image_top + block_height) > map_canvas_height then
+    CursorImage.Height := (map_canvas_height - cursor_image_top) * 32
+  else
+    CursorImage.Height := block_height * 32 + 1;
+end;
+
+procedure TMainWindow.draw_cursor_image;
+var
+  x, y: integer;
+  tile_x, tile_y: word;
+  border_x, border_y: integer;
+begin
+  border_x := (128 - block_width * 32) div 2;
+  border_y := (128 - block_height * 32) div 2;
+  BlockImage.Canvas.Brush.Color := clBtnFace;
+  BlockImage.Canvas.Rectangle(0,0,128,128);
+  CursorImage.Width := block_width * 32 + 1;
+  CursorImage.Height := block_height * 32 + 1;
+  CursorImage.Picture.Bitmap.Width := block_width * 32 + 1;
+  CursorImage.Picture.Bitmap.Height := block_height * 32 + 1;
+  CursorImage.Canvas.Pen.Color := clBlue;
+  CursorImage.Canvas.Rectangle(0, 0, block_width * 32 + 1, block_height * 32 + 1);
+  for x:= 0 to block_width-1 do
+    for y := 0 to block_height-1 do
+    begin
+      tile_x := block_data[x,y] mod 20;
+      tile_y := block_data[x,y] div 20;
+      BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), graphics_tileset.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+      CursorImage.Canvas.CopyRect(rect(x*32,y*32, x*32+32, y*32+32), graphics_tileset.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+    end;
+  CursorImage.Canvas.MoveTo(0,0);
+  CursorImage.Canvas.LineTo(0, block_height * 32);
+  CursorImage.Canvas.MoveTo(0,0);
+  CursorImage.Canvas.LineTo(block_width * 32, 0);
+  resize_cursor_image;
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);
