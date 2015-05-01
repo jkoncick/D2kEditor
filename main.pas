@@ -353,18 +353,21 @@ begin
   tileset_menuitems[5] := BLOXTREE1;
   tileset_menuitems[6] := BLOXWAST1;
   tileset_menuitems[7] := BLOXXMAS1;
-  current_dir := GetCurrentDir;
+  current_dir := ExtractFilePath(Application.ExeName);
   graphics_tileset := TPicture.Create;
   change_tileset(3);
   graphics_structures := TPicture.Create;
   graphics_structures_mask := TPicture.Create;
   graphics_misc_objects := TPicture.Create;
   graphics_structures_mask.bitmap.pixelformat := pf1bit;
-  graphics_structures.LoadFromFile('graphics/structures.bmp');
-  graphics_structures_mask.LoadFromFile('graphics/structures_mask.bmp');
-  graphics_misc_objects.LoadFromFile('graphics/misc_objects.bmp');
+  graphics_structures.LoadFromFile(current_dir + '/graphics/structures.bmp');
+  graphics_structures_mask.LoadFromFile(current_dir + '/graphics/structures_mask.bmp');
+  graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
   map_loaded := false;
   top := 60;
+  // Load map given as first parameter
+  if ParamCount > 0 then
+    load_map(ParamStr(1));
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
@@ -1221,6 +1224,13 @@ var
   mis_filename: String;
   x, y: integer;
 begin
+  if not FileExists(filename) then
+    exit;
+  if UpperCase(Copy(filename, Length(filename)-2, 3)) <> 'MAP' then
+  begin
+    Application.MessageBox('Invalid file type', 'Load map error', MB_ICONERROR);
+    exit;
+  end;
   // Reset map data and event markers
   for x := 0 to 127 do
     for y := 0 to 127 do
