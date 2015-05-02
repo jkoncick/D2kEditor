@@ -33,6 +33,7 @@ object MainWindow: TMainWindow
     Height = 1
     OnMouseDown = MapCanvasMouseDown
     OnMouseMove = MapCanvasMouseMove
+    OnMouseUp = MapCanvasMouseUp
   end
   object CursorImage: TImage
     Left = 4
