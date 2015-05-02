@@ -460,6 +460,7 @@ object MainWindow: TMainWindow
           Height = 17
           Caption = 'Select+copy'
           TabOrder = 17
+          OnClick = SetCursorImageVisibility
         end
       end
     end

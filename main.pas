@@ -11,6 +11,7 @@ const cnt_tilesets = 7;
 const cnt_players = 7;
 const cnt_mis_players = 8;
 const size_tileatr = 800;
+const max_undo_steps = 4095;
 
 type
    TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttBuildable);
@@ -147,6 +148,16 @@ type
   TMapTile = record
     tile: word;
     special: word;
+  end;
+
+type
+  TUndoEntry = record
+    x, y: word;
+    old_tile: word;
+    old_special: word;
+    new_tile: word;
+    new_special: word;
+    is_first: boolean;
   end;
 
 type
@@ -377,11 +388,13 @@ type
     block_select_start_y: word;
     block_select_end_x: word;
     block_select_end_y: word;
-    old_block_width: word;
-    old_block_height: word;
-    old_block_x: word;
-    old_block_y: word;
-    old_block_data: array[0..127,0..127] of word;
+
+    // Undo variables
+    undo_history: array[0..max_undo_steps] of TUndoEntry;
+    undo_start: integer;
+    undo_max: integer;
+    undo_pos: integer;
+    undo_block_start: boolean;
 
     // Procedures and functions
     procedure resize_map_canvas;
@@ -403,6 +416,9 @@ type
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word);
     procedure put_block_on_map;
+    procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
+    procedure do_undo;
+    procedure do_redo;
     procedure resize_cursor_image;
     procedure draw_cursor_image;
     procedure apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
@@ -471,10 +487,14 @@ begin
       key := 0;
       exit;
     end;
-    // Ctrl+Z: Undo
     ord('Z'): if ssCtrl in Shift then
     begin
-      BlockUndoClick(nil);
+      do_undo;
+      exit;
+    end;
+    ord('Y'): if ssCtrl in Shift then
+    begin
+      do_redo;
       exit;
     end;
     // Block preset group selection
@@ -487,6 +507,16 @@ begin
     100: {Num4} begin CursorImage.Left := CursorImage.Left - 32; resize_cursor_image; end;
     102: {Num6} begin CursorImage.Left := CursorImage.Left + 32; resize_cursor_image; end;
     104: {Num8} begin CursorImage.Top := CursorImage.Top - 32; resize_cursor_image; end;
+    // Paint sand/rock/dunes
+    192: begin
+      SetBlockSize(Block11);
+      if (BlockPresetGroupSelect.ItemIndex = 0) or (BlockPresetGroupSelect.ItemIndex = 2) then
+        RbRock.Checked := true
+      else if BlockPresetGroupSelect.ItemIndex = 1 then
+        RbSand.Checked := true
+      else if BlockPresetGroupSelect.ItemIndex = 3 then
+        RbDunes.Checked := true;
+    end;
   end;
   // Shift+key
   if ssShift in Shift then
@@ -722,17 +752,18 @@ end;
 
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
 begin
-  ShowMessage('Key Shortcuts:'+chr(13)+chr(13)+'space = Open tileset'+chr(13)+'1 - 8 = Block size preset'+chr(13)+'B = Tile block'+chr(13)+'S = Paint sand'+chr(13)+'R = Paint rock'+chr(13)+'D = Paint dunes'+chr(13)+'Z = Undo last block'+chr(13)+'Esc = Close tileset');
+  ShowMessage('Key Shortcuts:'#13#13'Space = Open tileset window'#13'Esc = Close tileset window'#13'Shift + 1 - 8 = Block size preset'#13+
+              'Shift + S = Paint sand'#13'Shift + R = Paint rock'#13'Shift + D = Paint dunes'#13'Shift + B = Tile block'#13'Shift + C = Select and copy mode'#13'Ctrl + Z = Undo'#13'Ctrl + Y = Redo'#13'F1 - F4 = Block key-preset group'#13'Num 2,4,6,8 = Move block on map');
 end;
 
 procedure TMainWindow.Mouseactions1Click(Sender: TObject);
 begin
-  ShowMessage('Mouse actions'+chr(13)+chr(13)+'When editing structures:'+chr(13)+'Left = Place structure'+chr(13)+'Right = Remove structure'+chr(13)+'Middle = Copy structure'+chr(13)+chr(13)+'When editing terrain:'+chr(13)+'Left = Place block'+chr(13)+'Right = Copy block');
+  ShowMessage('Mouse actions'#13#13'When editing structures:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13'When editing terrain:'#13'Left = Draw / Place block'#13'Middle = Copy block'#13'Right = Drag and scroll map');
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
 begin
-  ShowMessage('Dune 2000 Campaign Map Editor'+chr(13)+chr(13)+'Part of D2K+ Editing tools'+chr(13)+chr(13)+'Made by Klofkac'+chr(13)+'Version 0.4'+chr(13)+'Date: 2015-04-28'+chr(13)+chr(13)+'http://github.com/jkoncick/D2kEditor');
+  ShowMessage('Dune 2000 Campaign Map Editor'#13#13'Part of D2K+ Editing tools'#13#13'Made by Klofkac'#13'Version 0.4'#13'Date: 2015-04-28'#13#13'http://github.com/jkoncick/D2kEditor');
 end;
 
 procedure TMainWindow.MapScrollHChange(Sender: TObject);
@@ -845,10 +876,10 @@ begin
     // Editing structures
     if Button = mbLeft then
       // Put structure on map
-      map_data[map_x, map_y].special := strtoint(StructureValue.Text)
+      set_tile_value(map_x, map_y, map_data[map_x, map_y].tile, strtoint(StructureValue.Text), true)
     else if Button = mbRight then
       // Delete structure from map
-      map_data[map_x, map_y].special := 0
+      set_tile_value(map_x, map_y, map_data[map_x, map_y].tile, 0, true)
     else if Button = mbMiddle then
     begin
       // Get structure parameters on position and set them in menu
@@ -895,18 +926,18 @@ begin
       end else
       begin
         // Paint Sand/Rock/Dunes
+        undo_block_start := true;
         for block_x := map_x to map_x + BlockWidth.Value - 1 do
           for block_y := map_y to map_y + BlockHeight.Value - 1 do
           begin
             if (block_x >= map_width) or (block_y >= map_height) then
               continue;
             if RbSand.Checked then
-              map_data[block_x, block_y].tile := tiles_sand[random(10)]
+              set_tile_value(block_x, block_y, tiles_sand[random(10)], 0, false)
             else if RbRock.Checked then
-              map_data[block_x, block_y].tile := tiles_rock[random(15)]
+              set_tile_value(block_x, block_y, tiles_rock[random(15)], 0, false)
             else if RbDunes.Checked then
-              map_data[block_x, block_y].tile := tiles_dunes[random(8)];
-            map_data[block_x, block_y].special := 0;
+              set_tile_value(block_x, block_y, tiles_dunes[random(8)], 0, false);
           end;
       end;
     end
@@ -1005,16 +1036,8 @@ begin
 end;
 
 procedure TMainWindow.BlockUndoClick(Sender: TObject);
-var
-  x,y: integer;
 begin
-  for x := 0 to old_block_width - 1 do
-    for y := 0 to old_block_height - 1 do
-    begin
-      map_data[old_block_x+x, old_block_y+y].tile := old_block_data[x,y];
-    end;
-  render_minimap;
-  render_map;
+  do_undo;
 end;
 
 procedure TMainWindow.SetCursorImageVisibility(Sender: TObject);
@@ -1022,7 +1045,8 @@ begin
   if RbCustomBlock.Checked and (EditorPages.TabIndex = 1) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
   begin
     CursorImage.Visible := true;
-    RbCustomBlock.SetFocus;
+    if not TilesetDialog.Visible then
+      RbCustomBlock.SetFocus;
   end else
     CursorImage.Visible := false;
 end;
@@ -1412,6 +1436,9 @@ begin
       map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
     end;
+  undo_start := 0;
+  undo_max := 0;
+  undo_pos := 0;
   // Reading map file
   AssignFile(map_file, filename);
   Reset(map_file);
@@ -1740,18 +1767,55 @@ var
 begin
   cursor_left := (CursorImage.Left - MapCanvas.Left) div 32 + map_canvas_left;
   cursor_top := (CursorImage.Top - MapCanvas.Top) div 32 + map_canvas_top;
-  old_block_width := block_width;
-  old_block_height := block_height;
-  old_block_x := cursor_left;
-  old_block_y := cursor_top;
+  undo_block_start := true;
   for x := 0 to block_width - 1 do
     for y := 0 to block_height - 1 do
       if (cursor_left + x < map_width) and (cursor_left + x >= 0) and (cursor_top + y < map_height) and (cursor_top + y >= 0) then
-      begin
-        old_block_data[x,y] := map_data[cursor_left + x, cursor_top + y].tile;
-        map_data[cursor_left + x, cursor_top + y].tile := block_data[x,y];
-        map_data[cursor_left + x, cursor_top + y].special := 0;
-      end;
+        set_tile_value(cursor_left + x, cursor_top + y, block_data[x,y], 0, false);
+end;
+
+procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boolean);
+begin
+  undo_history[undo_pos].x := x;
+  undo_history[undo_pos].y := y;
+  undo_history[undo_pos].old_tile := map_data[x,y].tile;
+  undo_history[undo_pos].old_special := map_data[x,y].special;
+  undo_history[undo_pos].new_tile := tile;
+  undo_history[undo_pos].new_special := special;
+  undo_history[undo_pos].is_first := single_op or undo_block_start;
+  undo_block_start := false;
+  undo_pos := (undo_pos + 1) and max_undo_steps;
+  if undo_start = undo_pos then
+    undo_start := (undo_start + 1) and max_undo_steps;
+  undo_max := undo_pos;
+  map_data[x,y].tile := tile;
+  map_data[x,y].special := special;
+end;
+
+procedure TMainWindow.do_undo;
+begin
+  if undo_pos = undo_start then
+    exit;
+  repeat
+    undo_pos := (undo_pos - 1) and max_undo_steps;
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].old_tile;
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].old_special;
+  until undo_history[undo_pos].is_first or (undo_pos = undo_start);
+  render_minimap;
+  render_map;
+end;
+
+procedure TMainWindow.do_redo;
+begin
+  if undo_pos = undo_max then
+    exit;
+  repeat
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].new_tile;
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].new_special;
+    undo_pos := (undo_pos + 1) and max_undo_steps;
+  until undo_history[undo_pos].is_first or (undo_pos = undo_max);
+  render_minimap;
+  render_map;
 end;
 
 procedure TMainWindow.resize_cursor_image;
@@ -1852,7 +1916,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := 0;
+                map_data[x,y].tile := tiles_sand[random(10)];
                 map_data[x,y].special := 0;
               end;
             end;
@@ -1866,7 +1930,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := 0;
+                map_data[x,y].tile := tiles_sand[random(10)];
                 map_data[x,y].special := 0;
               end;
             end;
@@ -1880,7 +1944,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := 0;
+                map_data[x,y].tile := tiles_sand[random(10)];
                 map_data[x,y].special := 0;
               end;
             end;
@@ -1894,12 +1958,15 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := 0;
+                map_data[x,y].tile := tiles_sand[random(10)];
                 map_data[x,y].special := 0;
               end;
             end;
         end;
   end;
+  undo_start := 0;
+  undo_max := 0;
+  undo_pos := 0;
   render_minimap;
   render_map;
 end;
@@ -1911,6 +1978,7 @@ var
   player, index: word;
   is_misc: boolean;
 begin
+  undo_block_start := true;
   for y:= 0 to map_height - 1 do
     for x := 0 to map_width - 1 do
     begin
@@ -1920,13 +1988,13 @@ begin
         if player = player_from then
         begin
           if player_to = cnt_players then
-            map_data[x,y].special := 0
+            set_tile_value(x, y, map_data[x,y].tile, 0, false)
           else
-            map_data[x,y].special := structure_params[index].values[player_to];
+            set_tile_value(x, y, map_data[x,y].tile, structure_params[index].values[player_to], false);
         end;
         // Swap is checked (change to -> from)
         if (player = player_to) and swap then
-            map_data[x,y].special := structure_params[index].values[player_from];
+          set_tile_value(x, y, map_data[x,y].tile, structure_params[index].values[player_from], false);
       end;
     end;
   render_minimap;
@@ -1945,6 +2013,9 @@ begin
       map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
     end;
+  undo_start := 0;
+  undo_max := 0;
+  undo_pos := 0;
   map_width := new_width;
   map_height := new_height;
   for x := 0 to map_width - 1 do
