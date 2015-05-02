@@ -763,7 +763,7 @@ end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
 begin
-  ShowMessage('Dune 2000 Campaign Map Editor'#13#13'Part of D2K+ Editing tools'#13#13'Made by Klofkac'#13'Version 0.4'#13'Date: 2015-04-28'#13#13'http://github.com/jkoncick/D2kEditor');
+  ShowMessage('Dune 2000 Campaign Map Editor'#13#13'Part of D2K+ Editing tools'#13#13'Made by Klofkac'#13'Version 0.5'#13'Date: 2015-05-02'#13#13'http://github.com/jkoncick/D2kEditor');
 end;
 
 procedure TMainWindow.MapScrollHChange(Sender: TObject);
@@ -895,6 +895,7 @@ begin
           MiscObjList.ItemIndex := -1;
           StructureList.ItemIndex := index;
           PlayerSelect.ItemIndex := player;
+          show_power;
         end;
       end else
       begin
