@@ -243,7 +243,6 @@ type
     Block33: TButton;
     Block44: TButton;
     OpenTileset: TButton;
-    BlockUndo: TButton;
     BlockImage: TImage;
     Block21: TButton;
     Block12: TButton;
@@ -264,10 +263,11 @@ type
     Showeventmarkers1: TMenuItem;
     Savemapimage1: TMenuItem;
     N8: TMenuItem;
-    MapImageSaveDialog: TSaveDialog;
     CursorImage: TImage;
     BlockPresetGroupSelect: TRadioGroup;
     RbSelectMode: TRadioButton;
+    MapImageSaveDialog: TSaveDialog;
+    CbSelectStructures: TCheckBox;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -329,7 +329,6 @@ type
     // Terrain editor
     procedure SetBlockSize(Sender: TObject);
     procedure OpenTilesetClick(Sender: TObject);
-    procedure BlockUndoClick(Sender: TObject);
     procedure SetCursorImageVisibility(Sender: TObject);
 
   public
@@ -381,7 +380,7 @@ type
     // Tile block variables
     block_width: word;
     block_height: word;
-    block_data: array[0..127,0..127] of word;
+    block_data: array[0..127,0..127] of TMapTile;
     block_preset_order: integer;
     block_select_started: boolean;
     block_select_start_x: word;
@@ -414,7 +413,7 @@ type
 
     // Procedures related to drawing tiles/terrain and cursor image
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
-    procedure copy_block_from_map(b_width, b_height, b_left, b_top: word);
+    procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
     procedure put_block_on_map;
     procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
     procedure do_undo;
@@ -536,6 +535,7 @@ begin
     ord('R'): RbRock.Checked := true;
     ord('S'): RbSand.Checked := true;
     ord('C'): RbSelectMode.Checked := true;
+    ord('T'): CbSelectStructures.Checked := not CbSelectStructures.Checked;
   end else
     case key of
     ord('1'): apply_key_preset(1, 1, 1); // Up
@@ -753,7 +753,7 @@ end;
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
 begin
   ShowMessage('Key Shortcuts:'#13#13'Space = Open tileset window'#13'Esc = Close tileset window'#13'Shift + 1 - 8 = Block size preset'#13+
-              'Shift + S = Paint sand'#13'Shift + R = Paint rock'#13'Shift + D = Paint dunes'#13'Shift + B = Tile block'#13'Shift + C = Select and copy mode'#13'Ctrl + Z = Undo'#13'Ctrl + Y = Redo'#13'F1 - F4 = Block key-preset group'#13'Num 2,4,6,8 = Move block on map');
+              'Shift + S = Paint sand'#13'Shift + R = Paint rock'#13'Shift + D = Paint dunes'#13'Shift + B = Tile block'#13'Shift + C = Select and copy mode'#13'Shift + T = Select structures'#13'Ctrl + Z = Undo'#13'Ctrl + Y = Redo'#13'F1 - F4 = Block key-preset group'#13'Num 2,4,6,8 = Move block on map');
 end;
 
 procedure TMainWindow.Mouseactions1Click(Sender: TObject);
@@ -930,7 +930,7 @@ begin
         for block_x := map_x to map_x + BlockWidth.Value - 1 do
           for block_y := map_y to map_y + BlockHeight.Value - 1 do
           begin
-            if (block_x >= map_width) or (block_y >= map_height) then
+            if (block_x >= map_width) or (block_x < 0) or (block_y >= map_height) or (block_y < 0) then
               continue;
             if RbSand.Checked then
               set_tile_value(block_x, block_y, tiles_sand[random(10)], 0, false)
@@ -944,7 +944,7 @@ begin
     else if button = mbMiddle then
     begin
       // Copy selected block
-      copy_block_from_map(BlockWidth.Value, BlockHeight.Value, map_x, map_y);
+      copy_block_from_map(BlockWidth.Value, BlockHeight.Value, map_x, map_y, false);
       exit;
     end;
   end;
@@ -964,9 +964,11 @@ begin
     max_x := Max(block_select_start_x, block_select_end_x);
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
-    copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y);
+    copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true);
     render_map;
   end;
+  if EditorPages.TabIndex = 1 then
+    calculate_power_and_statistics;
 end;
 
 procedure TMainWindow.CursorImageMouseMove(Sender: TObject;
@@ -1033,11 +1035,6 @@ end;
 procedure TMainWindow.OpenTilesetClick(Sender: TObject);
 begin
   TilesetDialog.Show;
-end;
-
-procedure TMainWindow.BlockUndoClick(Sender: TObject);
-begin
-  do_undo;
 end;
 
 procedure TMainWindow.SetCursorImageVisibility(Sender: TObject);
@@ -1732,17 +1729,18 @@ begin
   for x:= 0 to b_width - 1 do
     for y := 0 to b_height - 1 do
     begin
-      block_data[x,y] := (b_top + y) * 20 + b_left + x;
+      block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
+      block_data[x,y].special := 0;
     end;
   RbCustomBlock.Checked := true;
   draw_cursor_image;
 end;
 
 procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left,
-  b_top: word);
+  b_top: word; structures: boolean);
 var
   x, y: integer;
-  value: word;
+  value: TMapTile;
 begin
   block_width := b_width;
   block_height := b_height;
@@ -1750,9 +1748,15 @@ begin
     for y := 0 to b_height - 1 do
     begin
       if (b_left + x < map_width) and (b_top + y < map_height) then
-        value := map_data[b_left + x, b_top + y].tile
-      else
-        value := 0;
+      begin
+        value := map_data[b_left + x, b_top + y];
+        if (not CbSelectStructures.Checked) or (not structures) then
+          value.special := 0;
+      end else
+      begin
+        value.tile := 0;
+        value.special := 0;
+      end;
       block_data[x,y] := value;
     end;
   RbCustomBlock.Checked := True;
@@ -1771,7 +1775,7 @@ begin
   for x := 0 to block_width - 1 do
     for y := 0 to block_height - 1 do
       if (cursor_left + x < map_width) and (cursor_left + x >= 0) and (cursor_top + y < map_height) and (cursor_top + y >= 0) then
-        set_tile_value(cursor_left + x, cursor_top + y, block_data[x,y], 0, false);
+        set_tile_value(cursor_left + x, cursor_top + y, block_data[x,y].tile, block_data[x,y].special, false);
 end;
 
 procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boolean);
@@ -1852,8 +1856,8 @@ begin
   for x:= 0 to block_width-1 do
     for y := 0 to block_height-1 do
     begin
-      tile_x := block_data[x,y] mod 20;
-      tile_y := block_data[x,y] div 20;
+      tile_x := block_data[x,y].tile mod 20;
+      tile_y := block_data[x,y].tile div 20;
       BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), graphics_tileset.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
       CursorImage.Canvas.CopyRect(rect(x*32,y*32, x*32+32, y*32+32), graphics_tileset.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
     end;
@@ -1896,6 +1900,7 @@ begin
   map_width := new_width;
   map_height := new_height;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  calculate_power_and_statistics;
   resize_map_canvas;
   render_minimap;
   render_map;
@@ -1967,6 +1972,7 @@ begin
   undo_start := 0;
   undo_max := 0;
   undo_pos := 0;
+  calculate_power_and_statistics;
   render_minimap;
   render_map;
 end;
@@ -1997,6 +2003,7 @@ begin
           set_tile_value(x, y, map_data[x,y].tile, structure_params[index].values[player_from], false);
       end;
     end;
+  calculate_power_and_statistics;
   render_minimap;
   render_map;
 end;

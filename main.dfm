@@ -43,6 +43,7 @@ object MainWindow: TMainWindow
     Visible = False
     OnMouseDown = CursorImageMouseDown
     OnMouseMove = CursorImageMouseMove
+    OnMouseUp = MapCanvasMouseUp
   end
   object MapScrollH: TScrollBar
     Left = 4
@@ -390,15 +391,6 @@ object MainWindow: TMainWindow
           TabOrder = 10
           OnClick = OpenTilesetClick
         end
-        object BlockUndo: TButton
-          Left = 96
-          Top = 264
-          Width = 49
-          Height = 25
-          Caption = 'Undo'
-          TabOrder = 11
-          OnClick = BlockUndoClick
-        end
         object Block21: TButton
           Tag = 5
           Left = 4
@@ -406,7 +398,7 @@ object MainWindow: TMainWindow
           Width = 38
           Height = 17
           Caption = '2 x 1'
-          TabOrder = 12
+          TabOrder = 11
           OnClick = SetBlockSize
         end
         object Block12: TButton
@@ -416,7 +408,7 @@ object MainWindow: TMainWindow
           Width = 38
           Height = 17
           Caption = '1 x 2'
-          TabOrder = 13
+          TabOrder = 12
           OnClick = SetBlockSize
         end
         object Block32: TButton
@@ -426,7 +418,7 @@ object MainWindow: TMainWindow
           Width = 38
           Height = 17
           Caption = '3 x 2'
-          TabOrder = 14
+          TabOrder = 13
           OnClick = SetBlockSize
         end
         object Block23: TButton
@@ -436,7 +428,7 @@ object MainWindow: TMainWindow
           Width = 38
           Height = 17
           Caption = '2 x 3'
-          TabOrder = 15
+          TabOrder = 14
           OnClick = SetBlockSize
         end
         object BlockPresetGroupSelect: TRadioGroup
@@ -451,16 +443,24 @@ object MainWindow: TMainWindow
             'Cliff sand-sand'
             'Rock border'
             'Dunes border')
-          TabOrder = 16
+          TabOrder = 15
         end
         object RbSelectMode: TRadioButton
           Left = 8
           Top = 268
           Width = 81
           Height = 17
-          Caption = 'Select+copy'
-          TabOrder = 17
+          Caption = 'Select mode'
+          TabOrder = 16
           OnClick = SetCursorImageVisibility
+        end
+        object CbSelectStructures: TCheckBox
+          Left = 90
+          Top = 268
+          Width = 97
+          Height = 17
+          Caption = 'Structures'
+          TabOrder = 17
         end
       end
     end
