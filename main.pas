@@ -72,11 +72,76 @@ const mmap_player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$
 const tilesets: array[1..cnt_tilesets] of String = ('BLOXBASE','BLOXBAT','BLOXBGBS','BLOXICE','BLOXTREE','BLOXWAST','BLOXXMAS');
 const tileatr_filenames: array[1..cnt_tilesets] of String = ('tileatr2.bin','tileatr6.bin','tileatr3.bin','tileatr5.bin','tileatr1.bin','tileatr4.bin','tileatr7.bin');
 
-const block_presets: array[1..8,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
-
 const tiles_sand: array[0..9] of word = (48,49,50,51,52,68,69,70,71,72);
 const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,576,592,593,594,595,596);
 const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
+
+const block_size_presets: array[1..8,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
+
+const block_key_presets: array[1..52,0..3,0..3] of word = (
+  // Up
+  ((2,2,16,18), (2,2, 5, 4), (1,1, 8,14), (1,1, 0, 3)),
+  ((2,3,16,22), (2,3, 6,10), (2,2,18,12), (2,2,16, 0)),
+  ((2,2, 7,26), (2,2, 7, 4), (1,1,11,14), (1,1, 1, 3)),
+  ((2,2, 9,26), (2,2, 0, 8), (1,1,12,14), (1,1, 1, 3)),
+  ((2,2, 0,28), (2,2, 2, 8), (1,1,13,14), (1,1, 1, 3)),
+  ((1,2,17,33), (1,2,15,33), (1,1,14,14), (1,1, 1, 3)),
+  ((0,0, 0, 0), (0,0, 0, 0), (1,1,15,14), (1,1, 1, 3)),
+  ((2,3,14,22), (2,3, 4,10), (2,2,16,12), (2,2,18, 0)),
+  ((2,2,18,18), (2,2, 9, 4), (1,1,16,14), (1,1, 2, 3)),
+  // Left
+  ((3,2, 0,26), (3,2, 8,12), (2,2, 6,13), (2,2,10, 0)),
+  ((2,2, 4,22), (2,2,18, 4), (1,1,14,16), (1,1, 0, 4)),
+  ((2,2, 6,22), (2,2,18, 6), (1,1,15,16), (1,1, 0, 4)),
+  ((2,2, 8,22), (2,2, 6, 8), (1,1,16,16), (1,1, 0, 4)),
+  ((2,1,18,34), (2,1,12,34), (1,1,17,16), (1,1, 0, 4)),
+  ((0,0, 0, 0), (0,0, 0, 0), (1,1,14,15), (1,1, 0, 4)),
+  ((3,2, 0,24), (3,2, 8,10), (2,2, 4,13), (2,2, 4, 1)),
+  // Right
+  ((3,2,11,23), (3,2,11,12), (2,2, 0,13), (2,2, 6, 1)),
+  ((2,2, 5,24), (2,2,11, 4), (1,1,11,16), (1,1, 2, 4)),
+  ((2,2, 7,24), (2,2,13, 4), (1,1,12,16), (1,1, 2, 4)),
+  ((2,2, 9,24), (2,2, 8, 8), (1,1,13,16), (1,1, 2, 4)),
+  ((2,1,18,33), (2,1, 9,34), (1,1,15,15), (1,1, 2, 4)),
+  ((3,2,11,25), (3,2,11,10), (2,2, 2,13), (2,2, 2, 1)),
+  // Down
+  ((2,2,16,20), (2,2, 0, 6), (1,1, 9,16), (1,1, 0, 5)),
+  ((2,3, 2,20), (2,3, 0,10), (2,2,18, 8), (2,2,16, 2)),
+  ((2,2, 4,20), (2,2, 2, 6), (1,1, 6,16), (1,1, 1, 5)),
+  ((2,2, 6,20), (2,2,14, 6), (1,1, 7,16), (1,1, 1, 5)),
+  ((2,2, 8,20), (2,2,16, 6), (1,1,17,15), (1,1, 1, 5)),
+  ((1,2,16,33), (1,2,14,33), (0,0, 0, 0), (1,1, 1, 5)),
+  ((2,3,10,20), (2,3, 2,10), (2,2,18,10), (2,2,18, 2)),
+  ((2,2,18,20), (2,2, 4, 6), (1,1,18,15), (1,1, 2, 5)),
+  // Inner curves
+  ((2,2, 4,28), (2,2,12, 6), (1,1, 3,15), (1,1, 0, 1)),
+  ((2,2,10,28), (2,2, 8, 6), (1,1, 3,16), (1,1, 0, 2)),
+  ((2,2, 6,28), (2,2,10, 6), (1,1, 4,15), (1,1, 1, 1)),
+  ((2,2, 8,28), (2,2, 6, 6), (1,1, 4,16), (1,1, 1, 2)),
+  // Up
+  ((2,2, 5,26), (2,2,14,10), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,18,24), (2,2,18,22), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,18,22), (2,2,18,24), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2, 2,28), (2,2,16,10), (0,0, 0, 0), (0,0, 0, 0)),
+  // Left
+  ((2,2, 0,22), (2,2,14, 8), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,12, 0), (2,2,14, 0), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,14, 0), (2,2,12, 0), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2, 3,24), (2,2,16, 8), (0,0, 0, 0), (0,0, 0, 0)),
+  // Right
+  ((2,1,12,22), (2,1,18,14), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,14, 2), (2,2,15, 4), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,15, 4), (2,2,14, 2), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2, 3,26), (2,2,14,12), (0,0, 0, 0), (0,0, 0, 0)),
+  // Down
+  ((2,2, 0,20), (2,2,10, 8), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,14,25), (2,2,16,25), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,16,25), (2,2,14,25), (0,0, 0, 0), (0,0, 0, 0)),
+  ((2,2,12,20), (2,2,12, 8), (0,0, 0, 0), (0,0, 0, 0)),
+  // Others
+  ((3,3, 0,30), (2,2, 3,30), (0,0, 0, 0), (0,0, 0, 0)),
+  ((1,2,13, 2), (2,2, 5,30), (0,0, 0, 0), (0,0, 0, 0))
+  );
 
 type
   TMapTile = record
@@ -190,6 +255,8 @@ type
     N8: TMenuItem;
     MapImageSaveDialog: TSaveDialog;
     CursorImage: TImage;
+    BlockPresetGroupSelect: TRadioGroup;
+    RbSelectMode: TRadioButton;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -302,6 +369,7 @@ type
     block_width: word;
     block_height: word;
     block_data: array[0..3,0..3] of word;
+    block_preset_order: integer;
     old_block_width: word;
     old_block_height: word;
     old_block_x: word;
@@ -328,6 +396,7 @@ type
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure resize_cursor_image;
     procedure draw_cursor_image;
+    procedure apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
 
     // Procedures called from other dialog
     procedure set_map_size(new_width, new_height: integer);
@@ -365,6 +434,7 @@ begin
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
   map_loaded := false;
   top := 60;
+  draw_cursor_image;
   // Load map given as first parameter
   if ParamCount > 0 then
     load_map(ParamStr(1));
@@ -384,24 +454,84 @@ procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   case key of
-  32: begin
-        EditorPages.TabIndex := 1;
-        OpenTilesetClick(nil);
-        key := 0;
-      end;
-  49: SetBlockSize(Block11);
-  50: SetBlockSize(Block22);
-  51: SetBlockSize(Block33);
-  52: SetBlockSize(Block44);
-  53: SetBlockSize(Block21);
-  54: SetBlockSize(Block12);
-  55: SetBlockSize(Block32);
-  56: SetBlockSize(Block23);
-  66: RbCustomBlock.Checked := true;
-  68: RbDunes.Checked := true;
-  82: RbRock.Checked := true;
-  83: RbSand.Checked := true;
-  90: BlockUndoClick(nil);
+    // Space: open tileset window
+    32:
+    begin
+      EditorPages.TabIndex := 1;
+      OpenTilesetClick(nil);
+      key := 0;
+      exit;
+    end;
+    // Ctrl+Z: Undo
+    ord('Z'): if ssCtrl in Shift then
+    begin
+      BlockUndoClick(nil);
+      exit;
+    end;
+    // Block preset group selection
+    112: {F1} BlockPresetGroupSelect.ItemIndex := 0;
+    113: {F2} BlockPresetGroupSelect.ItemIndex := 1;
+    114: {F3} BlockPresetGroupSelect.ItemIndex := 2;
+    115: {F4} BlockPresetGroupSelect.ItemIndex := 3;
+  end;
+  // Shift+key
+  if ssShift in Shift then
+    case key of
+    // Block size preset selection
+    ord('1'): SetBlockSize(Block11);
+    ord('2'): SetBlockSize(Block22);
+    ord('3'): SetBlockSize(Block33);
+    ord('4'): SetBlockSize(Block44);
+    ord('5'): SetBlockSize(Block21);
+    ord('6'): SetBlockSize(Block12);
+    ord('7'): SetBlockSize(Block32);
+    ord('8'): SetBlockSize(Block23);
+    // Terrain editing mode selection
+    ord('B'): RbCustomBlock.Checked := true;
+    ord('D'): RbDunes.Checked := true;
+    ord('R'): RbRock.Checked := true;
+    ord('S'): RbSand.Checked := true;
+    ord('C'): RbSelectMode.Checked := true;
+  end else
+    case key of
+    ord('1'): apply_key_preset(1, 1, 1); // Up
+    ord('2'): apply_key_preset(2, 1, 1);
+    ord('3'): apply_key_preset(3, 4, 5);
+    ord('4'): apply_key_preset(8, 1, 1);
+    ord('5'): apply_key_preset(9, 1, 1);
+    ord('Q'): apply_key_preset(10, 1, 1); // Left
+    ord('E'): apply_key_preset(11, 4, 5);
+    ord('A'): apply_key_preset(16, 1, 1);
+    ord('T'): apply_key_preset(17, 1, 1); // Down
+    ord('D'): apply_key_preset(18, 4, 4);
+    ord('G'): apply_key_preset(22, 1, 1);
+    ord('Z'): apply_key_preset(23, 1, 1); // Right
+    ord('X'): apply_key_preset(24, 1, 1);
+    ord('C'): apply_key_preset(25, 4, 3);
+    ord('V'): apply_key_preset(29, 1, 1);
+    ord('B'): apply_key_preset(30, 1, 1);
+    ord('W'): apply_key_preset(31, 1, 1); // Inner curves
+    ord('S'): apply_key_preset(32, 1, 1);
+    ord('R'): apply_key_preset(33, 1, 1);
+    ord('F'): apply_key_preset(34, 1, 1);
+    ord('6'): apply_key_preset(35, 1, 1); // Up
+    ord('7'): apply_key_preset(36, 1, 1);
+    ord('8'): apply_key_preset(37, 1, 1);
+    ord('9'): apply_key_preset(38, 1, 1);
+    ord('Y'): apply_key_preset(39, 1, 1); // Left
+    ord('U'): apply_key_preset(40, 1, 1);
+    ord('J'): apply_key_preset(41, 1, 1);
+    ord('H'): apply_key_preset(42, 1, 1);
+    ord('O'): apply_key_preset(43, 1, 1); // Right
+    ord('I'): apply_key_preset(44, 1, 1);
+    ord('K'): apply_key_preset(45, 1, 1);
+    ord('L'): apply_key_preset(46, 1, 1);
+    ord('N'): apply_key_preset(47, 1, 1); // Down
+    ord('M'): apply_key_preset(48, 1, 1);
+    188:      apply_key_preset(49, 1, 1);
+    190:      apply_key_preset(50, 1, 1);
+    ord('0'): apply_key_preset(51, 1, 1); // Others
+    ord('P'): apply_key_preset(52, 1, 1);
   end;
 end;
 
@@ -837,8 +967,8 @@ end;
 
 procedure TMainWindow.SetBlockSize(Sender: TObject);
 begin
-  BlockWidth.Value := block_presets[(Sender as TButton).Tag,1];
-  BlockHeight.Value := block_presets[(Sender as TButton).Tag,2];
+  BlockWidth.Value := block_size_presets[(Sender as TButton).Tag,1];
+  BlockHeight.Value := block_size_presets[(Sender as TButton).Tag,2];
 end;
 
 procedure TMainWindow.OpenTilesetClick(Sender: TObject);
@@ -1451,6 +1581,7 @@ begin
   // Load tileset attributes
   load_tileatr(map_tileset);
   StatusBar.Panels[1].Text := tilesets[map_tileset];
+  draw_cursor_image;
   render_minimap;
   render_map;
 end;
@@ -1533,6 +1664,7 @@ begin
     begin
       block_data[x,y] := (b_top + y) * 20 + b_left + x;
     end;
+  RbCustomBlock.Checked := true;
   draw_cursor_image;
 end;
 
@@ -1582,6 +1714,32 @@ begin
   CursorImage.Canvas.MoveTo(0,0);
   CursorImage.Canvas.LineTo(block_width * 32, 0);
   resize_cursor_image;
+end;
+
+procedure TMainWindow.apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
+var
+  grp: integer;
+  count: integer;
+begin
+  grp := BlockPresetGroupSelect.ItemIndex;
+  if (grp = 0) or (grp = 1) then
+    count := count_cliff
+  else if grp = 2 then
+    count := count_border
+  else
+    count := 1;
+  if count > 1 then
+  begin
+    inc(block_preset_order);
+    if block_preset_order >= count then
+      block_preset_order := 0;
+    num := num + block_preset_order;
+  end;
+  select_block_from_tileset(
+    block_key_presets[num, grp, 0],
+    block_key_presets[num, grp, 1],
+    block_key_presets[num, grp, 2],
+    block_key_presets[num, grp, 3]);
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);

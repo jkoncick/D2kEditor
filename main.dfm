@@ -103,7 +103,7 @@ object MainWindow: TMainWindow
     Left = 512
     Top = 0
     Width = 168
-    Height = 475
+    Height = 575
     TabOrder = 3
     OnMouseMove = FormMouseMove
     object MiniMapFrame: TBevel
@@ -133,7 +133,7 @@ object MainWindow: TMainWindow
       Left = 1
       Top = 141
       Width = 166
-      Height = 333
+      Height = 433
       ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
@@ -277,14 +277,14 @@ object MainWindow: TMainWindow
         end
         object BlockImage: TImage
           Left = 16
-          Top = 104
+          Top = 128
           Width = 128
           Height = 128
           OnClick = OpenTilesetClick
         end
         object RbCustomBlock: TRadioButton
           Left = 8
-          Top = 76
+          Top = 100
           Width = 73
           Height = 17
           Caption = 'Tile Block'
@@ -295,28 +295,28 @@ object MainWindow: TMainWindow
         end
         object RbSand: TRadioButton
           Left = 8
-          Top = 240
-          Width = 113
+          Top = 74
+          Width = 49
           Height = 17
-          Caption = 'Paint Sand'
+          Caption = 'Sand'
           TabOrder = 1
           OnClick = SetCursorImageVisibility
         end
         object RbRock: TRadioButton
-          Left = 8
-          Top = 264
-          Width = 113
+          Left = 56
+          Top = 74
+          Width = 49
           Height = 17
-          Caption = 'Paint Rock'
+          Caption = 'Rock'
           TabOrder = 2
           OnClick = SetCursorImageVisibility
         end
         object RbDunes: TRadioButton
-          Left = 8
-          Top = 288
-          Width = 113
+          Left = 104
+          Top = 74
+          Width = 57
           Height = 17
-          Caption = 'Paint Dunes'
+          Caption = 'Dunes'
           TabOrder = 3
           OnClick = SetCursorImageVisibility
         end
@@ -382,7 +382,7 @@ object MainWindow: TMainWindow
         end
         object OpenTileset: TButton
           Left = 84
-          Top = 72
+          Top = 96
           Width = 65
           Height = 25
           Caption = 'Open tileset'
@@ -391,7 +391,7 @@ object MainWindow: TMainWindow
         end
         object BlockUndo: TButton
           Left = 96
-          Top = 240
+          Top = 264
           Width = 49
           Height = 25
           Caption = 'Undo'
@@ -437,6 +437,28 @@ object MainWindow: TMainWindow
           Caption = '2 x 3'
           TabOrder = 15
           OnClick = SetBlockSize
+        end
+        object BlockPresetGroupSelect: TRadioGroup
+          Left = 2
+          Top = 296
+          Width = 153
+          Height = 105
+          Caption = ' Block key-preset group '
+          ItemIndex = 0
+          Items.Strings = (
+            'Cliff rock-sand'
+            'Cliff sand-sand'
+            'Rock border'
+            'Dunes border')
+          TabOrder = 16
+        end
+        object RbSelectMode: TRadioButton
+          Left = 8
+          Top = 268
+          Width = 81
+          Height = 17
+          Caption = 'Select+copy'
+          TabOrder = 17
         end
       end
     end
