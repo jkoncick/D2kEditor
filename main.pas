@@ -64,6 +64,12 @@ const structure_params: array[0..31] of TStructureParams =
     (offs_x: 47; offs_y: 1; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(194,374,574,  0,652,  0,  0))  // House Special Tank
   );
 
+const unit_names: array[0..29] of string = ('Light infantry', 'Trooper', 'Engineer', 'Thumper infantry',
+  'Sardaukar', 'Trike', 'Raider', 'Quad', 'Harvester', 'Combat tank (A)', 'Combat tank (H)', 'Combat tank (O)',
+  'MCV', 'Missile tank', 'Deviator', 'Siege tank', 'Sonic tank', 'Devastator', 'Carryall', 'Carryall (A)',
+  'Ornithropter', 'Stealth Fremen', 'Fremen', 'Saboteur', 'Death Hand Missile', 'Glitched infantry', 'Frigate',
+  'Grenadier', 'Stealth Raider', 'MP Sardaukar');
+
 const misc_obj_values: array[0..9] of word = (0,1,2,20,23,45,41,42,43,44);
 
 const mmap_misc_objects_colors: array[1..9] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF,$0000B0,$0000C0,$0000D0,$0000E0);
@@ -355,6 +361,7 @@ type
 
     // Mis file variables
     mis_map_markers: array[0..127, 0..127] of TEventMarker;
+    mis_events: array[0..63,0..71] of byte;
     mis_alloc_index: array[0..cnt_mis_players] of byte;
 
     // Statistics variables
@@ -458,6 +465,7 @@ begin
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
   map_loaded := false;
   top := 60;
+  Application.HintHidePause:=100000;
   draw_cursor_image;
   // Load map given as first parameter
   if ParamCount > 0 then
@@ -815,6 +823,10 @@ procedure TMainWindow.MapCanvasMouseMove(Sender: TObject;
 var
 canvas_x, canvas_y: integer;
 map_x, map_y: integer;
+eventnum: integer;
+numunits: integer;
+i: integer;
+tmp_hint: string;
 begin
   // Get tile coordinates
   canvas_x := X div 32;
@@ -835,6 +847,17 @@ begin
   SetCursorImageVisibility(Sender);
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
+  if (EditorPages.TabIndex = 0) and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
+  begin
+    eventnum := mis_map_markers[map_x,map_y].index;
+    numunits := mis_events[eventnum, 14];
+    tmp_hint := inttostr(numunits) + ' units:';
+    for i := 0 to (numunits -1) do
+      tmp_hint := tmp_hint + chr(13) + unit_names[mis_events[eventnum, 47+i]];
+    MapCanvas.Hint := tmp_hint;
+    MapCanvas.ShowHint := true
+  end else
+    MapCanvas.ShowHint := false;
   // Scroll map while holding right button
   if (ssRight in shift) and (EditorPages.TabIndex = 1) then
   begin
@@ -1520,9 +1543,10 @@ begin
   Read(mis_file,num_events);
   Read(mis_file,num_conds);
   Seek(mis_file,$EE58);
+  BlockRead(mis_file, mis_events, 64*72);
   for i:= 0 to num_events - 1 do
   begin
-    BlockRead(mis_file,event,72);
+    Move(mis_events[i], event, 72);
     if (event[13] = 0) or (event[13] = 18) or (event[13] = 14) then
     begin
       // Reinforcement, spawn, Reveal map

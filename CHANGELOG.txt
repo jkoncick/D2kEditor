@@ -8,20 +8,21 @@ Changed: New icon (by dato 2000)
 
 Major terrain editing improvements:
 - Selected tile block is drawn under mouse cursor when editing a map
+- You can Drag&Scroll map while holding right button in terrain editing mode
 - Fully functional Undo&Redo feature: you can undo/redo as many steps as you want (use Ctrl+Z, Ctrl+Y).
 - Added "Select&Copy" feature: you can select area on a map with mouse (press left button and drag) 
   and then place that area somewhere in map or even in different map. You can choose to select
   area with or without structures (structures are not drawn on the selected block) 
 - Added "Block key-presets" feature: This will let you draw cliffs and borders MUCH FASTER!!!
   Each key on keyboard (1, 2, 3, 4, Q, W, E, R, T, ect) has its block preset. Instead of selecting tile block 
-  from tileset of from a list (like in Shai-Hulud editor), you just simply press key on keyboard and select 
+  from tileset or from a list (like in Shai-Hulud editor), you just simply press key on keyboard and select 
   tile which you want. The layout of keys and their tiles is logical and intuitive (hopefully).
   Press key multiple times if there are more "versions" of the block.
   There are four preset groups: rock-sand cliff, sand-sand cliff, rock border, dunes border.
 - Keyboard shortcuts were changed and there are several new.
   All old letters/numbers shortcurs now work with Shift (Shift+R for selecting Rock, Shift+2 for 2x2 block etc)
   New shortcuts: Shift+C for Select&Copy mode, F1-F4 for selecting key-preset group 
-  Num2, Num4, Num6, Num8 for moving block on map (useful when you want to move it beyond up or right map border)
+  Num2, Num4, Num6, Num8 for moving block on map (useful when you want to move it beyond upper or left map border)
   "`" (the key under Esc) for quick select of Sand/Rock/Dunes according to current key-preset group
   
 
