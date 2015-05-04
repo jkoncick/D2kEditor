@@ -277,6 +277,7 @@ type
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure CMDialogKey(var AMessage: TCMDialogKey); message CM_DIALOGKEY;
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure FormMouseWheelUp(Sender: TObject; Shift: TShiftState;
@@ -480,6 +481,16 @@ begin
   StructureList.Height := EditorMenu.Height - 354;
   EditorPages.Height := Height - 214;
   StatusBar.Panels[3].Width := ClientWidth - 520;
+end;
+
+procedure TMainWindow.CMDialogKey(var AMessage: TCMDialogKey);
+begin
+  if AMessage.CharCode = VK_TAB then
+  begin
+    EditorPages.TabIndex := (EditorPages.TabIndex + 1) and 1;
+    AMessage.Result := 1;
+  end else
+    inherited;
 end;
 
 procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
@@ -760,7 +771,7 @@ end;
 
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
 begin
-  ShowMessage('Key Shortcuts:'#13#13'Space = Open tileset window'#13'Esc = Close tileset window'#13'Shift + 1 - 8 = Block size preset'#13+
+  ShowMessage('Key Shortcuts:'#13#13'Space = Open tileset window'#13'Esc = Close tileset window'#13'Tab = Switch Structures / Terrain'#13'Shift + 1 - 8 = Block size preset'#13+
               'Shift + S = Paint sand'#13'Shift + R = Paint rock'#13'Shift + D = Paint dunes'#13'Shift + B = Tile block'#13'Shift + C = Select and copy mode'#13'Shift + T = Select structures'#13'Ctrl + Z = Undo'#13'Ctrl + Y = Redo'#13'F1 - F4 = Block key-preset group'#13'Num 2,4,6,8 = Move block on map');
 end;
 
