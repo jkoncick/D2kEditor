@@ -11,7 +11,7 @@ const cnt_tilesets = 7;
 const cnt_players = 7;
 const cnt_mis_players = 8;
 const size_tileatr = 800;
-const max_undo_steps = 4095;
+const max_undo_steps = 32767;
 
 type
    TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttBuildable);
@@ -159,10 +159,8 @@ type
 type
   TUndoEntry = record
     x, y: word;
-    old_tile: word;
-    old_special: word;
-    new_tile: word;
-    new_special: word;
+    tile: word;
+    special: word;
     is_first: boolean;
   end;
 
@@ -1818,10 +1816,8 @@ procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boole
 begin
   undo_history[undo_pos].x := x;
   undo_history[undo_pos].y := y;
-  undo_history[undo_pos].old_tile := map_data[x,y].tile;
-  undo_history[undo_pos].old_special := map_data[x,y].special;
-  undo_history[undo_pos].new_tile := tile;
-  undo_history[undo_pos].new_special := special;
+  undo_history[undo_pos].tile := map_data[x,y].tile;
+  undo_history[undo_pos].special := map_data[x,y].special;
   undo_history[undo_pos].is_first := single_op or undo_block_start;
   undo_block_start := false;
   undo_pos := (undo_pos + 1) and max_undo_steps;
@@ -1833,25 +1829,37 @@ begin
 end;
 
 procedure TMainWindow.do_undo;
+var
+  tmp_tile, tmp_special: word;
 begin
   if undo_pos = undo_start then
     exit;
   repeat
     undo_pos := (undo_pos - 1) and max_undo_steps;
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].old_tile;
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].old_special;
+    tmp_tile := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile;
+    tmp_special := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special;
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].tile;
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].special;
+    undo_history[undo_pos].tile := tmp_tile;
+    undo_history[undo_pos].special := tmp_special;
   until undo_history[undo_pos].is_first or (undo_pos = undo_start);
   render_minimap;
   render_map;
 end;
 
 procedure TMainWindow.do_redo;
+var
+  tmp_tile, tmp_special: word;
 begin
   if undo_pos = undo_max then
     exit;
   repeat
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].new_tile;
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].new_special;
+    tmp_tile := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile;
+    tmp_special := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special;
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].tile;
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].special;
+    undo_history[undo_pos].tile := tmp_tile;
+    undo_history[undo_pos].special := tmp_special;
     undo_pos := (undo_pos + 1) and max_undo_steps;
   until undo_history[undo_pos].is_first or (undo_pos = undo_max);
   render_minimap;
