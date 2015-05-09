@@ -40,7 +40,7 @@ object TilesetDialog: TTilesetDialog
   object TilesetGrid: TCheckBox
     Left = 8
     Top = 4
-    Width = 97
+    Width = 73
     Height = 17
     Caption = 'Show Grid'
     TabOrder = 1
@@ -48,7 +48,7 @@ object TilesetDialog: TTilesetDialog
   end
   object Block11: TButton
     Tag = 1
-    Left = 92
+    Left = 164
     Top = 4
     Width = 49
     Height = 17
@@ -58,7 +58,7 @@ object TilesetDialog: TTilesetDialog
   end
   object Block22: TButton
     Tag = 2
-    Left = 140
+    Left = 212
     Top = 4
     Width = 49
     Height = 17
@@ -68,7 +68,7 @@ object TilesetDialog: TTilesetDialog
   end
   object Block33: TButton
     Tag = 3
-    Left = 188
+    Left = 260
     Top = 4
     Width = 49
     Height = 17
@@ -78,7 +78,7 @@ object TilesetDialog: TTilesetDialog
   end
   object Block44: TButton
     Tag = 4
-    Left = 236
+    Left = 308
     Top = 4
     Width = 49
     Height = 17
@@ -88,7 +88,7 @@ object TilesetDialog: TTilesetDialog
   end
   object Block21: TButton
     Tag = 5
-    Left = 284
+    Left = 356
     Top = 4
     Width = 49
     Height = 17
@@ -98,7 +98,7 @@ object TilesetDialog: TTilesetDialog
   end
   object Block12: TButton
     Tag = 6
-    Left = 332
+    Left = 404
     Top = 4
     Width = 49
     Height = 17
@@ -108,7 +108,7 @@ object TilesetDialog: TTilesetDialog
   end
   object Block32: TButton
     Tag = 7
-    Left = 380
+    Left = 452
     Top = 4
     Width = 49
     Height = 17
@@ -118,12 +118,21 @@ object TilesetDialog: TTilesetDialog
   end
   object Block23: TButton
     Tag = 8
-    Left = 428
+    Left = 500
     Top = 4
     Width = 49
     Height = 17
     Caption = '2 x 3'
     TabOrder = 9
     OnClick = SetBlockSize
+  end
+  object TilesetMarkTiles: TCheckBox
+    Left = 88
+    Top = 4
+    Width = 73
+    Height = 17
+    Caption = 'Mark tiles'
+    TabOrder = 10
+    OnClick = DrawTileset
   end
 end

@@ -1618,7 +1618,7 @@ end;
 
 function TMainWindow.get_tile_type(value: integer): TileType;
 begin
-  if value = 0 then
+  if (value and $00006000) = 0 then
     result := ttImpassable
   else if (value and $00006000) = $00004000 then
     result := ttInfantryOnly
