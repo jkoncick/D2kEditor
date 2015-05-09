@@ -159,8 +159,7 @@ type
 type
   TUndoEntry = record
     x, y: word;
-    tile: word;
-    special: word;
+    data: TMapTile;
     is_first: boolean;
   end;
 
@@ -272,6 +271,9 @@ type
     RbSelectMode: TRadioButton;
     MapImageSaveDialog: TSaveDialog;
     CbSelectStructures: TCheckBox;
+    Edit1: TMenuItem;
+    Undo1: TMenuItem;
+    Redo1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -290,6 +292,8 @@ type
     procedure Savemapas1Click(Sender: TObject);
     procedure Savemapimage1Click(Sender: TObject);
     procedure Exit1Click(Sender: TObject);
+    procedure Undo1Click(Sender: TObject);
+    procedure Redo1Click(Sender: TObject);
     procedure SelectTileset(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
@@ -503,16 +507,6 @@ begin
       key := 0;
       exit;
     end;
-    ord('Z'): if ssCtrl in Shift then
-    begin
-      do_undo;
-      exit;
-    end;
-    ord('Y'): if ssCtrl in Shift then
-    begin
-      do_redo;
-      exit;
-    end;
     // Block preset group selection
     112: {F1} BlockPresetGroupSelect.ItemIndex := 0;
     113: {F2} BlockPresetGroupSelect.ItemIndex := 1;
@@ -697,6 +691,16 @@ end;
 procedure TMainWindow.Exit1Click(Sender: TObject);
 begin
   application.Terminate;
+end;
+
+procedure TMainWindow.Undo1Click(Sender: TObject);
+begin
+  do_undo;
+end;
+
+procedure TMainWindow.Redo1Click(Sender: TObject);
+begin
+  do_redo;
 end;
 
 procedure TMainWindow.SelectTileset(Sender: TObject);
@@ -1466,6 +1470,8 @@ begin
       map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
     end;
+  Undo1.Enabled := false;
+  Redo1.Enabled := false;
   undo_start := 0;
   undo_max := 0;
   undo_pos := 0;
@@ -1682,6 +1688,8 @@ begin
   // Load tileset attributes
   load_tileatr(map_tileset);
   StatusBar.Panels[1].Text := tilesets[map_tileset];
+  if (TilesetDialog <> nil) and TilesetDialog.Visible then
+    TilesetDialog.DrawTileset(nil);
   draw_cursor_image;
   render_minimap;
   render_map;
@@ -1816,52 +1824,53 @@ procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boole
 begin
   undo_history[undo_pos].x := x;
   undo_history[undo_pos].y := y;
-  undo_history[undo_pos].tile := map_data[x,y].tile;
-  undo_history[undo_pos].special := map_data[x,y].special;
+  undo_history[undo_pos].data := map_data[x,y];
   undo_history[undo_pos].is_first := single_op or undo_block_start;
   undo_block_start := false;
   undo_pos := (undo_pos + 1) and max_undo_steps;
   if undo_start = undo_pos then
     undo_start := (undo_start + 1) and max_undo_steps;
   undo_max := undo_pos;
+  Undo1.Enabled := true;
+  Redo1.Enabled := false;
   map_data[x,y].tile := tile;
   map_data[x,y].special := special;
 end;
 
 procedure TMainWindow.do_undo;
 var
-  tmp_tile, tmp_special: word;
+  tmp_data: TMapTile;
 begin
   if undo_pos = undo_start then
     exit;
   repeat
     undo_pos := (undo_pos - 1) and max_undo_steps;
-    tmp_tile := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile;
-    tmp_special := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special;
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].tile;
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].special;
-    undo_history[undo_pos].tile := tmp_tile;
-    undo_history[undo_pos].special := tmp_special;
+    tmp_data := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y];
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y] := undo_history[undo_pos].data;
+    undo_history[undo_pos].data := tmp_data;
   until undo_history[undo_pos].is_first or (undo_pos = undo_start);
+  if undo_pos = undo_start then
+    Undo1.Enabled := false;
+  Redo1.Enabled := true;
   render_minimap;
   render_map;
 end;
 
 procedure TMainWindow.do_redo;
 var
-  tmp_tile, tmp_special: word;
+  tmp_data: TMapTile;
 begin
   if undo_pos = undo_max then
     exit;
   repeat
-    tmp_tile := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile;
-    tmp_special := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special;
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].tile := undo_history[undo_pos].tile;
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y].special := undo_history[undo_pos].special;
-    undo_history[undo_pos].tile := tmp_tile;
-    undo_history[undo_pos].special := tmp_special;
+    tmp_data := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y];
+    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y] := undo_history[undo_pos].data;
+    undo_history[undo_pos].data := tmp_data;
     undo_pos := (undo_pos + 1) and max_undo_steps;
   until undo_history[undo_pos].is_first or (undo_pos = undo_max);
+  if undo_pos = undo_max then
+    Redo1.Enabled := false;
+  Undo1.Enabled := true;
   render_minimap;
   render_map;
 end;
@@ -2013,6 +2022,8 @@ begin
             end;
         end;
   end;
+  Undo1.Enabled := false;
+  Redo1.Enabled := false;
   undo_start := 0;
   undo_max := 0;
   undo_pos := 0;
@@ -2064,6 +2075,8 @@ begin
       map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
     end;
+  Undo1.Enabled := false;
+  Redo1.Enabled := false;
   undo_start := 0;
   undo_max := 0;
   undo_pos := 0;

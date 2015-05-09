@@ -513,6 +513,21 @@ object MainWindow: TMainWindow
         OnClick = Exit1Click
       end
     end
+    object Edit1: TMenuItem
+      Caption = 'Edit'
+      object Undo1: TMenuItem
+        Caption = 'Undo'
+        Enabled = False
+        ShortCut = 16474
+        OnClick = Undo1Click
+      end
+      object Redo1: TMenuItem
+        Caption = 'Redo'
+        Enabled = False
+        ShortCut = 16473
+        OnClick = Redo1Click
+      end
+    end
     object ileset1: TMenuItem
       Caption = 'Tileset'
       object Selecttileset1: TMenuItem
