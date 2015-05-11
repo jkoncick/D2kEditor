@@ -31,6 +31,7 @@ object MainWindow: TMainWindow
     Top = 4
     Width = 1
     Height = 1
+    OnDblClick = MapCanvasDblClick
     OnMouseDown = MapCanvasMouseDown
     OnMouseMove = MapCanvasMouseMove
     OnMouseUp = MapCanvasMouseUp

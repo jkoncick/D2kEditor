@@ -322,6 +322,7 @@ type
       Y: Integer);
     procedure CursorImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure MapCanvasDblClick(Sender: TObject);
     procedure MapCanvasMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -397,6 +398,7 @@ type
     block_select_start_y: word;
     block_select_end_x: word;
     block_select_end_y: word;
+    block_placed: boolean;
 
     // Undo variables
     undo_history: array[0..max_undo_steps] of TUndoEntry;
@@ -425,6 +427,8 @@ type
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
     procedure put_block_on_map;
+    procedure fill_area(x,y: word);
+    procedure put_sand_rock_dunes(x,y: word);
     procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
     procedure do_undo;
     procedure do_redo;
@@ -696,11 +700,13 @@ end;
 procedure TMainWindow.Undo1Click(Sender: TObject);
 begin
   do_undo;
+  block_placed := false;
 end;
 
 procedure TMainWindow.Redo1Click(Sender: TObject);
 begin
   do_redo;
+  block_placed := false;
 end;
 
 procedure TMainWindow.SelectTileset(Sender: TObject);
@@ -860,6 +866,7 @@ begin
   SetCursorImageVisibility(Sender);
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
+  block_placed := false;
   if (EditorPages.TabIndex = 0) and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
   begin
     eventnum := mis_map_markers[map_x,map_y].index;
@@ -900,13 +907,16 @@ end;
 procedure TMainWindow.MapCanvasMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-  block_x, block_y: integer;
+  xx, yy: integer;
   map_x, map_y: integer;
   index, player: word;
   is_misc: boolean;
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
+  if block_placed then
+    exit;
+  block_placed := true;
   if EditorPages.TabIndex = 0 then
     begin
     // Editing structures
@@ -964,17 +974,12 @@ begin
       begin
         // Paint Sand/Rock/Dunes
         undo_block_start := true;
-        for block_x := map_x to map_x + BlockWidth.Value - 1 do
-          for block_y := map_y to map_y + BlockHeight.Value - 1 do
+        for xx := map_x to map_x + BlockWidth.Value - 1 do
+          for yy := map_y to map_y + BlockHeight.Value - 1 do
           begin
-            if (block_x >= map_width) or (block_x < 0) or (block_y >= map_height) or (block_y < 0) then
+            if (xx >= map_width) or (xx < 0) or (yy >= map_height) or (yy < 0) then
               continue;
-            if RbSand.Checked then
-              set_tile_value(block_x, block_y, tiles_sand[random(10)], 0, false)
-            else if RbRock.Checked then
-              set_tile_value(block_x, block_y, tiles_rock[random(15)], 0, false)
-            else if RbDunes.Checked then
-              set_tile_value(block_x, block_y, tiles_dunes[random(8)], 0, false);
+            put_sand_rock_dunes(xx, yy);
           end;
       end;
     end
@@ -987,6 +992,25 @@ begin
   end;
   render_minimap;
   render_map;
+end;
+
+procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
+var
+  tmp_pos: integer;
+begin
+  if ((EditorPages.TabIndex = 1) and (RbSand.Checked or RbRock.Checked or RbDunes.Checked)) or ((EditorPages.TabIndex = 0) and (StructureValue.Text = '2')) then
+  begin
+    tmp_pos := undo_pos;
+    repeat
+      tmp_pos := (tmp_pos - 1) and max_undo_steps
+    until undo_history[tmp_pos].is_first;
+    if (undo_history[tmp_pos].x = mouse_old_x) and (undo_history[tmp_pos].y = mouse_old_y) then
+      do_undo;
+    undo_block_start := true;
+    fill_area(mouse_old_x, mouse_old_y);
+    render_minimap;
+    render_map;
+  end;
 end;
 
 procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
@@ -1818,6 +1842,52 @@ begin
     for y := 0 to block_height - 1 do
       if (cursor_left + x < map_width) and (cursor_left + x >= 0) and (cursor_top + y < map_height) and (cursor_top + y >= 0) then
         set_tile_value(cursor_left + x, cursor_top + y, block_data[x,y].tile, block_data[x,y].special, false);
+end;
+
+procedure TMainWindow.fill_area(x, y: word);
+var
+  is_sand: boolean;
+  replaces_sand: boolean;
+  thick_spice: boolean;
+  i: integer;
+begin
+  is_sand := false;
+  thick_spice := (EditorPages.TabIndex = 0) and (StructureValue.Text = '2');
+  replaces_sand := thick_spice or RbRock.Checked or RbDunes.Checked;
+  for i := 0 to 9 do
+    if map_data[x,y].tile = tiles_sand[i] then
+    begin
+      is_sand := true;
+      break;
+    end;
+  if map_data[x,y].special <> 0 then
+    is_sand := false;
+  if (not is_sand and not replaces_sand) or (is_sand and replaces_sand) then
+  begin
+    if thick_spice then
+      set_tile_value(x, y, map_data[x,y].tile, 2, false)
+    else
+      put_sand_rock_dunes(x, y)
+  end else
+    exit;
+  if x > 0 then
+    fill_area(x-1, y);
+  if x < (map_width - 1) then
+    fill_area(x+1, y);
+  if y > 0 then
+    fill_area(x, y-1);
+  if y < (map_height - 1) then
+    fill_area(x, y+1);
+end;
+
+procedure TMainWindow.put_sand_rock_dunes(x, y: word);
+begin
+  if RbSand.Checked then
+    set_tile_value(x, y, tiles_sand[random(10)], 0, false)
+  else if RbRock.Checked then
+    set_tile_value(x, y, tiles_rock[random(15)], 0, false)
+  else if RbDunes.Checked then
+    set_tile_value(x, y, tiles_dunes[random(8)], 0, false);
 end;
 
 procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boolean);
