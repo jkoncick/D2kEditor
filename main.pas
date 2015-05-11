@@ -171,6 +171,7 @@ type
     emtype: EventMarkerType;
     player: word;
     index: word;
+    moved: boolean;
   end;
 
 type
@@ -1372,6 +1373,8 @@ begin
           else if event_marker.emtype = emSpawn then
             MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'S');
           MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
+          if event_marker.moved then
+            MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 10, '<');
         end
         else if (event_marker.emtype = emTileTrigger) or (event_marker.emtype = emRevealMap) then
         begin
@@ -1384,6 +1387,8 @@ begin
           else if event_marker.emtype = emRevealMap then
             MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'M');
           MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
+          if event_marker.moved then
+            MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 10, '<');
         end;
       end;
     end;
@@ -1516,7 +1521,7 @@ begin
   map_filename := filename;
   StatusBar.Panels[3].Text := filename;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
-  // Attempting to detect tileset from .mis file
+  // Load tileset and other information from .mis file
   mis_filename := ExtractFileDir(filename)+'\_'+ExtractFileName(filename);
   mis_filename[length(mis_filename)-1]:= 'I';
   mis_filename[length(mis_filename)]:= 'S';
@@ -1556,6 +1561,7 @@ var
   condition: array[0..27] of byte;
   x, y: byte;
   i: integer;
+  moved: boolean;
 begin
   if not FileExists(filename) then
     exit;
@@ -1591,6 +1597,13 @@ begin
       // Reinforcement, spawn, Reveal map
       x := event[0];
       y := event[4];
+      // Move event marker one tile to right if this tile has already an event
+      moved := false;
+      while mis_map_markers[x][y].emtype <> emNone do
+      begin
+        x := (x + 1) mod map_width;
+        moved := true;
+      end;
       if event[13] = 18 then
         mis_map_markers[x][y].emtype := emSpawn
       else if event[13] = 14 then
@@ -1601,6 +1614,7 @@ begin
         mis_map_markers[x][y].emtype := emReinforcement;
       mis_map_markers[x][y].player := event[15];
       mis_map_markers[x][y].index := i;
+      mis_map_markers[x][y].moved := moved;
     end;
   end;
   Seek(mis_file,$10058);
