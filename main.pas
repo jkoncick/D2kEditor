@@ -275,6 +275,7 @@ type
     Edit1: TMenuItem;
     Undo1: TMenuItem;
     Redo1: TMenuItem;
+    Showunknownspecials1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -300,6 +301,7 @@ type
     procedure Loadtileset1Click(Sender: TObject);
     procedure ShowGrid1Click(Sender: TObject);
     procedure Marktiles1Click(Sender: TObject);
+    procedure Showunknownspecials1Click(Sender: TObject);
     procedure Useallocationindexes1Click(Sender: TObject);
     procedure Showeventmarkers1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
@@ -745,6 +747,12 @@ end;
 procedure TMainWindow.Marktiles1Click(Sender: TObject);
 begin
   Marktiles1.Checked := not Marktiles1.Checked;
+  render_map;
+end;
+
+procedure TMainWindow.Showunknownspecials1Click(Sender: TObject);
+begin
+  Showunknownspecials1.Checked := not Showunknownspecials1.Checked;
   render_map;
 end;
 
@@ -1238,6 +1246,7 @@ begin
     end;
   end;
   MapCanvas.Canvas.Pen.Width := 1;
+  MapCanvas.Canvas.Brush.Style := bsClear;
   // Draw structures
   for y:= min_y -3 to max_y + max_y_plus do
   begin
@@ -1346,7 +1355,9 @@ begin
           MapCanvas.Canvas.CopyMode := cmSrcPaint;
           MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures.Bitmap.Canvas,src_rect);
         end;
-      end;
+      end
+      else if (value <> 0) and Showunknownspecials1.Checked then
+        MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 2, inttostr(value));
     end;
   end;
   // Draw event markers

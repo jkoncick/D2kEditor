@@ -614,6 +614,11 @@ object MainWindow: TMainWindow
         ShortCut = 16461
         OnClick = Marktiles1Click
       end
+      object Showunknownspecials1: TMenuItem
+        Caption = 'Show unknown specials'
+        ShortCut = 16469
+        OnClick = Showunknownspecials1Click
+      end
       object N7: TMenuItem
         Caption = '-'
       end
