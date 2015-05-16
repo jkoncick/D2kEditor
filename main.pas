@@ -387,8 +387,12 @@ type
     map_canvas_top: word;
     map_canvas_old_left: word;
     map_canvas_old_top: word;
+
+    // Mouse related variables
     mouse_old_x: word;
     mouse_old_y: word;
+    mouse_already_clicked: boolean;
+    mouse_last_button: TMouseButton;
 
     // Minimap variables
     mmap_border_x: word;
@@ -404,7 +408,6 @@ type
     block_select_start_y: word;
     block_select_end_x: word;
     block_select_end_y: word;
-    block_placed: boolean;
 
     // Undo variables
     undo_history: array[0..max_undo_steps] of TUndoEntry;
@@ -417,6 +420,7 @@ type
     procedure resize_map_canvas;
     procedure render_map;
     procedure render_minimap;
+    procedure render_minimap_position_marker;
     procedure load_map(filename: String);
     procedure save_map(filename: String);
     procedure load_misfile(filename: String);
@@ -707,13 +711,13 @@ end;
 procedure TMainWindow.Undo1Click(Sender: TObject);
 begin
   do_undo;
-  block_placed := false;
+  mouse_already_clicked := false;
 end;
 
 procedure TMainWindow.Redo1Click(Sender: TObject);
 begin
   do_redo;
-  block_placed := false;
+  mouse_already_clicked := false;
 end;
 
 procedure TMainWindow.SelectTileset(Sender: TObject);
@@ -810,12 +814,14 @@ procedure TMainWindow.MapScrollHChange(Sender: TObject);
 begin
   map_canvas_left := MapScrollH.Position;
   render_map;
+  render_minimap_position_marker;
 end;
 
 procedure TMainWindow.MapScrollVChange(Sender: TObject);
 begin
   map_canvas_top := MapScrollV.Position;
   render_map;
+  render_minimap_position_marker;
 end;
 
 procedure TMainWindow.MapScrollHKeyDown(Sender: TObject; var Key: Word;
@@ -880,7 +886,7 @@ begin
   // If mouse is still inside same tile, exit (for optimization)
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
-  block_placed := false;
+  mouse_already_clicked := false;
   // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
   if mode(mStructures) and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
   begin
@@ -929,9 +935,10 @@ var
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
-  if block_placed then
+  if mouse_already_clicked and (mouse_last_button = Button) then
     exit;
-  block_placed := true;
+  mouse_already_clicked := true;
+  mouse_last_button := Button;
   if mode(mStructures) then
     begin
     // Editing structures
@@ -962,11 +969,9 @@ begin
       begin
         MiscObjList.ItemIndex := -1;
         StructureList.ItemIndex := -1;
-        exit;
       end;
       exit;
     end;
-    calculate_power_and_statistics;
   end else
   begin
     // Editing terrain
@@ -1006,7 +1011,11 @@ begin
       exit;
     end;
   end;
-  render_minimap;
+  if not mode(mAnyPaint) then
+  begin
+    render_minimap;
+    calculate_power_and_statistics;
+  end;
   render_map;
 end;
 
@@ -1044,8 +1053,11 @@ begin
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true);
     render_map;
   end;
-  if mode(mTerrain) then
+  if mode(mAnyPaint) then
+  begin
+    render_minimap;
     calculate_power_and_statistics;
+  end;
 end;
 
 procedure TMainWindow.CursorImageMouseMove(Sender: TObject;
@@ -1151,7 +1163,11 @@ begin
     MapScrollV.Enabled := False
   else
     MapScrollV.Enabled := True;
-  render_map;
+  if map_loaded then
+  begin
+    render_map;
+    render_minimap_position_marker;
+  end;
 end;
 
 
@@ -1412,6 +1428,7 @@ begin
     end;
   end;
   // Draw grid
+  MapCanvas.Canvas.CopyMode:=cmSrcCopy;
   MapCanvas.Canvas.Pen.Color := clBlack;
   MapCanvas.Canvas.Pen.Width := 1;
   if ShowGrid1.Checked then
@@ -1439,13 +1456,6 @@ begin
     MapCanvas.Canvas.Rectangle(min_x, min_y, max_x, max_y);
     MapCanvas.Canvas.Brush.Style := bsSolid;
   end;
-  // Draw position marker on minimap
-  MapCanvas.Canvas.CopyMode:=cmSrcCopy;
-  MiniMap.Canvas.CopyRect(rect(0,0,128,128),MiniMapTmp.Canvas,rect(0,0,128,128));
-  MiniMap.Canvas.Pen.Color:= $00FF00;
-  MiniMap.Canvas.Brush.Style := bsClear;
-  MiniMap.Canvas.Rectangle(mmap_border_x + map_canvas_left,mmap_border_y + map_canvas_top,mmap_border_x + map_canvas_left + map_canvas_width,mmap_border_y + map_canvas_top + map_canvas_height);
-  MiniMap.Canvas.Brush.Style := bsSolid;
 end;
 
 procedure TMainWindow.render_minimap;
@@ -1494,6 +1504,16 @@ begin
         MiniMapTmp.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+structure_params[index].size_x,y+mmap_border_y+structure_params[index].size_y);
       end;
     end;
+  render_minimap_position_marker;
+end;
+
+procedure TMainWindow.render_minimap_position_marker;
+begin
+  MiniMap.Canvas.CopyRect(rect(0,0,128,128),MiniMapTmp.Canvas,rect(0,0,128,128));
+  MiniMap.Canvas.Pen.Color:= $00FF00;
+  MiniMap.Canvas.Brush.Style := bsClear;
+  MiniMap.Canvas.Rectangle(mmap_border_x + map_canvas_left,mmap_border_y + map_canvas_top,mmap_border_x + map_canvas_left + map_canvas_width,mmap_border_y + map_canvas_top + map_canvas_height);
+  MiniMap.Canvas.Brush.Style := bsSolid;
 end;
 
 procedure TMainWindow.load_map(filename: String);
