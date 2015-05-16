@@ -182,6 +182,9 @@ type
   end;
 
 type
+  SelectedMode = (mStructures, mTerrain, mAnyPaint, mStructuresPaint, mTerrainPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode, mThickSpice);
+
+type
   TMainWindow = class(TForm)
     MapCanvas: TImage;
     MapScrollH: TScrollBar;
@@ -227,14 +230,14 @@ type
     PageStructures: TTabSheet;
     PageTerrain: TTabSheet;
     LbStructureValue: TLabel;
-    StructureValue: TEdit;
+    SpecialValue: TEdit;
     LbMiscObjList: TLabel;
     MiscObjList: TListBox;
     LbPlayerSelect: TLabel;
     PlayerSelect: TComboBox;
     LbStructureList: TLabel;
     StructureList: TListBox;
-    RbCustomBlock: TRadioButton;
+    RbTileBlock: TRadioButton;
     RbSand: TRadioButton;
     RbRock: TRadioButton;
     RbDunes: TRadioButton;
@@ -422,6 +425,7 @@ type
     function get_tile_type(value: integer): TileType;
     procedure structure_params_to_value;
     function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
+    function mode(m: SelectedMode): boolean;
     procedure change_tileset(index: integer);
     procedure calculate_power_and_statistics;
     procedure show_power;
@@ -548,7 +552,7 @@ begin
     ord('7'): SetBlockSize(Block32);
     ord('8'): SetBlockSize(Block23);
     // Terrain editing mode selection
-    ord('B'): RbCustomBlock.Checked := true;
+    ord('B'): RbTileBlock.Checked := true;
     ord('D'): RbDunes.Checked := true;
     ord('R'): RbRock.Checked := true;
     ord('S'): RbSand.Checked := true;
@@ -873,10 +877,12 @@ begin
   StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
   // Show cursor image if needed
   SetCursorImageVisibility(Sender);
+  // If mouse is still inside same tile, exit (for optimization)
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
   block_placed := false;
-  if (EditorPages.TabIndex = 0) and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
+  // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
+  if mode(mStructures) and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
   begin
     eventnum := mis_map_markers[map_x,map_y].index;
     numunits := mis_events[eventnum, 14];
@@ -888,7 +894,7 @@ begin
   end else
     MapCanvas.ShowHint := false;
   // Scroll map while holding right button
-  if (ssRight in shift) and (EditorPages.TabIndex = 1) then
+  if mode(mTerrain) and (ssRight in shift) then
   begin
     MapScrollH.Position := map_canvas_left + (mouse_old_x - map_x);
     MapScrollV.Position := map_canvas_top + (mouse_old_y - map_y);
@@ -909,7 +915,7 @@ begin
     render_map;
   end else
   // If left button is held, paint sand/rock/dunes/spice during mouse move
-  if (ssLeft in shift) and (((EditorPages.TabIndex = 1) and (not RbCustomBlock.Checked)) or ((EditorPages.TabIndex = 0) and (strtoint(StructureValue.Text) <= 2))) then
+  if (ssLeft in shift) and mode(mAnyPaint) then
     MapCanvasMouseDown(sender,mbLeft,Shift,x,y);
 end;
 
@@ -926,19 +932,19 @@ begin
   if block_placed then
     exit;
   block_placed := true;
-  if EditorPages.TabIndex = 0 then
+  if mode(mStructures) then
     begin
     // Editing structures
     if Button = mbLeft then
       // Put structure on map
-      set_tile_value(map_x, map_y, map_data[map_x, map_y].tile, strtoint(StructureValue.Text), true)
+      set_tile_value(map_x, map_y, map_data[map_x, map_y].tile, strtoint(SpecialValue.Text), true)
     else if Button = mbRight then
       // Delete structure from map
       set_tile_value(map_x, map_y, map_data[map_x, map_y].tile, 0, true)
     else if Button = mbMiddle then
     begin
       // Get structure parameters on position and set them in menu
-      StructureValue.text := inttostr(map_data[map_x, map_y].special);
+      SpecialValue.text := inttostr(map_data[map_x, map_y].special);
       if structure_value_to_params(map_data[map_x, map_y].special, player, index, is_misc) then
       begin
         if is_misc then
@@ -966,7 +972,7 @@ begin
     // Editing terrain
     if button = mbLeft then
     begin
-      if RbSelectMode.Checked then
+      if mode(mSelectMode) then
       begin
         // Start selection
         block_select_started := true;
@@ -974,12 +980,13 @@ begin
         block_select_start_y := map_y;
         block_select_end_x := map_x;
         block_select_end_y := map_y;
-      end else
-      if RbCustomBlock.Checked then
+      end
+      else if mode(mTileBlock) then
       begin
         // Draw selected block
         put_block_on_map;
-      end else
+      end
+      else if mode(mTerrainPaint) then
       begin
         // Paint Sand/Rock/Dunes
         undo_block_start := true;
@@ -1007,7 +1014,7 @@ procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
 var
   tmp_pos: integer;
 begin
-  if ((EditorPages.TabIndex = 1) and (RbSand.Checked or RbRock.Checked or RbDunes.Checked)) or ((EditorPages.TabIndex = 0) and (StructureValue.Text = '2')) then
+  if mode(mTerrainPaint) or mode(mThickSpice) then
   begin
     tmp_pos := undo_pos;
     repeat
@@ -1037,7 +1044,7 @@ begin
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true);
     render_map;
   end;
-  if EditorPages.TabIndex = 1 then
+  if mode(mTerrain) then
     calculate_power_and_statistics;
 end;
 
@@ -1109,11 +1116,11 @@ end;
 
 procedure TMainWindow.SetCursorImageVisibility(Sender: TObject);
 begin
-  if RbCustomBlock.Checked and (EditorPages.TabIndex = 1) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
+  if mode(mTileBlock) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
   begin
     CursorImage.Visible := true;
     if not TilesetDialog.Visible then
-      RbCustomBlock.SetFocus;
+      RbTileBlock.SetFocus;
   end else
     CursorImage.Visible := false;
 end;
@@ -1687,7 +1694,7 @@ begin
     value := misc_obj_values[MiscObjList.ItemIndex]
   else
     value := structure_params[StructureList.ItemIndex].values[PlayerSelect.ItemIndex];
-  StructureValue.Text := inttostr(value);
+  SpecialValue.Text := inttostr(value);
 end;
 
 
@@ -1725,6 +1732,24 @@ begin
     end;
   end;
   result := false;
+end;
+
+function TMainWindow.mode(m: SelectedMode): boolean;
+begin
+  result := false;
+  case m of
+    mStructures:      result := EditorPages.TabIndex = 0;
+    mTerrain:         result := EditorPages.TabIndex = 1;
+    mAnyPaint:        result := ((EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) <= 2)) or ((EditorPages.TabIndex = 1) and (RbSand.Checked or RbRock.Checked or RbDunes.Checked));
+    mStructuresPaint: result := (EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) <= 2);
+    mTerrainPaint:    result := (EditorPages.TabIndex = 1) and (RbSand.Checked or RbRock.Checked or RbDunes.Checked);
+    mSand:            result := (EditorPages.TabIndex = 1) and RbSand.Checked;
+    mRock:            result := (EditorPages.TabIndex = 1) and RbRock.Checked;
+    mDunes:           result := (EditorPages.TabIndex = 1) and RbDunes.Checked;
+    mTileBlock:       result := (EditorPages.TabIndex = 1) and RbTileBlock.Checked;
+    mSelectMode:      result := (EditorPages.TabIndex = 1) and RbSelectMode.Checked;
+    mThickSpice:      result := (EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) = 2);
+  end;
 end;
 
 procedure TMainWindow.change_tileset(index: integer);
@@ -1823,7 +1848,7 @@ begin
       block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
       block_data[x,y].special := 0;
     end;
-  RbCustomBlock.Checked := true;
+  RbTileBlock.Checked := true;
   draw_cursor_image;
 end;
 
@@ -1850,7 +1875,7 @@ begin
       end;
       block_data[x,y] := value;
     end;
-  RbCustomBlock.Checked := True;
+  RbTileBlock.Checked := True;
   draw_cursor_image;
 end;
 
@@ -1877,8 +1902,8 @@ var
   i: integer;
 begin
   is_sand := false;
-  thick_spice := (EditorPages.TabIndex = 0) and (StructureValue.Text = '2');
-  replaces_sand := thick_spice or RbRock.Checked or RbDunes.Checked;
+  thick_spice := mode(mThickSpice);
+  replaces_sand := thick_spice or mode(mRock) or mode(mDunes);
   for i := 0 to 9 do
     if map_data[x,y].tile = tiles_sand[i] then
     begin
@@ -1907,11 +1932,11 @@ end;
 
 procedure TMainWindow.put_sand_rock_dunes(x, y: word);
 begin
-  if RbSand.Checked then
+  if mode(mSand) then
     set_tile_value(x, y, tiles_sand[random(10)], 0, false)
-  else if RbRock.Checked then
+  else if mode(mRock) then
     set_tile_value(x, y, tiles_rock[random(15)], 0, false)
-  else if RbDunes.Checked then
+  else if mode(mDunes) then
     set_tile_value(x, y, tiles_dunes[random(8)], 0, false);
 end;
 

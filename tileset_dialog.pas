@@ -148,7 +148,7 @@ begin
   if Button = mbLeft then
   begin
     close;
-    MainWindow.RbCustomBlock.Checked := True;
+    MainWindow.RbTileBlock.Checked := True;
   end;
 end;
 

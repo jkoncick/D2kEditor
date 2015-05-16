@@ -170,7 +170,7 @@ object MainWindow: TMainWindow
           Height = 13
           Caption = 'Structures'
         end
-        object StructureValue: TEdit
+        object SpecialValue: TEdit
           Left = 80
           Top = 2
           Width = 73
@@ -285,7 +285,7 @@ object MainWindow: TMainWindow
           Height = 128
           OnClick = OpenTilesetClick
         end
-        object RbCustomBlock: TRadioButton
+        object RbTileBlock: TRadioButton
           Left = 8
           Top = 100
           Width = 73
