@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, set_dialog, tileset_dialog, Math,
-  Spin, Buttons;
+  Spin, Buttons, ShellApi, IniFiles;
 
 const cnt_tilesets = 7;
 const cnt_players = 7;
@@ -185,6 +185,16 @@ type
   SelectedMode = (mStructures, mTerrain, mAnyPaint, mStructuresPaint, mTerrainPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode, mThickSpice);
 
 type
+  TMapTestSettings = record
+    Scenario: String;
+    MySideID: integer;
+    MissionNumber: integer;
+    DifficultyLevel: integer;
+    Seed: integer;
+    TextUib: String;
+  end;
+
+type
   TMainWindow = class(TForm)
     MapCanvas: TImage;
     MapScrollH: TScrollBar;
@@ -279,6 +289,9 @@ type
     Undo1: TMenuItem;
     Redo1: TMenuItem;
     Showunknownspecials1: TMenuItem;
+    Launchgame1: TMenuItem;
+    Quicklaunch1: TMenuItem;
+    Launchwithsettings1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -310,6 +323,8 @@ type
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
+    procedure Quicklaunch1Click(Sender: TObject);
+    procedure Launchwithsettings1Click(Sender: TObject);
     procedure KeyShortcuts1Click(Sender: TObject);
     procedure Mouseactions1Click(Sender: TObject);
     procedure About1Click(Sender: TObject);
@@ -416,16 +431,30 @@ type
     undo_pos: integer;
     undo_block_start: boolean;
 
-    // Procedures and functions
+    // Map testing variables
+    map_test_settings: TMapTestSettings;
+    map_test_settings_loaded: boolean;
+
+    // Rendering procedures
     procedure resize_map_canvas;
     procedure render_map;
     procedure render_minimap;
     procedure render_minimap_position_marker;
+
+    // Map loading & saving procedures
     procedure load_map(filename: String);
     procedure save_map(filename: String);
+    function get_mis_filename(filename: String): String;
     procedure load_misfile(filename: String);
     procedure load_tileatr(tileset: integer);
     procedure check_map_errors;
+
+    // Map testing procedures
+    function check_map_can_be_tested: boolean;
+    procedure get_map_test_settings(ini: TIniFile);
+    procedure set_map_test_settings(ini: TIniFile);
+
+    // Miscellaneous helper procedures
     function get_tile_type(value: integer): TileType;
     procedure structure_params_to_value;
     function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
@@ -672,8 +701,14 @@ begin
   check_map_errors;
   if MapSaveDialog.Execute then
   begin
-    map_filename := MapSaveDialog.FileName;
-    StatusBar.Panels[3].Text := MapSaveDialog.FileName;
+    if map_filename <> MapSaveDialog.FileName then
+    begin
+      map_filename := MapSaveDialog.FileName;
+      StatusBar.Panels[3].Text := MapSaveDialog.FileName;
+      Quicklaunch1.Enabled := true;
+      Launchwithsettings1.Enabled := true;
+      map_test_settings_loaded := false;
+    end;
     save_map(MapSaveDialog.FileName);
   end;
 end;
@@ -792,6 +827,26 @@ end;
 procedure TMainWindow.Changestructureowner1Click(Sender: TObject);
 begin
   SetDialog.select_menu(3);
+end;
+
+procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
+var
+  spawn_ini: TIniFile;
+begin
+  if not check_map_can_be_tested then
+    exit;
+  spawn_ini := TIniFile.Create(ExtractFilePath(map_filename) + '..\spawn.ini');
+  get_map_test_settings(spawn_ini);
+  set_map_test_settings(spawn_ini);
+  spawn_ini.Destroy;
+  SetCurrentDir(ExtractFilePath(map_filename) + '..\');
+  ShellExecute(Application.Handle, 'open', PChar(ExtractFilePath(map_filename) + '..\dune2000.exe'), '-SPAWN', nil, SW_SHOWNORMAL);
+end;
+
+procedure TMainWindow.Launchwithsettings1Click(Sender: TObject);
+begin
+  if not check_map_can_be_tested then
+    exit;
 end;
 
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
@@ -1519,7 +1574,6 @@ end;
 procedure TMainWindow.load_map(filename: String);
 var
   map_file: file of word;
-  mis_filename: String;
   x, y: integer;
 begin
   if not FileExists(filename) then
@@ -1557,13 +1611,13 @@ begin
   // Setting variables and status bar
   map_loaded := true;
   map_filename := filename;
+  Quicklaunch1.Enabled := true;
+  Launchwithsettings1.Enabled := true;
+  map_test_settings_loaded := false;
   StatusBar.Panels[3].Text := filename;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   // Load tileset and other information from .mis file
-  mis_filename := ExtractFileDir(filename)+'\_'+ExtractFileName(filename);
-  mis_filename[length(mis_filename)-1]:= 'I';
-  mis_filename[length(mis_filename)]:= 'S';
-  load_misfile(mis_filename);
+  load_misfile(get_mis_filename(map_filename));
   // Rendering
   resize_map_canvas;
   render_minimap;
@@ -1587,6 +1641,16 @@ begin
       Write(map_file, map_data[x,y].special);
     end;
   CloseFile(map_file);
+end;
+
+function TMainWindow.get_mis_filename(filename: String): String;
+var
+  mis_filename: String;
+begin
+  mis_filename := ExtractFileDir(filename)+'\_'+ExtractFileName(filename);
+  mis_filename[length(mis_filename)-1]:= 'I';
+  mis_filename[length(mis_filename)]:= 'S';
+  result := UpperCase(mis_filename);
 end;
 
 procedure TMainWindow.load_misfile(filename: String);
@@ -1690,6 +1754,77 @@ begin
     Application.MessageBox('You must place at least one Worm Spawner.', 'Map error', MB_ICONWARNING);
   if (mstat_num_player_starts <> 0) and (mstat_num_player_starts <> 8) then
     Application.MessageBox('Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', 'Map error', MB_ICONWARNING);
+end;
+
+function TMainWindow.check_map_can_be_tested: boolean;
+var
+  mis_filename: String;
+begin
+  result := true;
+  mis_filename := get_mis_filename(map_filename);
+  if UpperCase(ExtractFileName(ExcludeTrailingPathDelimiter(ExtractFilePath(map_filename)))) <> 'MISSIONS' then
+  begin
+    Application.MessageBox('Map must be located in "Missions" folder.', 'Cannot test map', MB_ICONERROR);
+    result := false;
+  end
+  else if not FileExists(ExtractFilePath(map_filename) + '..\dune2000.exe') then
+  begin
+    Application.MessageBox(PChar('Cannot find game executable (Dune2000.exe) in ' + ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(map_filename)))), 'Cannot test map', MB_ICONERROR);
+    result := false;
+  end
+  else if not FileExists(mis_filename) then
+  begin
+    Application.MessageBox(PChar('Mission file ' + ExtractFileName(mis_filename) + ' does not exist.'), 'Cannot test map', MB_ICONERROR);
+    result := false;
+  end;
+end;
+
+procedure TMainWindow.get_map_test_settings(ini: TIniFile);
+var
+  map_name: String;
+  house, mission: char;
+  house_num, mission_num: integer;
+begin
+  if map_test_settings_loaded then
+    exit;
+  map_name := ChangeFileExt(ExtractFileName(map_filename),'');
+  // Try to detect MissionNumber and MySideID from map file name
+  house := map_name[Length(map_name)-3];
+  mission := map_name[Length(map_name)-2];
+  house_num := ini.ReadInteger('Settings', 'MySideID', 0);
+  case house of
+  'A': house_num := 0;
+  'H': house_num := 1;
+  'O': house_num := 2;
+  end;
+  if (ord(mission) >= ord('1')) and (ord(mission) <= ord('9')) then
+    mission_num := strtoint(mission)
+  else
+    mission_num := ini.ReadInteger('Settings', 'MissionNumber', 1);
+  with map_test_settings do
+  begin
+    Scenario := map_name;
+    MySideID := house_num;
+    MissionNumber := mission_num;
+    DifficultyLevel := ini.ReadInteger('Settings', 'DifficultyLevel', 1);
+    Seed := ini.ReadInteger('Settings', 'Seed', random(2000000000));
+    TextUib := ini.ReadString('Settings', 'TextUib', '');
+  end;
+  map_test_settings_loaded := true;
+end;
+
+procedure TMainWindow.set_map_test_settings(ini: TIniFile);
+begin
+  with map_test_settings do
+  begin
+    ini.WriteString('Settings', 'Scenario', Scenario);
+    ini.WriteInteger('Settings', 'MySideID', MySideID);
+    ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);
+    ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
+    ini.WriteInteger('Settings', 'Seed', Seed);
+    if TextUib <> '' then
+      ini.WriteString('Settings', 'TextUib', TextUib);
+  end;
 end;
 
 function TMainWindow.get_tile_type(value: integer): TileType;
@@ -2231,6 +2366,8 @@ begin
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';
+  Quicklaunch1.Enabled := false;
+  Launchwithsettings1.Enabled := false;
   map_loaded := true;
   calculate_power_and_statistics;
   resize_map_canvas;

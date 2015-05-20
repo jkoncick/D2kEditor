@@ -657,6 +657,21 @@ object MainWindow: TMainWindow
         OnClick = Changestructureowner1Click
       end
     end
+    object Launchgame1: TMenuItem
+      Caption = 'Test'
+      object Quicklaunch1: TMenuItem
+        Caption = 'Quick launch'
+        Enabled = False
+        ShortCut = 119
+        OnClick = Quicklaunch1Click
+      end
+      object Launchwithsettings1: TMenuItem
+        Caption = 'Launch with settings'
+        Enabled = False
+        ShortCut = 120
+        OnClick = Launchwithsettings1Click
+      end
+    end
     object Help1: TMenuItem
       Caption = 'Help'
       object KeyShortcuts1: TMenuItem
