@@ -656,6 +656,14 @@ object MainWindow: TMainWindow
         Caption = 'Change structure owner'
         OnClick = Changestructureowner1Click
       end
+      object N9: TMenuItem
+        Caption = '-'
+      end
+      object Createemptymisfile1: TMenuItem
+        Caption = 'Create empty .mis file'
+        Enabled = False
+        OnClick = Createemptymisfile1Click
+      end
     end
     object Launchgame1: TMenuItem
       Caption = 'Test'

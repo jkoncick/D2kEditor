@@ -77,7 +77,7 @@ const mmap_tile_colors: array[0..4] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF
 const mmap_player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
 
 const tilesets: array[1..cnt_tilesets] of String = ('BLOXBASE','BLOXBAT','BLOXBGBS','BLOXICE','BLOXTREE','BLOXWAST','BLOXXMAS');
-const tileatr_filenames: array[1..cnt_tilesets] of String = ('tileatr2.bin','tileatr6.bin','tileatr3.bin','tileatr5.bin','tileatr1.bin','tileatr4.bin','tileatr7.bin');
+const tileatr_filenames: array[1..cnt_tilesets] of String = ('TILEATR2','TILEATR6','TILEATR3','TILEATR5','TILEATR1','TILEATR4','TILEATR7');
 
 const tiles_sand: array[0..9] of word = (48,49,50,51,52,68,69,70,71,72);
 const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,576,592,593,594,595,596);
@@ -293,6 +293,8 @@ type
     Launchgame1: TMenuItem;
     Quicklaunch1: TMenuItem;
     Launchwithsettings1: TMenuItem;
+    N9: TMenuItem;
+    Createemptymisfile1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -324,6 +326,7 @@ type
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
+    procedure Createemptymisfile1Click(Sender: TObject);
     procedure Quicklaunch1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
     procedure KeyShortcuts1Click(Sender: TObject);
@@ -708,6 +711,7 @@ begin
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
       Quicklaunch1.Enabled := true;
       Launchwithsettings1.Enabled := true;
+      Createemptymisfile1.Enabled := true;
       test_map_settings_loaded := false;
     end;
     save_map(MapSaveDialog.FileName);
@@ -828,6 +832,64 @@ end;
 procedure TMainWindow.Changestructureowner1Click(Sender: TObject);
 begin
   SetDialog.select_menu(3);
+end;
+
+procedure TMainWindow.Createemptymisfile1Click(Sender: TObject);
+var
+  mis_filename: String;
+  mis_file: file of byte;
+  i, j: integer;
+  b: byte;
+begin
+  mis_filename := get_mis_filename(map_filename);
+  if FileExists(mis_filename) then
+  begin
+    Application.MessageBox('Mission file for this map already exists.', 'Create empty .mis file', MB_ICONERROR);
+    exit;
+  end;
+  AssignFile(mis_file, mis_filename);
+  ReWrite(mis_file);
+  b := 0;
+  for i := 0 to 68065 do
+    Write(mis_file, b);
+  // Write tileset name
+  Seek(mis_file,$10598);
+  BlockWrite(mis_file, tilesets[map_tileset,1], Length(tilesets[map_tileset]));
+  // Write tileatr file name
+  Seek(mis_file,$10660);
+  BlockWrite(mis_file, tileatr_filenames[map_tileset,1], Length(tileatr_filenames[map_tileset]));
+  // Write allocation indexes
+  Seek(mis_file,$50);
+  for i := 0 to 7 do
+    Write(mis_file, i);
+  // Write tech levels
+  Seek(mis_file,$0);
+  b := 8;
+  for i := 0 to 7 do
+    Write(mis_file, b);
+  // Write starting money
+  Seek(mis_file,$8);
+  for i := 0 to 7 do
+  begin
+    b := $88;
+    Write(mis_file, b);
+    b := $13;
+    Write(mis_file, b);
+    b := 0;
+    Write(mis_file, b);
+    Write(mis_file, b);
+  end;
+  // Write diplomacy
+  Seek(mis_file,$EE18);
+  for i := 0 to 7 do
+    for j := 0 to 7 do
+    begin
+      if i = j then b := 0 else b := 1;
+      Write(mis_file, b);
+    end;
+  CloseFile(mis_file);
+  Application.MessageBox('Mission file created', 'Create empty .mis file', MB_ICONINFORMATION);
+  Createemptymisfile1.Enabled := false;
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
@@ -1662,6 +1724,7 @@ var
   i: integer;
   moved: boolean;
 begin
+  Createemptymisfile1.Enabled := not FileExists(filename);
   if not FileExists(filename) then
     exit;
   AssignFile(mis_file, filename);
@@ -1737,9 +1800,9 @@ procedure TMainWindow.load_tileatr(tileset: integer);
 var
   tileatr_file: file of integer;
 begin
-  if not FileExists(current_dir+'/tilesets/'+tileatr_filenames[tileset]) then
+  if not FileExists(current_dir+'/tilesets/'+tileatr_filenames[tileset]+'.bin') then
     exit;
-  AssignFile(tileatr_file, current_dir+'/tilesets/'+tileatr_filenames[tileset]);
+  AssignFile(tileatr_file, current_dir+'/tilesets/'+tileatr_filenames[tileset]+'.bin');
   Reset(tileatr_file);
   BlockRead(tileatr_file, tileset_attributes, size_tileatr);
   CloseFile(tileatr_file);
@@ -2392,6 +2455,7 @@ begin
   map_filename := '';
   Quicklaunch1.Enabled := false;
   Launchwithsettings1.Enabled := false;
+  Createemptymisfile1.Enabled := false;
   map_loaded := true;
   calculate_power_and_statistics;
   resize_map_canvas;
