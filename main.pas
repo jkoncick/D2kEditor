@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, set_dialog, tileset_dialog, Math,
-  Spin, Buttons, ShellApi, IniFiles;
+  Spin, Buttons, ShellApi, IniFiles, test_map_dialog;
 
 const cnt_tilesets = 7;
 const cnt_players = 7;
@@ -185,13 +185,14 @@ type
   SelectedMode = (mStructures, mTerrain, mAnyPaint, mStructuresPaint, mTerrainPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode, mThickSpice);
 
 type
-  TMapTestSettings = record
-    Scenario: String;
+  TTestMapSettings = record
     MySideID: integer;
     MissionNumber: integer;
     DifficultyLevel: integer;
     Seed: integer;
     TextUib: String;
+    GamePath: String;
+    Parameters: String;
   end;
 
 type
@@ -432,8 +433,8 @@ type
     undo_block_start: boolean;
 
     // Map testing variables
-    map_test_settings: TMapTestSettings;
-    map_test_settings_loaded: boolean;
+    test_map_settings: TTestMapSettings;
+    test_map_settings_loaded: boolean;
 
     // Rendering procedures
     procedure resize_map_canvas;
@@ -447,12 +448,12 @@ type
     function get_mis_filename(filename: String): String;
     procedure load_misfile(filename: String);
     procedure load_tileatr(tileset: integer);
-    procedure check_map_errors;
+    function check_map_errors: boolean;
 
     // Map testing procedures
     function check_map_can_be_tested: boolean;
-    procedure get_map_test_settings(ini: TIniFile);
-    procedure set_map_test_settings(ini: TIniFile);
+    procedure get_map_test_settings;
+    procedure launch_game;
 
     // Miscellaneous helper procedures
     function get_tile_type(value: integer): TileType;
@@ -707,7 +708,7 @@ begin
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
       Quicklaunch1.Enabled := true;
       Launchwithsettings1.Enabled := true;
-      map_test_settings_loaded := false;
+      test_map_settings_loaded := false;
     end;
     save_map(MapSaveDialog.FileName);
   end;
@@ -830,23 +831,19 @@ begin
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
-var
-  spawn_ini: TIniFile;
 begin
+  get_map_test_settings;
   if not check_map_can_be_tested then
     exit;
-  spawn_ini := TIniFile.Create(ExtractFilePath(map_filename) + '..\spawn.ini');
-  get_map_test_settings(spawn_ini);
-  set_map_test_settings(spawn_ini);
-  spawn_ini.Destroy;
-  SetCurrentDir(ExtractFilePath(map_filename) + '..\');
-  ShellExecute(Application.Handle, 'open', PChar(ExtractFilePath(map_filename) + '..\dune2000.exe'), '-SPAWN', nil, SW_SHOWNORMAL);
+  launch_game;
 end;
 
 procedure TMainWindow.Launchwithsettings1Click(Sender: TObject);
 begin
+  get_map_test_settings;
   if not check_map_can_be_tested then
     exit;
+  TestMapDialog.invoke;
 end;
 
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
@@ -1613,7 +1610,7 @@ begin
   map_filename := filename;
   Quicklaunch1.Enabled := true;
   Launchwithsettings1.Enabled := true;
-  map_test_settings_loaded := false;
+  test_map_settings_loaded := false;
   StatusBar.Panels[3].Text := filename;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   // Load tileset and other information from .mis file
@@ -1647,10 +1644,10 @@ function TMainWindow.get_mis_filename(filename: String): String;
 var
   mis_filename: String;
 begin
-  mis_filename := ExtractFileDir(filename)+'\_'+ExtractFileName(filename);
+  mis_filename := ExtractFileDir(filename)+'\_'+UpperCase(ExtractFileName(filename));
   mis_filename[length(mis_filename)-1]:= 'I';
   mis_filename[length(mis_filename)]:= 'S';
-  result := UpperCase(mis_filename);
+  result := mis_filename;
 end;
 
 procedure TMainWindow.load_misfile(filename: String);
@@ -1748,47 +1745,63 @@ begin
   CloseFile(tileatr_file);
 end;
 
-procedure TMainWindow.check_map_errors;
-begin
-  if mstat_num_worm_spawners = 0 then
-    Application.MessageBox('You must place at least one Worm Spawner.', 'Map error', MB_ICONWARNING);
-  if (mstat_num_player_starts <> 0) and (mstat_num_player_starts <> 8) then
-    Application.MessageBox('Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', 'Map error', MB_ICONWARNING);
-end;
-
-function TMainWindow.check_map_can_be_tested: boolean;
-var
-  mis_filename: String;
+function TMainWindow.check_map_errors: boolean;
 begin
   result := true;
-  mis_filename := get_mis_filename(map_filename);
-  if UpperCase(ExtractFileName(ExcludeTrailingPathDelimiter(ExtractFilePath(map_filename)))) <> 'MISSIONS' then
+  if mstat_num_worm_spawners = 0 then
   begin
-    Application.MessageBox('Map must be located in "Missions" folder.', 'Cannot test map', MB_ICONERROR);
+    Application.MessageBox('You must place at least one Worm Spawner.', 'Map error', MB_ICONWARNING);
     result := false;
-  end
-  else if not FileExists(ExtractFilePath(map_filename) + '..\dune2000.exe') then
+  end;
+  if (mstat_num_player_starts <> 0) and (mstat_num_player_starts <> 8) then
   begin
-    Application.MessageBox(PChar('Cannot find game executable (Dune2000.exe) in ' + ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(map_filename)))), 'Cannot test map', MB_ICONERROR);
-    result := false;
-  end
-  else if not FileExists(mis_filename) then
-  begin
-    Application.MessageBox(PChar('Mission file ' + ExtractFileName(mis_filename) + ' does not exist.'), 'Cannot test map', MB_ICONERROR);
+    Application.MessageBox('Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', 'Map error', MB_ICONWARNING);
     result := false;
   end;
 end;
 
-procedure TMainWindow.get_map_test_settings(ini: TIniFile);
+function TMainWindow.check_map_can_be_tested: boolean;
 var
+  game_executable: String;
+  mis_filename: String;
+begin
+  game_executable := test_map_settings.GamePath + 'dune2000.exe';
+  mis_filename := get_mis_filename(map_filename);
+  if not FileExists(game_executable) then
+  begin
+    Application.MessageBox(PChar('Cannot find game executable (' + game_executable + ')'), 'Cannot test map', MB_ICONERROR);
+    result := false;
+  end
+  else if not FileExists(mis_filename) then
+  begin
+    Application.MessageBox(PChar('Mission file ' + mis_filename + ' does not exist.'), 'Cannot test map', MB_ICONERROR);
+    result := false;
+  end else
+    result := check_map_errors;
+end;
+
+procedure TMainWindow.get_map_test_settings;
+var
+  ini: TIniFile;
+  game_path: String;
   map_name: String;
   house, mission: char;
   house_num, mission_num: integer;
 begin
-  if map_test_settings_loaded then
+  if test_map_settings_loaded then
     exit;
-  map_name := ChangeFileExt(ExtractFileName(map_filename),'');
+  // Get Game path (folder where Dune2000.exe is located) from map filename
+  if (test_map_settings.GamePath = '') or (not FileExists(test_map_settings.GamePath + 'Dune2000.exe')) then
+  begin
+    game_path := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(map_filename)));
+    test_map_settings.GamePath := game_path;
+    if not FileExists(game_path + 'Dune2000.exe') then
+      exit;
+  end else
+    game_path := test_map_settings.GamePath;
+  ini := TIniFile.Create(game_path + 'spawn.ini');
   // Try to detect MissionNumber and MySideID from map file name
+  map_name := ChangeFileExt(ExtractFileName(map_filename),'');
   house := map_name[Length(map_name)-3];
   mission := map_name[Length(map_name)-2];
   house_num := ini.ReadInteger('Settings', 'MySideID', 0);
@@ -1801,23 +1814,29 @@ begin
     mission_num := strtoint(mission)
   else
     mission_num := ini.ReadInteger('Settings', 'MissionNumber', 1);
-  with map_test_settings do
+  with test_map_settings do
   begin
-    Scenario := map_name;
     MySideID := house_num;
     MissionNumber := mission_num;
     DifficultyLevel := ini.ReadInteger('Settings', 'DifficultyLevel', 1);
     Seed := ini.ReadInteger('Settings', 'Seed', random(2000000000));
     TextUib := ini.ReadString('Settings', 'TextUib', '');
   end;
-  map_test_settings_loaded := true;
+  ini.Destroy;
+  test_map_settings_loaded := true;
 end;
 
-procedure TMainWindow.set_map_test_settings(ini: TIniFile);
+procedure TMainWindow.launch_game;
+var
+  ini: TIniFile;
+  game_path: String;
 begin
-  with map_test_settings do
+  // Write settings to ini file
+  game_path := test_map_settings.GamePath;
+  ini := TIniFile.Create(game_path + 'spawn.ini');
+  with test_map_settings do
   begin
-    ini.WriteString('Settings', 'Scenario', Scenario);
+    ini.WriteString('Settings', 'Scenario', 'TESTMAP');
     ini.WriteInteger('Settings', 'MySideID', MySideID);
     ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);
     ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
@@ -1825,6 +1844,11 @@ begin
     if TextUib <> '' then
       ini.WriteString('Settings', 'TextUib', TextUib);
   end;
+  ini.Destroy;
+  save_map(game_path + 'Missions\TESTMAP.MAP');
+  CopyFile(PChar(get_mis_filename(map_filename)), PChar(game_path + 'Missions\_TESTMAP.MIS'), false);
+  SetCurrentDir(game_path);
+  ShellExecute(Application.Handle, 'open', PChar(game_path + 'dune2000.exe'), PChar('-SPAWN ' + test_map_settings.Parameters), nil, SW_SHOWNORMAL);
 end;
 
 function TMainWindow.get_tile_type(value: integer): TileType;
