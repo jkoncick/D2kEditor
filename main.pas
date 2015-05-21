@@ -14,7 +14,7 @@ const size_tileatr = 800;
 const max_undo_steps = 32767;
 
 type
-   TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttBuildable);
+   TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttRock, ttBuildable);
 
 type
   TStructureParams = record
@@ -73,7 +73,7 @@ const unit_names: array[0..29] of string = ('Light infantry', 'Trooper', 'Engine
 const misc_obj_values: array[0..9] of word = (0,1,2,20,23,45,41,42,43,44);
 
 const mmap_misc_objects_colors: array[1..9] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF,$0000B0,$0000C0,$0000D0,$0000E0);
-const mmap_tile_colors: array[0..4] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4);
+const mmap_tile_colors: array[0..5] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4,$509CDC);
 const mmap_player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
 
 const tilesets: array[1..cnt_tilesets] of String = ('BLOXBASE','BLOXBAT','BLOXBGBS','BLOXICE','BLOXTREE','BLOXWAST','BLOXXMAS');
@@ -1922,8 +1922,10 @@ begin
     result := ttInfantryOnly
   else if (value and $40000000) = $40000000 then
     result := ttSlowdown
-  else if (value and $20000000) = $20000000 then
+  else if (value and $8000) = $8000 then
     result := ttBuildable
+  else if (value and $20000000) = $20000000 then
+    result := ttRock
   else
     result := ttNormal
 end;

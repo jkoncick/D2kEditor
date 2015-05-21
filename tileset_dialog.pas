@@ -65,12 +65,14 @@ begin
       for y := tileset_top to tileset_top + 18 - 1 do
       begin
         tile_attr := MainWindow.get_tile_type(MainWindow.tileset_attributes[x + y * 20]);
-        if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) then
+        if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) or (tile_attr = ttBuildable) then
         begin
           if (tile_attr = ttImpassable) then
             TilesetImage.Canvas.Pen.Color := clRed
           else if (tile_attr = ttInfantryOnly) then
-            TilesetImage.Canvas.Pen.Color := $4080FF;
+            TilesetImage.Canvas.Pen.Color := $4080FF
+          else if (tile_attr = ttBuildable) then
+            TilesetImage.Canvas.Pen.Color := $40FF80;
           TilesetImage.Canvas.Pen.Width := 2;
           TilesetImage.Canvas.MoveTo(x*32, (y-tileset_top)*32);
           TilesetImage.Canvas.LineTo(x*32+31, (y-tileset_top)*32+31);
