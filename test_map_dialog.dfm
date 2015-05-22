@@ -4,8 +4,8 @@ object TestMapDialog: TTestMapDialog
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Test Map Settings'
-  ClientHeight = 273
-  ClientWidth = 313
+  ClientHeight = 257
+  ClientWidth = 297
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,58 +19,58 @@ object TestMapDialog: TTestMapDialog
   PixelsPerInch = 96
   TextHeight = 13
   object lblMySideID: TLabel
-    Left = 24
-    Top = 24
+    Left = 16
+    Top = 16
     Width = 34
     Height = 13
     Caption = 'Play as'
   end
   object lblMissionNumber: TLabel
-    Left = 24
-    Top = 56
+    Left = 16
+    Top = 48
     Width = 35
     Height = 13
     Caption = 'Mission'
   end
   object lblDifficultyLevel: TLabel
-    Left = 24
-    Top = 88
+    Left = 16
+    Top = 80
     Width = 40
     Height = 13
     Caption = 'Difficulty'
   end
   object lblSeed: TLabel
-    Left = 24
-    Top = 120
+    Left = 16
+    Top = 112
     Width = 25
     Height = 13
     Caption = 'Seed'
   end
   object lblTextUib: TLabel
-    Left = 24
-    Top = 152
+    Left = 16
+    Top = 144
     Width = 38
     Height = 13
     Caption = 'Text.uib'
   end
   object lblParameters: TLabel
-    Left = 24
-    Top = 184
+    Left = 16
+    Top = 176
     Width = 53
     Height = 13
     Caption = 'Parameters'
   end
   object eMySideID: TComboBox
-    Left = 104
-    Top = 24
+    Left = 96
+    Top = 16
     Width = 121
     Height = 21
     ItemHeight = 13
     TabOrder = 0
   end
   object eMissionNumber: TSpinEdit
-    Left = 104
-    Top = 56
+    Left = 96
+    Top = 48
     Width = 121
     Height = 22
     MaxLength = 1
@@ -80,8 +80,8 @@ object TestMapDialog: TTestMapDialog
     Value = 1
   end
   object eDifficultyLevel: TComboBox
-    Left = 104
-    Top = 88
+    Left = 96
+    Top = 80
     Width = 121
     Height = 21
     ItemHeight = 13
@@ -94,31 +94,31 @@ object TestMapDialog: TTestMapDialog
       'Hard')
   end
   object eSeed: TEdit
-    Left = 104
-    Top = 120
+    Left = 96
+    Top = 112
     Width = 121
     Height = 21
     TabOrder = 3
     Text = '0'
   end
   object eTextUib: TEdit
-    Left = 104
-    Top = 152
+    Left = 96
+    Top = 144
     Width = 121
     Height = 21
     TabOrder = 4
     Text = 'TEXT.UIB'
   end
   object eParameters: TEdit
-    Left = 104
-    Top = 184
+    Left = 96
+    Top = 176
     Width = 121
     Height = 21
     TabOrder = 5
   end
   object btnCancel: TButton
-    Left = 24
-    Top = 224
+    Left = 16
+    Top = 216
     Width = 89
     Height = 25
     Caption = 'Cancel'
@@ -126,8 +126,8 @@ object TestMapDialog: TTestMapDialog
     OnClick = btnCancelClick
   end
   object btnLaunch: TButton
-    Left = 136
-    Top = 224
+    Left = 128
+    Top = 216
     Width = 89
     Height = 25
     Caption = 'Launch'
@@ -135,8 +135,8 @@ object TestMapDialog: TTestMapDialog
     OnClick = btnLaunchClick
   end
   object btnRandomSeed: TButton
-    Left = 232
-    Top = 120
+    Left = 224
+    Top = 112
     Width = 57
     Height = 25
     Caption = 'Random'
@@ -144,8 +144,8 @@ object TestMapDialog: TTestMapDialog
     OnClick = btnRandomSeedClick
   end
   object btnDefaultTextUib: TButton
-    Left = 232
-    Top = 152
+    Left = 224
+    Top = 144
     Width = 57
     Height = 25
     Caption = 'Default'

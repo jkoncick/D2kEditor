@@ -516,7 +516,8 @@ begin
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
   map_loaded := false;
   top := 60;
-  Application.HintHidePause:=100000;
+  Application.HintPause := 100;
+  Application.HintHidePause:= 100000;
   draw_cursor_image;
   // Load map given as first parameter
   if ParamCount > 0 then
@@ -916,7 +917,7 @@ end;
 
 procedure TMainWindow.Mouseactions1Click(Sender: TObject);
 begin
-  ShowMessage('Mouse actions'#13#13'When editing structures:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13'When editing terrain:'#13'Left = Draw / Place block'#13'Middle = Copy block'#13'Right = Drag and scroll map');
+  ShowMessage('Mouse actions'#13#13'When editing structures:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13'When editing terrain:'#13'Left = Draw / Place block'#13'Double click = Fill area'#13'Middle = Copy block'#13'Right = Drag and scroll map');
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
@@ -1002,8 +1003,9 @@ begin
     exit;
   mouse_already_clicked := false;
   // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
-  if mode(mStructures) and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
+  if mode(mStructures) and Showeventmarkers1.Checked and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
   begin
+    Application.CancelHint;
     eventnum := mis_map_markers[map_x,map_y].index;
     numunits := mis_events[eventnum, 14];
     tmp_hint := inttostr(numunits) + ' units:';

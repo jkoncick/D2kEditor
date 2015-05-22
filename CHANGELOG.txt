@@ -1,5 +1,37 @@
 D2kEditor changelog
 
+Alpha 0.6 (released 2015-??-??)
+-------------------------------
+Added: "Mark tiles" option also to Tileset window. Buildable tiles are marked there too.
+Added: "Edit" menu with Undo and Redo options
+Added: Press TAB key to switch between Structures and Terrain mode
+Added: "Show unknown specials" feature
+Added: If more events (Reinforcements etc) are placed in one tile, additional markers are dwawn next to that tile
+Added: If mouse cursor is moved over Reinforcement or Spawn marker, list of units is displayed. Works in Structures mode.
+Changed: Minimap is updated after you finish painting of sand/rock/dunes/spice, because rendering was very slow.
+Added: "Fill area" feature: works with sand, rock, dunes and thick spice.
+       - You need to double-click into a tile inside area you want to fill.
+       - If rock, dunes or thick spice is selected, area made of sand tiles is filled.
+         (Recommendation: Draw a border with Thin spice and then fill the center with Thick spice) 
+       - If sand is selected, area made of tiles which are not sand is filled.
+Added: "Test map" feature: you can now launch and test your map directly from the editor!
+       Requirements:
+       - You need to have modified version of Dune2000.exe, which supports mission launching.
+         (It is distributed along with Mission launcher)
+       - Dune2000.exe must be in parent directory of the directory where the map is saved
+       - Counterpart .mis file must exist and there must be no map errors (missing Worm Spawners etc.)
+       How it works:
+       - Added "Test" menu with two options "Quick launch" and "Launch with settings"
+       - "Quick launch" simply starts game with last settings
+       - "Launch with settings" opens a window where you can set Difficulty, Mission number, Side you want to play as etc.
+       - Mission number and Side is detected from map name's last 4 characters (like A4V1 - A for Side, 4 for mission).
+       - For map names not having this name pattern you need to set them manually.
+       - Before launching, map is saved into temporary file (TESTMAP.map) which is actually launched. 
+       - Original map is not saved. Don't forget to save!
+Added: "Create empty .mis file" feature: Creates .mis file with default settings, no events, no AI. Useful when creating new map. 
+         
+
+
 Aplha 0.5 (released 2015-05-02)
 -------------------------------
 Fixed: Map image is saved properly
