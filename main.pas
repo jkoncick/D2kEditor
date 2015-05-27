@@ -15,6 +15,7 @@ const max_undo_steps = 32767;
 
 type
    TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttRock, ttBuildable);
+   FillAreaType = (faSand, faSpice, faDunes, faOther);
 
 type
   TStructureParams = record
@@ -182,7 +183,7 @@ type
   end;
 
 type
-  SelectedMode = (mStructures, mTerrain, mAnyPaint, mStructuresPaint, mTerrainPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode, mThickSpice);
+  SelectedMode = (mStructures, mTerrain, mAnyPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode);
 
 type
   TTestMapSettings = record
@@ -460,6 +461,7 @@ type
 
     // Miscellaneous helper procedures
     function get_tile_type(value: integer): TileType;
+    function get_fill_area_type(x,y: integer): FillAreaType;
     procedure structure_params_to_value;
     function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
     function mode(m: SelectedMode): boolean;
@@ -471,7 +473,7 @@ type
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
     procedure put_block_on_map;
-    procedure fill_area(x,y: word);
+    procedure fill_area(x,y: word; area_type: FillAreaType);
     procedure put_sand_rock_dunes(x,y: word);
     procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
     procedure do_undo;
@@ -1107,7 +1109,7 @@ begin
         // Draw selected block
         put_block_on_map;
       end
-      else if mode(mTerrainPaint) then
+      else if mode(mAnyPaint) then
       begin
         // Paint Sand/Rock/Dunes
         undo_block_start := true;
@@ -1139,16 +1141,18 @@ procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
 var
   tmp_pos: integer;
 begin
-  if mode(mTerrainPaint) or mode(mThickSpice) then
+  if mode(mAnyPaint) then
   begin
+    // Undo the action which was made by first click
     tmp_pos := undo_pos;
     repeat
       tmp_pos := (tmp_pos - 1) and max_undo_steps
     until undo_history[tmp_pos].is_first;
     if (undo_history[tmp_pos].x = mouse_old_x) and (undo_history[tmp_pos].y = mouse_old_y) then
       do_undo;
+    // Fill area
     undo_block_start := true;
-    fill_area(mouse_old_x, mouse_old_y);
+    fill_area(mouse_old_x, mouse_old_y, get_fill_area_type(mouse_old_x, mouse_old_y));
     render_minimap;
     render_map;
   end;
@@ -1932,6 +1936,29 @@ begin
     result := ttNormal
 end;
 
+function TMainWindow.get_fill_area_type(x, y: integer): FillAreaType;
+var
+  i: integer;
+begin
+  for i := 0 to 9 do
+    if (map_data[x,y].tile = tiles_sand[i]) and (map_data[x,y].special = 0) then
+    begin
+      result := faSand;
+      exit;
+    end;
+  if (map_data[x,y].special = 1) or (map_data[x,y].special = 2) then
+  begin
+    result := faSpice;
+    exit;
+  end;
+  if (tileset_attributes[map_data[x,y].tile] = $40016000) and (map_data[x,y].special = 0) then
+  begin
+    result := faDunes;
+    exit;
+  end;
+  result := faOther;
+end;
+
 procedure TMainWindow.structure_params_to_value;
 var
   value: word;
@@ -1987,14 +2014,11 @@ begin
     mStructures:      result := EditorPages.TabIndex = 0;
     mTerrain:         result := EditorPages.TabIndex = 1;
     mAnyPaint:        result := ((EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) <= 2)) or ((EditorPages.TabIndex = 1) and (RbSand.Checked or RbRock.Checked or RbDunes.Checked));
-    mStructuresPaint: result := (EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) <= 2);
-    mTerrainPaint:    result := (EditorPages.TabIndex = 1) and (RbSand.Checked or RbRock.Checked or RbDunes.Checked);
     mSand:            result := (EditorPages.TabIndex = 1) and RbSand.Checked;
     mRock:            result := (EditorPages.TabIndex = 1) and RbRock.Checked;
     mDunes:           result := (EditorPages.TabIndex = 1) and RbDunes.Checked;
     mTileBlock:       result := (EditorPages.TabIndex = 1) and RbTileBlock.Checked;
     mSelectMode:      result := (EditorPages.TabIndex = 1) and RbSelectMode.Checked;
-    mThickSpice:      result := (EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) = 2);
   end;
 end;
 
@@ -2140,40 +2164,24 @@ begin
         set_tile_value(cursor_left + x, cursor_top + y, block_data[x,y].tile, block_data[x,y].special, false);
 end;
 
-procedure TMainWindow.fill_area(x, y: word);
-var
-  is_sand: boolean;
-  replaces_sand: boolean;
-  thick_spice: boolean;
-  i: integer;
+procedure TMainWindow.fill_area(x, y: word; area_type: FillAreaType);
 begin
-  is_sand := false;
-  thick_spice := mode(mThickSpice);
-  replaces_sand := thick_spice or mode(mRock) or mode(mDunes);
-  for i := 0 to 9 do
-    if map_data[x,y].tile = tiles_sand[i] then
-    begin
-      is_sand := true;
-      break;
-    end;
-  if map_data[x,y].special <> 0 then
-    is_sand := false;
-  if (not is_sand and not replaces_sand) or (is_sand and replaces_sand) then
-  begin
-    if thick_spice then
-      set_tile_value(x, y, map_data[x,y].tile, 2, false)
-    else
-      put_sand_rock_dunes(x, y)
-  end else
+  if get_fill_area_type(x, y) <> area_type then
+    exit;
+  if mode(mStructures) then
+    set_tile_value(x, y, map_data[x,y].tile, strtoint(SpecialValue.text), false)
+  else
+    put_sand_rock_dunes(x, y);
+  if get_fill_area_type(x, y) = area_type then
     exit;
   if x > 0 then
-    fill_area(x-1, y);
+    fill_area(x-1, y, area_type);
   if x < (map_width - 1) then
-    fill_area(x+1, y);
+    fill_area(x+1, y, area_type);
   if y > 0 then
-    fill_area(x, y-1);
+    fill_area(x, y-1, area_type);
   if y < (map_height - 1) then
-    fill_area(x, y+1);
+    fill_area(x, y+1, area_type);
 end;
 
 procedure TMainWindow.put_sand_rock_dunes(x, y: word);

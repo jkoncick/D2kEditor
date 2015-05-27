@@ -49,6 +49,7 @@ uses
 procedure TTestMapDialog.FormCreate(Sender: TObject);
 begin
   eMySideID.Items := MainWindow.PlayerSelect.Items;
+  eMySideID.Items.Add('7 - Sandworm');
   eMySideID.ItemIndex := 0;
 end;
 
