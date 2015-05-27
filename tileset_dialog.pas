@@ -4,22 +4,24 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls;
+  Dialogs, StdCtrls, ExtCtrls, Buttons, Math;
 
 type
   TTilesetDialog = class(TForm)
     TilesetImage: TImage;
     TilesetScroll: TScrollBar;
     TilesetGrid: TCheckBox;
-    Block11: TButton;
-    Block22: TButton;
-    Block33: TButton;
-    Block44: TButton;
-    Block21: TButton;
-    Block12: TButton;
-    Block32: TButton;
-    Block23: TButton;
     TilesetMarkTiles: TCheckBox;
+    sbCustomSize: TSpeedButton;
+    sbPreset11: TSpeedButton;
+    sbPreset22: TSpeedButton;
+    sbPreset33: TSpeedButton;
+    sbPreset44: TSpeedButton;
+    sbPreset21: TSpeedButton;
+    sbPreset12: TSpeedButton;
+    sbPreset32: TSpeedButton;
+    sbPreset23: TSpeedButton;
+    procedure FormCreate(Sender: TObject);
     procedure DrawTileset(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -29,10 +31,24 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure TilesetImageMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure TilesetImageMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure TilesetImageMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure SetBlockSize(Sender: TObject);
   private
     { Private declarations }
     tileset_top: word;
+
+    preset_buttons: array[0..8] of TSpeedButton;
+    preset_width: word;
+    preset_height: word;
+
+    select_started: boolean;
+    select_start_x: integer;
+    select_start_y: integer;
+    select_end_x: integer;
+    select_end_y: integer;
   public
     { Public declarations }
     block_width: word;
@@ -52,6 +68,19 @@ uses
 {$R *.dfm}
 
 { TTilesetDialog }
+
+procedure TTilesetDialog.FormCreate(Sender: TObject);
+begin
+  preset_buttons[0] := sbCustomSize;
+  preset_buttons[1] := sbPreset11;
+  preset_buttons[2] := sbPreset22;
+  preset_buttons[3] := sbPreset33;
+  preset_buttons[4] := sbPreset44;
+  preset_buttons[5] := sbPreset21;
+  preset_buttons[6] := sbPreset12;
+  preset_buttons[7] := sbPreset32;
+  preset_buttons[8] := sbPreset23;
+end;
 
 procedure TTilesetDialog.DrawTileset(Sender: TObject);
 var
@@ -108,14 +137,12 @@ begin
   27: Close;
   71: TilesetGrid.Checked := not TilesetGrid.Checked;
   77: TilesetMarkTiles.Checked := not TilesetMarkTiles.Checked;
-  49: SetBlockSize(Block11);
-  50: SetBlockSize(Block22);
-  51: SetBlockSize(Block33);
-  52: SetBlockSize(Block44);
-  53: SetBlockSize(Block21);
-  54: SetBlockSize(Block12);
-  55: SetBlockSize(Block32);
-  56: SetBlockSize(Block23);
+  192: sbCustomSize.Down := true;
+  end;
+  if (key >= ord('1')) and (key <= ord('8')) then
+  begin
+    preset_buttons[key - ord('0')].Down := true;
+    SetBlockSize(preset_buttons[key - ord('0')]);
   end;
 end;
 
@@ -141,8 +168,17 @@ var
 begin
   b_left := X div 32;
   b_top := Y div 32 + tileset_top;
-  b_width := MainWindow.BlockWidth.Value;
-  b_height := MainWindow.BlockHeight.Value;
+  if sbCustomSize.Down then
+  begin
+    // Custom block size
+    select_started := true;
+    select_start_x := b_left;
+    select_start_y := b_top;
+    TilesetImageMouseMove(Sender, Shift, X, Y);
+    exit;
+  end;
+  b_width := preset_width;
+  b_height := preset_height;
   if (b_left + b_width > 20) or (b_top + b_height > 40) then
     exit;
   MainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top);
@@ -154,9 +190,47 @@ begin
   end;
 end;
 
-procedure TTilesetDialog.SetBlockSize(Sender: TObject);
+procedure TTilesetDialog.TilesetImageMouseMove(Sender: TObject;
+  Shift: TShiftState; X, Y: Integer);
+var
+  pos_x, pos_y: integer;
 begin
-  MainWindow.SetBlockSize(sender);
+  pos_x := X div 32;
+  pos_y := Y div 32 + tileset_top;
+  if select_started and ((pos_x <> select_end_x) or (pos_y <> select_end_y)) and (pos_x >= 0) and (pos_y >=0) and (pos_x < 20) and (pos_y < 40) then
+  begin
+    select_end_x := pos_x;
+    select_end_y := pos_y;
+    block_left := min(select_start_x, select_end_x);
+    block_width := max(select_start_x, select_end_x) - block_left + 1;
+    block_top := min(select_start_y, select_end_y);
+    block_height := max(select_start_y, select_end_y) - block_top + 1;
+    DrawTileset(nil);
+  end;
+end;
+
+procedure TTilesetDialog.TilesetImageMouseUp(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if select_started then
+  begin
+    select_started := false;
+    MainWindow.select_block_from_tileset(block_width, block_height, block_left, block_top);
+    if Button = mbLeft then
+    begin
+      close;
+      MainWindow.RbTileBlock.Checked := True;
+    end;
+  end;
+end;
+
+procedure TTilesetDialog.SetBlockSize(Sender: TObject);
+var
+  tag: integer;
+begin
+  tag := (Sender as TSpeedButton).Tag;
+  preset_width := block_size_presets[tag][1];
+  preset_height := block_size_presets[tag][2];
 end;
 
 end.

@@ -13,6 +13,7 @@ object TilesetDialog: TTilesetDialog
   Font.Style = []
   KeyPreview = True
   OldCreateOrder = False
+  OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnMouseWheelDown = FormMouseWheelDown
   OnMouseWheelUp = FormMouseWheelUp
@@ -25,6 +26,97 @@ object TilesetDialog: TTilesetDialog
     Width = 640
     Height = 576
     OnMouseDown = TilesetImageMouseDown
+    OnMouseMove = TilesetImageMouseMove
+    OnMouseUp = TilesetImageMouseUp
+  end
+  object sbCustomSize: TSpeedButton
+    Left = 168
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Down = True
+    Caption = 'Custom'
+  end
+  object sbPreset11: TSpeedButton
+    Tag = 1
+    Left = 216
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '1 x 1'
+    OnClick = SetBlockSize
+  end
+  object sbPreset22: TSpeedButton
+    Tag = 2
+    Left = 264
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '2 x 2'
+    OnClick = SetBlockSize
+  end
+  object sbPreset33: TSpeedButton
+    Tag = 3
+    Left = 312
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '3 x 3'
+    OnClick = SetBlockSize
+  end
+  object sbPreset44: TSpeedButton
+    Tag = 4
+    Left = 360
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '4 x 4'
+    OnClick = SetBlockSize
+  end
+  object sbPreset21: TSpeedButton
+    Tag = 5
+    Left = 408
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '2 x 1'
+    OnClick = SetBlockSize
+  end
+  object sbPreset12: TSpeedButton
+    Tag = 6
+    Left = 456
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '1 x 2'
+    OnClick = SetBlockSize
+  end
+  object sbPreset32: TSpeedButton
+    Tag = 7
+    Left = 504
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '3 x 2'
+    OnClick = SetBlockSize
+  end
+  object sbPreset23: TSpeedButton
+    Tag = 8
+    Left = 552
+    Top = 3
+    Width = 49
+    Height = 19
+    GroupIndex = 1
+    Caption = '2 x 3'
+    OnClick = SetBlockSize
   end
   object TilesetScroll: TScrollBar
     Left = 648
@@ -46,93 +138,13 @@ object TilesetDialog: TTilesetDialog
     TabOrder = 1
     OnClick = DrawTileset
   end
-  object Block11: TButton
-    Tag = 1
-    Left = 164
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '1 x 1'
-    TabOrder = 2
-    OnClick = SetBlockSize
-  end
-  object Block22: TButton
-    Tag = 2
-    Left = 212
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '2 x 2'
-    TabOrder = 3
-    OnClick = SetBlockSize
-  end
-  object Block33: TButton
-    Tag = 3
-    Left = 260
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '3 x 3'
-    TabOrder = 4
-    OnClick = SetBlockSize
-  end
-  object Block44: TButton
-    Tag = 4
-    Left = 308
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '4 x 4'
-    TabOrder = 5
-    OnClick = SetBlockSize
-  end
-  object Block21: TButton
-    Tag = 5
-    Left = 356
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '2 x 1'
-    TabOrder = 6
-    OnClick = SetBlockSize
-  end
-  object Block12: TButton
-    Tag = 6
-    Left = 404
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '1 x 2'
-    TabOrder = 7
-    OnClick = SetBlockSize
-  end
-  object Block32: TButton
-    Tag = 7
-    Left = 452
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '3 x 2'
-    TabOrder = 8
-    OnClick = SetBlockSize
-  end
-  object Block23: TButton
-    Tag = 8
-    Left = 500
-    Top = 4
-    Width = 49
-    Height = 17
-    Caption = '2 x 3'
-    TabOrder = 9
-    OnClick = SetBlockSize
-  end
   object TilesetMarkTiles: TCheckBox
     Left = 88
     Top = 4
     Width = 73
     Height = 17
     Caption = 'Mark tiles'
-    TabOrder = 10
+    TabOrder = 2
     OnClick = DrawTileset
   end
 end
