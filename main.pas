@@ -230,7 +230,6 @@ type
     Savemapas1: TMenuItem;
     N2: TMenuItem;
     Exit1: TMenuItem;
-    Detectfrommis1: TMenuItem;
     Selectnext1: TMenuItem;
     N3: TMenuItem;
     Map1: TMenuItem;
@@ -296,6 +295,8 @@ type
     Launchwithsettings1: TMenuItem;
     N9: TMenuItem;
     Createemptymisfile1: TMenuItem;
+    TileatrOpenDialog: TOpenDialog;
+    Loadtilesetattributes1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -319,6 +320,7 @@ type
     procedure SelectTileset(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
+    procedure Loadtilesetattributes1Click(Sender: TObject);
     procedure ShowGrid1Click(Sender: TObject);
     procedure Marktiles1Click(Sender: TObject);
     procedure Showunknownspecials1Click(Sender: TObject);
@@ -451,7 +453,7 @@ type
     procedure save_map(filename: String);
     function get_mis_filename(filename: String): String;
     procedure load_misfile(filename: String);
-    procedure load_tileatr(tileset: integer);
+    procedure load_tileatr(filename: String);
     function check_map_errors: boolean;
 
     // Map testing procedures
@@ -784,8 +786,18 @@ begin
     graphics_tileset.LoadFromFile(TilesetOpenDialog.FileName);
     tileset_menuitems[map_tileset].Checked := False;
     map_tileset := 0;
-    load_tileatr(3);
+    load_tileatr(current_dir+'/tilesets/'+tileatr_filenames[3]+'.bin');
     StatusBar.Panels[1].Text := 'Tileset File';
+    render_map;
+  end;
+end;
+
+procedure TMainWindow.Loadtilesetattributes1Click(Sender: TObject);
+begin
+  if TileatrOpenDialog.Execute then
+  begin
+    load_tileatr(TileatrOpenDialog.FileName);
+    render_minimap;
     render_map;
   end;
 end;
@@ -1733,16 +1745,13 @@ begin
   AssignFile(mis_file, filename);
   Reset(mis_file);
   // Load tileset
-  if Detectfrommis1.Checked then
+  Seek(mis_file,$10598);
+  BlockRead(mis_file,tileset_name_buf,8);
+  tileset_name := String(tileset_name_buf);
+  for i:= 1 to cnt_tilesets do
   begin
-    Seek(mis_file,$10598);
-    BlockRead(mis_file,tileset_name_buf,8);
-    tileset_name := String(tileset_name_buf);
-    for i:= 1 to cnt_tilesets do
-    begin
-      if tileset_name = tilesets[i] then
-        change_tileset(i);
-    end;
+    if tileset_name = tilesets[i] then
+      change_tileset(i);
   end;
   // Load allocation indexes
   Seek(mis_file,$50);
@@ -1799,13 +1808,13 @@ begin
   CloseFile(mis_file);
 end;
 
-procedure TMainWindow.load_tileatr(tileset: integer);
+procedure TMainWindow.load_tileatr(filename: String);
 var
   tileatr_file: file of integer;
 begin
-  if not FileExists(current_dir+'/tilesets/'+tileatr_filenames[tileset]+'.bin') then
+  if not FileExists(filename) then
     exit;
-  AssignFile(tileatr_file, current_dir+'/tilesets/'+tileatr_filenames[tileset]+'.bin');
+  AssignFile(tileatr_file, filename);
   Reset(tileatr_file);
   BlockRead(tileatr_file, tileset_attributes, size_tileatr);
   CloseFile(tileatr_file);
@@ -2027,7 +2036,7 @@ begin
   if FileExists(current_dir+'/tilesets/d2k_'+tilesets[map_tileset]+'.bmp') then
     graphics_tileset.LoadFromFile(current_dir+'/tilesets/d2k_'+tilesets[map_tileset]+'.bmp');
   // Load tileset attributes
-  load_tileatr(map_tileset);
+  load_tileatr(current_dir+'/tilesets/'+tileatr_filenames[map_tileset]+'.bin');
   StatusBar.Panels[1].Text := tilesets[map_tileset];
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
     TilesetDialog.DrawTileset(nil);

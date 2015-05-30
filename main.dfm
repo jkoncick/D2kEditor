@@ -589,17 +589,16 @@ object MainWindow: TMainWindow
         ShortCut = 16468
         OnClick = Selectnext1Click
       end
-      object Loadtileset1: TMenuItem
-        Caption = 'Load from file'
-        OnClick = Loadtileset1Click
-      end
       object N3: TMenuItem
         Caption = '-'
       end
-      object Detectfrommis1: TMenuItem
-        AutoCheck = True
-        Caption = 'Detect from .mis'
-        Checked = True
+      object Loadtileset1: TMenuItem
+        Caption = 'Load image'
+        OnClick = Loadtileset1Click
+      end
+      object Loadtilesetattributes1: TMenuItem
+        Caption = 'Load attributes'
+        OnClick = Loadtilesetattributes1Click
       end
     end
     object Settings1: TMenuItem
@@ -646,14 +645,17 @@ object MainWindow: TMainWindow
       Caption = 'Map'
       object Setmapsize1: TMenuItem
         Caption = 'Set map size'
+        ShortCut = 116
         OnClick = Setmapsize1Click
       end
       object Shiftmap1: TMenuItem
         Caption = 'Shift map'
+        ShortCut = 117
         OnClick = Shiftmap1Click
       end
       object Changestructureowner1: TMenuItem
         Caption = 'Change structure owner'
+        ShortCut = 118
         OnClick = Changestructureowner1Click
       end
       object N9: TMenuItem
@@ -707,9 +709,9 @@ object MainWindow: TMainWindow
   end
   object TilesetOpenDialog: TOpenDialog
     DefaultExt = 'bmp'
-    Filter = 'Dune 2000 Tileset (*.bmp)|*.bmp'
-    InitialDir = '.\graphics'
-    Title = 'Load Tileset'
+    Filter = 'Dune 2000 Tileset image (*.bmp)|*.bmp'
+    InitialDir = '.\tilesets'
+    Title = 'Load Tileset image'
     Left = 96
   end
   object MapSaveDialog: TSaveDialog
@@ -719,12 +721,19 @@ object MainWindow: TMainWindow
     Left = 64
   end
   object XPManifest1: TXPManifest
-    Left = 160
+    Left = 192
   end
   object MapImageSaveDialog: TSaveDialog
     DefaultExt = 'bmp'
     Filter = 'Image (*.bmp)|*.bmp'
     Title = 'Save map image'
+    Left = 160
+  end
+  object TileatrOpenDialog: TOpenDialog
+    DefaultExt = 'bin'
+    Filter = 'Dune 2000 Tileset attributes (*.bin)|*.bin'
+    InitialDir = '.\tilesets'
+    Title = 'Load Tileset attributes'
     Left = 128
   end
 end
