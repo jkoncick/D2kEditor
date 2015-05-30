@@ -478,6 +478,7 @@ type
     procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
     procedure do_undo;
     procedure do_redo;
+    procedure reset_undo_history;
     procedure resize_cursor_image;
     procedure draw_cursor_image;
     procedure apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
@@ -1656,11 +1657,7 @@ begin
       map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
     end;
-  Undo1.Enabled := false;
-  Redo1.Enabled := false;
-  undo_start := 0;
-  undo_max := 0;
-  undo_pos := 0;
+  reset_undo_history;
   // Reading map file
   AssignFile(map_file, filename);
   Reset(map_file);
@@ -2249,6 +2246,15 @@ begin
   render_map;
 end;
 
+procedure TMainWindow.reset_undo_history;
+begin
+  Undo1.Enabled := false;
+  Redo1.Enabled := false;
+  undo_start := 0;
+  undo_max := 0;
+  undo_pos := 0;
+end;
+
 procedure TMainWindow.resize_cursor_image;
 var
   cursor_image_left: integer;
@@ -2321,12 +2327,22 @@ begin
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);
+var
+  i, j: integer;
 begin
   if (map_width = new_width) and (map_height = new_height) then
     exit;
+  for i := 0 to new_height - 1 do
+    for j := 0 to new_width - 1 do
+      if (i >= map_height) or (j >= map_width) then
+      begin
+        map_data[j,i].tile := tiles_sand[random(10)];
+        map_data[j,i].special := 0;
+      end;
   map_width := new_width;
   map_height := new_height;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  reset_undo_history;
   calculate_power_and_statistics;
   resize_map_canvas;
   render_minimap;
@@ -2396,11 +2412,7 @@ begin
             end;
         end;
   end;
-  Undo1.Enabled := false;
-  Redo1.Enabled := false;
-  undo_start := 0;
-  undo_max := 0;
-  undo_pos := 0;
+  reset_undo_history;
   calculate_power_and_statistics;
   render_minimap;
   render_map;
@@ -2449,11 +2461,8 @@ begin
       map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
     end;
-  Undo1.Enabled := false;
-  Redo1.Enabled := false;
-  undo_start := 0;
-  undo_max := 0;
-  undo_pos := 0;
+  reset_undo_history;
+  // Initialize map
   map_width := new_width;
   map_height := new_height;
   for x := 0 to map_width - 1 do
