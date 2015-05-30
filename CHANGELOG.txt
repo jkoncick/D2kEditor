@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Alpha 0.6 (released 2015-??-??)
+Alpha 0.6 (released 2015-05-30)
 -------------------------------
 Added: "Mark tiles" option also to Tileset window. Buildable tiles are marked there too.
 Added: "Edit" menu with Undo and Redo options
@@ -9,11 +9,12 @@ Added: "Show unknown specials" feature
 Added: If more events (Reinforcements etc) are placed in one tile, additional markers are dwawn next to that tile
 Added: If mouse cursor is moved over Reinforcement or Spawn marker, list of units is displayed. Works in Structures mode.
 Changed: Minimap is updated after you finish painting of sand/rock/dunes/spice, because rendering was very slow.
-Added: "Fill area" feature: works with sand, rock, dunes and thick spice.
+Added: "Fill area" feature: works with sand, rock, dunes and spice.
        - You need to double-click into a tile inside area you want to fill.
-       - If rock, dunes or thick spice is selected, area made of sand tiles is filled.
-         (Recommendation: Draw a border with Thin spice and then fill the center with Thick spice) 
-       - If sand is selected, area made of tiles which are not sand is filled.
+       - Area consists of connected tiles of same "type". There are 4 types: Clean sand, Dunes, Spice and anything other.
+Added: Made block selection from tileset much easier. You no more need to select predefined block size and then click to tileset,
+       but you can select any block simply with mouse. (You can still use presets if you want.)
+Fixed: When you resize map, the new empty space is filled with random sand
 Added: "Test map" feature: you can now launch and test your map directly from the editor!
        Requirements:
        - You need to have modified version of Dune2000.exe, which supports mission launching.
