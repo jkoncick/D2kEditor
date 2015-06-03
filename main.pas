@@ -86,7 +86,7 @@ const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
 
 const block_size_presets: array[1..8,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
-const block_key_presets: array[1..52,0..3,0..3] of word = (
+const block_key_presets: array[1..53,0..3,0..3] of word = (
   // Up
   ((2,2,16,18), (2,2, 5, 4), (1,1, 8,14), (1,1, 0, 3)),
   ((2,3,16,22), (2,3, 6,10), (2,2,18,12), (2,2,16, 0)),
@@ -97,6 +97,7 @@ const block_key_presets: array[1..52,0..3,0..3] of word = (
   ((0,0, 0, 0), (0,0, 0, 0), (1,1,15,14), (1,1, 1, 3)),
   ((2,3,14,22), (2,3, 4,10), (2,2,16,12), (2,2,18, 0)),
   ((2,2,18,18), (2,2, 9, 4), (1,1,16,14), (1,1, 2, 3)),
+  ((2,2,18,18), (2,2, 9, 4), (1,1,13,15), (1,1, 2, 3)),
   // Left
   ((3,2, 0,26), (3,2, 8,12), (2,2, 6,13), (2,2,10, 0)),
   ((2,2, 4,22), (2,2,18, 4), (1,1,14,16), (1,1, 0, 4)),
@@ -612,40 +613,40 @@ begin
     ord('2'): apply_key_preset(2, 1, 1);
     ord('3'): apply_key_preset(3, 4, 5);
     ord('4'): apply_key_preset(8, 1, 1);
-    ord('5'): apply_key_preset(9, 1, 1);
-    ord('Q'): apply_key_preset(10, 1, 1); // Left
-    ord('E'): apply_key_preset(11, 4, 5);
-    ord('A'): apply_key_preset(16, 1, 1);
-    ord('T'): apply_key_preset(17, 1, 1); // Right
-    ord('D'): apply_key_preset(18, 4, 4);
-    ord('G'): apply_key_preset(22, 1, 1);
-    ord('Z'): apply_key_preset(23, 1, 1); // Down
-    ord('X'): apply_key_preset(24, 1, 1);
-    ord('C'): apply_key_preset(25, 4, 3);
-    ord('V'): apply_key_preset(29, 1, 1);
-    ord('B'): apply_key_preset(30, 1, 1);
-    ord('W'): apply_key_preset(31, 1, 1); // Inner curves
-    ord('S'): apply_key_preset(32, 1, 1);
-    ord('R'): apply_key_preset(33, 1, 1);
-    ord('F'): apply_key_preset(34, 1, 1);
-    ord('6'): apply_key_preset(35, 1, 1); // Up
-    ord('7'): apply_key_preset(36, 1, 1);
-    ord('8'): apply_key_preset(37, 1, 1);
-    ord('9'): apply_key_preset(38, 1, 1);
-    ord('Y'): apply_key_preset(39, 1, 1); // Left
-    ord('U'): apply_key_preset(40, 1, 1);
-    ord('J'): apply_key_preset(41, 1, 1);
-    ord('H'): apply_key_preset(42, 1, 1);
-    ord('O'): apply_key_preset(43, 1, 1); // Right
-    ord('I'): apply_key_preset(44, 1, 1);
-    ord('K'): apply_key_preset(45, 1, 1);
-    ord('L'): apply_key_preset(46, 1, 1);
-    ord('N'): apply_key_preset(47, 1, 1); // Down
-    ord('M'): apply_key_preset(48, 1, 1);
-    188:      apply_key_preset(49, 1, 1);
-    190:      apply_key_preset(50, 1, 1);
-    ord('0'): apply_key_preset(51, 1, 1); // Others
-    ord('P'): apply_key_preset(52, 1, 1);
+    ord('5'): apply_key_preset(9, 1, 2);
+    ord('Q'): apply_key_preset(11, 1, 1); // Left
+    ord('E'): apply_key_preset(12, 4, 5);
+    ord('A'): apply_key_preset(17, 1, 1);
+    ord('T'): apply_key_preset(18, 1, 1); // Right
+    ord('D'): apply_key_preset(19, 4, 4);
+    ord('G'): apply_key_preset(23, 1, 1);
+    ord('Z'): apply_key_preset(24, 1, 1); // Down
+    ord('X'): apply_key_preset(25, 1, 1);
+    ord('C'): apply_key_preset(26, 4, 3);
+    ord('V'): apply_key_preset(30, 1, 1);
+    ord('B'): apply_key_preset(31, 1, 1);
+    ord('W'): apply_key_preset(32, 1, 1); // Inner curves
+    ord('S'): apply_key_preset(33, 1, 1);
+    ord('R'): apply_key_preset(34, 1, 1);
+    ord('F'): apply_key_preset(35, 1, 1);
+    ord('6'): apply_key_preset(36, 1, 1); // Up
+    ord('7'): apply_key_preset(37, 1, 1);
+    ord('8'): apply_key_preset(38, 1, 1);
+    ord('9'): apply_key_preset(39, 1, 1);
+    ord('Y'): apply_key_preset(40, 1, 1); // Left
+    ord('U'): apply_key_preset(41, 1, 1);
+    ord('J'): apply_key_preset(42, 1, 1);
+    ord('H'): apply_key_preset(43, 1, 1);
+    ord('O'): apply_key_preset(44, 1, 1); // Right
+    ord('I'): apply_key_preset(45, 1, 1);
+    ord('K'): apply_key_preset(46, 1, 1);
+    ord('L'): apply_key_preset(47, 1, 1);
+    ord('N'): apply_key_preset(48, 1, 1); // Down
+    ord('M'): apply_key_preset(49, 1, 1);
+    188:      apply_key_preset(50, 1, 1);
+    190:      apply_key_preset(51, 1, 1);
+    ord('0'): apply_key_preset(52, 1, 1); // Others
+    ord('P'): apply_key_preset(53, 1, 1);
   end;
 end;
 
@@ -2441,15 +2442,15 @@ begin
     case (sum and 15) of
        7: begin // down
           if (sum and 128 > 0) and not is_rock_dunes(x+1,y+2, false) then
-            put_edge_block(x,y,2,1,0,0,24,1)
+            put_edge_block(x,y,2,1,0,0,25,1)
           else
-            put_edge_block(x,y,1,0,0,0,25,3);
+            put_edge_block(x,y,1,0,0,0,26,3);
         end;
       11: begin // right
           if (sum and 32 > 0) and not is_rock_dunes(x+2,y-1, false) then
-            put_edge_block(x,y,1,-2,0,-1,22,1)
+            put_edge_block(x,y,1,-2,0,-1,23,1)
           else
-            put_edge_block(x,y,0,-1,0,0,18,4);
+            put_edge_block(x,y,0,-1,0,0,19,4);
         end;
       14: begin // up
           if (sum and 16 > 0) and not is_rock_dunes(x-1,y-2, false) then
@@ -2459,21 +2460,21 @@ begin
         end;
       13: begin // left
           if (sum and 64 > 0) and not is_rock_dunes(x-2,y+1, false) then
-            put_edge_block(x,y,-1,2,-1,0,10,1)
+            put_edge_block(x,y,-1,2,-1,0,11,1)
           else
-            put_edge_block(x,y,0,1,0,0,11,5);
+            put_edge_block(x,y,0,1,0,0,12,5);
         end;
        3: begin // down-right corner
           if (sum and 32 > 0) and is_rock_dunes(x+2,y-1, false) then
-            put_edge_block(x,y,2,-1,0,-1,29,1)
+            put_edge_block(x,y,2,-1,0,-1,30,1)
           else
-            put_edge_block(x,y,0,-1,0,0,30,1);
+            put_edge_block(x,y,0,-1,0,0,31,1);
         end;
       10: begin // up-right corner
           if (sum and 16 > 0) and is_rock_dunes(x-1,y-2, false) then
-            put_edge_block(x,y,-1,-2,-1,-1,17,1)
+            put_edge_block(x,y,-1,-2,-1,-1,18,1)
           else
-            put_edge_block(x,y,-1,0,0,0,9,1);
+            put_edge_block(x,y,-1,0,0,0,9,2);
         end;
       12: begin // up-left corner
           if (sum and 64 > 0) and is_rock_dunes(x-2,y+1, false) then
@@ -2483,16 +2484,16 @@ begin
         end;
        5: begin // down-left corner
           if (sum and 128 > 0) and is_rock_dunes(x+1,y+2, false) then
-            put_edge_block(x,y,1,2,0,0,16,1)
+            put_edge_block(x,y,1,2,0,0,17,1)
           else
-            put_edge_block(x,y,1,0,0,0,23,1);
+            put_edge_block(x,y,1,0,0,0,24,1);
         end;
       15: begin // inner curves
         case sum of
-          239: put_edge_block(x,y,-1,0,0,0,34,1); // down-right curve
-          191: put_edge_block(x,y,0,1,0,0,33,1);  // up-right curve
-          127: put_edge_block(x,y,1,0,0,0,31,1);  // up-left curve
-          223: put_edge_block(x,y,0,-1,0,0,32,1); // down-left curve
+          239: put_edge_block(x,y,-1,0,0,0,35,1); // down-right curve
+          191: put_edge_block(x,y,0,1,0,0,34,1);  // up-right curve
+          127: put_edge_block(x,y,1,0,0,0,32,1);  // up-left curve
+          223: put_edge_block(x,y,0,-1,0,0,33,1); // down-left curve
           else break; // Invalid combination - end
         end;
         end;
