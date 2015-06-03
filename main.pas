@@ -485,6 +485,11 @@ type
     procedure draw_cursor_image;
     procedure apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
 
+    // Procedures related to auto-smoothing edges
+    function is_rock_dunes(x,y: integer; real_rock: boolean): boolean;
+    procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y, block_preset, variants_rock: integer);
+    procedure smooth_edges(x, y: integer);
+
     // Procedures called from other dialog
     procedure set_map_size(new_width, new_height: integer);
     procedure shift_map(direction, num_tiles: integer);
@@ -611,10 +616,10 @@ begin
     ord('Q'): apply_key_preset(10, 1, 1); // Left
     ord('E'): apply_key_preset(11, 4, 5);
     ord('A'): apply_key_preset(16, 1, 1);
-    ord('T'): apply_key_preset(17, 1, 1); // Down
+    ord('T'): apply_key_preset(17, 1, 1); // Right
     ord('D'): apply_key_preset(18, 4, 4);
     ord('G'): apply_key_preset(22, 1, 1);
-    ord('Z'): apply_key_preset(23, 1, 1); // Right
+    ord('Z'): apply_key_preset(23, 1, 1); // Down
     ord('X'): apply_key_preset(24, 1, 1);
     ord('C'): apply_key_preset(25, 4, 3);
     ord('V'): apply_key_preset(29, 1, 1);
@@ -1121,6 +1126,11 @@ begin
       begin
         // Draw selected block
         put_block_on_map;
+      end
+      else if (ssShift in Shift) and (mode(mRock) or mode(mDunes)) then
+      begin
+        // Smooth rock/dunes edge
+        smooth_edges(map_x, map_y);
       end
       else if mode(mAnyPaint) then
       begin
@@ -2333,6 +2343,175 @@ begin
     block_key_presets[num, grp, 1],
     block_key_presets[num, grp, 2],
     block_key_presets[num, grp, 3]);
+end;
+
+function TMainWindow.is_rock_dunes(x, y: integer; real_rock: boolean): boolean;
+var
+  i: integer;
+begin
+  if x < 0 then
+    x := 0;
+  if y < 0 then
+    y := 0;
+  if x >= map_width then
+    x := map_width - 1;
+  if y >= map_width then
+    y := map_height - 1;
+  if mode(mRock) and real_rock then // Check if tile is exactly clean rock
+    for i := 0 to 14 do
+      if (map_data[x,y].tile = tiles_rock[i]) then
+      begin
+        result := true;
+        exit;
+      end;
+  if mode(mRock) and not real_rock then // Check if tile is either rock or anything other than sand
+    for i := 0 to 9 do
+      if (map_data[x,y].tile = tiles_sand[i]) then
+      begin
+        result := false;
+        exit;
+      end;
+  if mode(mDunes) then
+    for i := 0 to 7 do
+      if (map_data[x,y].tile = tiles_dunes[i]) then
+      begin
+        result := true;
+        exit;
+      end;
+  result := mode(mRock) and not real_rock;
+end;
+
+procedure TMainWindow.put_edge_block(var xpos, ypos: integer; moveoff_x,
+  moveoff_y, blockoff_x, blockoff_y, block_preset, variants_rock: integer);
+var
+  preset_type: integer;
+  x, y: integer;
+begin
+  // Reuse already defined block-key-presets for this purpose
+  preset_type := 3;
+  if mode(mRock) then
+  begin
+    preset_type := 2;
+    block_preset := block_preset + random(variants_rock);
+  end;
+  // Place edge block (it can be either 1x1 or 2x2, so we use loops)
+  for y := 0 to block_key_presets[block_preset, preset_type, 1] - 1 do
+    for x := 0 to 0 + block_key_presets[block_preset, preset_type, 0] - 1 do
+    begin
+      // We cannot place the edge block immediately physically into map,
+      // because it would interfere with checks for tiles around following tile.
+      // Instead, we exploit undo feature for this purpose: we store all changes
+      // into history and in the end we apply the changes (like doing redo)
+      undo_history[undo_max].x := x + xpos + blockoff_x;
+      undo_history[undo_max].y := y + ypos + blockoff_y;
+      undo_history[undo_max].data.tile := (block_key_presets[block_preset, preset_type, 3] + y) * 20 + block_key_presets[block_preset, preset_type, 2] + x;
+      undo_history[undo_max].data.special := 0;
+      undo_history[undo_max].is_first := false;
+      undo_max := (undo_max + 1) and max_undo_steps;
+    end;
+  // Finally move to next position (anticlockwise direction)
+  xpos := xpos + moveoff_x;
+  ypos := ypos + moveoff_y;
+end;
+
+procedure TMainWindow.smooth_edges(x, y: integer);
+var
+  start_x, start_y: integer;
+  sum: integer;
+  steps: integer;
+begin
+  start_x := x;
+  start_y := y;
+  undo_max := undo_pos;
+  steps := 0;
+  // Start smoothing edge from starting point (where user shift-clicked)
+  while is_rock_dunes(x, y, true) do
+  begin
+    // Check for all 8 tiles around current tile to determine the direction of edge
+    sum := 0;
+    if is_rock_dunes(x,   y-1, false) then sum := sum + 1;   // 16 1 32
+    if is_rock_dunes(x-1, y  , false) then sum := sum + 2;   //  2 X 4
+    if is_rock_dunes(x+1, y  , false) then sum := sum + 4;   // 64 8 128
+    if is_rock_dunes(x  , y+1, false) then sum := sum + 8;
+    if is_rock_dunes(x-1, y-1, false) then sum := sum + 16;
+    if is_rock_dunes(x+1, y-1, false) then sum := sum + 32;
+    if is_rock_dunes(x-1, y+1, false) then sum := sum + 64;
+    if is_rock_dunes(x+1, y+1, false) then sum := sum + 128;
+    // Transform current tile into edge tile and move to following tile
+    case (sum and 15) of
+       7: begin // down
+          if (sum and 128 > 0) and not is_rock_dunes(x+1,y+2, false) then
+            put_edge_block(x,y,2,1,0,0,24,1)
+          else
+            put_edge_block(x,y,1,0,0,0,25,3);
+        end;
+      11: begin // right
+          if (sum and 32 > 0) and not is_rock_dunes(x+2,y-1, false) then
+            put_edge_block(x,y,1,-2,0,-1,22,1)
+          else
+            put_edge_block(x,y,0,-1,0,0,18,4);
+        end;
+      14: begin // up
+          if (sum and 16 > 0) and not is_rock_dunes(x-1,y-2, false) then
+            put_edge_block(x,y,-2,-1,-1,-1,8,1)
+          else
+            put_edge_block(x,y,-1,0,0,0,3,5);
+        end;
+      13: begin // left
+          if (sum and 64 > 0) and not is_rock_dunes(x-2,y+1, false) then
+            put_edge_block(x,y,-1,2,-1,0,10,1)
+          else
+            put_edge_block(x,y,0,1,0,0,11,5);
+        end;
+       3: begin // down-right corner
+          if (sum and 32 > 0) and is_rock_dunes(x+2,y-1, false) then
+            put_edge_block(x,y,2,-1,0,-1,29,1)
+          else
+            put_edge_block(x,y,0,-1,0,0,30,1);
+        end;
+      10: begin // up-right corner
+          if (sum and 16 > 0) and is_rock_dunes(x-1,y-2, false) then
+            put_edge_block(x,y,-1,-2,-1,-1,17,1)
+          else
+            put_edge_block(x,y,-1,0,0,0,9,1);
+        end;
+      12: begin // up-left corner
+          if (sum and 64 > 0) and is_rock_dunes(x-2,y+1, false) then
+            put_edge_block(x,y,-2,1,-1,0,2,1)
+          else
+            put_edge_block(x,y,0,1,0,0,1,1);
+        end;
+       5: begin // down-left corner
+          if (sum and 128 > 0) and is_rock_dunes(x+1,y+2, false) then
+            put_edge_block(x,y,1,2,0,0,16,1)
+          else
+            put_edge_block(x,y,1,0,0,0,23,1);
+        end;
+      15: begin // inner curves
+        case sum of
+          239: put_edge_block(x,y,-1,0,0,0,34,1); // down-right curve
+          191: put_edge_block(x,y,0,1,0,0,33,1);  // up-right curve
+          127: put_edge_block(x,y,1,0,0,0,31,1);  // up-left curve
+          223: put_edge_block(x,y,0,-1,0,0,32,1); // down-left curve
+          else break; // Invalid combination - end
+        end;
+        end;
+      else break; // Invalid combination - end
+    end;
+    // End if we got back into starting point
+    if (x = start_x) and (y = start_y) then
+      break;
+    // End if we got outside the map
+    if (x < 0) or (y < 0) or (x >= map_width) or (y >= map_height) then
+      break;
+    // Sometimes the algorithm may end up in infinite loop. This is to prevent it.
+    inc(steps);
+    if steps > 1000 then
+      break;
+  end;
+  undo_history[undo_pos].is_first := true;
+  // Finally put smoothed edges on map - apply all changes we stored into undo history
+  do_redo;
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);
