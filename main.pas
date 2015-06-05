@@ -300,7 +300,9 @@ type
     Loadtilesetattributes1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
     procedure CMDialogKey(var AMessage: TCMDialogKey); message CM_DIALOGKEY;
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -529,10 +531,16 @@ begin
   top := 60;
   Application.HintPause := 100;
   Application.HintHidePause:= 100000;
+  DragAcceptFiles(Handle, True);
   draw_cursor_image;
   // Load map given as first parameter
   if ParamCount > 0 then
     load_map(ParamStr(1));
+end;
+
+procedure TMainWindow.FormDestroy(Sender: TObject);
+begin
+  DragAcceptFiles(Handle, False);
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
@@ -543,6 +551,18 @@ begin
   StructureList.Height := EditorMenu.Height - 354;
   EditorPages.Height := Height - 214;
   StatusBar.Panels[3].Width := ClientWidth - 520;
+end;
+
+procedure TMainWindow.WMDropFiles(var Msg: TWMDropFiles);
+var
+  filename: string;
+  length: integer;
+begin
+  length := DragQueryFile(Msg.Drop, 0, nil, 0);
+  setlength(filename, length);
+  DragQueryFile(Msg.Drop, 0, PChar(filename), length + 1);
+  load_map(filename);
+  DragFinish(Msg.Drop);
 end;
 
 procedure TMainWindow.CMDialogKey(var AMessage: TCMDialogKey);
