@@ -14,8 +14,8 @@ const size_tileatr = 800;
 const max_undo_steps = 32767;
 
 type
-   TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttRock, ttBuildable);
-   FillAreaType = (faSand, faSpice, faDunes, faOther);
+   TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttRock, ttBuildable, ttIce);
+   FillAreaType = (faSpice, faSand, faDunes, faSandDecorations, faIce, faOther);
 
 type
   TStructureParams = record
@@ -74,7 +74,7 @@ const unit_names: array[0..29] of string = ('Light infantry', 'Trooper', 'Engine
 const misc_obj_values: array[0..9] of word = (0,1,2,20,23,45,41,42,43,44);
 
 const mmap_misc_objects_colors: array[1..9] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF,$0000B0,$0000C0,$0000D0,$0000E0);
-const mmap_tile_colors: array[0..5] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4,$509CDC);
+const mmap_tile_colors: array[0..6] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4,$509CDC,$F0827F);
 const mmap_player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
 
 const tilesets: array[1..cnt_tilesets] of String = ('BLOXBASE','BLOXBAT','BLOXBGBS','BLOXICE','BLOXTREE','BLOXWAST','BLOXXMAS');
@@ -487,7 +487,7 @@ type
     procedure apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
 
     // Procedures related to auto-smoothing edges
-    function is_rock_dunes(x,y: integer; real_rock: boolean): boolean;
+    function is_rock_dunes(x,y: integer; exact: boolean): boolean;
     procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y, block_preset, variants_rock: integer);
     procedure smooth_edges(x, y: integer);
 
@@ -938,7 +938,7 @@ end;
 
 procedure TMainWindow.Mouseactions1Click(Sender: TObject);
 begin
-  ShowMessage('Mouse actions'#13#13'When editing structures:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13'When editing terrain:'#13'Left = Draw / Place block'#13'Double click = Fill area'#13'Middle = Copy block'#13'Right = Drag and scroll map');
+  ShowMessage('Mouse actions'#13#13'When editing structures:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13+'When editing terrain:'#13'Left = Draw / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right = Drag and scroll map');
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
@@ -1949,31 +1949,29 @@ begin
     result := ttBuildable
   else if (value and $20000000) = $20000000 then
     result := ttRock
+  else if (value and $40) = $40 then
+    result := ttIce
   else
     result := ttNormal
 end;
 
 function TMainWindow.get_fill_area_type(x, y: integer): FillAreaType;
 var
-  i: integer;
+  atr: cardinal;
 begin
-  for i := 0 to 9 do
-    if (map_data[x,y].tile = tiles_sand[i]) and (map_data[x,y].special = 0) then
-    begin
-      result := faSand;
-      exit;
-    end;
+  atr := tileset_attributes[map_data[x,y].tile];
   if (map_data[x,y].special = 1) or (map_data[x,y].special = 2) then
-  begin
-    result := faSpice;
-    exit;
-  end;
-  if (tileset_attributes[map_data[x,y].tile] = $40016000) and (map_data[x,y].special = 0) then
-  begin
-    result := faDunes;
-    exit;
-  end;
-  result := faOther;
+    result := faSpice
+  else if (atr and 1) = 1 then
+    result := faSand
+  else if (atr and 8) = 8 then
+    result := faDunes
+  else if (atr and 32) = 32 then
+    result := faSandDecorations
+  else if (atr and 64) = 64 then
+    result := faIce
+  else
+    result := faOther;
 end;
 
 procedure TMainWindow.structure_params_to_value;
@@ -2346,40 +2344,24 @@ begin
     block_key_presets[num, grp, 3]);
 end;
 
-function TMainWindow.is_rock_dunes(x, y: integer; real_rock: boolean): boolean;
+function TMainWindow.is_rock_dunes(x, y: integer; exact: boolean): boolean;
 var
-  i: integer;
+  atr: cardinal;
 begin
-  if x < 0 then
-    x := 0;
-  if y < 0 then
-    y := 0;
-  if x >= map_width then
-    x := map_width - 1;
-  if y >= map_width then
-    y := map_height - 1;
-  if mode(mRock) and real_rock then // Check if tile is exactly clean rock
-    for i := 0 to 14 do
-      if (map_data[x,y].tile = tiles_rock[i]) then
-      begin
-        result := true;
-        exit;
-      end;
-  if mode(mRock) and not real_rock then // Check if tile is either rock or anything other than sand
-    for i := 0 to 9 do
-      if (map_data[x,y].tile = tiles_sand[i]) then
-      begin
-        result := false;
-        exit;
-      end;
-  if mode(mDunes) then
-    for i := 0 to 7 do
-      if (map_data[x,y].tile = tiles_dunes[i]) then
-      begin
-        result := true;
-        exit;
-      end;
-  result := mode(mRock) and not real_rock;
+  if x < 0 then x := 0;
+  if y < 0 then y := 0;
+  if x >= map_width then x := map_width - 1;
+  if y >= map_width then y := map_height - 1;
+  atr := tileset_attributes[map_data[x,y].tile];
+  result := false;
+  if mode(mRock) and exact then // Tile is exactly clear rock
+    result := (atr and 2) = 2;
+  if mode(mRock) and not exact then // Tile is part of rock area
+    result := (atr and 16) = 16;
+  if mode(mDunes) and exact then // Tile is exactly clear dunes
+    result := (atr and 4) = 4;
+  if mode(mDunes) and not exact then // Tile is part of dunes area
+    result := (atr and 8) = 8;
 end;
 
 procedure TMainWindow.put_edge_block(var xpos, ypos: integer; moveoff_x,
