@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, set_dialog, tileset_dialog, Math,
-  Spin, Buttons, ShellApi, IniFiles, test_map_dialog;
+  Spin, Buttons, ShellApi, IniFiles, Clipbrd, test_map_dialog;
 
 const cnt_tilesets = 7;
 const cnt_players = 7;
@@ -187,6 +187,13 @@ type
   SelectedMode = (mStructures, mTerrain, mAnyPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode);
 
 type
+  TBlockClipboard = record
+    block_width: word;
+    block_height: word;
+    block_data: array[0..127,0..127] of TMapTile;
+  end;
+
+type
   TTestMapSettings = record
     MySideID: integer;
     MissionNumber: integer;
@@ -298,6 +305,9 @@ type
     Createemptymisfile1: TMenuItem;
     TileatrOpenDialog: TOpenDialog;
     Loadtilesetattributes1: TMenuItem;
+    N10: TMenuItem;
+    Copy1: TMenuItem;
+    Paste1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -320,6 +330,8 @@ type
     procedure Exit1Click(Sender: TObject);
     procedure Undo1Click(Sender: TObject);
     procedure Redo1Click(Sender: TObject);
+    procedure Copy1Click(Sender: TObject);
+    procedure Paste1Click(Sender: TObject);
     procedure SelectTileset(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
@@ -445,6 +457,9 @@ type
     test_map_settings: TTestMapSettings;
     test_map_settings_loaded: boolean;
 
+    // Clipboard variables
+    clipboard_format: cardinal;
+
     // Rendering procedures
     procedure resize_map_canvas;
     procedure render_map;
@@ -532,6 +547,7 @@ begin
   Application.HintPause := 100;
   Application.HintHidePause:= 100000;
   DragAcceptFiles(Handle, True);
+  clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
   draw_cursor_image;
   // Load map given as first parameter
   if ParamCount > 0 then
@@ -790,6 +806,51 @@ procedure TMainWindow.Redo1Click(Sender: TObject);
 begin
   do_redo;
   mouse_already_clicked := false;
+end;
+
+procedure TMainWindow.Copy1Click(Sender: TObject);
+var
+  handle: THandle;
+  pointer: ^TBlockClipboard;
+begin
+  if not map_loaded or not mode(mTileBlock) then
+    exit;
+  OpenClipboard(Application.Handle);
+  EmptyClipboard;
+
+  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, SizeOf(TBlockClipboard));
+  pointer := GlobalLock(handle);
+
+  pointer.block_width := block_width;
+  pointer.block_height := block_height;
+  Move(block_data, pointer.block_data, sizeof(block_data));
+
+  GlobalUnLock(handle);
+  SetClipboardData(clipboard_format, handle);
+  CloseClipboard;
+end;
+
+procedure TMainWindow.Paste1Click(Sender: TObject);
+var
+  handle: THandle;
+  pointer: ^TBlockClipboard;
+begin
+  if not map_loaded or not Clipboard.HasFormat(clipboard_format) then
+    exit;
+  OpenClipboard(Application.Handle);
+  handle := GetClipboardData(clipboard_format);
+  pointer := GlobalLock(handle);
+
+  block_width := pointer.block_width;
+  block_height := pointer.block_height;
+  Move(pointer.block_data, block_data, sizeof(block_data));
+
+  RbTileBlock.Checked := true;
+  EditorPages.TabIndex := 1;
+  draw_cursor_image;
+
+  GlobalUnLock(handle);
+  CloseClipboard;
 end;
 
 procedure TMainWindow.SelectTileset(Sender: TObject);

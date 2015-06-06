@@ -529,6 +529,19 @@ object MainWindow: TMainWindow
         ShortCut = 16473
         OnClick = Redo1Click
       end
+      object N10: TMenuItem
+        Caption = '-'
+      end
+      object Copy1: TMenuItem
+        Caption = 'Copy'
+        ShortCut = 16451
+        OnClick = Copy1Click
+      end
+      object Paste1: TMenuItem
+        Caption = 'Paste'
+        ShortCut = 16470
+        OnClick = Paste1Click
+      end
     end
     object ileset1: TMenuItem
       Caption = 'Tileset'
