@@ -547,56 +547,6 @@ object MainWindow: TMainWindow
       Caption = 'Tileset'
       object Selecttileset1: TMenuItem
         Caption = 'Select tileset'
-        object BLOXBASE1: TMenuItem
-          Tag = 1
-          Caption = 'BLOXBASE'
-          GroupIndex = 1
-          RadioItem = True
-          OnClick = SelectTileset
-        end
-        object BLOXBAT1: TMenuItem
-          Tag = 2
-          Caption = 'BLOXBAT'
-          GroupIndex = 1
-          RadioItem = True
-          OnClick = SelectTileset
-        end
-        object BLOXBGBS1: TMenuItem
-          Tag = 3
-          Caption = 'BLOXBGBS'
-          Checked = True
-          GroupIndex = 1
-          RadioItem = True
-          OnClick = SelectTileset
-        end
-        object BLOXICE1: TMenuItem
-          Tag = 4
-          Caption = 'BLOXICE'
-          GroupIndex = 1
-          RadioItem = True
-          OnClick = SelectTileset
-        end
-        object BLOXTREE1: TMenuItem
-          Tag = 5
-          Caption = 'BLOXTREE'
-          GroupIndex = 1
-          RadioItem = True
-          OnClick = SelectTileset
-        end
-        object BLOXWAST1: TMenuItem
-          Tag = 6
-          Caption = 'BLOXWAST'
-          GroupIndex = 1
-          RadioItem = True
-          OnClick = SelectTileset
-        end
-        object BLOXXMAS1: TMenuItem
-          Tag = 7
-          Caption = 'BLOXXMAS'
-          GroupIndex = 1
-          RadioItem = True
-          OnClick = SelectTileset
-        end
       end
       object Selectnext1: TMenuItem
         Caption = 'Select next'

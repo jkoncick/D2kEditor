@@ -3,160 +3,21 @@ unit main;
 interface
 
 uses
+  // System libraries
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, set_dialog, tileset_dialog, Math,
-  Spin, Buttons, ShellApi, IniFiles, Clipbrd, test_map_dialog;
+  Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
+  ShellApi, IniFiles, Clipbrd,
+  // Units
+  tileset, map_defs, mis_file,
+  // Dialogs
+  set_dialog, tileset_dialog, test_map_dialog;
 
-const cnt_tilesets = 7;
-const cnt_players = 7;
-const cnt_mis_players = 8;
-const size_tileatr = 800;
 const max_undo_steps = 32767;
-
-type
-   TileType = (ttNormal, ttImpassable, ttInfantryOnly, ttSlowdown, ttRock, ttBuildable, ttIce);
-   FillAreaType = (faSpice, faSand, faDunes, faSandDecorations, faIce, faOther);
-
-type
-  TStructureParams = record
-    offs_x: word; // X-offset in image
-    offs_y: word; // Y-offset in image
-    size_x: word; // Structure width
-    size_y: word; // Structure height
-    overfl: word; // Sprite overflow (1 = up (for buildings), 2 = infantry, 3 = wide (harvester, MCV))
-    lnwall: boolean;  // Structure links with wall
-    power: SmallInt; // Power the structure gives/needs
-    values: array[0..cnt_players-1] of word; // Map special values
-  end;
-
-const structure_params: array[0..31] of TStructureParams =
-  (
-    (offs_x:  0; offs_y: 0; size_x: 1; size_y: 1; overfl:  0; lnwall:  true; power:   0; values:(  4,204,404,580,620,660,700)), // Wall
-    (offs_x:  1; offs_y: 0; size_x: 2; size_y: 3; overfl:  1; lnwall: false; power:-200; values:(  5,205,405,581,621,661,701)), // Wind trap
-    (offs_x:  3; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: -20; values:(  8,208,408,582,622,662,702)), // Construction Yard
-    (offs_x:  6; offs_y: 0; size_x: 2; size_y: 3; overfl:  1; lnwall: false; power:  30; values:( 11,211,411,583,623,663,703)), // Barracks
-    (offs_x:  8; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power:  75; values:( 14,214,414,584,624,664,704)), // Refinery
-    (offs_x: 11; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 125; values:( 17,217,417,585,625,665,705)), // Outpost
-    (offs_x: 14; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 125; values:( 63,263,463,587,627,667,707)), // Light Factory
-    (offs_x: 17; offs_y: 0; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:  15; values:( 69,269,469,589,629,668,708)), // Silo
-    (offs_x: 18; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power: 150; values:( 72,272,472,590,630,669,709)), // Heavy Factory
-    (offs_x: 21; offs_y: 0; size_x: 3; size_y: 3; overfl:  0; lnwall: false; power:  50; values:( 75,275,475,591,631,670,710)), // Repair Pad
-    (offs_x: 24; offs_y: 0; size_x: 1; size_y: 1; overfl:  1; lnwall:  true; power:  50; values:( 78,278,478,592,632,671,711)), // Gun Turret
-    (offs_x: 25; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power:  75; values:(120,320,520,593,633,672,712)), // High Tech Factory
-    (offs_x: 28; offs_y: 0; size_x: 1; size_y: 1; overfl:  1; lnwall:  true; power:  60; values:(123,323,523,594,634,673,713)), // Rocket Turret
-    (offs_x: 29; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power: 175; values:(126,326,526,595,635,674,714)), // IX Research Centre
-    (offs_x: 32; offs_y: 0; size_x: 3; size_y: 3; overfl:  0; lnwall: false; power: 150; values:(129,329,529,596,636,675,715)), // Starport
-    (offs_x: 35; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 200; values:(132,332,532,588,628,676,716)), // Palace
-    (offs_x: 38; offs_y: 0; size_x: 2; size_y: 2; overfl:  0; lnwall: false; power:  50; values:(  0,  0,  0,597,637,  0,  0)), // Sietch
-    (offs_x: 40; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 100; values:(  0,218,418,  0,  0,666,  0)), // Modified Outpost
-    (offs_x: 43; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(180,360,560,598,638,677,717)), // Light Infantry
-    (offs_x: 44; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(181,361,561,599,639,678,718)), // Trooper
-    (offs_x: 45; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(182,362,562,600,640,679,719)), // St. Fremen / Saboteur
-    (offs_x: 46; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(183,363,563,601,641,  0,  0)), // Sardakaur / Fremen
-    (offs_x: 47; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(184,364,564,602,642,680,720)), // Engineer
-    (offs_x: 44; offs_y: 1; size_x: 1; size_y: 1; overfl:  3; lnwall: false; power:   0; values:(185,365,565,603,643,681,721)), // Harvester
-    (offs_x: 46; offs_y: 1; size_x: 1; size_y: 1; overfl:  3; lnwall: false; power:   0; values:(186,366,566,604,644,682,722)), // MCV
-    (offs_x: 43; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(187,367,567,605,645,683,723)), // Trike / Raider
-    (offs_x: 44; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(188,368,568,606,646,684,724)), // Quad
-    (offs_x: 45; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(189,369,569,607,647,685,725)), // Combat Tank
-    (offs_x: 46; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(190,370,570,608,648,686,726)), // Missile Tank
-    (offs_x: 47; offs_y: 3; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(191,371,571,609,649,687,727)), // Siege Tank
-    (offs_x: 17; offs_y: 1; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(192,372,572,610,650,688,728)), // Carryall
-    (offs_x: 47; offs_y: 1; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(194,374,574,  0,652,  0,  0))  // House Special Tank
-  );
-
-const unit_names: array[0..29] of string = ('Light infantry', 'Trooper', 'Engineer', 'Thumper infantry',
-  'Sardaukar', 'Trike', 'Raider', 'Quad', 'Harvester', 'Combat tank (A)', 'Combat tank (H)', 'Combat tank (O)',
-  'MCV', 'Missile tank', 'Deviator', 'Siege tank', 'Sonic tank', 'Devastator', 'Carryall', 'Carryall (A)',
-  'Ornithropter', 'Stealth Fremen', 'Fremen', 'Saboteur', 'Death Hand Missile', 'Glitched infantry', 'Frigate',
-  'Grenadier', 'Stealth Raider', 'MP Sardaukar');
-
-const misc_obj_values: array[0..9] of word = (0,1,2,20,23,45,41,42,43,44);
-
-const mmap_misc_objects_colors: array[1..9] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF,$0000B0,$0000C0,$0000D0,$0000E0);
-const mmap_tile_colors: array[0..6] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4,$509CDC,$F0827F);
-const mmap_player_colors: array[0..cnt_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
-
-const tilesets: array[1..cnt_tilesets] of String = ('BLOXBASE','BLOXBAT','BLOXBGBS','BLOXICE','BLOXTREE','BLOXWAST','BLOXXMAS');
-const tileatr_filenames: array[1..cnt_tilesets] of String = ('TILEATR2','TILEATR6','TILEATR3','TILEATR5','TILEATR1','TILEATR4','TILEATR7');
-
-const tiles_sand: array[0..9] of word = (48,49,50,51,52,68,69,70,71,72);
-const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,576,592,593,594,595,596);
-const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
 
 const block_size_presets: array[1..8,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
-const block_key_presets: array[1..53,0..3,0..3] of word = (
-  // Up
-  ((2,2,16,18), (2,2, 5, 4), (1,1, 8,14), (1,1, 0, 3)),
-  ((2,3,16,22), (2,3, 6,10), (2,2,18,12), (2,2,16, 0)),
-  ((2,2, 7,26), (2,2, 7, 4), (1,1,11,14), (1,1, 1, 3)),
-  ((2,2, 9,26), (2,2, 0, 8), (1,1,12,14), (1,1, 1, 3)),
-  ((2,2, 0,28), (2,2, 2, 8), (1,1,13,14), (1,1, 1, 3)),
-  ((1,2,17,33), (1,2,15,33), (1,1,14,14), (1,1, 1, 3)),
-  ((0,0, 0, 0), (0,0, 0, 0), (1,1,15,14), (1,1, 1, 3)),
-  ((2,3,14,22), (2,3, 4,10), (2,2,16,12), (2,2,18, 0)),
-  ((2,2,18,18), (2,2, 9, 4), (1,1,16,14), (1,1, 2, 3)),
-  ((2,2,18,18), (2,2, 9, 4), (1,1,13,15), (1,1, 2, 3)),
-  // Left
-  ((3,2, 0,26), (3,2, 8,12), (2,2, 6,13), (2,2,10, 0)),
-  ((2,2, 4,22), (2,2,18, 4), (1,1,14,16), (1,1, 0, 4)),
-  ((2,2, 6,22), (2,2,18, 6), (1,1,15,16), (1,1, 0, 4)),
-  ((2,2, 8,22), (2,2, 6, 8), (1,1,16,16), (1,1, 0, 4)),
-  ((2,1,18,34), (2,1,12,34), (1,1,17,16), (1,1, 0, 4)),
-  ((0,0, 0, 0), (0,0, 0, 0), (1,1,14,15), (1,1, 0, 4)),
-  ((3,2, 0,24), (3,2, 8,10), (2,2, 4,13), (2,2, 4, 1)),
-  // Right
-  ((3,2,11,23), (3,2,11,12), (2,2, 0,13), (2,2, 6, 1)),
-  ((2,2, 5,24), (2,2,11, 4), (1,1,11,16), (1,1, 2, 4)),
-  ((2,2, 7,24), (2,2,13, 4), (1,1,12,16), (1,1, 2, 4)),
-  ((2,2, 9,24), (2,2, 8, 8), (1,1,13,16), (1,1, 2, 4)),
-  ((2,1,18,33), (2,1, 9,34), (1,1,15,15), (1,1, 2, 4)),
-  ((3,2,11,25), (3,2,11,10), (2,2, 2,13), (2,2, 2, 1)),
-  // Down
-  ((2,2,16,20), (2,2, 0, 6), (1,1, 9,16), (1,1, 0, 5)),
-  ((2,3, 2,20), (2,3, 0,10), (2,2,18, 8), (2,2,16, 2)),
-  ((2,2, 4,20), (2,2, 2, 6), (1,1, 6,16), (1,1, 1, 5)),
-  ((2,2, 6,20), (2,2,14, 6), (1,1, 7,16), (1,1, 1, 5)),
-  ((2,2, 8,20), (2,2,16, 6), (1,1,17,15), (1,1, 1, 5)),
-  ((1,2,16,33), (1,2,14,33), (0,0, 0, 0), (1,1, 1, 5)),
-  ((2,3,10,20), (2,3, 2,10), (2,2,18,10), (2,2,18, 2)),
-  ((2,2,18,20), (2,2, 4, 6), (1,1,18,15), (1,1, 2, 5)),
-  // Inner curves
-  ((2,2, 4,28), (2,2,12, 6), (1,1, 3,15), (1,1, 0, 1)),
-  ((2,2,10,28), (2,2, 8, 6), (1,1, 3,16), (1,1, 0, 2)),
-  ((2,2, 6,28), (2,2,10, 6), (1,1, 4,15), (1,1, 1, 1)),
-  ((2,2, 8,28), (2,2, 6, 6), (1,1, 4,16), (1,1, 1, 2)),
-  // Up
-  ((2,2, 5,26), (2,2,14,10), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,18,24), (2,2,18,22), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,18,22), (2,2,18,24), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2, 2,28), (2,2,16,10), (0,0, 0, 0), (0,0, 0, 0)),
-  // Left
-  ((2,2, 0,22), (2,2,14, 8), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,12, 0), (2,2,14, 0), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,14, 0), (2,2,12, 0), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2, 3,24), (2,2,16, 8), (0,0, 0, 0), (0,0, 0, 0)),
-  // Right
-  ((2,1,12,22), (2,1,18,14), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,14, 2), (2,2,15, 4), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,15, 4), (2,2,14, 2), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2, 3,26), (2,2,14,12), (0,0, 0, 0), (0,0, 0, 0)),
-  // Down
-  ((2,2, 0,20), (2,2,10, 8), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,14,25), (2,2,16,25), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,16,25), (2,2,14,25), (0,0, 0, 0), (0,0, 0, 0)),
-  ((2,2,12,20), (2,2,12, 8), (0,0, 0, 0), (0,0, 0, 0)),
-  // Others
-  ((3,3, 0,30), (2,2, 3,30), (0,0, 0, 0), (0,0, 0, 0)),
-  ((1,2,13, 2), (2,2, 5,30), (0,0, 0, 0), (0,0, 0, 0))
-  );
-
 type
-  TMapTile = record
-    tile: word;
-    special: word;
-  end;
+  SelectedMode = (mStructures, mTerrain, mAnyPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode);
 
 type
   TUndoEntry = record
@@ -164,27 +25,6 @@ type
     data: TMapTile;
     is_first: boolean;
   end;
-
-type
-   EventMarkerType = (emNone, emReinforcement, emHarvester, emSpawn, emTileTrigger, emRevealMap);
-
-type
-  TEventMarker = record
-    emtype: EventMarkerType;
-    player: word;
-    index: word;
-    moved: boolean;
-  end;
-
-type
-  TPlayerStats = record
-    power_percent: word;
-    power_output: word;
-    power_need: word;
-  end;
-
-type
-  SelectedMode = (mStructures, mTerrain, mAnyPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode);
 
 type
   TBlockClipboard = record
@@ -221,13 +61,6 @@ type
     TilesetOpenDialog: TOpenDialog;
     MapSaveDialog: TSaveDialog;
     Selecttileset1: TMenuItem;
-    BLOXBASE1: TMenuItem;
-    BLOXBAT1: TMenuItem;
-    BLOXBGBS1: TMenuItem;
-    BLOXICE1: TMenuItem;
-    BLOXTREE1: TMenuItem;
-    BLOXWAST1: TMenuItem;
-    BLOXXMAS1: TMenuItem;
     MiniMap: TImage;
     MiniMapTmp: TImage;
     Settings1: TMenuItem;
@@ -386,36 +219,10 @@ type
 
   public
 
-    current_dir: String;
-    tileset_menuitems: array[1..cnt_tilesets] of TMenuItem;
-
     // Graphic data
-    graphics_tileset: TPicture;
     graphics_structures: TPicture;
     graphics_structures_mask: TPicture;
     graphics_misc_objects: TPicture;
-
-    // Tileset data
-    tileset_attributes: array[0..size_tileatr-1] of integer;
-
-    // Map variables
-    map_data: array[0..127, 0..127] of TMapTile;
-    map_loaded: boolean;
-    map_filename: String;
-    map_width: word;
-    map_height: word;
-    map_tileset: word;
-
-    // Mis file variables
-    mis_map_markers: array[0..127, 0..127] of TEventMarker;
-    mis_events: array[0..63,0..71] of byte;
-    mis_alloc_index: array[0..cnt_mis_players] of byte;
-
-    // Statistics variables
-    mstat_player: array[0..cnt_players-1] of TPlayerStats;
-    mstat_num_worm_spawners: word;
-    mstat_num_player_starts: word;
-    mstat_num_spice_blooms: word;
 
     // Map canvas variables
     map_canvas_width: word;
@@ -469,10 +276,6 @@ type
     // Map loading & saving procedures
     procedure load_map(filename: String);
     procedure save_map(filename: String);
-    function get_mis_filename(filename: String): String;
-    procedure load_misfile(filename: String);
-    procedure load_tileatr(filename: String);
-    function check_map_errors: boolean;
 
     // Map testing procedures
     function check_map_can_be_tested: boolean;
@@ -480,14 +283,9 @@ type
     procedure launch_game;
 
     // Miscellaneous helper procedures
-    function get_tile_type(value: integer): TileType;
-    function get_fill_area_type(x,y: integer): FillAreaType;
-    procedure structure_params_to_value;
-    function structure_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
+    procedure set_special_value;
     function mode(m: SelectedMode): boolean;
-    procedure change_tileset(index: integer);
-    procedure calculate_power_and_statistics;
-    procedure show_power;
+    procedure show_power_and_statistics;
 
     // Procedures related to drawing tiles/terrain and cursor image
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
@@ -516,6 +314,7 @@ type
   end;
 
 var
+  current_dir: String;
   MainWindow: TMainWindow;
 
 implementation
@@ -525,16 +324,9 @@ implementation
 procedure TMainWindow.FormCreate(Sender: TObject);
 begin
   randomize;
-  tileset_menuitems[1] := BLOXBASE1;
-  tileset_menuitems[2] := BLOXBAT1;
-  tileset_menuitems[3] := BLOXBGBS1;
-  tileset_menuitems[4] := BLOXICE1;
-  tileset_menuitems[5] := BLOXTREE1;
-  tileset_menuitems[6] := BLOXWAST1;
-  tileset_menuitems[7] := BLOXXMAS1;
   current_dir := ExtractFilePath(Application.ExeName);
-  graphics_tileset := TPicture.Create;
-  change_tileset(3);
+  tileset_init;
+  tileset_change(default_tileset);
   graphics_structures := TPicture.Create;
   graphics_structures_mask := TPicture.Create;
   graphics_misc_objects := TPicture.Create;
@@ -855,27 +647,19 @@ end;
 
 procedure TMainWindow.SelectTileset(Sender: TObject);
 begin
-  change_tileset((sender as TMenuItem).Tag)
+  tileset_change((sender as TMenuItem).Tag)
 end;
 
 procedure TMainWindow.Selectnext1Click(Sender: TObject);
 begin
-  map_tileset := map_tileset + 1;
-  if map_tileset > cnt_tilesets then
-    map_tileset := 1;
-  change_tileset(map_tileset);  
+  tileset_next;
 end;
 
 procedure TMainWindow.Loadtileset1Click(Sender: TObject);
 begin
   if TilesetOpenDialog.Execute then
   begin
-    graphics_tileset.LoadFromFile(TilesetOpenDialog.FileName);
-    tileset_menuitems[map_tileset].Checked := False;
-    map_tileset := 0;
-    load_tileatr(current_dir+'/tilesets/'+tileatr_filenames[3]+'.bin');
-    StatusBar.Panels[1].Text := 'Tileset File';
-    render_map;
+    tileset_load_custom_image(TilesetOpenDialog.FileName);
   end;
 end;
 
@@ -938,61 +722,8 @@ begin
 end;
 
 procedure TMainWindow.Createemptymisfile1Click(Sender: TObject);
-var
-  mis_filename: String;
-  mis_file: file of byte;
-  i, j: integer;
-  b: byte;
 begin
-  mis_filename := get_mis_filename(map_filename);
-  if FileExists(mis_filename) then
-  begin
-    Application.MessageBox('Mission file for this map already exists.', 'Create empty .mis file', MB_ICONERROR);
-    exit;
-  end;
-  AssignFile(mis_file, mis_filename);
-  ReWrite(mis_file);
-  b := 0;
-  for i := 0 to 68065 do
-    Write(mis_file, b);
-  // Write tileset name
-  Seek(mis_file,$10598);
-  BlockWrite(mis_file, tilesets[map_tileset,1], Length(tilesets[map_tileset]));
-  // Write tileatr file name
-  Seek(mis_file,$10660);
-  BlockWrite(mis_file, tileatr_filenames[map_tileset,1], Length(tileatr_filenames[map_tileset]));
-  // Write allocation indexes
-  Seek(mis_file,$50);
-  for i := 0 to 7 do
-    Write(mis_file, i);
-  // Write tech levels
-  Seek(mis_file,$0);
-  b := 8;
-  for i := 0 to 7 do
-    Write(mis_file, b);
-  // Write starting money
-  Seek(mis_file,$8);
-  for i := 0 to 7 do
-  begin
-    b := $88;
-    Write(mis_file, b);
-    b := $13;
-    Write(mis_file, b);
-    b := 0;
-    Write(mis_file, b);
-    Write(mis_file, b);
-  end;
-  // Write diplomacy
-  Seek(mis_file,$EE18);
-  for i := 0 to 7 do
-    for j := 0 to 7 do
-    begin
-      if i = j then b := 0 else b := 1;
-      Write(mis_file, b);
-    end;
-  CloseFile(mis_file);
-  Application.MessageBox('Mission file created', 'Create empty .mis file', MB_ICONINFORMATION);
-  Createemptymisfile1.Enabled := false;
+  create_empty_mis_file(get_mis_filename(map_filename));
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
@@ -1105,14 +836,14 @@ begin
     exit;
   mouse_already_clicked := false;
   // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
-  if mode(mStructures) and Showeventmarkers1.Checked and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emSpawn)) then
+  if mode(mStructures) and Showeventmarkers1.Checked and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emUnitSpawn)) then
   begin
     Application.CancelHint;
     eventnum := mis_map_markers[map_x,map_y].index;
     numunits := mis_events[eventnum, 14];
     tmp_hint := inttostr(numunits) + ' units:';
     for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + unit_names[mis_events[eventnum, 47+i]];
+      tmp_hint := tmp_hint + chr(13) + unit_names_long[mis_events[eventnum, 47+i]];
     MapCanvas.Hint := tmp_hint;
     MapCanvas.ShowHint := true
   end else
@@ -1170,7 +901,7 @@ begin
     begin
       // Get structure parameters on position and set them in menu
       SpecialValue.text := inttostr(map_data[map_x, map_y].special);
-      if structure_value_to_params(map_data[map_x, map_y].special, player, index, is_misc) then
+      if special_value_to_params(map_data[map_x, map_y].special, player, index, is_misc) then
       begin
         if is_misc then
         begin
@@ -1181,7 +912,7 @@ begin
           MiscObjList.ItemIndex := -1;
           StructureList.ItemIndex := index;
           PlayerSelect.ItemIndex := player;
-          show_power;
+          show_power_and_statistics;
         end;
       end else
       begin
@@ -1257,7 +988,7 @@ begin
       do_undo;
     // Fill area
     undo_block_start := true;
-    fill_area(mouse_old_x, mouse_old_y, get_fill_area_type(mouse_old_x, mouse_old_y));
+    fill_area(mouse_old_x, mouse_old_y, get_fill_area_type(map_data[mouse_old_x, mouse_old_y].tile, map_data[mouse_old_x, mouse_old_y].special));
     render_minimap;
     render_map;
   end;
@@ -1325,19 +1056,19 @@ end;
 procedure TMainWindow.StructureListClick(Sender: TObject);
 begin
   MiscObjList.ItemIndex := -1;
-  structure_params_to_value;
+  set_special_value;
 end;
 
 procedure TMainWindow.PlayerSelectChange(Sender: TObject);
 begin
-  structure_params_to_value;
-  show_power;
+  set_special_value;
+  show_power_and_statistics;
 end;
 
 procedure TMainWindow.MiscObjListClick(Sender: TObject);
 begin
   StructureList.ItemIndex := -1;
-  structure_params_to_value;
+  set_special_value;
 end;
 
 procedure TMainWindow.SetBlockSize(Sender: TObject);
@@ -1473,11 +1204,11 @@ begin
     for x:= min_x to max_x do
     begin
       tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
-      MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),graphics_tileset.Bitmap.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
+      MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),tileset_image.Bitmap.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
       // Draw tile attribute markers
       if Marktiles1.Checked then
       begin
-        tile_attr := get_tile_type(tileset_attributes[tile]);
+        tile_attr := get_tile_type(tile);
         if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) then
         begin
           if (tile_attr = ttImpassable) then
@@ -1507,7 +1238,7 @@ begin
         continue;
       value := map_data[actual_x, actual_y].special;
       // Getting structure parameters
-      if structure_value_to_params(value,player,index,is_misc) then
+      if special_value_to_params(value,player,index,is_misc) then
       begin
         // Structure is not empty
         if is_misc then
@@ -1524,7 +1255,7 @@ begin
           // Translate player number according to allocation index
           if Useallocationindexes1.Checked then
             player := mis_alloc_index[player];
-          if player >= cnt_players then
+          if player >= cnt_map_players then
             player := 0;
           if index = 0 then
           begin
@@ -1534,28 +1265,28 @@ begin
             if (actual_x - 1) >= 0 then
             begin
               value := map_data[actual_x - 1, actual_y].special;
-              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 1
             end;
             // Checking up of wall
             if (actual_y - 1) >= 0 then
             begin
               value := map_data[actual_x, actual_y - 1].special;
-              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 2
             end;
             // Checking right of wall
             if (actual_x + 1) < map_width then
             begin
               value := map_data[actual_x + 1, actual_y].special;
-              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 4
             end;
             // Checking down of wall
             if (actual_y + 1) < map_height then
             begin
               value := map_data[actual_x, actual_y + 1].special;
-              if structure_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
                 wall_bitmap := wall_bitmap + 8
             end;
             // Wall source rect
@@ -1612,45 +1343,30 @@ begin
   if Showeventmarkers1.Checked then
   begin
     for y:= 0 to map_canvas_height - 1 do
-    begin
       for x:= 0 to map_canvas_width - 1 do
       begin
         event_marker := addr(mis_map_markers[x + map_canvas_left, y + map_canvas_top]);
-        if (event_marker.emtype = emReinforcement) or (event_marker.emtype = emHarvester) or (event_marker.emtype = emSpawn) then
+        if event_marker.emtype = emNone then
+          continue;
+        if event_marker_type_info[ord(event_marker.emtype)].player_related then
         begin
           player := event_marker.player;
-          if player >= cnt_players then
+          if player >= cnt_map_players then
             player := 0;
           MapCanvas.Canvas.Pen.Color := mmap_player_colors[player];
           MapCanvas.Canvas.Brush.Color := mmap_player_colors[player];
-          MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
-          MapCanvas.Canvas.Pen.Color := clBlack;
-          if event_marker.emtype = emReinforcement then
-            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'R')
-          else if event_marker.emtype = emHarvester then
-            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'H')
-          else if event_marker.emtype = emSpawn then
-            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'S');
-          MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
-          if event_marker.moved then
-            MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 10, '<');
-        end
-        else if (event_marker.emtype = emTileTrigger) or (event_marker.emtype = emRevealMap) then
+        end else
         begin
           MapCanvas.Canvas.Pen.Color := clGray;
           MapCanvas.Canvas.Brush.Color := clGray;
-          MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
-          MapCanvas.Canvas.Pen.Color := clBlack;
-          if event_marker.emtype = emTileTrigger then
-            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'T')
-          else if event_marker.emtype = emRevealMap then
-            MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, 'M');
-          MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
-          if event_marker.moved then
-            MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 10, '<');
         end;
+        MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
+        MapCanvas.Canvas.Pen.Color := clBlack;
+        MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, event_marker_type_info[ord(event_marker.emtype)].letter);
+        MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
+        if event_marker.moved then
+          MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 10, '<');
       end;
-    end;
   end;
   // Draw grid
   MapCanvas.Canvas.CopyMode:=cmSrcCopy;
@@ -1702,15 +1418,15 @@ begin
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
-      tile_attr := get_tile_type(tileset_attributes[map_data[x,y].tile]);
-      MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_colors[ord(tile_attr)];
+      tile_attr := get_tile_type(map_data[x,y].tile);
+      MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_type_colors[ord(tile_attr)];
     end;
   // Rendering structures
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
       value := map_data[x,y].special;
-      if not structure_value_to_params(value,player,index,is_misc) then
+      if not special_value_to_params(value,player,index,is_misc) then
         continue
       else if is_misc then
       begin
@@ -1720,7 +1436,7 @@ begin
         // Translate player number according to allocation index
         if Useallocationindexes1.Checked then
           player := mis_alloc_index[player];
-        if player >= cnt_players then
+        if player >= cnt_map_players then
           player := 0;
         // Render structure on map
         MiniMapTmp.Canvas.Pen.Color := mmap_player_colors[player];
@@ -1761,7 +1477,7 @@ begin
       map_data[x,y].special := 0;
       mis_map_markers[x,y].emtype := emNone;
     end;
-  reset_undo_history;
+  MainWindow.reset_undo_history;
   // Reading map file
   AssignFile(map_file, filename);
   Reset(map_file);
@@ -1777,17 +1493,17 @@ begin
   // Setting variables and status bar
   map_loaded := true;
   map_filename := filename;
-  Quicklaunch1.Enabled := true;
-  Launchwithsettings1.Enabled := true;
-  test_map_settings_loaded := false;
-  StatusBar.Panels[3].Text := filename;
-  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  MainWindow.Quicklaunch1.Enabled := true;
+  MainWindow.Launchwithsettings1.Enabled := true;
+  MainWindow.test_map_settings_loaded := false;
+  MainWindow.StatusBar.Panels[3].Text := filename;
+  MainWindow.StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   // Load tileset and other information from .mis file
-  load_misfile(get_mis_filename(map_filename));
+  load_mis_file(get_mis_filename(map_filename));
   // Rendering
-  resize_map_canvas;
-  render_minimap;
-  render_map;
+  MainWindow.resize_map_canvas;
+  MainWindow.render_minimap;
+  MainWindow.render_map;
   calculate_power_and_statistics;
 end;
 
@@ -1807,124 +1523,6 @@ begin
       Write(map_file, map_data[x,y].special);
     end;
   CloseFile(map_file);
-end;
-
-function TMainWindow.get_mis_filename(filename: String): String;
-var
-  mis_filename: String;
-begin
-  mis_filename := ExtractFileDir(filename)+'\_'+UpperCase(ExtractFileName(filename));
-  mis_filename[length(mis_filename)-1]:= 'I';
-  mis_filename[length(mis_filename)]:= 'S';
-  result := mis_filename;
-end;
-
-procedure TMainWindow.load_misfile(filename: String);
-var
-  mis_file: file of byte;
-  tileset_name_buf: array[0..7] of char;
-  tileset_name: String;
-  num_events, num_conds: byte;
-  event: array[0..71] of byte;
-  condition: array[0..27] of byte;
-  x, y: byte;
-  i: integer;
-  moved: boolean;
-begin
-  Createemptymisfile1.Enabled := not FileExists(filename);
-  if not FileExists(filename) then
-    exit;
-  AssignFile(mis_file, filename);
-  Reset(mis_file);
-  // Load tileset
-  Seek(mis_file,$10598);
-  BlockRead(mis_file,tileset_name_buf,8);
-  tileset_name := String(tileset_name_buf);
-  for i:= 1 to cnt_tilesets do
-  begin
-    if tileset_name = tilesets[i] then
-      change_tileset(i);
-  end;
-  // Load allocation indexes
-  Seek(mis_file,$50);
-  BlockRead(mis_file,mis_alloc_index,8);
-
-  // Load map markers (reinforcement destinations etc)
-  Seek(mis_file,$10728);
-  Read(mis_file,num_events);
-  Read(mis_file,num_conds);
-  Seek(mis_file,$EE58);
-  BlockRead(mis_file, mis_events, 64*72);
-  for i:= 0 to num_events - 1 do
-  begin
-    Move(mis_events[i], event, 72);
-    if (event[13] = 0) or (event[13] = 18) or (event[13] = 14) then
-    begin
-      // Reinforcement, spawn, Reveal map
-      x := event[0];
-      y := event[4];
-      // Move event marker one tile to right if this tile has already an event
-      moved := false;
-      while mis_map_markers[x][y].emtype <> emNone do
-      begin
-        x := (x + 1) mod map_width;
-        moved := true;
-      end;
-      if event[13] = 18 then
-        mis_map_markers[x][y].emtype := emSpawn
-      else if event[13] = 14 then
-         mis_map_markers[x][y].emtype := emRevealMap
-      else if (event[14] = 1) and (event[47] = 8) then
-        mis_map_markers[x][y].emtype := emHarvester
-      else
-        mis_map_markers[x][y].emtype := emReinforcement;
-      mis_map_markers[x][y].player := event[15];
-      mis_map_markers[x][y].index := i;
-      mis_map_markers[x][y].moved := moved;
-    end;
-  end;
-  Seek(mis_file,$10058);
-  for i:= 0 to num_conds - 1 do
-  begin
-    BlockRead(mis_file,condition,28);
-    if condition[25] = 7 then
-    begin
-      // Unit in tile
-      x := condition[12];
-      y := condition[16];
-      mis_map_markers[x][y].emtype := emTileTrigger;
-      mis_map_markers[x][y].index := i;
-    end;
-  end;
-
-  CloseFile(mis_file);
-end;
-
-procedure TMainWindow.load_tileatr(filename: String);
-var
-  tileatr_file: file of integer;
-begin
-  if not FileExists(filename) then
-    exit;
-  AssignFile(tileatr_file, filename);
-  Reset(tileatr_file);
-  BlockRead(tileatr_file, tileset_attributes, size_tileatr);
-  CloseFile(tileatr_file);
-end;
-
-function TMainWindow.check_map_errors: boolean;
-begin
-  result := true;
-  if mstat_num_worm_spawners = 0 then
-  begin
-    Application.MessageBox('You must place at least one Worm Spawner.', 'Map error', MB_ICONWARNING);
-    result := false;
-  end;
-  if (mstat_num_player_starts <> 0) and (mstat_num_player_starts <> 8) then
-  begin
-    Application.MessageBox('Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', 'Map error', MB_ICONWARNING);
-    result := false;
-  end;
 end;
 
 function TMainWindow.check_map_can_be_tested: boolean;
@@ -2018,44 +1616,7 @@ begin
   ShellExecute(Application.Handle, 'open', PChar(game_path + 'dune2000.exe'), PChar('-SPAWN ' + test_map_settings.Parameters), nil, SW_SHOWNORMAL);
 end;
 
-function TMainWindow.get_tile_type(value: integer): TileType;
-begin
-  if (value and $00006000) = 0 then
-    result := ttImpassable
-  else if (value and $00006000) = $00004000 then
-    result := ttInfantryOnly
-  else if (value and $40000000) = $40000000 then
-    result := ttSlowdown
-  else if (value and $8000) = $8000 then
-    result := ttBuildable
-  else if (value and $20000000) = $20000000 then
-    result := ttRock
-  else if (value and $40) = $40 then
-    result := ttIce
-  else
-    result := ttNormal
-end;
-
-function TMainWindow.get_fill_area_type(x, y: integer): FillAreaType;
-var
-  atr: cardinal;
-begin
-  atr := tileset_attributes[map_data[x,y].tile];
-  if (map_data[x,y].special = 1) or (map_data[x,y].special = 2) then
-    result := faSpice
-  else if (atr and 1) = 1 then
-    result := faSand
-  else if (atr and 8) = 8 then
-    result := faDunes
-  else if (atr and 32) = 32 then
-    result := faSandDecorations
-  else if (atr and 64) = 64 then
-    result := faIce
-  else
-    result := faOther;
-end;
-
-procedure TMainWindow.structure_params_to_value;
+procedure TMainWindow.set_special_value;
 var
   value: word;
 begin
@@ -2064,43 +1625,6 @@ begin
   else
     value := structure_params[StructureList.ItemIndex].values[PlayerSelect.ItemIndex];
   SpecialValue.Text := inttostr(value);
-end;
-
-
-function TMainWindow.structure_value_to_params(value: word; var player,
-  index: word; var is_misc: boolean): boolean;
-var i, j: integer;
-begin
-  if value = 0 then
-  begin
-    result := false;
-    exit;
-  end;
-  for i:= 0 to 9 do
-  begin
-    if value = misc_obj_values[i] then
-    begin
-      index := i;
-      is_misc := true;
-      result := true;
-      exit;
-    end;
-  end;
-  for i := 0 to 31 do
-  begin
-    for j:= 0 to cnt_players - 1 do
-    begin
-      if value = structure_params[i].values[j] then
-      begin
-        player := j;
-        index := i;
-        is_misc := false;
-        result := true;
-        exit;
-      end;
-    end;
-  end;
-  result := false;
 end;
 
 function TMainWindow.mode(m: SelectedMode): boolean;
@@ -2118,82 +1642,12 @@ begin
   end;
 end;
 
-procedure TMainWindow.change_tileset(index: integer);
-begin
-  map_tileset := index;
-  tileset_menuitems[map_tileset].Checked := true;
-  // Load tileset graphics
-  if FileExists(current_dir+'/tilesets/d2k_'+tilesets[map_tileset]+'.bmp') then
-    graphics_tileset.LoadFromFile(current_dir+'/tilesets/d2k_'+tilesets[map_tileset]+'.bmp');
-  // Load tileset attributes
-  load_tileatr(current_dir+'/tilesets/'+tileatr_filenames[map_tileset]+'.bin');
-  StatusBar.Panels[1].Text := tilesets[map_tileset];
-  if (TilesetDialog <> nil) and TilesetDialog.Visible then
-    TilesetDialog.DrawTileset(nil);
-  draw_cursor_image;
-  render_minimap;
-  render_map;
-end;
-
-procedure TMainWindow.calculate_power_and_statistics;
-var
-  output, need: array[0..cnt_players-1] of integer;
-  x, y: integer;
-  player, index: word;
-  is_misc: boolean;
-  tmp_power: integer;
-begin
-  mstat_num_worm_spawners := 0;
-  mstat_num_player_starts := 0;
-  mstat_num_spice_blooms := 0;
-  for x := 0 to cnt_players - 1 do
-  begin
-    output[x] := 0;
-    need[x] := 0;
-  end;
-  for y := 0 to map_height - 1 do
-    for x := 0 to map_width -1 do
-    begin
-      if structure_value_to_params(map_data[x,y].special,player,index,is_misc) then
-      begin
-        if is_misc then
-        begin
-          if index = 3 then
-            inc(mstat_num_worm_spawners)
-          else if index = 4 then
-            inc(mstat_num_player_starts)
-          else if (index >= 5) and (index <= 9) then
-            inc(mstat_num_spice_blooms)
-        end else
-        begin
-          tmp_power := structure_params[index].power;
-          if tmp_power > 0 then
-            need[player] := need[player] + tmp_power
-          else if tmp_power < 0 then
-            output[player] := output[player] - tmp_power;
-        end;
-      end;
-    end;
-  for x := 0 to cnt_players - 1 do
-  begin
-    if (output[x] > 0) and (need[x] = 0) then
-      mstat_player[x].power_percent := output[x] div 2 + 100
-    else if (output[x] = 0) then
-      mstat_player[x].power_percent := 0
-    else
-      mstat_player[x].power_percent := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
-    mstat_player[x].power_output := output[x];
-    mstat_player[x].power_need := need[x];
-  end;
-  StatusBar.Panels[4].Text := 'W: '+inttostr(mstat_num_worm_spawners)+'  S: '+inttostr(mstat_num_player_starts)+'  B: '+inttostr(mstat_num_spice_blooms);
-  show_power;
-end;
-
-procedure TMainWindow.show_power;
+procedure TMainWindow.show_power_and_statistics;
 var
   i: integer;
 begin
   i := PlayerSelect.ItemIndex;
+  StatusBar.Panels[4].Text := 'W: '+inttostr(mstat_num_worm_spawners)+'  S: '+inttostr(mstat_num_player_starts)+'  B: '+inttostr(mstat_num_spice_blooms);
   StatusBar.Panels[5].Text := 'Power: '+inttostr(mstat_player[i].power_percent)+'%   ('+inttostr(mstat_player[i].power_output)+'/'+inttostr(mstat_player[i].power_need)+')';
 end;
 
@@ -2262,13 +1716,13 @@ end;
 
 procedure TMainWindow.fill_area(x, y: word; area_type: FillAreaType);
 begin
-  if get_fill_area_type(x, y) <> area_type then
+  if get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
     exit;
   if mode(mStructures) then
     set_tile_value(x, y, map_data[x,y].tile, strtoint(SpecialValue.text), false)
   else
     put_sand_rock_dunes(x, y);
-  if get_fill_area_type(x, y) = area_type then
+  if get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) = area_type then
     exit;
   if x > 0 then
     fill_area(x-1, y, area_type);
@@ -2390,8 +1844,8 @@ begin
     begin
       tile_x := block_data[x,y].tile mod 20;
       tile_y := block_data[x,y].tile div 20;
-      BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), graphics_tileset.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
-      CursorImage.Canvas.CopyRect(rect(x*32,y*32, x*32+32, y*32+32), graphics_tileset.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+      BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), tileset_image.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+      CursorImage.Canvas.CopyRect(rect(x*32,y*32, x*32+32, y*32+32), tileset_image.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
     end;
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;
@@ -2681,12 +2135,12 @@ begin
   for y:= 0 to map_height - 1 do
     for x := 0 to map_width - 1 do
     begin
-      if structure_value_to_params(map_data[x,y].special, player, index, is_misc) and (not is_misc) then
+      if special_value_to_params(map_data[x,y].special, player, index, is_misc) and (not is_misc) then
       begin
         // Change from -> to
         if player = player_from then
         begin
-          if player_to = cnt_players then
+          if player_to = cnt_map_players then
             set_tile_value(x, y, map_data[x,y].tile, 0, false)
           else
             set_tile_value(x, y, map_data[x,y].tile, structure_params[index].values[player_to], false);

@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls, Buttons, Math;
+  Dialogs, StdCtrls, ExtCtrls, Buttons, Math, tileset;
 
 type
   TTilesetDialog = class(TForm)
@@ -88,12 +88,12 @@ var
   tile_attr: TileType;
 begin
   tileset_top := TilesetScroll.Position;
-  TilesetImage.Canvas.CopyRect(rect(0,0,640,576),MainWindow.graphics_tileset.Bitmap.Canvas,rect(0,tileset_top*32,640,tileset_top*32+576));
+  TilesetImage.Canvas.CopyRect(rect(0,0,640,576),tileset_image.Bitmap.Canvas,rect(0,tileset_top*32,640,tileset_top*32+576));
   if TilesetMarkTiles.Checked then
     for x := 0 to 20 - 1 do
       for y := tileset_top to tileset_top + 18 - 1 do
       begin
-        tile_attr := MainWindow.get_tile_type(MainWindow.tileset_attributes[x + y * 20]);
+        tile_attr := get_tile_type(x + y * 20);
         if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) or (tile_attr = ttBuildable) then
         begin
           if (tile_attr = ttImpassable) then
