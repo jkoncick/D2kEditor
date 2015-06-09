@@ -8,9 +8,9 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Units
-  tileset, map_defs, mis_file,
+  tileset, map_defs, mis_file, stringtable,
   // Dialogs
-  set_dialog, tileset_dialog, test_map_dialog;
+  set_dialog, tileset_dialog, test_map_dialog, event_dialog;
 
 const max_undo_steps = 32767;
 
@@ -141,6 +141,8 @@ type
     N10: TMenuItem;
     Copy1: TMenuItem;
     Paste1: TMenuItem;
+    Mission1: TMenuItem;
+    EventsandConditions1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -178,6 +180,7 @@ type
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
     procedure Createemptymisfile1Click(Sender: TObject);
+    procedure EventsandConditions1Click(Sender: TObject);
     procedure Quicklaunch1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
     procedure KeyShortcuts1Click(Sender: TObject);
@@ -726,6 +729,11 @@ begin
   create_empty_mis_file(get_mis_filename(map_filename));
 end;
 
+procedure TMainWindow.EventsandConditions1Click(Sender: TObject);
+begin
+  EventDialog.show;
+end;
+
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
 begin
   get_map_test_settings;
@@ -840,10 +848,10 @@ begin
   begin
     Application.CancelHint;
     eventnum := mis_map_markers[map_x,map_y].index;
-    numunits := mis_events[eventnum, 14];
+    numunits := mis_data.events[eventnum].num_units;
     tmp_hint := inttostr(numunits) + ' units:';
     for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + unit_names_long[mis_events[eventnum, 47+i]];
+      tmp_hint := tmp_hint + chr(13) + unit_names[mis_data.events[eventnum].units[i]];
     MapCanvas.Hint := tmp_hint;
     MapCanvas.ShowHint := true
   end else
@@ -1254,7 +1262,7 @@ begin
           dest_rect := rect(x*32,y*32,x*32+structure_params[index].size_x*32,y*32+structure_params[index].size_y*32);
           // Translate player number according to allocation index
           if Useallocationindexes1.Checked then
-            player := mis_alloc_index[player];
+            player := mis_data.allocation_index[player];
           if player >= cnt_map_players then
             player := 0;
           if index = 0 then
@@ -1350,7 +1358,7 @@ begin
           continue;
         if event_marker_type_info[ord(event_marker.emtype)].player_related then
         begin
-          player := event_marker.player;
+          player := event_marker.side;
           if player >= cnt_map_players then
             player := 0;
           MapCanvas.Canvas.Pen.Color := mmap_player_colors[player];
@@ -1435,7 +1443,7 @@ begin
       begin
         // Translate player number according to allocation index
         if Useallocationindexes1.Checked then
-          player := mis_alloc_index[player];
+          player := mis_data.allocation_index[player];
         if player >= cnt_map_players then
           player := 0;
         // Render structure on map
@@ -1505,6 +1513,8 @@ begin
   MainWindow.render_minimap;
   MainWindow.render_map;
   calculate_power_and_statistics;
+
+  load_string_table(ExtractFilePath(map_filename) + '..\Data\UI_DATA\text.uib');
 end;
 
 procedure TMainWindow.save_map(filename: String);

@@ -631,6 +631,14 @@ object MainWindow: TMainWindow
         OnClick = Createemptymisfile1Click
       end
     end
+    object Mission1: TMenuItem
+      Caption = 'Mission'
+      object EventsandConditions1: TMenuItem
+        Caption = 'Events and Conditions'
+        ShortCut = 121
+        OnClick = EventsandConditions1Click
+      end
+    end
     object Launchgame1: TMenuItem
       Caption = 'Test'
       object Quicklaunch1: TMenuItem
