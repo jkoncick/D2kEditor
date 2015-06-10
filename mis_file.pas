@@ -148,7 +148,7 @@ type
   TCondition = packed record
     time_amount: cardinal;
     start_delay: cardinal;
-    more_uses: cardinal; // Interval run count, Casualty threshold, Base/Units destroyed, tile revealed unknown, Cash amount
+    value: cardinal; // Interval run count, Casualty threshold, Base/Units destroyed, tile revealed unknown, Cash amount
     map_pos_x: cardinal;
     map_pos_y: cardinal;
     casualty_flags: cardinal;
@@ -190,12 +190,14 @@ type
     use_map_position: boolean;
     use_player_index: boolean;
     use_unit_list: boolean;
+    value_name: string;
   end;
 
 type
   TConditionTypeInfo = record
     name: String;
     use_player_index: boolean;
+    value_name: string;
   end;
 
 type
@@ -207,40 +209,40 @@ type
 // Mis file type definition constants
 const event_type_info: array[0..19] of TEventTypeInfo =
   (
-    (name: 'Reinforcement';             use_map_position: true;  use_player_index: true;  use_unit_list: true; ),
-    (name: 'Starport Delivery';         use_map_position: false; use_player_index: true;  use_unit_list: true; ),
-    (name: 'Allegiance';                use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Leave';                     use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Berserk';                   use_map_position: false; use_player_index: true;  use_unit_list: false;),
-    (name: 'Play Sound';                use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Set Build Rate';            use_map_position: false; use_player_index: true;  use_unit_list: false;),
-    (name: 'Set Attack Building Rate';  use_map_position: false; use_player_index: true;  use_unit_list: false;),
-    (name: 'Set Cash';                  use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Set Tech';                  use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Mission Win';               use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Mission Fail';              use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Blox File';                 use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Attrib File';               use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Reveal Map';                use_map_position: true;  use_player_index: false; use_unit_list: false;),
-    (name: 'Show Timer';                use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Hide Timer';                use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Show Message';              use_map_position: false; use_player_index: false; use_unit_list: false;),
-    (name: 'Unit Spawn';                use_map_position: true;  use_player_index: true;  use_unit_list: true; ),
-    (name: 'Set Flag';                  use_map_position: false; use_player_index: false; use_unit_list: false;)
+    (name: 'Reinforcement';             use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
+    (name: 'Starport Delivery';         use_map_position: false; use_player_index: true;  use_unit_list: true;  value_name: '';),
+    (name: 'Allegiance';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Berserk';                   use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
+    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Set Build Rate';            use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Set Attack Building Rate';  use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Set Cash';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Cash';),
+    (name: 'Set Tech';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Tech level';),
+    (name: 'Mission Win';               use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Mission Fail';              use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Reveal Map';                use_map_position: true;  use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Show Timer';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Time';),
+    (name: 'Hide Timer';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Show Message';              use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Unit Spawn';                use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
+    (name: 'Set Flag';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';)
   );
 
 const condition_type_info: array[0..9] of TConditionTypeInfo =
   (
-    (name: 'Building Exists'; use_player_index: true; ),
-    (name: 'Unit Exists';     use_player_index: true; ),
-    (name: 'Interval';        use_player_index: false;),
-    (name: 'Timer';           use_player_index: false;),
-    (name: 'Casualties';      use_player_index: true; ),
-    (name: 'Base Destroyed';  use_player_index: true; ),
-    (name: 'Units Destroyed'; use_player_index: true; ),
-    (name: 'Tile Revealed';   use_player_index: false;),
-    (name: 'Spice Harvested'; use_player_index: false;),
-    (name: 'Flag';            use_player_index: false;)
+    (name: 'Building Exists'; use_player_index: true;  value_name: '';),
+    (name: 'Unit Exists';     use_player_index: true;  value_name: '';),
+    (name: 'Interval';        use_player_index: false; value_name: 'Run count';),
+    (name: 'Timer';           use_player_index: false; value_name: '';),
+    (name: 'Casualties';      use_player_index: true;  value_name: '';),
+    (name: 'Base Destroyed';  use_player_index: true;  value_name: 'Unknown';),
+    (name: 'Units Destroyed'; use_player_index: true;  value_name: 'Unknown';),
+    (name: 'Tile Revealed';   use_player_index: false; value_name: 'Unknown';),
+    (name: 'Spice Harvested'; use_player_index: false; value_name: '';),
+    (name: 'Flag';            use_player_index: false; value_name: '';)
   );
 
 const event_marker_type_info: array[0..5] of TEventMarkerTypeInfo =
@@ -440,7 +442,7 @@ begin
   case event_type of
     etAllegiance:   contents := player_names[event.player] + ' -> ' + player_names[event.allegiance_target] + ' (' + allegiance_type[event.allegiance_type] + ')';
     etRevealMap:    contents := inttostr(event.num_units);
-    etShowMessage:  contents := inttostr(event.value) + ' (' + inttostr(event.message_index) + ') ' + string_table[event.message_index].text;
+    etShowMessage:  contents := '(' + inttostr(event.message_index) + ') ' + string_table[event.message_index].text;
     etSetFlag:      contents := inttostr(event.player) + ' = ' + flag_value[event.value];
   end;
   {contents := inttostr(event.map_pos_x) + ' ' + inttostr(event.map_pos_y) + ' ' + inttostr(event.value) + ' ' + inttostr(event.num_units)  + ' ' + inttostr(event.player) + ' ' + inttostr(event.allegiance_target) + ' ' + inttostr(event.allegiance_type) + ' ' + inttostr(event.deploy_action);
@@ -490,11 +492,11 @@ begin
   case cond_type of
     ctBuildingExists: contents := contents + space + building_names[cond.building_type];
     ctUnitExists:     contents := contents + space + unit_names[cond.unit_type_or_comparison_function];
-    ctInterval:       contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.more_uses);
+    ctInterval:       contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.value);
     ctTimer:          contents := contents + comparison_function[cond.unit_type_or_comparison_function] + inttostr(cond.time_amount);
-    ctCasualties:     contents := contents + space + inttostr(cond.more_uses) + ' ' + IntToHex(cond.casualty_flags, 8);
+    ctCasualties:     contents := contents + space + inttostr(cond.value) + ' ' + IntToHex(cond.casualty_flags, 8);
     ctTileRevealed:   contents := contents + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y);
-    ctSpiceHarvested: contents := contents + inttostr(cond.more_uses);
+    ctSpiceHarvested: contents := contents + inttostr(cond.value);
   end;
   //contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.more_uses) + ' ' + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y) + ' ' + inttostr(cond.casualty_flags) + ' ' + inttostr(cond.side) + ' ' + inttostr(cond.building_type) + ' ' + inttostr(cond.unit_type_or_comparison_function);
   result := contents;
