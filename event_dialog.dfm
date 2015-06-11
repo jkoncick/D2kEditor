@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
-  Left = 84
-  Top = 4
+  Left = 200
+  Top = 110
   Width = 1288
   Height = 720
   Caption = 'Events and Conditions'
@@ -14,7 +14,6 @@ object EventDialog: TEventDialog
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
-  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object Splitter1: TSplitter
@@ -41,8 +40,11 @@ object EventDialog: TEventDialog
     Font.Style = []
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
     ParentFont = False
+    PopupMenu = EventGridPopupMenu
     ScrollBars = ssVertical
     TabOrder = 0
+    OnMouseWheelDown = EventGridMouseWheelDown
+    OnMouseWheelUp = EventGridMouseWheelUp
     OnSelectCell = EventGridSelectCell
   end
   object LowerPanel: TPanel
@@ -64,7 +66,11 @@ object EventDialog: TEventDialog
       DefaultRowHeight = 18
       RowCount = 49
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
+      PopupMenu = ConditionGridPopupMenu
       TabOrder = 0
+      OnDblClick = ConditionGridDblClick
+      OnMouseWheelDown = ConditionGridMouseWheelDown
+      OnMouseWheelUp = ConditionGridMouseWheelUp
       OnSelectCell = ConditionGridSelectCell
       RowHeights = (
         18
@@ -212,6 +218,7 @@ object EventDialog: TEventDialog
           Height = 22
           Caption = 'Go to map'
           TabOrder = 2
+          OnClick = btnEventPositionGotoMapClick
         end
       end
       object epDeployAction: TPanel
@@ -420,6 +427,16 @@ object EventDialog: TEventDialog
           TabOrder = 1
         end
       end
+      object btnApplyEventChanges: TBitBtn
+        Left = 120
+        Top = 152
+        Width = 115
+        Height = 25
+        Caption = 'Apply changes'
+        TabOrder = 9
+        OnClick = btnApplyEventChangesClick
+        Kind = bkOK
+      end
     end
     object EventUnitListPanel: TPanel
       Left = 240
@@ -531,16 +548,12 @@ object EventDialog: TEventDialog
         Top = 16
         Width = 196
         Height = 240
+        OnClickCheck = EventConditionListClickCheck
         Align = alLeft
         ItemHeight = 16
-        Items.Strings = (
-          '1'
-          '2'
-          '3'
-          '4'
-          '5')
         Style = lbOwnerDrawFixed
         TabOrder = 0
+        OnDblClick = EventConditionListDblClick
       end
       object EventConditionListLabelPanel: TPanel
         Left = 0
@@ -565,6 +578,7 @@ object EventDialog: TEventDialog
         Height = 49
         Caption = '<--'
         TabOrder = 2
+        OnClick = btnAddConditionClick
       end
       object btnDeleteCondition: TButton
         Left = 196
@@ -573,6 +587,7 @@ object EventDialog: TEventDialog
         Height = 25
         Caption = '-->'
         TabOrder = 3
+        OnClick = btnDeleteConditionClick
       end
       object btnDeleteLastCondition: TButton
         Left = 196
@@ -581,6 +596,7 @@ object EventDialog: TEventDialog
         Height = 25
         Caption = 'X'
         TabOrder = 4
+        OnClick = btnDeleteLastConditionClick
       end
       object btnDeleteAllConditions: TButton
         Left = 196
@@ -589,6 +605,7 @@ object EventDialog: TEventDialog
         Height = 25
         Caption = 'C'
         TabOrder = 5
+        OnClick = btnDeleteAllConditionsClick
       end
     end
     object ConditionPropertiesPanel: TPanel
@@ -686,6 +703,7 @@ object EventDialog: TEventDialog
           Height = 22
           Caption = 'To map'
           TabOrder = 2
+          OnClick = btnConditionPositionGotoMapClick
         end
       end
       object cpBuildingType: TPanel
@@ -810,7 +828,7 @@ object EventDialog: TEventDialog
       end
       object cpConditionValue: TPanel
         Left = 0
-        Top = 168
+        Top = 192
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -818,84 +836,89 @@ object EventDialog: TEventDialog
         object lblConditionValue: TLabel
           Left = 4
           Top = 8
-          Width = 53
+          Width = 30
           Height = 13
-          Caption = 'Run count:'
+          Caption = 'Value:'
         end
-        object seConditionValue: TSpinEdit
+        object edConditionValue: TEdit
           Left = 64
           Top = 4
-          Width = 57
-          Height = 22
-          MaxValue = 255
-          MinValue = 0
+          Width = 80
+          Height = 21
+          Hint = 'Time between intervals'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
-          Value = 0
+          Text = '0'
         end
       end
       object cpCasualties: TPanel
         Left = 0
-        Top = 176
+        Top = 224
         Width = 200
         Height = 30
         BevelOuter = bvNone
         TabOrder = 8
-        object lblCasualtyThreshold: TLabel
+        object lblCasualtyFlags: TLabel
           Left = 4
           Top = 8
-          Width = 50
+          Width = 34
           Height = 13
-          Caption = 'Threshold:'
+          Caption = 'Flags?:'
         end
-        object edCasualtyThreshold1: TEdit
+        object edCasualtyFlags: TEdit
           Left = 64
           Top = 4
-          Width = 49
-          Height = 21
-          Hint = 'Start delay'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 0
-          Text = '0'
-        end
-        object edCasualtyThreshold2: TEdit
-          Left = 120
-          Top = 4
           Width = 80
           Height = 21
           Hint = 'Time between intervals'
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 1
+          TabOrder = 0
           Text = '0'
         end
       end
-      object cpCreditsAmount: TPanel
-        Left = 0
-        Top = 208
-        Width = 200
-        Height = 30
-        BevelOuter = bvNone
+      object btnApplyConditionChanges: TBitBtn
+        Left = 85
+        Top = 152
+        Width = 115
+        Height = 25
+        Caption = 'Apply changes'
         TabOrder = 9
-        object lblCreditsAmount: TLabel
-          Left = 4
-          Top = 8
-          Width = 35
-          Height = 13
-          Caption = 'Credits:'
-        end
-        object edCreditsAmount: TEdit
-          Left = 56
-          Top = 4
-          Width = 80
-          Height = 21
-          Hint = 'Time between intervals'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 0
-          Text = '0'
-        end
+        OnClick = btnApplyConditionChangesClick
+        Kind = bkOK
       end
+    end
+  end
+  object EventGridPopupMenu: TPopupMenu
+    Left = 392
+    object Addevent1: TMenuItem
+      Caption = 'Add event'
+      ShortCut = 45
+      OnClick = Addevent1Click
+    end
+    object Deleteselectedevent1: TMenuItem
+      Caption = 'Delete selected event'
+      ShortCut = 46
+    end
+    object Deletelastevent1: TMenuItem
+      Caption = 'Delete last event'
+      ShortCut = 16430
+    end
+  end
+  object ConditionGridPopupMenu: TPopupMenu
+    Left = 424
+    object Addcondition1: TMenuItem
+      Caption = 'Add condition'
+      ShortCut = 45
+    end
+    object Deleteselectedcondition1: TMenuItem
+      Caption = 'Delete selected condition'
+      ShortCut = 46
+    end
+    object Deletelastcondition1: TMenuItem
+      Caption = 'Delete last condition'
+      ShortCut = 16430
     end
   end
 end

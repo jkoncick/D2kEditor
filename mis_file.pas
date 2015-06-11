@@ -217,8 +217,8 @@ const event_type_info: array[0..19] of TEventTypeInfo =
     (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
     (name: 'Set Build Rate';            use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
     (name: 'Set Attack Building Rate';  use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
-    (name: 'Set Cash';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Cash';),
-    (name: 'Set Tech';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Tech level';),
+    (name: 'Set Cash';                  use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Cash';),
+    (name: 'Set Tech';                  use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Tech level';),
     (name: 'Mission Win';               use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
     (name: 'Mission Fail';              use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
     (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
@@ -237,11 +237,11 @@ const condition_type_info: array[0..9] of TConditionTypeInfo =
     (name: 'Unit Exists';     use_player_index: true;  value_name: '';),
     (name: 'Interval';        use_player_index: false; value_name: 'Run count';),
     (name: 'Timer';           use_player_index: false; value_name: '';),
-    (name: 'Casualties';      use_player_index: true;  value_name: '';),
+    (name: 'Casualties';      use_player_index: true;  value_name: 'Threshold';),
     (name: 'Base Destroyed';  use_player_index: true;  value_name: 'Unknown';),
     (name: 'Units Destroyed'; use_player_index: true;  value_name: 'Unknown';),
     (name: 'Tile Revealed';   use_player_index: false; value_name: 'Unknown';),
-    (name: 'Spice Harvested'; use_player_index: false; value_name: '';),
+    (name: 'Spice Harvested'; use_player_index: false; value_name: 'Credits';),
     (name: 'Flag';            use_player_index: false; value_name: '';)
   );
 
@@ -274,7 +274,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset, map_defs, stringtable;
+uses Windows, Forms, SysUtils, main, tileset, map_defs, stringtable, event_dialog;
 
 function get_mis_filename(filename: String): String;
 var
@@ -309,6 +309,7 @@ begin
       tileset_change(i);
   end;
   process_event_markers;
+  EventDialog.update_contents;
 end;
 
 procedure process_event_markers;
@@ -320,6 +321,9 @@ var
   i: integer;
   moved: boolean;
 begin
+  for x := 0 to 127 do
+    for y := 0 to 127 do
+      mis_map_markers[x,y].emtype := emNone;
   for i:= 0 to mis_data.num_events - 1 do
   begin
     event := Addr(mis_data.events[i]);
@@ -441,8 +445,18 @@ begin
   end;
   case event_type of
     etAllegiance:   contents := player_names[event.player] + ' -> ' + player_names[event.allegiance_target] + ' (' + allegiance_type[event.allegiance_type] + ')';
+    etSetBuildRate: contents := inttostr(event.value);
+    etSetAttackBuildingRate: contents := inttostr(event.value);
+    etSetCash:      contents := inttostr(event.value);
+    etSetTech:      contents := inttostr(event.value);
     etRevealMap:    contents := inttostr(event.num_units);
-    etShowMessage:  contents := '(' + inttostr(event.message_index) + ') ' + string_table[event.message_index].text;
+    etShowTimer:    contents := inttostr(event.value);
+    etShowMessage:
+    begin
+      contents := '(' + inttostr(event.message_index) + ') ';
+      if event.message_index < cardinal(string_table_size) then
+      contents := contents + string_table[event.message_index].text;
+    end;
     etSetFlag:      contents := inttostr(event.player) + ' = ' + flag_value[event.value];
   end;
   {contents := inttostr(event.map_pos_x) + ' ' + inttostr(event.map_pos_y) + ' ' + inttostr(event.value) + ' ' + inttostr(event.num_units)  + ' ' + inttostr(event.player) + ' ' + inttostr(event.allegiance_target) + ' ' + inttostr(event.allegiance_type) + ' ' + inttostr(event.deploy_action);

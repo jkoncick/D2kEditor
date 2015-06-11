@@ -289,6 +289,8 @@ type
     procedure set_special_value;
     function mode(m: SelectedMode): boolean;
     procedure show_power_and_statistics;
+    procedure start_event_position_selection;
+    procedure finish_event_position_selection(x, y: integer);
 
     // Procedures related to drawing tiles/terrain and cursor image
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
@@ -896,6 +898,11 @@ begin
     exit;
   mouse_already_clicked := true;
   mouse_last_button := Button;
+  // Event position selection mode
+  if not EditorPages.Visible then
+  begin
+    finish_event_position_selection(map_x, map_y);
+  end;
   if mode(mStructures) then
     begin
     // Editing structures
@@ -1507,14 +1514,13 @@ begin
   MainWindow.StatusBar.Panels[3].Text := filename;
   MainWindow.StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   // Load tileset and other information from .mis file
+  load_string_table(ExtractFilePath(map_filename) + '..\Data\UI_DATA\text.uib');
   load_mis_file(get_mis_filename(map_filename));
   // Rendering
   MainWindow.resize_map_canvas;
   MainWindow.render_minimap;
   MainWindow.render_map;
   calculate_power_and_statistics;
-
-  load_string_table(ExtractFilePath(map_filename) + '..\Data\UI_DATA\text.uib');
 end;
 
 procedure TMainWindow.save_map(filename: String);
@@ -1659,6 +1665,20 @@ begin
   i := PlayerSelect.ItemIndex;
   StatusBar.Panels[4].Text := 'W: '+inttostr(mstat_num_worm_spawners)+'  S: '+inttostr(mstat_num_player_starts)+'  B: '+inttostr(mstat_num_spice_blooms);
   StatusBar.Panels[5].Text := 'Power: '+inttostr(mstat_player[i].power_percent)+'%   ('+inttostr(mstat_player[i].power_output)+'/'+inttostr(mstat_player[i].power_need)+')';
+end;
+
+procedure TMainWindow.start_event_position_selection;
+begin
+  EditorPages.Visible := false;
+  MapCanvas.Cursor := crHandPoint;
+end;
+
+procedure TMainWindow.finish_event_position_selection(x, y: integer);
+begin
+  EditorPages.Visible := true;
+    MapCanvas.Cursor := crDefault;
+  EventDialog.Show;
+  EventDialog.finish_event_position_selection(x, y);
 end;
 
 procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left,

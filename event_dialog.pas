@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Grids, ExtCtrls, StdCtrls, CheckLst, Spin, mis_file;
+  Dialogs, Grids, ExtCtrls, StdCtrls, CheckLst, Spin, mis_file, Buttons,
+  Menus;
 
 type
   TEventDialog = class(TForm)
@@ -91,20 +92,25 @@ type
     edInterval: TEdit;
     cpConditionValue: TPanel;
     lblConditionValue: TLabel;
-    seConditionValue: TSpinEdit;
     cpCasualties: TPanel;
-    lblCasualtyThreshold: TLabel;
-    edCasualtyThreshold1: TEdit;
-    edCasualtyThreshold2: TEdit;
-    cpCreditsAmount: TPanel;
-    lblCreditsAmount: TLabel;
-    edCreditsAmount: TEdit;
+    lblCasualtyFlags: TLabel;
+    edCasualtyFlags: TEdit;
     epMessage: TPanel;
     lblMessage: TLabel;
     seMessageId: TSpinEdit;
     edMessageText: TEdit;
+    btnApplyEventChanges: TBitBtn;
+    btnApplyConditionChanges: TBitBtn;
+    edConditionValue: TEdit;
+    EventGridPopupMenu: TPopupMenu;
+    Addevent1: TMenuItem;
+    Deleteselectedevent1: TMenuItem;
+    Deletelastevent1: TMenuItem;
+    ConditionGridPopupMenu: TPopupMenu;
+    Addcondition1: TMenuItem;
+    Deleteselectedcondition1: TMenuItem;
+    Deletelastcondition1: TMenuItem;
     procedure FormCreate(Sender: TObject);
-    procedure FormShow(Sender: TObject);
     procedure seMessageIdChange(Sender: TObject);
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer;
       var CanSelect: Boolean);
@@ -118,10 +124,35 @@ type
     procedure EventUnitListDblClick(Sender: TObject);
     procedure btnDeleteLastUnitClick(Sender: TObject);
     procedure btnDeleteAllUnitsClick(Sender: TObject);
+    procedure EventConditionListClickCheck(Sender: TObject);
+    procedure btnAddConditionClick(Sender: TObject);
+    procedure btnDeleteConditionClick(Sender: TObject);
+    procedure ConditionGridDblClick(Sender: TObject);
+    procedure btnDeleteLastConditionClick(Sender: TObject);
+    procedure btnDeleteAllConditionsClick(Sender: TObject);
+    procedure ConditionGridMouseWheelDown(Sender: TObject;
+      Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure ConditionGridMouseWheelUp(Sender: TObject;
+      Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
+    procedure EventGridMouseWheelUp(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
+    procedure btnApplyEventChangesClick(Sender: TObject);
+    procedure btnApplyConditionChangesClick(Sender: TObject);
+    procedure EventConditionListDblClick(Sender: TObject);
+    procedure btnEventPositionGotoMapClick(Sender: TObject);
+    procedure btnConditionPositionGotoMapClick(Sender: TObject);
+    procedure Addevent1Click(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
+    selected_event: integer;
+    selected_condition: integer;
+
+    condition_position: boolean;
   public
+    procedure update_contents;
     procedure fill_grids;
 
     procedure select_event(index: integer);
@@ -130,11 +161,15 @@ type
     procedure fill_event_unit_list;
     procedure fill_event_condition_list;
     procedure change_event_type(event_type: integer);
+    procedure apply_event_changes;
 
     procedure select_condition(index: integer);
     procedure fill_condition_ui(condition_valid: boolean);
     procedure fill_condition_ui_panel(panel: TPanel; var panel_top: integer);
     procedure change_condition_type(condition_type: integer);
+    procedure apply_condition_changes;
+
+    procedure finish_event_position_selection(x, y: integer);
   end;
 
 var
@@ -142,7 +177,7 @@ var
 
 implementation
 
-uses stringtable;
+uses main, stringtable;
 
 {$R *.dfm}
 
@@ -223,9 +258,11 @@ begin
   select_condition(0);
 end;
 
-procedure TEventDialog.FormShow(Sender: TObject);
+procedure TEventDialog.update_contents;
 begin
   fill_grids;
+  select_event(selected_event);
+  select_condition(selected_condition);
 end;
 
 procedure TEventDialog.fill_grids;
@@ -286,16 +323,20 @@ end;
 
 procedure TEventDialog.select_event(index: integer);
 begin
+  selected_event := index;
   lblEventProperties.Caption := 'Event properties (event ' + inttostr(index) + ')';
   if index >= mis_data.num_events then
   begin
+    FillChar(tmp_event, sizeof(TEvent), 0);
     cbEventType.ItemIndex := -1;
     cbEventType.Enabled := false;
+    btnApplyEventChanges.Enabled := false;
   end else
   begin
     Move(mis_data.events[index], tmp_event, sizeof(TEvent));
     cbEventType.ItemIndex := tmp_event.event_type;
     cbEventType.Enabled := true;
+    btnApplyEventChanges.Enabled := true;
   end;
   fill_event_ui(index < mis_data.num_events);
 end;
@@ -306,12 +347,12 @@ var
 begin
   epEventPlayer.Visible := event_valid and event_type_info[tmp_event.event_type].use_player_index;
   epEventPosition.Visible := event_valid and event_type_info[tmp_event.event_type].use_map_position;
-  epDeployAction.Visible := false;
-  epAllegiance.Visible := false;
-  epSetFlag.Visible := false;
-  epRadius.Visible := false;
-  epEventValue.Visible := false;
-  epMessage.Visible := false;
+  epDeployAction.Visible := event_valid and ((tmp_event.event_type = Byte(etReinforcement)) or (tmp_event.event_type = Byte(etUnitSpawn)));
+  epAllegiance.Visible := tmp_event.event_type = Byte(etAllegiance);
+  epSetFlag.Visible := tmp_event.event_type = Byte(etSetFlag);
+  epRadius.Visible := tmp_event.event_type = Byte(etRevealMap);
+  epEventValue.Visible := event_valid and (event_type_info[tmp_event.event_type].value_name <> '');
+  epMessage.Visible := tmp_event.event_type = Byte(etShowMessage);
   EventUnitList.Items.Clear;
   EventConditionList.Items.Clear;
   UnitSelectionList.Enabled := event_valid and event_type_info[tmp_event.event_type].use_unit_list;
@@ -423,18 +464,66 @@ begin
   fill_event_ui(true);
 end;
 
+procedure TEventDialog.apply_event_changes;
+var
+  event_type: integer;
+begin
+  event_type := tmp_event.event_type;
+  if event_type_info[event_type].use_player_index then
+    tmp_event.player := cbEventPlayer.ItemIndex;
+  if event_type_info[event_type].use_map_position then
+  begin
+    tmp_event.map_pos_x := seEventPositionX.Value;
+    tmp_event.map_pos_y := seEventPositionY.Value;
+  end;
+  if event_type_info[event_type].value_name <> '' then
+    tmp_event.value := strtoint(edEventValue.Text);
+  case EventType(event_type) of
+    etReinforcement: tmp_event.deploy_action := cbDeployAction.ItemIndex;
+    etAllegiance:
+    begin
+      tmp_event.player := cbAllegianceSource.ItemIndex;
+      tmp_event.allegiance_target := cbAllegianceTarget.ItemIndex;
+      tmp_event.allegiance_type := cbAllegianceType.ItemIndex;
+    end;
+    etRevealMap: tmp_event.num_units := seRadius.Value;
+    etShowMessage: tmp_event.message_index := seMessageId.Value;
+    etUnitSpawn: tmp_event.deploy_action := cbDeployAction.ItemIndex;
+    etSetFlag:
+    begin
+      tmp_event.player := seFlagNumber.Value;
+      if rbFlagTrue.Checked then
+        tmp_event.value := 1
+      else
+        tmp_event.value := 0;
+    end;
+  end;
+  Move(tmp_event, mis_data.events[selected_event], sizeof(TEvent));
+  fill_grids;
+  // Update event markers on map if event has position
+  if event_type_info[event_type].use_map_position then
+  begin
+    process_event_markers;
+    MainWindow.render_map;
+  end;
+end;
+
 procedure TEventDialog.select_condition(index: integer);
 begin
+  selected_condition := index;
   lblConditionProperties.Caption := 'Condition properties (condition ' + inttostr(index) + ')';
   if index >= mis_data.num_conditions then
   begin
+    FillChar(tmp_condition, sizeof(TCondition), 0);
     cbConditionType.ItemIndex := -1;
     cbConditionType.Enabled := false;
+    btnApplyConditionChanges.Enabled := false;
   end else
   begin
     Move(mis_data.conditions[index], tmp_condition, sizeof(TCondition));
     cbConditionType.ItemIndex := tmp_condition.condition_type;
     cbConditionType.Enabled := true;
+    btnApplyConditionChanges.Enabled := true;
   end;
   fill_condition_ui(index < mis_data.num_conditions);
 end;
@@ -444,14 +533,13 @@ var
   panel_top: integer;
 begin
   cpConditionPlayer.Visible := condition_valid and condition_type_info[tmp_condition.condition_type].use_player_index;
-  cpConditionPosition.Visible := false;
-  cpBuildingType.Visible := false;
-  cpUnitType.Visible := false;
-  cpTimer.Visible := false;
-  cpInterval.Visible := false;
-  cpConditionValue.Visible := false;
-  cpCasualties.Visible := false;
-  cpCreditsAmount.Visible := false;
+  cpConditionPosition.Visible := tmp_condition.condition_type = Byte(ctTileRevealed);
+  cpBuildingType.Visible := condition_valid and (tmp_condition.condition_type = Byte(ctBuildingExists));
+  cpUnitType.Visible := tmp_condition.condition_type = Byte(ctUnitExists);
+  cpTimer.Visible := tmp_condition.condition_type = Byte(ctTimer);
+  cpInterval.Visible := tmp_condition.condition_type = Byte(ctInterval);
+  cpConditionValue.Visible := condition_valid and (condition_type_info[tmp_condition.condition_type].value_name <> '');
+  cpCasualties.Visible := tmp_condition.condition_type = Byte(ctCasualties);
   if not condition_valid then
     exit;
   panel_top := 52;
@@ -464,7 +552,6 @@ begin
     ctTimer:          fill_condition_ui_panel(cpTimer, panel_top);
     ctCasualties:     fill_condition_ui_panel(cpCasualties, panel_top);
     ctTileRevealed:   fill_condition_ui_panel(cpConditionPosition, panel_top);
-    ctSpiceHarvested: fill_condition_ui_panel(cpCreditsAmount, panel_top);
   end;
   if condition_type_info[tmp_condition.condition_type].value_name <> '' then
     fill_condition_ui_panel(cpConditionValue, panel_top);
@@ -497,15 +584,10 @@ begin
   if panel = cpConditionValue then
   begin
     lblConditionValue.Caption := condition_type_info[tmp_condition.condition_type].value_name + ':';
-    seConditionValue.Value := tmp_condition.value;
+    edConditionValue.Text := inttostr(tmp_condition.value);
   end;
   if panel = cpCasualties then
-  begin
-    edCasualtyThreshold1.Text := inttostr(tmp_condition.value);
-    edCasualtyThreshold2.Text := inttohex(tmp_condition.casualty_flags, 8);
-  end;
-  if panel = cpCreditsAmount then
-    edCreditsAmount.Text := inttostr(tmp_condition.value);
+    edCasualtyFlags.Text := inttohex(tmp_condition.casualty_flags, 8);
   panel.Visible := true;
   panel.Top := panel_top;
   panel_top := panel_top + panel.Height + 2;
@@ -527,6 +609,61 @@ begin
   tmp_condition.building_type := 0;
   tmp_condition.unit_type_or_comparison_function := 0;
   fill_condition_ui(true);
+end;
+
+procedure TEventDialog.apply_condition_changes;
+var
+  condition_type: integer;
+begin
+  condition_type := tmp_condition.condition_type;
+  if condition_type_info[condition_type].use_player_index then
+    tmp_condition.player := cbConditionPlayer.ItemIndex;
+  if condition_type_info[condition_type].value_name <> '' then
+    tmp_condition.value := strtoint(edConditionValue.Text);
+  case ConditionType(condition_type) of
+    ctBuildingExists: tmp_condition.building_type := cbBuildingType.ItemIndex;
+    ctUnitExists: tmp_condition.unit_type_or_comparison_function := cbUnitType.ItemIndex;
+    ctInterval:
+    begin
+      tmp_condition.time_amount := strtoint(edInterval.Text);
+      tmp_condition.start_delay := strtoint(edStartDelay.Text);
+    end;
+    ctTimer:
+    begin
+      tmp_condition.time_amount := strtoint(edTimerTime.Text);
+      tmp_condition.unit_type_or_comparison_function := cbTimerCompareFunc.ItemIndex;
+    end;
+    ctCasualties:
+      tmp_condition.casualty_flags := strtoint('$'+edCasualtyFlags.Text);
+    ctTileRevealed:
+    begin
+      tmp_condition.map_pos_x := seConditionPositionX.Value;
+      tmp_condition.map_pos_y := seConditionPositionY.Value;
+    end;
+  end;
+  Move(tmp_condition, mis_data.conditions[selected_condition], sizeof(TCondition));
+  fill_grids;
+  EventConditionList.Clear;
+  fill_event_condition_list;
+  // Update event markers on map if condition has position
+  if condition_type = Byte(ctTileRevealed) then
+  begin
+    process_event_markers;
+    MainWindow.render_map;
+  end;
+end;
+
+procedure TEventDialog.finish_event_position_selection(x, y: integer);
+begin
+  if not condition_position then
+  begin
+    seEventPositionX.Value := x;
+    seEventPositionY.Value := y;
+  end else
+  begin
+    seConditionPositionX.Value := x;
+    seConditionPositionY.Value := y;
+  end;
 end;
 
 procedure TEventDialog.seMessageIdChange(Sender: TObject);
@@ -609,6 +746,156 @@ begin
   tmp_event.num_units := 0;
   FillChar(tmp_event.units, Length(tmp_event.units) + 4, 0);
   EventUnitList.Items.Clear;
+end;
+
+procedure TEventDialog.EventConditionListClickCheck(Sender: TObject);
+var
+  i: integer;
+begin
+  for i := 0 to tmp_event.num_conditions -1 do
+    if EventConditionList.Checked[i] then
+      tmp_event.condition_not[i] := 1
+    else
+      tmp_event.condition_not[i] := 0;
+end;
+
+procedure TEventDialog.btnAddConditionClick(Sender: TObject);
+var
+  i: integer;
+begin
+  // Check if selected condition is valid
+  if selected_condition >= mis_data.num_conditions then
+    exit;
+  // Check if condition already exists in list
+  for i := 0 to tmp_event.num_conditions -1 do
+    if tmp_event.condition_index[i] = selected_condition then
+      exit;
+  // Check if reached maximum number of conditions in event
+  if tmp_event.num_conditions = Length(tmp_event.condition_index) then
+  begin
+    beep;
+    exit;
+  end;
+  tmp_event.condition_index[tmp_event.num_conditions] := selected_condition;
+  tmp_event.condition_not[tmp_event.num_conditions] := 0;
+  inc(tmp_event.num_conditions);
+  EventConditionList.Items.Add(inttostr(selected_condition) + ' - ' + condition_type_info[mis_data.conditions[selected_condition].condition_type].name + '(' + get_condition_contents(selected_condition, true) + ')');
+end;
+
+procedure TEventDialog.btnDeleteConditionClick(Sender: TObject);
+var
+  i: integer;
+begin
+  if EventConditionList.ItemIndex = -1 then
+    exit;
+  for i := EventConditionList.ItemIndex to tmp_event.num_conditions - 2 do
+  begin
+    tmp_event.condition_index[i] := tmp_event.condition_index[i+1];
+    tmp_event.condition_not[i] := tmp_event.condition_not[i+1];
+  end;
+  tmp_event.condition_index[tmp_event.num_conditions - 1] := 0;
+  tmp_event.condition_not[tmp_event.num_conditions - 1] := 0;
+  dec(tmp_event.num_conditions);
+  EventConditionList.Items.Delete(EventConditionList.ItemIndex);
+end;
+
+procedure TEventDialog.ConditionGridDblClick(Sender: TObject);
+begin
+  btnAddConditionClick(Sender);
+end;
+
+procedure TEventDialog.btnDeleteLastConditionClick(Sender: TObject);
+begin
+  if tmp_event.num_conditions = 0 then
+  begin
+    beep;
+    exit;
+  end;
+  tmp_event.condition_index[tmp_event.num_conditions-1] := 0;
+  tmp_event.condition_not[tmp_event.num_conditions-1] := 0;
+  dec(tmp_event.num_conditions);
+  EventConditionList.Items.Delete(tmp_event.num_conditions);
+end;
+
+procedure TEventDialog.btnDeleteAllConditionsClick(Sender: TObject);
+begin
+  tmp_event.num_conditions := 0;
+  FillChar(tmp_event.condition_index, Length(tmp_event.condition_index), 0);
+  FillChar(tmp_event.condition_not, Length(tmp_event.condition_not), 0);
+  EventConditionList.Items.Clear;
+end;
+
+procedure TEventDialog.ConditionGridMouseWheelDown(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if ConditionGrid.TopRow < (Length(mis_data.conditions) + 1 - ConditionGrid.VisibleRowCount) then
+    ConditionGrid.TopRow := ConditionGrid.TopRow + 1;
+  Handled := true;
+end;
+
+procedure TEventDialog.ConditionGridMouseWheelUp(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if ConditionGrid.TopRow > 1 then
+    ConditionGrid.TopRow := ConditionGrid.TopRow - 1;
+  Handled := true;
+end;
+
+procedure TEventDialog.EventGridMouseWheelDown(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if EventGrid.TopRow < (Length(mis_data.events) + 1 - EventGrid.VisibleRowCount) then
+    EventGrid.TopRow := EventGrid.TopRow + 1;
+  Handled := true;
+end;
+
+procedure TEventDialog.EventGridMouseWheelUp(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if EventGrid.TopRow > 1 then
+    EventGrid.TopRow := EventGrid.TopRow - 1;
+  Handled := true;
+end;
+
+procedure TEventDialog.btnApplyEventChangesClick(Sender: TObject);
+begin
+  apply_event_changes;
+end;
+
+procedure TEventDialog.btnApplyConditionChangesClick(Sender: TObject);
+begin
+  apply_condition_changes;
+end;
+
+procedure TEventDialog.EventConditionListDblClick(Sender: TObject);
+begin
+  ConditionGrid.Row := tmp_event.condition_index[EventConditionList.ItemIndex] + 1;
+end;
+
+procedure TEventDialog.btnEventPositionGotoMapClick(Sender: TObject);
+begin
+  MainWindow.start_event_position_selection;
+  condition_position := false;
+  close;
+end;
+
+procedure TEventDialog.btnConditionPositionGotoMapClick(Sender: TObject);
+begin
+  MainWindow.start_event_position_selection;
+  condition_position := true;
+  close;
+end;
+
+procedure TEventDialog.Addevent1Click(Sender: TObject);
+begin
+  if mis_data.num_events = Length(mis_data.events) then
+  begin
+    beep;
+    exit;
+  end;
+  inc(mis_data.num_events);
+  fill_grids;
+  EventGrid.Row := mis_data.num_events;
 end;
 
 end.
