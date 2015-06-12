@@ -1,6 +1,6 @@
 object MainWindow: TMainWindow
-  Left = 193
-  Top = 109
+  Left = 199
+  Top = 80
   Width = 950
   Height = 650
   HorzScrollBar.Visible = False
@@ -89,6 +89,9 @@ object MainWindow: TMainWindow
       item
         Text = 'No map loaded'
         Width = 230
+      end
+      item
+        Width = 30
       end
       item
         Text = 'W: 0  S: 0  B: 0'
@@ -622,14 +625,6 @@ object MainWindow: TMainWindow
         ShortCut = 118
         OnClick = Changestructureowner1Click
       end
-      object N9: TMenuItem
-        Caption = '-'
-      end
-      object Createemptymisfile1: TMenuItem
-        Caption = 'Create empty .mis file'
-        Enabled = False
-        OnClick = Createemptymisfile1Click
-      end
     end
     object Mission1: TMenuItem
       Caption = 'Mission'
@@ -638,18 +633,28 @@ object MainWindow: TMainWindow
         ShortCut = 121
         OnClick = EventsandConditions1Click
       end
+      object Missionsettings1: TMenuItem
+        Caption = 'Mission settings'
+        ShortCut = 122
+        OnClick = Missionsettings1Click
+      end
+      object N9: TMenuItem
+        Caption = '-'
+      end
+      object Assignmisfile1: TMenuItem
+        Caption = '(Un)Assign .mis file'
+        OnClick = Assignmisfile1Click
+      end
     end
     object Launchgame1: TMenuItem
       Caption = 'Test'
       object Quicklaunch1: TMenuItem
         Caption = 'Quick launch'
-        Enabled = False
         ShortCut = 119
         OnClick = Quicklaunch1Click
       end
       object Launchwithsettings1: TMenuItem
         Caption = 'Launch with settings'
-        Enabled = False
         ShortCut = 120
         OnClick = Launchwithsettings1Click
       end

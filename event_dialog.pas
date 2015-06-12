@@ -110,6 +110,8 @@ type
     Addcondition1: TMenuItem;
     Deleteselectedcondition1: TMenuItem;
     Deletelastcondition1: TMenuItem;
+    MoveUp1: TMenuItem;
+    MoveDown1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure seMessageIdChange(Sender: TObject);
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer;
@@ -144,6 +146,14 @@ type
     procedure btnEventPositionGotoMapClick(Sender: TObject);
     procedure btnConditionPositionGotoMapClick(Sender: TObject);
     procedure Addevent1Click(Sender: TObject);
+    procedure Deleteselectedevent1Click(Sender: TObject);
+    procedure Deletelastevent1Click(Sender: TObject);
+    procedure MoveUp1Click(Sender: TObject);
+    procedure MoveDown1Click(Sender: TObject);
+    procedure Addcondition1Click(Sender: TObject);
+    procedure Deleteselectedcondition1Click(Sender: TObject);
+    procedure Deletelastcondition1Click(Sender: TObject);
+    procedure seFlagNumberChange(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -333,7 +343,7 @@ begin
     btnApplyEventChanges.Enabled := false;
   end else
   begin
-    Move(mis_data.events[index], tmp_event, sizeof(TEvent));
+    tmp_event := mis_data.events[index];
     cbEventType.ItemIndex := tmp_event.event_type;
     cbEventType.Enabled := true;
     btnApplyEventChanges.Enabled := true;
@@ -422,8 +432,9 @@ procedure TEventDialog.fill_event_unit_list;
 var
   i: integer;
 begin
-  for i := 0 to tmp_event.num_units - 1 do
-    EventUnitList.Items.Add(unit_names[tmp_event.units[i]]);
+  if event_type_info[mis_data.events[selected_event].event_type].use_unit_list then
+    for i := 0 to tmp_event.num_units - 1 do
+      EventUnitList.Items.Add(unit_names[tmp_event.units[i]]);
 end;
 
 procedure TEventDialog.fill_event_condition_list;
@@ -498,7 +509,7 @@ begin
         tmp_event.value := 0;
     end;
   end;
-  Move(tmp_event, mis_data.events[selected_event], sizeof(TEvent));
+  mis_data.events[selected_event] := tmp_event;
   fill_grids;
   // Update event markers on map if event has position
   if event_type_info[event_type].use_map_position then
@@ -520,7 +531,7 @@ begin
     btnApplyConditionChanges.Enabled := false;
   end else
   begin
-    Move(mis_data.conditions[index], tmp_condition, sizeof(TCondition));
+    tmp_condition := mis_data.conditions[index];
     cbConditionType.ItemIndex := tmp_condition.condition_type;
     cbConditionType.Enabled := true;
     btnApplyConditionChanges.Enabled := true;
@@ -608,6 +619,8 @@ begin
   tmp_condition.casualty_flags := 0;
   tmp_condition.building_type := 0;
   tmp_condition.unit_type_or_comparison_function := 0;
+  if (condition_type = Byte(ctTileRevealed)) or (condition_type = Byte(ctBaseDestroyed)) or (condition_type = Byte(ctUnitsDestroyed)) then
+    tmp_condition.value := 1;
   fill_condition_ui(true);
 end;
 
@@ -641,7 +654,7 @@ begin
       tmp_condition.map_pos_y := seConditionPositionY.Value;
     end;
   end;
-  Move(tmp_condition, mis_data.conditions[selected_condition], sizeof(TCondition));
+  mis_data.conditions[selected_condition] := tmp_condition;
   fill_grids;
   EventConditionList.Clear;
   fill_event_condition_list;
@@ -696,6 +709,12 @@ end;
 
 procedure TEventDialog.btnAddUnitClick(Sender: TObject);
 begin
+  if UnitSelectionList.ItemIndex = -1 then
+    exit;
+  if selected_event >= mis_data.num_events then
+    exit;
+  if not event_type_info[mis_data.events[selected_event].event_type].use_unit_list then
+    exit;
   if tmp_event.num_units = (Length(tmp_event.units) + 4) then
   begin
     beep;
@@ -763,6 +782,9 @@ procedure TEventDialog.btnAddConditionClick(Sender: TObject);
 var
   i: integer;
 begin
+  // Check if selected event is valid
+  if selected_event >= mis_data.num_events then
+    exit;
   // Check if selected condition is valid
   if selected_condition >= mis_data.num_conditions then
     exit;
@@ -874,14 +896,14 @@ end;
 
 procedure TEventDialog.btnEventPositionGotoMapClick(Sender: TObject);
 begin
-  MainWindow.start_event_position_selection;
+  MainWindow.start_event_position_selection(seEventPositionX.Value, seEventPositionY.Value);
   condition_position := false;
   close;
 end;
 
 procedure TEventDialog.btnConditionPositionGotoMapClick(Sender: TObject);
 begin
-  MainWindow.start_event_position_selection;
+  MainWindow.start_event_position_selection(seConditionPositionX.Value, seConditionPositionY.Value);
   condition_position := true;
   close;
 end;
@@ -896,6 +918,97 @@ begin
   inc(mis_data.num_events);
   fill_grids;
   EventGrid.Row := mis_data.num_events;
+end;
+
+procedure TEventDialog.Deleteselectedevent1Click(Sender: TObject);
+var
+  i: integer;
+begin
+  if selected_event >= mis_data.num_events then
+    exit;
+  for i := selected_event to mis_data.num_events - 2 do
+    mis_data.events[i] := mis_data.events[i+1];
+  FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
+  dec(mis_data.num_events);
+  fill_grids;
+  select_event(selected_event);
+end;
+
+procedure TEventDialog.Deletelastevent1Click(Sender: TObject);
+begin
+  if mis_data.num_events = 0 then
+  begin
+    beep;
+    exit;
+  end;
+  FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
+  dec(mis_data.num_events);
+  fill_grids;
+  select_event(selected_event);
+end;
+
+procedure TEventDialog.MoveUp1Click(Sender: TObject);
+begin
+  if selected_event = 0 then
+    exit;
+  tmp_event := mis_data.events[selected_event];
+  mis_data.events[selected_event] := mis_data.events[selected_event - 1];
+  mis_data.events[selected_event - 1] := tmp_event;
+  fill_grids;
+  EventGrid.Row := selected_event;
+end;
+
+procedure TEventDialog.MoveDown1Click(Sender: TObject);
+begin
+  if selected_event >= mis_data.num_events - 1 then
+    exit;
+  tmp_event := mis_data.events[selected_event];
+  mis_data.events[selected_event] := mis_data.events[selected_event + 1];
+  mis_data.events[selected_event + 1] := tmp_event;
+  fill_grids;
+  EventGrid.Row := selected_event + 2;
+end;
+
+procedure TEventDialog.Addcondition1Click(Sender: TObject);
+begin
+  if mis_data.num_conditions = Length(mis_data.conditions) then
+  begin
+    beep;
+    exit;
+  end;
+  inc(mis_data.num_conditions);
+  fill_grids;
+  ConditionGrid.Row := mis_data.num_conditions;
+end;
+
+procedure TEventDialog.Deleteselectedcondition1Click(Sender: TObject);
+begin
+  if selected_condition >= mis_data.num_conditions then
+    exit;
+  if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
+    exit;
+  delete_condition(selected_condition);
+  select_condition(selected_condition);
+  select_event(selected_event);
+end;
+
+procedure TEventDialog.Deletelastcondition1Click(Sender: TObject);
+begin
+  if selected_condition >= mis_data.num_conditions then
+    exit;
+  if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
+    exit;
+  delete_condition(mis_data.num_conditions - 1);
+  select_condition(selected_condition);
+  select_event(selected_event);
+end;
+
+procedure TEventDialog.seFlagNumberChange(Sender: TObject);
+begin
+  if mis_data.conditions[StrToIntDef(seFlagNumber.Text,0)].condition_type = Byte(ctFlag) then
+    seFlagNumber.Color := clWhite
+  else
+    seFlagNumber.Color := clRed;
 end;
 
 end.

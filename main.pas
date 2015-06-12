@@ -134,8 +134,6 @@ type
     Launchgame1: TMenuItem;
     Quicklaunch1: TMenuItem;
     Launchwithsettings1: TMenuItem;
-    N9: TMenuItem;
-    Createemptymisfile1: TMenuItem;
     TileatrOpenDialog: TOpenDialog;
     Loadtilesetattributes1: TMenuItem;
     N10: TMenuItem;
@@ -143,6 +141,9 @@ type
     Paste1: TMenuItem;
     Mission1: TMenuItem;
     EventsandConditions1: TMenuItem;
+    Missionsettings1: TMenuItem;
+    N9: TMenuItem;
+    Assignmisfile1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -179,8 +180,9 @@ type
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
-    procedure Createemptymisfile1Click(Sender: TObject);
     procedure EventsandConditions1Click(Sender: TObject);
+    procedure Missionsettings1Click(Sender: TObject);
+    procedure Assignmisfile1Click(Sender: TObject);
     procedure Quicklaunch1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
     procedure KeyShortcuts1Click(Sender: TObject);
@@ -289,7 +291,7 @@ type
     procedure set_special_value;
     function mode(m: SelectedMode): boolean;
     procedure show_power_and_statistics;
-    procedure start_event_position_selection;
+    procedure start_event_position_selection(x, y: integer);
     procedure finish_event_position_selection(x, y: integer);
 
     // Procedures related to drawing tiles/terrain and cursor image
@@ -363,7 +365,7 @@ begin
   EditorMenu.Height := Height - 72;
   StructureList.Height := EditorMenu.Height - 354;
   EditorPages.Height := Height - 214;
-  StatusBar.Panels[3].Width := ClientWidth - 520;
+  StatusBar.Panels[3].Width := ClientWidth - 550;
 end;
 
 procedure TMainWindow.WMDropFiles(var Msg: TWMDropFiles);
@@ -392,6 +394,12 @@ procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   case key of
+    // Esc: cancel event position selection
+    27:
+    begin
+      if not EditorPages.Visible then
+        finish_event_position_selection(-1,-1);
+    end;
     // Space: open tileset window
     32:
     begin
@@ -553,10 +561,9 @@ begin
     if map_filename <> MapSaveDialog.FileName then
     begin
       map_filename := MapSaveDialog.FileName;
+      if mis_assigned then
+        mis_filename := get_mis_filename(map_filename);
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
-      Quicklaunch1.Enabled := true;
-      Launchwithsettings1.Enabled := true;
-      Createemptymisfile1.Enabled := true;
       test_map_settings_loaded := false;
     end;
     save_map(MapSaveDialog.FileName);
@@ -726,14 +733,41 @@ begin
   SetDialog.select_menu(3);
 end;
 
-procedure TMainWindow.Createemptymisfile1Click(Sender: TObject);
-begin
-  create_empty_mis_file(get_mis_filename(map_filename));
-end;
-
 procedure TMainWindow.EventsandConditions1Click(Sender: TObject);
 begin
+  if not mis_assigned then
+  begin
+    Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
+    exit;
+  end;
   EventDialog.show;
+end;
+
+procedure TMainWindow.Missionsettings1Click(Sender: TObject);
+begin
+  if not mis_assigned then
+  begin
+    Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
+    exit;
+  end;
+  beep;
+end;
+
+procedure TMainWindow.Assignmisfile1Click(Sender: TObject);
+begin
+  if not map_loaded then
+    exit;
+  if not mis_assigned then
+  begin
+    mis_assigned := true;
+    mis_filename := get_mis_filename(map_filename);
+    StatusBar.Panels[4].Text := 'MIS';
+  end else
+  begin
+    mis_assigned := false;
+    mis_filename := '';
+    StatusBar.Panels[4].Text := '';
+  end;
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
@@ -899,9 +933,10 @@ begin
   mouse_already_clicked := true;
   mouse_last_button := Button;
   // Event position selection mode
-  if not EditorPages.Visible then
+  if (not EditorPages.Visible) and (Button = mbLeft) then
   begin
     finish_event_position_selection(map_x, map_y);
+    exit;
   end;
   if mode(mStructures) then
     begin
@@ -1102,7 +1137,7 @@ begin
   if mode(mTileBlock) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
   begin
     CursorImage.Visible := true;
-    if not TilesetDialog.Visible then
+    if (not TilesetDialog.Visible) and EditorPages.Visible and (not EventDialog.Visible) then
       RbTileBlock.SetFocus;
   end else
     CursorImage.Visible := false;
@@ -1508,8 +1543,6 @@ begin
   // Setting variables and status bar
   map_loaded := true;
   map_filename := filename;
-  MainWindow.Quicklaunch1.Enabled := true;
-  MainWindow.Launchwithsettings1.Enabled := true;
   MainWindow.test_map_settings_loaded := false;
   MainWindow.StatusBar.Panels[3].Text := filename;
   MainWindow.StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
@@ -1539,23 +1572,28 @@ begin
       Write(map_file, map_data[x,y].special);
     end;
   CloseFile(map_file);
+  if mis_assigned then
+    save_mis_file(get_mis_filename(filename));
 end;
 
 function TMainWindow.check_map_can_be_tested: boolean;
 var
   game_executable: String;
-  mis_filename: String;
 begin
   game_executable := test_map_settings.GamePath + 'dune2000.exe';
-  mis_filename := get_mis_filename(map_filename);
+  if not map_loaded then
+  begin
+    Application.MessageBox('No map to test.', 'Cannot test map', MB_ICONERROR);
+    result := false;
+  end else
+  if not mis_assigned then
+  begin
+    Application.MessageBox('No mission file is assigned to this map.', 'Cannot test map', MB_ICONERROR);
+    result := false;
+  end else
   if not FileExists(game_executable) then
   begin
     Application.MessageBox(PChar('Cannot find game executable (' + game_executable + ')'), 'Cannot test map', MB_ICONERROR);
-    result := false;
-  end
-  else if not FileExists(mis_filename) then
-  begin
-    Application.MessageBox(PChar('Mission file ' + mis_filename + ' does not exist.'), 'Cannot test map', MB_ICONERROR);
     result := false;
   end else
     result := check_map_errors;
@@ -1582,9 +1620,16 @@ begin
     game_path := test_map_settings.GamePath;
   ini := TIniFile.Create(game_path + 'spawn.ini');
   // Try to detect MissionNumber and MySideID from map file name
-  map_name := ChangeFileExt(ExtractFileName(map_filename),'');
-  house := map_name[Length(map_name)-3];
-  mission := map_name[Length(map_name)-2];
+  if map_filename <> '' then
+  begin
+    map_name := ChangeFileExt(ExtractFileName(map_filename),'');
+    house := map_name[Length(map_name)-3];
+    mission := map_name[Length(map_name)-2];
+  end else
+  begin
+    house := 'X';
+    mission := 'X';
+  end;
   house_num := ini.ReadInteger('Settings', 'MySideID', 0);
   case house of
   'A': house_num := 0;
@@ -1627,9 +1672,7 @@ begin
   end;
   ini.Destroy;
   save_map(game_path + 'Missions\TESTMAP.MAP');
-  CopyFile(PChar(get_mis_filename(map_filename)), PChar(game_path + 'Missions\_TESTMAP.MIS'), false);
-  SetCurrentDir(game_path);
-  ShellExecute(Application.Handle, 'open', PChar(game_path + 'dune2000.exe'), PChar('-SPAWN ' + test_map_settings.Parameters), nil, SW_SHOWNORMAL);
+  ShellExecuteA(0, 'open', PChar(game_path + 'dune2000.exe'), PChar('-SPAWN ' + test_map_settings.Parameters), PChar(game_path), SW_SHOWNORMAL);
 end;
 
 procedure TMainWindow.set_special_value;
@@ -1663,21 +1706,40 @@ var
   i: integer;
 begin
   i := PlayerSelect.ItemIndex;
-  StatusBar.Panels[4].Text := 'W: '+inttostr(mstat_num_worm_spawners)+'  S: '+inttostr(mstat_num_player_starts)+'  B: '+inttostr(mstat_num_spice_blooms);
-  StatusBar.Panels[5].Text := 'Power: '+inttostr(mstat_player[i].power_percent)+'%   ('+inttostr(mstat_player[i].power_output)+'/'+inttostr(mstat_player[i].power_need)+')';
+  StatusBar.Panels[5].Text := 'W: '+inttostr(mstat_num_worm_spawners)+'  S: '+inttostr(mstat_num_player_starts)+'  B: '+inttostr(mstat_num_spice_blooms);
+  StatusBar.Panels[6].Text := 'Power: '+inttostr(mstat_player[i].power_percent)+'%   ('+inttostr(mstat_player[i].power_output)+'/'+inttostr(mstat_player[i].power_need)+')';
 end;
 
-procedure TMainWindow.start_event_position_selection;
+procedure TMainWindow.start_event_position_selection(x, y: integer);
 begin
+  if (x <> 0) and (y <> 0) then
+  begin
+    MapScrollH.Position := x - (map_canvas_width div 2);
+    MapScrollV.Position := y - (map_canvas_height div 2);
+  end;
   EditorPages.Visible := false;
+  File1.Enabled := false;
+  Edit1.Enabled := false;
+  ileset1.Enabled := false;
+  Map1.Enabled := false;
+  Mission1.Enabled := false;
+  Launchgame1.Enabled := false;
   MapCanvas.Cursor := crHandPoint;
 end;
 
 procedure TMainWindow.finish_event_position_selection(x, y: integer);
 begin
   EditorPages.Visible := true;
-    MapCanvas.Cursor := crDefault;
+  File1.Enabled := true;
+  Edit1.Enabled := true;
+  ileset1.Enabled := true;
+  Map1.Enabled := true;
+  Mission1.Enabled := true;
+  Launchgame1.Enabled := true;
+  MapCanvas.Cursor := crDefault;
   EventDialog.Show;
+  if (x = -1) and (y = -1) then
+    exit;
   EventDialog.finish_event_position_selection(x, y);
 end;
 
@@ -2210,10 +2272,13 @@ begin
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';
-  Quicklaunch1.Enabled := false;
-  Launchwithsettings1.Enabled := false;
-  Createemptymisfile1.Enabled := false;
   map_loaded := true;
+  // Initialize mis file
+  mis_assigned := false;
+  mis_filename := '';
+  StatusBar.Panels[4].Text := '';
+  set_default_mis_values;
+  // Finish it
   calculate_power_and_statistics;
   resize_map_canvas;
   render_minimap;

@@ -258,17 +258,20 @@ const event_marker_type_info: array[0..5] of TEventMarkerTypeInfo =
 // Mis file variables
 var
   mis_filename: String;
+  mis_assigned: boolean;
   mis_data: TMisFile;
   mis_map_markers: array[0..127, 0..127] of TEventMarker;
 
 // Mis file functions and procedures
   function get_mis_filename(filename: String): String;
   procedure load_mis_file(filename: String);
+  procedure save_mis_file(filename: String);
   procedure process_event_markers;
-  procedure create_empty_mis_file(filename: String);
+  procedure set_default_mis_values;
   function get_event_contents(index: integer): String;
   function get_event_conditions(index: integer): String;
   function get_condition_contents(index: integer; show_player: boolean): String;
+  procedure delete_condition(deleted_index: integer);
 
 
 
@@ -292,15 +295,22 @@ var
   tileset_name: String;
   i: integer;
 begin
-  MainWindow.Createemptymisfile1.Enabled := not FileExists(filename);
-  if not FileExists(filename) then
+  mis_assigned := FileExists(filename);
+  if mis_assigned then
+  begin
+    MainWindow.StatusBar.Panels[4].Text := 'MIS';
+    mis_filename := filename;
+  end else
+  begin
+    MainWindow.StatusBar.Panels[4].Text := '';
+    mis_filename := '';
+    set_default_mis_values;
     exit;
-
+  end;
   AssignFile(mis_file, filename);
   Reset(mis_file);
   Read(mis_file, mis_data);
   CloseFile(mis_file);
-  mis_filename := filename;
 
   tileset_name := String(mis_data.tileset);
   for i:= 0 to cnt_tilesets-1 do
@@ -310,6 +320,16 @@ begin
   end;
   process_event_markers;
   EventDialog.update_contents;
+end;
+
+procedure save_mis_file(filename: String);
+var
+  mis_file: file of TMisFile;
+begin
+  AssignFile(mis_file, filename);
+  ReWrite(mis_file);
+  Write(mis_file, mis_data);
+  CloseFile(mis_file);
 end;
 
 procedure process_event_markers;
@@ -367,60 +387,30 @@ begin
   end;
 end;
 
-procedure create_empty_mis_file(filename: String);
+procedure set_default_mis_values;
 var
-  mis_file: file of byte;
   i, j: integer;
-  b: byte;
 begin
-  if FileExists(filename) then
-  begin
-    Application.MessageBox('Mission file for this map already exists.', 'Create empty .mis file', MB_ICONERROR);
-    exit;
-  end;
-  AssignFile(mis_file, filename);
-  ReWrite(mis_file);
-  b := 0;
-  for i := 0 to 68065 do
-    Write(mis_file, b);
+  FillChar(mis_data, sizeof(mis_data), 0);
   // Write tileset name
-  Seek(mis_file,$10598);
-  BlockWrite(mis_file, tilesets[tileset_index].name[1], Length(tilesets[tileset_index].name));
-  // Write tileatr file name
-  Seek(mis_file,$10660);
-  BlockWrite(mis_file, tilesets[tileset_index].tileatr_name[1], Length(tilesets[tileset_index].tileatr_name));
-  // Write allocation indexes
-  Seek(mis_file,$50);
-  for i := 0 to 7 do
-    Write(mis_file, i);
-  // Write tech levels
-  Seek(mis_file,$0);
-  b := 8;
-  for i := 0 to 7 do
-    Write(mis_file, b);
-  // Write starting money
-  Seek(mis_file,$8);
+  Move(tilesets[tileset_index].name[1], mis_data.tileset, 8);
+  Move(tilesets[tileset_index].tileatr_name[1], mis_data.tileatr, 8);
+  // Player properties
   for i := 0 to 7 do
   begin
-    b := $88;
-    Write(mis_file, b);
-    b := $13;
-    Write(mis_file, b);
-    b := 0;
-    Write(mis_file, b);
-    Write(mis_file, b);
+    mis_data.tech_level[i] := 8;
+    mis_data.starting_money[i] := 5000;
+    mis_data.allocation_index[i] := i;
   end;
-  // Write diplomacy
-  Seek(mis_file,$EE18);
+  // Allegiance
   for i := 0 to 7 do
     for j := 0 to 7 do
     begin
-      if i = j then b := 0 else b := 1;
-      Write(mis_file, b);
+      if i = j then
+        mis_data.allegiance[i,j] := 0
+      else
+        mis_data.allegiance[i,j] := 1;
     end;
-  CloseFile(mis_file);
-  Application.MessageBox('Mission file created', 'Create empty .mis file', MB_ICONINFORMATION);
-  MainWindow.Createemptymisfile1.Enabled := false;
 end;
 
 function get_event_contents(index: integer): String;
@@ -514,6 +504,52 @@ begin
   end;
   //contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.more_uses) + ' ' + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y) + ' ' + inttostr(cond.casualty_flags) + ' ' + inttostr(cond.side) + ' ' + inttostr(cond.building_type) + ' ' + inttostr(cond.unit_type_or_comparison_function);
   result := contents;
+end;
+
+procedure delete_condition(deleted_index: integer);
+var
+  i, j, k: integer;
+begin
+  if deleted_index >= mis_data.num_conditions then
+    exit;
+  // Delete condition and shift all conditions up
+  for i := deleted_index to mis_data.num_conditions - 2 do
+    mis_data.conditions[i] := mis_data.conditions[i+1];
+  FillChar(mis_data.conditions[mis_data.num_conditions - 1], sizeof(TCondition), 0);
+  // Modify all event's conditions
+  for i := 0 to mis_data.num_events - 1 do
+  begin
+    // Go through all event's conditions
+    for j := 0 to mis_data.events[i].num_conditions - 1 do
+    begin
+      // Decrease condition index if greater than deleted condition
+      if mis_data.events[i].condition_index[j] > deleted_index then
+        dec(mis_data.events[i].condition_index[j])
+      // Delete condition from event if it is the deleted condition
+      else if mis_data.events[i].condition_index[j] = deleted_index then
+      begin
+        for k := j to mis_data.events[i].num_conditions - 2 do
+        begin
+          mis_data.events[i].condition_index[k] := mis_data.events[i].condition_index[k+1];
+          mis_data.events[i].condition_not[k] := mis_data.events[i].condition_not[k+1];
+        end;
+        mis_data.events[i].condition_index[mis_data.events[i].num_conditions - 1] := 0;
+        mis_data.events[i].condition_not[mis_data.events[i].num_conditions - 1] := 0;
+        dec(mis_data.events[i].num_conditions)
+      end;
+    end;
+    // Modify flag number if event is Set Flag type
+    if mis_data.events[i].event_type = Byte(etSetFlag) then
+    begin
+      if mis_data.events[i].player > deleted_index then
+        dec(mis_data.events[i].player)
+      else if mis_data.events[i].player = deleted_index then
+        mis_data.events[i].player := 0;
+    end;
+  end;
+  // Finally decrease number of conditions and fill event dialog grids
+  dec(mis_data.num_conditions);
+  EventDialog.fill_grids;
 end;
 
 end.

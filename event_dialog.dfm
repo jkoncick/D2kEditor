@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
-  Left = 200
-  Top = 110
+  Left = 198
+  Top = 10
   Width = 1288
   Height = 720
   Caption = 'Events and Conditions'
@@ -325,6 +325,7 @@ object EventDialog: TEventDialog
           MinValue = 0
           TabOrder = 0
           Value = 0
+          OnChange = seFlagNumberChange
         end
         object rbFlagTrue: TRadioButton
           Left = 120
@@ -372,7 +373,7 @@ object EventDialog: TEventDialog
       end
       object epEventValue: TPanel
         Left = 0
-        Top = 172
+        Top = 188
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -395,7 +396,7 @@ object EventDialog: TEventDialog
       end
       object epMessage: TPanel
         Left = 0
-        Top = 204
+        Top = 220
         Width = 240
         Height = 62
         BevelOuter = bvNone
@@ -900,10 +901,20 @@ object EventDialog: TEventDialog
     object Deleteselectedevent1: TMenuItem
       Caption = 'Delete selected event'
       ShortCut = 46
+      OnClick = Deleteselectedevent1Click
     end
     object Deletelastevent1: TMenuItem
       Caption = 'Delete last event'
       ShortCut = 16430
+      OnClick = Deletelastevent1Click
+    end
+    object MoveUp1: TMenuItem
+      Caption = 'Move Up'
+      OnClick = MoveUp1Click
+    end
+    object MoveDown1: TMenuItem
+      Caption = 'Move Down'
+      OnClick = MoveDown1Click
     end
   end
   object ConditionGridPopupMenu: TPopupMenu
@@ -911,14 +922,17 @@ object EventDialog: TEventDialog
     object Addcondition1: TMenuItem
       Caption = 'Add condition'
       ShortCut = 45
+      OnClick = Addcondition1Click
     end
     object Deleteselectedcondition1: TMenuItem
       Caption = 'Delete selected condition'
       ShortCut = 46
+      OnClick = Deleteselectedcondition1Click
     end
     object Deletelastcondition1: TMenuItem
       Caption = 'Delete last condition'
       ShortCut = 16430
+      OnClick = Deletelastcondition1Click
     end
   end
 end

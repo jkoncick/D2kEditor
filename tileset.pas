@@ -57,7 +57,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset_dialog;
+uses Windows, Forms, SysUtils, main, tileset_dialog, mis_file;
 
 procedure tileset_init;
 var
@@ -83,6 +83,9 @@ begin
   tileset_index := index;
   tileset_menuitems[tileset_index].Checked := true;
   image_filename := current_dir+'/tilesets/'+tilesets[tileset_index].image_name+'.bmp';
+  // Set tileset in .mis file
+  Move(tilesets[tileset_index].name[1], mis_data.tileset, 8);
+  Move(tilesets[tileset_index].tileatr_name[1], mis_data.tileatr, 8);
   // Load tileset graphics
   if FileExists(image_filename) then
   begin
@@ -94,6 +97,7 @@ begin
   MainWindow.StatusBar.Panels[1].Text := tilesets[tileset_index].name;
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
     TilesetDialog.DrawTileset(nil);
+  // Re-render everything
   MainWindow.draw_cursor_image;
   MainWindow.render_minimap;
   MainWindow.render_map;
