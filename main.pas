@@ -10,7 +10,7 @@ uses
   // Units
   tileset, map_defs, mis_file, stringtable,
   // Dialogs
-  set_dialog, tileset_dialog, test_map_dialog, event_dialog;
+  set_dialog, tileset_dialog, test_map_dialog, event_dialog, mission_dialog;
 
 const max_undo_steps = 32767;
 
@@ -740,17 +740,17 @@ begin
     Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
     exit;
   end;
-  EventDialog.show;
+  EventDialog.Show;
 end;
 
 procedure TMainWindow.Missionsettings1Click(Sender: TObject);
 begin
   if not mis_assigned then
   begin
-    Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
-    exit;
+    //Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
+    //exit;
   end;
-  beep;
+  MissionDialog.Show;
 end;
 
 procedure TMainWindow.Assignmisfile1Click(Sender: TObject);

@@ -10,7 +10,8 @@ uses
   tileset in 'tileset.pas',
   map_defs in 'map_defs.pas',
   event_dialog in 'event_dialog.pas' {EventDialog},
-  stringtable in 'stringtable.pas';
+  stringtable in 'stringtable.pas',
+  mission_dialog in 'mission_dialog.pas' {MissionDialog};
 
 {$R *.res}
 
@@ -22,5 +23,6 @@ begin
   Application.CreateForm(TTilesetDialog, TilesetDialog);
   Application.CreateForm(TTestMapDialog, TestMapDialog);
   Application.CreateForm(TEventDialog, EventDialog);
+  Application.CreateForm(TMissionDialog, MissionDialog);
   Application.Run;
 end.

@@ -2,15 +2,20 @@ unit mis_file;
 
 interface
 
+uses Graphics;
+
 // Mis file constants
 const cnt_mis_players = 8;
 
 const player_names: array[0..7] of string =
   ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
+const player_names_short: array[0..7] of string =
+  ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
 
 const flag_value: array[0..1] of string = ('False', 'True');
 const deploy_action: array[0..2] of string = ('None', 'Hunt', 'Free');
 const allegiance_type: array[0..2] of string = ('Ally', 'Enemy', 'Neutral');
+const allegiance_type_color: array[0..2] of TColor = (clGreen, clRed, clOlive);
 const comparison_function: array[0..3] of string = ('>', '<', '=', '%');
 
 const unit_names: array[0..29] of string = (
@@ -172,7 +177,7 @@ type
     tileatr:          array[0..199] of char;
     num_events:       byte;
     num_conditions:   byte;
-    time_limit:       cardinal;
+    time_limit:       integer;
     unknown2:         array[0..691] of byte;
   end;
 
@@ -277,7 +282,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset, map_defs, stringtable, event_dialog;
+uses Windows, Forms, SysUtils, main, tileset, map_defs, stringtable, event_dialog, mission_dialog;
 
 function get_mis_filename(filename: String): String;
 var
@@ -320,6 +325,7 @@ begin
   end;
   process_event_markers;
   EventDialog.update_contents;
+  MissionDialog.fill_data;
 end;
 
 procedure save_mis_file(filename: String);
@@ -496,7 +502,7 @@ begin
   case cond_type of
     ctBuildingExists: contents := contents + space + building_names[cond.building_type];
     ctUnitExists:     contents := contents + space + unit_names[cond.unit_type_or_comparison_function];
-    ctInterval:       contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.value);
+    ctInterval:       contents := contents + inttostr(cond.start_delay) + ' ' + inttostr(cond.time_amount) + ' ' + inttostr(cond.value);
     ctTimer:          contents := contents + comparison_function[cond.unit_type_or_comparison_function] + inttostr(cond.time_amount);
     ctCasualties:     contents := contents + space + inttostr(cond.value) + ' ' + IntToHex(cond.casualty_flags, 8);
     ctTileRevealed:   contents := contents + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y);

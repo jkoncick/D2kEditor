@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
-  Left = 198
-  Top = 10
+  Left = 78
+  Top = 18
   Width = 1288
   Height = 720
   Caption = 'Events and Conditions'
@@ -846,9 +846,8 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 80
           Height = 21
-          Hint = 'Time between intervals'
           ParentShowHint = False
-          ShowHint = True
+          ShowHint = False
           TabOrder = 0
           Text = '0'
         end
