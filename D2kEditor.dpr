@@ -10,14 +10,16 @@ uses
   tileset in 'tileset.pas',
   map_defs in 'map_defs.pas',
   event_dialog in 'event_dialog.pas' {EventDialog},
-  stringtable in 'stringtable.pas',
-  mission_dialog in 'mission_dialog.pas' {MissionDialog};
+  string_table in 'string_table.pas',
+  mission_dialog in 'mission_dialog.pas' {MissionDialog},
+  vars in 'vars.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.Title := 'D2K+ map Editor';
+  StringTable := TStringTable.Create;
   Application.CreateForm(TMainWindow, MainWindow);
   Application.CreateForm(TSetDialog, SetDialog);
   Application.CreateForm(TTilesetDialog, TilesetDialog);

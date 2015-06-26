@@ -187,7 +187,7 @@ var
 
 implementation
 
-uses main, stringtable;
+uses main, string_table;
 
 {$R *.dfm}
 
@@ -253,8 +253,6 @@ begin
   for i:= 0 to Length(allegiance_type)-1 do
     cbAllegianceType.Items.Add(inttostr(i) + ' - ' + allegiance_type[i]);
   cbConditionPlayer.Items := cbEventPlayer.Items;
-  // Initialize max message ID
-  seMessageId.MaxValue := string_table_size;
   // Initialize building types
   for i:= 0 to Length(building_names)-1 do
     cbBuildingType.Items.Add(inttostr(i) + ' - ' + building_names[i]);
@@ -681,8 +679,7 @@ end;
 
 procedure TEventDialog.seMessageIdChange(Sender: TObject);
 begin
-  if StrToIntDef(seMessageId.Text,0) < string_table_size then
-    edMessageText.Text := string_table[StrToIntDef(seMessageId.Text,0)].text;
+  edMessageText.Text := StringTable.get_text(StrToIntDef(seMessageId.Text,0));
 end;
 
 procedure TEventDialog.EventGridSelectCell(Sender: TObject; ACol,
@@ -917,7 +914,10 @@ begin
   end;
   inc(mis_data.num_events);
   fill_grids;
-  EventGrid.Row := mis_data.num_events;
+  if EventGrid.Row = mis_data.num_events then
+    select_event(EventGrid.Row-1)
+  else
+    EventGrid.Row := mis_data.num_events;
 end;
 
 procedure TEventDialog.Deleteselectedevent1Click(Sender: TObject);
@@ -978,7 +978,10 @@ begin
   end;
   inc(mis_data.num_conditions);
   fill_grids;
-  ConditionGrid.Row := mis_data.num_conditions;
+  if ConditionGrid.Row = mis_data.num_conditions then
+    select_condition(ConditionGrid.Row-1)
+  else
+    ConditionGrid.Row := mis_data.num_conditions;
 end;
 
 procedure TEventDialog.Deleteselectedcondition1Click(Sender: TObject);
@@ -988,8 +991,7 @@ begin
   if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
     exit;
   delete_condition(selected_condition);
-  select_condition(selected_condition);
-  select_event(selected_event);
+  update_contents;
 end;
 
 procedure TEventDialog.Deletelastcondition1Click(Sender: TObject);
@@ -999,8 +1001,7 @@ begin
   if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
     exit;
   delete_condition(mis_data.num_conditions - 1);
-  select_condition(selected_condition);
-  select_event(selected_event);
+  update_contents;
 end;
 
 procedure TEventDialog.seFlagNumberChange(Sender: TObject);

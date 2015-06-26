@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Units
-  tileset, map_defs, mis_file, stringtable,
+  tileset, map_defs, mis_file, string_table,
   // Dialogs
   set_dialog, tileset_dialog, test_map_dialog, event_dialog, mission_dialog;
 
@@ -1510,6 +1510,7 @@ end;
 procedure TMainWindow.load_map(filename: String);
 var
   map_file: file of word;
+  tmp_mis_filename: String;
   x, y: integer;
 begin
   if not FileExists(filename) then
@@ -1546,9 +1547,28 @@ begin
   MainWindow.test_map_settings_loaded := false;
   MainWindow.StatusBar.Panels[3].Text := filename;
   MainWindow.StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
-  // Load tileset and other information from .mis file
-  load_string_table(ExtractFilePath(map_filename) + '..\Data\UI_DATA\text.uib');
-  load_mis_file(get_mis_filename(map_filename));
+  // Load string table (to be moved)
+  StringTable.load_from_file(ExtractFilePath(map_filename) + '..\Data\UI_DATA\text.uib');
+  // Load mis file
+  tmp_mis_filename := get_mis_filename(map_filename);
+  if FileExists(tmp_mis_filename) then
+  begin
+    mis_assigned := true;
+    MainWindow.StatusBar.Panels[4].Text := 'MIS';
+    load_mis_file(tmp_mis_filename);
+    // Update Mission settings and Events and Conditions dialogs.
+    // Map's ini file will be loaded along with Mission dialog.
+    MissionDialog.fill_data;
+    EventDialog.update_contents;
+  end else
+  begin
+    mis_assigned := false;
+    MainWindow.StatusBar.Panels[4].Text := '';
+    mis_filename := '';
+    set_default_mis_values;
+    MissionDialog.Close;
+    EventDialog.Close;
+  end;
   // Rendering
   MainWindow.resize_map_canvas;
   MainWindow.render_minimap;
@@ -1573,7 +1593,10 @@ begin
     end;
   CloseFile(map_file);
   if mis_assigned then
+  begin
     save_mis_file(get_mis_filename(filename));
+    MissionDialog.save_ini_fields(filename);
+  end;
 end;
 
 function TMainWindow.check_map_can_be_tested: boolean;
@@ -1672,6 +1695,8 @@ begin
   end;
   ini.Destroy;
   save_map(game_path + 'Missions\TESTMAP.MAP');
+  if not MissionDialog.cbUseINI.Checked then
+    DeleteFile(game_path + 'Missions\TESTMAP.INI');
   ShellExecuteA(0, 'open', PChar(game_path + 'dune2000.exe'), PChar('-SPAWN ' + test_map_settings.Parameters), PChar(game_path), SW_SHOWNORMAL);
 end;
 

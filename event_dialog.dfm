@@ -413,7 +413,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 65
           Height = 22
-          MaxValue = 2048
+          MaxValue = 2047
           MinValue = 0
           TabOrder = 0
           Value = 0

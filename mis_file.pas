@@ -10,7 +10,7 @@ const cnt_mis_players = 8;
 const player_names: array[0..7] of string =
   ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
 const player_names_short: array[0..7] of string =
-  ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
+  ('Atr', 'Hark', 'Ord', 'Emp', 'Fre', 'Smug', 'Merc', 'Sdwm');
 
 const flag_value: array[0..1] of string = ('False', 'True');
 const deploy_action: array[0..2] of string = ('None', 'Hunt', 'Free');
@@ -282,7 +282,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset, map_defs, stringtable, event_dialog, mission_dialog;
+uses SysUtils, tileset, map_defs, string_table;
 
 function get_mis_filename(filename: String): String;
 var
@@ -300,22 +300,11 @@ var
   tileset_name: String;
   i: integer;
 begin
-  mis_assigned := FileExists(filename);
-  if mis_assigned then
-  begin
-    MainWindow.StatusBar.Panels[4].Text := 'MIS';
-    mis_filename := filename;
-  end else
-  begin
-    MainWindow.StatusBar.Panels[4].Text := '';
-    mis_filename := '';
-    set_default_mis_values;
-    exit;
-  end;
   AssignFile(mis_file, filename);
   Reset(mis_file);
   Read(mis_file, mis_data);
   CloseFile(mis_file);
+  mis_filename := filename;
 
   tileset_name := String(mis_data.tileset);
   for i:= 0 to cnt_tilesets-1 do
@@ -324,8 +313,6 @@ begin
       tileset_change(i);
   end;
   process_event_markers;
-  EventDialog.update_contents;
-  MissionDialog.fill_data;
 end;
 
 procedure save_mis_file(filename: String);
@@ -450,8 +437,7 @@ begin
     etShowMessage:
     begin
       contents := '(' + inttostr(event.message_index) + ') ';
-      if event.message_index < cardinal(string_table_size) then
-      contents := contents + string_table[event.message_index].text;
+      contents := contents + StringTable.get_text(event.message_index);
     end;
     etSetFlag:      contents := inttostr(event.player) + ' = ' + flag_value[event.value];
   end;
@@ -555,7 +541,6 @@ begin
   end;
   // Finally decrease number of conditions and fill event dialog grids
   dec(mis_data.num_conditions);
-  EventDialog.fill_grids;
 end;
 
 end.

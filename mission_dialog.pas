@@ -5,7 +5,10 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, StdCtrls, Spin, mis_file, Buttons, ComCtrls, Grids,
-  ValEdit;
+  ValEdit, IniFiles, map_defs, vars;
+
+const player_names_shorter: array[0..7] of string =
+  ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
 
 type
   TMissionDialog = class(TForm)
@@ -29,7 +32,27 @@ type
     btnImportAI: TButton;
     btnExportAI: TButton;
     btnCopyAI: TButton;
-    cbCopyAITo: TComboBox;
+    StringValueList: TValueListEditor;
+    RuleValueList: TValueListEditor;
+    cbUseINI: TCheckBox;
+    btnRefreshStrings: TButton;
+    Bevel1: TBevel;
+    btnResetToDefaults: TButton;
+    lblMapName: TLabel;
+    lblMapAuthor: TLabel;
+    lblMapMusic: TLabel;
+    edMapName: TEdit;
+    edMapAuthor: TEdit;
+    edMapMusic: TEdit;
+    btnPasteAI: TButton;
+    lblMapSideId: TLabel;
+    lblMapMissionNumber: TLabel;
+    cbMapSideId: TComboBox;
+    seMapMissionNumber: TSpinEdit;
+    StringsPanel: TPanel;
+    StringsSplitter: TSplitter;
+    MapBriefing: TMemo;
+    lblMapBriefing: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure seTechLevelAllChange(Sender: TObject);
     procedure edStartingMoneyAllChange(Sender: TObject);
@@ -42,7 +65,9 @@ type
     procedure time_limit_change(Sender: TObject);
     procedure AITabControlChange(Sender: TObject);
     procedure AIValueListStringsChange(Sender: TObject);
-    procedure btnCopyAIClick(Sender: TObject);
+    procedure cbUseINIClick(Sender: TObject);
+    procedure btnResetToDefaultsClick(Sender: TObject);
+    procedure btnRefreshStringsClick(Sender: TObject);
   private
     player_label: array[0..cnt_mis_players-1] of TLabel;
     tech_level: array[0..cnt_mis_players-1] of TSpinEdit;
@@ -53,12 +78,20 @@ type
   public
     procedure fill_data;
     procedure fill_ai_values;
+
+    function get_ini_filename(map_filename: String): String;
+    procedure load_ini_fields;
+    procedure empty_ini_fields;
+    procedure save_ini_fields(map_filename: String);
   end;
 
 var
   MissionDialog: TMissionDialog;
 
 implementation
+
+uses
+  string_table, event_dialog;
 
 {$R *.dfm}
 
@@ -112,7 +145,7 @@ begin
     player_label_alleg[i] := TLabel.Create(self);
     player_label_alleg[i].Left := 290 + i * 52;
     player_label_alleg[i].Top := 8;
-    player_label_alleg[i].Caption := player_names_short[i];
+    player_label_alleg[i].Caption := player_names_shorter[i];
     player_label_alleg[i].Parent := PlayerSettingsPanel;
     // Initialize allegiance buttons
     for j := 0 to cnt_mis_players-1 do
@@ -128,11 +161,11 @@ begin
       allegiance_btn[i,j].OnClick := allegiance_btn_click;
     end;
     // Initialize AI PageControl
-    AITabControl.Tabs.Add(player_names[i]);
-    cbCopyAITo.Items.Add(inttostr(i) + ' - ' + player_names[i]);
+    AITabControl.Tabs.Add(player_names_short[i]);
+    // Initialize Play as list
+    cbMapSideId.Items.Add(inttostr(i) + ' - ' + player_names[i]);
   end;
-  AIValueList.ColWidths[0] := 160;
-  cbCopyAITo.ItemIndex := 0;
+  StringTable.init_value_list(StringValueList);
 end;
 
 procedure TMissionDialog.fill_data;
@@ -152,6 +185,17 @@ begin
   end;
   edTimeLimit.Text := inttostr(mis_data.time_limit);
   fill_ai_values;
+  cbUseINI.Tag := 1;
+  if FileExists(get_ini_filename(map_filename)) then
+  begin
+    load_ini_fields;
+    cbUseINI.Checked := true;
+  end else
+  begin
+    empty_ini_fields;
+    cbUseINI.Checked := false;
+  end;
+  cbUseINI.Tag := 0;
 end;
 
 procedure TMissionDialog.fill_ai_values;
@@ -166,6 +210,132 @@ begin
   end;
   AIValueList.Strings := tmp_strings;
   tmp_strings.Destroy;
+end;
+
+function TMissionDialog.get_ini_filename(map_filename: String): String;
+begin
+  result := ChangeFileExt(map_filename,'.ini');
+end;
+
+procedure TMissionDialog.load_ini_fields;
+var
+  i: integer;
+  tmp_strings: TStringList;
+  ini: TIniFile;
+begin
+  ini := TIniFile.Create(get_ini_filename(map_filename));
+  btnResetToDefaults.Enabled := true;
+  btnRefreshStrings.Enabled := true;
+  // Load basic map settings
+  edMapName.Enabled := true;
+  edMapName.Text := ini.ReadString('Basic','Name','');
+  edMapAuthor.Enabled := true;
+  edMapAuthor.Text := ini.ReadString('Basic','Author','');
+  edMapMusic.Enabled := true;
+  edMapMusic.Text := ini.ReadString('Basic','Music','');
+  cbMapSideId.Enabled := true;
+  cbMapSideId.ItemIndex := ini.ReadInteger('Basic','SideId',-1);
+  seMapMissionNumber.Enabled := true;
+  seMapMissionNumber.Value := ini.ReadInteger('Basic','MissionNumber',0);
+  // Load rules
+  RuleValueList.Enabled := true;
+  tmp_strings := TValueListStrings.Create(nil);
+  for i := 0 to Length(rule_definitions) - 1 do
+  begin
+    tmp_strings.Add(rule_definitions[i].name+'='+ini.ReadString('Vars',rule_definitions[i].name,rule_definitions[i].default_value));
+  end;
+  RuleValueList.Strings := tmp_strings;
+  tmp_strings.Clear;
+  // Load strings
+  StringValueList.Enabled := true;
+  StringTable.load_custom_texts_from_ini(ini);
+  // Load briefing
+  MapBriefing.Enabled := true;
+  tmp_strings.Delimiter := '_';
+  tmp_strings.DelimitedText := StringReplace(ini.ReadString('Basic','Briefing',''),' ','^',[rfReplaceAll]);
+  for i := 0 to tmp_strings.Count-1 do
+  begin
+    tmp_strings[i] := StringReplace(tmp_strings[i],'^',' ',[rfReplaceAll]);
+  end;
+  MapBriefing.Lines := tmp_strings;
+  tmp_strings.Destroy;
+  ini.Destroy;
+end;
+
+procedure TMissionDialog.empty_ini_fields;
+begin
+  btnResetToDefaults.Enabled := false;
+  btnRefreshStrings.Enabled := false;
+  edMapName.Enabled := false;
+  edMapName.Clear;
+  edMapAuthor.Enabled := false;
+  edMapAuthor.Clear;
+  edMapMusic.Enabled := false;
+  edMapMusic.Clear;
+  cbMapSideId.Enabled := false;
+  cbMapSideId.ItemIndex := -1;
+  seMapMissionNumber.Enabled := false;
+  seMapMissionNumber.Value := 0;
+  RuleValueList.Enabled := false;
+  RuleValueList.Strings.Clear;
+  StringValueList.Enabled := false;
+  StringTable.clear_custom_texts;
+  MapBriefing.Enabled := false;
+  MapBriefing.Lines.Clear;
+end;
+
+procedure TMissionDialog.save_ini_fields(map_filename: String);
+var
+  i: integer;
+  tmp_string: String;
+  ini: TIniFile;
+begin
+  if not cbUseINI.Checked then
+    exit;
+  ini := TIniFile.Create(get_ini_filename(map_filename));
+  // Save basic map settings
+  if edMapName.Text = '' then
+    ini.DeleteKey('Basic','Name')
+  else
+    ini.WriteString('Basic','Name',edMapName.Text);
+  if edMapAuthor.Text = '' then
+    ini.DeleteKey('Basic','Author')
+  else
+    ini.WriteString('Basic','Author',edMapAuthor.Text);
+  if edMapMusic.Text = '' then
+    ini.DeleteKey('Basic','Music')
+  else
+    ini.WriteString('Basic','Music',edMapMusic.Text);
+  if cbMapSideId.ItemIndex = -1 then
+    ini.DeleteKey('Basic','SideId')
+  else
+    ini.WriteInteger('Basic','SideId',cbMapSideId.ItemIndex);
+  if seMapMissionNumber.Value = 0 then
+    ini.DeleteKey('Basic','MissionNumber')
+  else
+    ini.WriteInteger('Basic','MissionNumber',seMapMissionNumber.Value);
+  // Save rules
+  for i := 0 to Length(rule_definitions) - 1 do
+  begin
+    if RuleValueList.Cells[1,i+1] = rule_definitions[i].default_value then
+      ini.DeleteKey('Vars',rule_definitions[i].name)
+    else
+      ini.WriteString('Vars',rule_definitions[i].name,RuleValueList.Cells[1,i+1]);
+  end;
+  // Save strings
+  StringTable.save_custom_texts_to_ini(ini);
+  // Save briefing
+  if MapBriefing.Lines.Count = 0 then
+    ini.DeleteKey('Basic','Briefing')
+  else begin
+    for i := 0 to MapBriefing.Lines.Count - 1 do
+    begin
+      if i > 0 then
+        tmp_string := tmp_string + '_';
+      tmp_string := tmp_string + MapBriefing.Lines[i];
+    end;
+    ini.WriteString('Basic','Briefing',tmp_string);
+  end;
 end;
 
 procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
@@ -255,10 +425,45 @@ begin
   mis_data.ai_segments[AITabControl.TabIndex, AIValueList.Row-1] := strtointdef(AIValueList.Cells[1,AIValueList.Row],0);
 end;
 
-procedure TMissionDialog.btnCopyAIClick(Sender: TObject);
+procedure TMissionDialog.cbUseINIClick(Sender: TObject);
+var
+  ini_filename: string;
 begin
-  Move(mis_data.ai_segments[AITabControl.TabIndex], mis_data.ai_segments[cbCopyAITo.ItemIndex], Length(mis_data.ai_segments[0]));
-  AITabControl.TabIndex := cbCopyAITo.ItemIndex;
+  if cbUseINI.Tag = 1 then
+    exit;
+  if cbUseINI.Checked then
+  begin
+    load_ini_fields;
+  end else
+  begin
+    ini_filename := get_ini_filename(map_filename);
+    if FileExists(ini_filename) and (Application.MessageBox('Do you want to delete ini file on disk?', 'Do not use ini file', MB_YESNO or MB_ICONQUESTION) = IDYES) then
+      DeleteFile(ini_filename);
+    empty_ini_fields;
+    // Need to update strings because custom texts are unloaded
+    EventDialog.update_contents;
+  end;
+end;
+
+procedure TMissionDialog.btnResetToDefaultsClick(Sender: TObject);
+var
+  i: integer;
+  tmp_strings: TValueListStrings;
+begin
+  if not cbUseINI.Checked then
+    exit;
+  tmp_strings := TValueListStrings.Create(nil);
+  for i := 0 to Length(rule_definitions) - 1 do
+  begin
+    tmp_strings.Add(rule_definitions[i].name+'='+rule_definitions[i].default_value);
+  end;
+  RuleValueList.Strings := tmp_strings;
+  tmp_strings.Destroy;
+end;
+
+procedure TMissionDialog.btnRefreshStringsClick(Sender: TObject);
+begin
+  EventDialog.update_contents;
 end;
 
 end.
