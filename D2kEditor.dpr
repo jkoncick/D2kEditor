@@ -11,8 +11,7 @@ uses
   map_defs in 'map_defs.pas',
   event_dialog in 'event_dialog.pas' {EventDialog},
   string_table in 'string_table.pas',
-  mission_dialog in 'mission_dialog.pas' {MissionDialog},
-  vars in 'vars.pas';
+  mission_dialog in 'mission_dialog.pas' {MissionDialog};
 
 {$R *.res}
 

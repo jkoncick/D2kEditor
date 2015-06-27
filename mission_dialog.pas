@@ -5,10 +5,16 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, StdCtrls, Spin, mis_file, Buttons, ComCtrls, Grids,
-  ValEdit, IniFiles, map_defs, vars, Clipbrd;
+  ValEdit, IniFiles, map_defs, Clipbrd;
 
 const player_names_shorter: array[0..7] of string =
   ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
+
+type
+  TRuleDefinition = record
+    name: String;
+    default_value: String;
+  end;
 
 type
   TAIClipboard = record
@@ -86,6 +92,7 @@ type
     alloc_index: array[0..cnt_mis_players-1] of TSpinEdit;
     player_label_alleg: array[0..cnt_mis_players-1] of TLabel;
     allegiance_btn: array[0..cnt_mis_players-1, 0..cnt_mis_players-1] of TBitBtn;
+    rule_definitions: array of TRuleDefinition;
     ai_clipboard_format: cardinal;
   public
     procedure fill_data;
@@ -103,14 +110,17 @@ var
 implementation
 
 uses
-  string_table, event_dialog;
+  string_table, event_dialog, main;
 
 {$R *.dfm}
 
 procedure TMissionDialog.FormCreate(Sender: TObject);
 var
   i, j: integer;
+  rules_ini: TIniFile;
+  tmp_strings: TStringList;
 begin
+  StringTable.init_value_list(StringValueList);
   for i := 0 to cnt_mis_players-1 do
   begin
     // Initialize player labels
@@ -177,7 +187,19 @@ begin
     // Initialize Play as list
     cbMapSideId.Items.Add(inttostr(i) + ' - ' + player_names[i]);
   end;
-  StringTable.init_value_list(StringValueList);
+  // Load rule definitions from ini file
+  rules_ini := TIniFile.Create(current_dir + 'rules.ini');
+  tmp_strings := TStringList.Create;
+  rules_ini.ReadSection('Vars',tmp_strings);
+  SetLength(rule_definitions, tmp_strings.Count);
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    rule_definitions[i].name := tmp_strings[i];
+    rule_definitions[i].default_value := rules_ini.ReadString('Vars',tmp_strings[i],'');
+  end;
+  rules_ini.Destroy;
+  tmp_strings.Destroy;
+  // Register AI clipboard format
   ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
 end;
 
