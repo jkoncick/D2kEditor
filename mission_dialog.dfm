@@ -13,8 +13,10 @@ object MissionDialog: TMissionDialog
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  KeyPreview = True
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
   PixelsPerInch = 96
   TextHeight = 13
   object SettingsPanel: TPanel
@@ -116,6 +118,13 @@ object MissionDialog: TMissionDialog
         Width = 112
         Height = 13
         Caption = 'Mission briefing (below):'
+      end
+      object lblTimeLimitHelp: TLabel
+        Left = 176
+        Top = 260
+        Width = 239
+        Height = 13
+        Caption = '(-1 = no limit, 25 = one second, 1500 = one minute)'
       end
       object seTechLevelAll: TSpinEdit
         Left = 72

@@ -19,8 +19,10 @@ object MainWindow: TMainWindow
   OldCreateOrder = False
   Position = poScreenCenter
   Visible = True
+  OnActivate = FormActivate
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnDeactivate = FormDeactivate
   OnKeyDown = FormKeyDown
   OnMouseMove = FormMouseMove
   OnMouseWheelDown = FormMouseWheelDown

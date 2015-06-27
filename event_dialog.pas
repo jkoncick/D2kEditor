@@ -112,7 +112,12 @@ type
     Deletelastcondition1: TMenuItem;
     MoveUp1: TMenuItem;
     MoveDown1: TMenuItem;
+    Insertevent1: TMenuItem;
+    Duplicateevent1: TMenuItem;
+    Duplicatecondition1: TMenuItem;
     procedure FormCreate(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     procedure seMessageIdChange(Sender: TObject);
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer;
       var CanSelect: Boolean);
@@ -132,25 +137,32 @@ type
     procedure ConditionGridDblClick(Sender: TObject);
     procedure btnDeleteLastConditionClick(Sender: TObject);
     procedure btnDeleteAllConditionsClick(Sender: TObject);
-    procedure ConditionGridMouseWheelDown(Sender: TObject;
-      Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
-    procedure ConditionGridMouseWheelUp(Sender: TObject;
-      Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure EventGridMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
     procedure EventGridMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
+    procedure ConditionGridMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure ConditionGridMouseWheelDown(Sender: TObject;
+      Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure ConditionGridMouseWheelUp(Sender: TObject;
+      Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure btnApplyEventChangesClick(Sender: TObject);
     procedure btnApplyConditionChangesClick(Sender: TObject);
     procedure EventConditionListDblClick(Sender: TObject);
     procedure btnEventPositionGotoMapClick(Sender: TObject);
     procedure btnConditionPositionGotoMapClick(Sender: TObject);
     procedure Addevent1Click(Sender: TObject);
+    procedure Insertevent1Click(Sender: TObject);
+    procedure Duplicateevent1Click(Sender: TObject);
     procedure Deleteselectedevent1Click(Sender: TObject);
     procedure Deletelastevent1Click(Sender: TObject);
     procedure MoveUp1Click(Sender: TObject);
     procedure MoveDown1Click(Sender: TObject);
     procedure Addcondition1Click(Sender: TObject);
+    procedure Duplicatecondition1Click(Sender: TObject);
     procedure Deleteselectedcondition1Click(Sender: TObject);
     procedure Deletelastcondition1Click(Sender: TObject);
     procedure seFlagNumberChange(Sender: TObject);
@@ -264,6 +276,15 @@ begin
     cbTimerCompareFunc.Items.Add(comparison_function[i]);
   select_event(0);
   select_condition(0);
+end;
+
+procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if key = 27 then
+    Close;
+  if key = 123 then
+    MainWindow.Show;
 end;
 
 procedure TEventDialog.update_contents;
@@ -844,20 +865,17 @@ begin
   EventConditionList.Items.Clear;
 end;
 
-procedure TEventDialog.ConditionGridMouseWheelDown(Sender: TObject;
-  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+procedure TEventDialog.EventGridMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  row: integer;
 begin
-  if ConditionGrid.TopRow < (Length(mis_data.conditions) + 1 - ConditionGrid.VisibleRowCount) then
-    ConditionGrid.TopRow := ConditionGrid.TopRow + 1;
-  Handled := true;
-end;
-
-procedure TEventDialog.ConditionGridMouseWheelUp(Sender: TObject;
-  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
-begin
-  if ConditionGrid.TopRow > 1 then
-    ConditionGrid.TopRow := ConditionGrid.TopRow - 1;
-  Handled := true;
+  if Button = mbRight then
+  begin
+    EventGrid.MouseToCell(X,Y,X,row);
+    if row > 0 then
+      EventGrid.Row := row;
+  end;
 end;
 
 procedure TEventDialog.EventGridMouseWheelDown(Sender: TObject;
@@ -873,6 +891,35 @@ procedure TEventDialog.EventGridMouseWheelUp(Sender: TObject;
 begin
   if EventGrid.TopRow > 1 then
     EventGrid.TopRow := EventGrid.TopRow - 1;
+  Handled := true;
+end;
+
+procedure TEventDialog.ConditionGridMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  row: integer;
+begin
+  if Button = mbRight then
+  begin
+    ConditionGrid.MouseToCell(X,Y,X,row);
+    if row > 0 then
+      ConditionGrid.Row := row;
+  end;
+end;
+
+procedure TEventDialog.ConditionGridMouseWheelDown(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if ConditionGrid.TopRow < (Length(mis_data.conditions) + 1 - ConditionGrid.VisibleRowCount) then
+    ConditionGrid.TopRow := ConditionGrid.TopRow + 1;
+  Handled := true;
+end;
+
+procedure TEventDialog.ConditionGridMouseWheelUp(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if ConditionGrid.TopRow > 1 then
+    ConditionGrid.TopRow := ConditionGrid.TopRow - 1;
   Handled := true;
 end;
 
@@ -918,6 +965,43 @@ begin
     select_event(EventGrid.Row-1)
   else
     EventGrid.Row := mis_data.num_events;
+end;
+
+procedure TEventDialog.Insertevent1Click(Sender: TObject);
+var
+  i: integer;
+begin
+  if mis_data.num_events = Length(mis_data.events) then
+  begin
+    beep;
+    exit;
+  end;
+  if selected_event >= mis_data.num_events then
+    exit;
+  for i := mis_data.num_events downto selected_event + 1 do
+    mis_data.events[i] := mis_data.events[i-1];
+  FillChar(mis_data.events[selected_event], sizeof(TEvent), 0);
+  inc(mis_data.num_events);
+  fill_grids;
+  select_event(selected_event);
+end;
+
+procedure TEventDialog.Duplicateevent1Click(Sender: TObject);
+var
+  i: integer;
+begin
+  if mis_data.num_events = Length(mis_data.events) then
+  begin
+    beep;
+    exit;
+  end;
+  if selected_event >= mis_data.num_events then
+    exit;
+  for i := mis_data.num_events downto selected_event + 1 do
+    mis_data.events[i] := mis_data.events[i-1];
+  inc(mis_data.num_events);
+  fill_grids;
+  EventGrid.Row := selected_event + 2;
 end;
 
 procedure TEventDialog.Deleteselectedevent1Click(Sender: TObject);
@@ -982,6 +1066,19 @@ begin
     select_condition(ConditionGrid.Row-1)
   else
     ConditionGrid.Row := mis_data.num_conditions;
+end;
+
+procedure TEventDialog.Duplicatecondition1Click(Sender: TObject);
+begin
+  if mis_data.num_conditions = Length(mis_data.conditions) then
+  begin
+    beep;
+    exit;
+  end;
+  Move(mis_data.conditions[selected_condition], mis_data.conditions[mis_data.num_conditions], sizeof(TCondition));
+  inc(mis_data.num_conditions);
+  fill_grids;
+  ConditionGrid.Row := mis_data.num_conditions;
 end;
 
 procedure TEventDialog.Deleteselectedcondition1Click(Sender: TObject);

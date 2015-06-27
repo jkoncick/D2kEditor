@@ -148,6 +148,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure FormDeactivate(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
     procedure CMDialogKey(var AMessage: TCMDialogKey); message CM_DIALOGKEY;
     procedure FormKeyDown(Sender: TObject; var Key: Word;
@@ -366,6 +368,22 @@ begin
   StructureList.Height := EditorMenu.Height - 354;
   EditorPages.Height := Height - 214;
   StatusBar.Panels[3].Width := ClientWidth - 550;
+end;
+
+procedure TMainWindow.FormDeactivate(Sender: TObject);
+begin
+  Undo1.ShortCut := 0;
+  Redo1.ShortCut := 0;
+  Copy1.ShortCut := 0;
+  Paste1.ShortCut := 0;
+end;
+
+procedure TMainWindow.FormActivate(Sender: TObject);
+begin
+  Undo1.ShortCut := 16474;
+  Redo1.ShortCut := 16473;
+  Copy1.ShortCut := 16451;
+  Paste1.ShortCut := 16470;
 end;
 
 procedure TMainWindow.WMDropFiles(var Msg: TWMDropFiles);

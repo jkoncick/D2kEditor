@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
-  Left = 78
-  Top = 18
+  Left = 192
+  Top = 112
   Width = 1288
   Height = 720
   Caption = 'Events and Conditions'
@@ -12,8 +12,10 @@ object EventDialog: TEventDialog
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  KeyPreview = True
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
   PixelsPerInch = 96
   TextHeight = 13
   object Splitter1: TSplitter
@@ -43,6 +45,7 @@ object EventDialog: TEventDialog
     PopupMenu = EventGridPopupMenu
     ScrollBars = ssVertical
     TabOrder = 0
+    OnMouseDown = EventGridMouseDown
     OnMouseWheelDown = EventGridMouseWheelDown
     OnMouseWheelUp = EventGridMouseWheelUp
     OnSelectCell = EventGridSelectCell
@@ -69,6 +72,7 @@ object EventDialog: TEventDialog
       PopupMenu = ConditionGridPopupMenu
       TabOrder = 0
       OnDblClick = ConditionGridDblClick
+      OnMouseDown = ConditionGridMouseDown
       OnMouseWheelDown = ConditionGridMouseWheelDown
       OnMouseWheelUp = ConditionGridMouseWheelUp
       OnSelectCell = ConditionGridSelectCell
@@ -897,8 +901,18 @@ object EventDialog: TEventDialog
       ShortCut = 45
       OnClick = Addevent1Click
     end
+    object Insertevent1: TMenuItem
+      Caption = 'Insert event'
+      ShortCut = 16429
+      OnClick = Insertevent1Click
+    end
+    object Duplicateevent1: TMenuItem
+      Caption = 'Duplicate event'
+      ShortCut = 8237
+      OnClick = Duplicateevent1Click
+    end
     object Deleteselectedevent1: TMenuItem
-      Caption = 'Delete selected event'
+      Caption = 'Delete event'
       ShortCut = 46
       OnClick = Deleteselectedevent1Click
     end
@@ -909,10 +923,12 @@ object EventDialog: TEventDialog
     end
     object MoveUp1: TMenuItem
       Caption = 'Move Up'
+      ShortCut = 33
       OnClick = MoveUp1Click
     end
     object MoveDown1: TMenuItem
       Caption = 'Move Down'
+      ShortCut = 34
       OnClick = MoveDown1Click
     end
   end
@@ -923,8 +939,13 @@ object EventDialog: TEventDialog
       ShortCut = 45
       OnClick = Addcondition1Click
     end
+    object Duplicatecondition1: TMenuItem
+      Caption = 'Duplicate condition'
+      ShortCut = 8237
+      OnClick = Duplicatecondition1Click
+    end
     object Deleteselectedcondition1: TMenuItem
-      Caption = 'Delete selected condition'
+      Caption = 'Delete condition'
       ShortCut = 46
       OnClick = Deleteselectedcondition1Click
     end

@@ -66,7 +66,10 @@ type
     lblMapBriefing: TLabel;
     ExportAIDialog: TSaveDialog;
     ImportAIDialog: TOpenDialog;
+    lblTimeLimitHelp: TLabel;
     procedure FormCreate(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     procedure seTechLevelAllChange(Sender: TObject);
     procedure edStartingMoneyAllChange(Sender: TObject);
     procedure btnAllocIndexResetClick(Sender: TObject);
@@ -201,6 +204,15 @@ begin
   tmp_strings.Destroy;
   // Register AI clipboard format
   ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
+end;
+
+procedure TMissionDialog.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if key = 27 then
+    Close;
+  if key = 123 then
+    MainWindow.Show;
 end;
 
 procedure TMissionDialog.fill_data;
