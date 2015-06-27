@@ -5,10 +5,15 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, StdCtrls, Spin, mis_file, Buttons, ComCtrls, Grids,
-  ValEdit, IniFiles, map_defs, vars;
+  ValEdit, IniFiles, map_defs, vars, Clipbrd;
 
 const player_names_shorter: array[0..7] of string =
   ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
+
+type
+  TAIClipboard = record
+    ai_data: array[0..7607] of byte;
+  end;
 
 type
   TMissionDialog = class(TForm)
@@ -53,6 +58,8 @@ type
     StringsSplitter: TSplitter;
     MapBriefing: TMemo;
     lblMapBriefing: TLabel;
+    ExportAIDialog: TSaveDialog;
+    ImportAIDialog: TOpenDialog;
     procedure FormCreate(Sender: TObject);
     procedure seTechLevelAllChange(Sender: TObject);
     procedure edStartingMoneyAllChange(Sender: TObject);
@@ -68,6 +75,10 @@ type
     procedure cbUseINIClick(Sender: TObject);
     procedure btnResetToDefaultsClick(Sender: TObject);
     procedure btnRefreshStringsClick(Sender: TObject);
+    procedure btnExportAIClick(Sender: TObject);
+    procedure btnImportAIClick(Sender: TObject);
+    procedure btnCopyAIClick(Sender: TObject);
+    procedure btnPasteAIClick(Sender: TObject);
   private
     player_label: array[0..cnt_mis_players-1] of TLabel;
     tech_level: array[0..cnt_mis_players-1] of TSpinEdit;
@@ -75,6 +86,7 @@ type
     alloc_index: array[0..cnt_mis_players-1] of TSpinEdit;
     player_label_alleg: array[0..cnt_mis_players-1] of TLabel;
     allegiance_btn: array[0..cnt_mis_players-1, 0..cnt_mis_players-1] of TBitBtn;
+    ai_clipboard_format: cardinal;
   public
     procedure fill_data;
     procedure fill_ai_values;
@@ -166,6 +178,7 @@ begin
     cbMapSideId.Items.Add(inttostr(i) + ' - ' + player_names[i]);
   end;
   StringTable.init_value_list(StringValueList);
+  ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
 end;
 
 procedure TMissionDialog.fill_data;
@@ -201,9 +214,9 @@ end;
 procedure TMissionDialog.fill_ai_values;
 var
   i: integer;
-  tmp_strings: TValueListStrings;
+  tmp_strings: TStringList;
 begin
-  tmp_strings := TValueListStrings.Create(nil);
+  tmp_strings := TStringList.Create();
   for i := 0 to Length(mis_data.ai_segments[0]) -1 do
   begin
     tmp_strings.Add('Byte ' + inttostr(i)+ '=' + inttostr(mis_data.ai_segments[AITabControl.TabIndex, i]));
@@ -239,7 +252,7 @@ begin
   seMapMissionNumber.Value := ini.ReadInteger('Basic','MissionNumber',0);
   // Load rules
   RuleValueList.Enabled := true;
-  tmp_strings := TValueListStrings.Create(nil);
+  tmp_strings := TStringList.Create;
   for i := 0 to Length(rule_definitions) - 1 do
   begin
     tmp_strings.Add(rule_definitions[i].name+'='+ini.ReadString('Vars',rule_definitions[i].name,rule_definitions[i].default_value));
@@ -448,11 +461,11 @@ end;
 procedure TMissionDialog.btnResetToDefaultsClick(Sender: TObject);
 var
   i: integer;
-  tmp_strings: TValueListStrings;
+  tmp_strings: TStringList;
 begin
   if not cbUseINI.Checked then
     exit;
-  tmp_strings := TValueListStrings.Create(nil);
+  tmp_strings := TStringList.Create;
   for i := 0 to Length(rule_definitions) - 1 do
   begin
     tmp_strings.Add(rule_definitions[i].name+'='+rule_definitions[i].default_value);
@@ -464,6 +477,70 @@ end;
 procedure TMissionDialog.btnRefreshStringsClick(Sender: TObject);
 begin
   EventDialog.update_contents;
+end;
+
+procedure TMissionDialog.btnExportAIClick(Sender: TObject);
+var
+  ai_file: file of byte;
+begin
+  if ExportAIDialog.Execute then
+  begin
+    AssignFile(ai_file, ExportAIDialog.FileName);
+    ReWrite(ai_file);
+    BlockWrite(ai_file, mis_data.ai_segments[AITabControl.TabIndex][1], Length(mis_data.ai_segments[0])-1);
+    CloseFile(ai_file);
+  end;
+end;
+
+procedure TMissionDialog.btnImportAIClick(Sender: TObject);
+var
+  ai_file: file of byte;
+begin
+  if ImportAIDialog.Execute then
+  begin
+    AssignFile(ai_file, ImportAIDialog.FileName);
+    Reset(ai_file);
+    BlockRead(ai_file, mis_data.ai_segments[AITabControl.TabIndex][1], Length(mis_data.ai_segments[0])-1);
+    CloseFile(ai_file);
+    fill_ai_values;
+  end;
+end;
+
+procedure TMissionDialog.btnCopyAIClick(Sender: TObject);
+var
+  handle: THandle;
+  pointer: ^TAIClipboard;
+begin
+  OpenClipboard(Application.Handle);
+  EmptyClipboard;
+
+  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, sizeof(TAIClipboard));
+  pointer := GlobalLock(handle);
+
+  Move(mis_data.ai_segments[AITabControl.TabIndex][1], pointer.ai_data, 7607);
+
+  GlobalUnLock(handle);
+  SetClipboardData(ai_clipboard_format, handle);
+  CloseClipboard;
+end;
+
+procedure TMissionDialog.btnPasteAIClick(Sender: TObject);
+var
+  handle: THandle;
+  pointer: ^TAIClipboard;
+begin
+  if not Clipboard.HasFormat(ai_clipboard_format) then
+    exit;
+  OpenClipboard(Application.Handle);
+  handle := GetClipboardData(ai_clipboard_format);
+  pointer := GlobalLock(handle);
+
+  Move(pointer.ai_data, mis_data.ai_segments[AITabControl.TabIndex][1], 7607);
+
+  fill_ai_values;
+
+  GlobalUnLock(handle);
+  CloseClipboard;
 end;
 
 end.

@@ -1,8 +1,8 @@
 object MissionDialog: TMissionDialog
   Left = 192
-  Top = 111
+  Top = 80
   Width = 1024
-  Height = 600
+  Height = 640
   Caption = 'Mission settings'
   Color = clBtnFace
   Constraints.MaxWidth = 1024
@@ -21,7 +21,7 @@ object MissionDialog: TMissionDialog
     Left = 0
     Top = 0
     Width = 714
-    Height = 566
+    Height = 606
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
@@ -245,7 +245,7 @@ object MissionDialog: TMissionDialog
       Left = 0
       Top = 369
       Width = 714
-      Height = 197
+      Height = 237
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
@@ -253,7 +253,7 @@ object MissionDialog: TMissionDialog
         Left = 0
         Top = 0
         Width = 272
-        Height = 197
+        Height = 237
         Align = alLeft
         DefaultColWidth = 180
         Enabled = False
@@ -269,13 +269,13 @@ object MissionDialog: TMissionDialog
         Left = 272
         Top = 0
         Width = 442
-        Height = 197
+        Height = 237
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 1
         object StringsSplitter: TSplitter
           Left = 0
-          Top = 94
+          Top = 114
           Width = 442
           Height = 3
           Cursor = crVSplit
@@ -283,9 +283,9 @@ object MissionDialog: TMissionDialog
         end
         object StringValueList: TValueListEditor
           Left = 0
-          Top = 97
+          Top = 117
           Width = 442
-          Height = 100
+          Height = 120
           Align = alBottom
           Constraints.MinHeight = 60
           DefaultColWidth = 50
@@ -303,7 +303,7 @@ object MissionDialog: TMissionDialog
           Left = 0
           Top = 0
           Width = 442
-          Height = 94
+          Height = 114
           Align = alClient
           ScrollBars = ssVertical
           TabOrder = 1
@@ -315,7 +315,7 @@ object MissionDialog: TMissionDialog
     Left = 714
     Top = 0
     Width = 302
-    Height = 566
+    Height = 606
     Align = alRight
     TabOrder = 1
     TabWidth = 37
@@ -324,7 +324,7 @@ object MissionDialog: TMissionDialog
       Left = 4
       Top = 6
       Width = 294
-      Height = 532
+      Height = 572
       Align = alClient
       DefaultColWidth = 180
       ScrollBars = ssVertical
@@ -339,27 +339,29 @@ object MissionDialog: TMissionDialog
     end
     object AIOptionsPanel: TPanel
       Left = 4
-      Top = 538
+      Top = 578
       Width = 294
       Height = 24
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 1
       object btnImportAI: TButton
-        Left = 0
+        Left = 72
         Top = 0
         Width = 73
         Height = 24
         Caption = 'Import AI'
         TabOrder = 0
+        OnClick = btnImportAIClick
       end
       object btnExportAI: TButton
-        Left = 72
+        Left = 0
         Top = 0
         Width = 73
         Height = 24
         Caption = 'Export AI'
         TabOrder = 1
+        OnClick = btnExportAIClick
       end
       object btnCopyAI: TButton
         Left = 150
@@ -368,6 +370,7 @@ object MissionDialog: TMissionDialog
         Height = 24
         Caption = 'Copy AI'
         TabOrder = 2
+        OnClick = btnCopyAIClick
       end
       object btnPasteAI: TButton
         Left = 222
@@ -376,7 +379,19 @@ object MissionDialog: TMissionDialog
         Height = 24
         Caption = 'Paste AI'
         TabOrder = 3
+        OnClick = btnPasteAIClick
       end
     end
+  end
+  object ExportAIDialog: TSaveDialog
+    DefaultExt = 'misai'
+    Filter = 'Mission file AI segment (*.misai)|*.misai'
+    Title = 'Export AI segment'
+  end
+  object ImportAIDialog: TOpenDialog
+    DefaultExt = 'misai'
+    Filter = 'Mission file AI segment (*.misai)|*.misai'
+    Title = 'Import AI segment'
+    Left = 32
   end
 end

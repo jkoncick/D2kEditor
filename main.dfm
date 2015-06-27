@@ -629,15 +629,15 @@ object MainWindow: TMainWindow
     end
     object Mission1: TMenuItem
       Caption = 'Mission'
-      object EventsandConditions1: TMenuItem
-        Caption = 'Events and Conditions'
-        ShortCut = 121
-        OnClick = EventsandConditions1Click
-      end
       object Missionsettings1: TMenuItem
         Caption = 'Mission settings'
-        ShortCut = 122
+        ShortCut = 121
         OnClick = Missionsettings1Click
+      end
+      object EventsandConditions1: TMenuItem
+        Caption = 'Events and Conditions'
+        ShortCut = 122
+        OnClick = EventsandConditions1Click
       end
       object N9: TMenuItem
         Caption = '-'
