@@ -500,7 +500,8 @@ end;
 
 procedure delete_condition(deleted_index: integer);
 var
-  i, j, k: integer;
+  i, j, k, m: integer;
+  event: ^TEvent;
 begin
   if deleted_index >= mis_data.num_conditions then
     exit;
@@ -508,35 +509,38 @@ begin
   for i := deleted_index to mis_data.num_conditions - 2 do
     mis_data.conditions[i] := mis_data.conditions[i+1];
   FillChar(mis_data.conditions[mis_data.num_conditions - 1], sizeof(TCondition), 0);
-  // Modify all event's conditions
+  // Go through all events
   for i := 0 to mis_data.num_events - 1 do
   begin
+    event := Addr(mis_data.events[i]);
     // Go through all event's conditions
-    for j := 0 to mis_data.events[i].num_conditions - 1 do
+    m := 0;
+    for j := 0 to event.num_conditions - 1 do
     begin
       // Decrease condition index if greater than deleted condition
-      if mis_data.events[i].condition_index[j] > deleted_index then
-        dec(mis_data.events[i].condition_index[j])
+      if event.condition_index[j+m] > deleted_index then
+        dec(event.condition_index[j+m])
       // Delete condition from event if it is the deleted condition
-      else if mis_data.events[i].condition_index[j] = deleted_index then
+      else if event.condition_index[j] = deleted_index then
       begin
-        for k := j to mis_data.events[i].num_conditions - 2 do
+        for k := j to event.num_conditions - 2 do
         begin
-          mis_data.events[i].condition_index[k] := mis_data.events[i].condition_index[k+1];
-          mis_data.events[i].condition_not[k] := mis_data.events[i].condition_not[k+1];
+          event.condition_index[k] := event.condition_index[k+1];
+          event.condition_not[k] := event.condition_not[k+1];
         end;
-        mis_data.events[i].condition_index[mis_data.events[i].num_conditions - 1] := 0;
-        mis_data.events[i].condition_not[mis_data.events[i].num_conditions - 1] := 0;
-        dec(mis_data.events[i].num_conditions)
+        event.condition_index[event.num_conditions - 1] := 0;
+        event.condition_not[event.num_conditions - 1] := 0;
+        dec(event.num_conditions);
+        m := -1;
       end;
     end;
     // Modify flag number if event is Set Flag type
-    if mis_data.events[i].event_type = Byte(etSetFlag) then
+    if event.event_type = Byte(etSetFlag) then
     begin
-      if mis_data.events[i].player > deleted_index then
-        dec(mis_data.events[i].player)
-      else if mis_data.events[i].player = deleted_index then
-        mis_data.events[i].player := 0;
+      if event.player > deleted_index then
+        dec(event.player)
+      else if event.player = deleted_index then
+        event.player := 0;
     end;
   end;
   // Finally decrease number of conditions and fill event dialog grids

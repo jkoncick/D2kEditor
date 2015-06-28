@@ -936,6 +936,7 @@ end;
 procedure TEventDialog.EventConditionListDblClick(Sender: TObject);
 begin
   ConditionGrid.Row := tmp_event.condition_index[EventConditionList.ItemIndex] + 1;
+  ConditionGrid.SetFocus;
 end;
 
 procedure TEventDialog.btnEventPositionGotoMapClick(Sender: TObject);
