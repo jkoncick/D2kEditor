@@ -1,4 +1,4 @@
-unit tileset;
+unit _tileset;
 
 interface
 
@@ -34,67 +34,74 @@ const tilesets: array[0..cnt_tilesets-1] of TTilesetInfo =
     (name: 'BLOXXMAS'; image_name: 'd2k_BLOXXMAS'; tileatr_name: 'TILEATR7')
   );
 
-// Tileset variables
+// Tileset class
+type
+  TTileset = class
+
+  private
+    menuitems: array[0..cnt_tilesets-1] of TMenuItem;
+
+  public
+    tileimage_filename: String;
+    attributes_filename: String;  
+    tileimage: TBitmap;
+    attributes: array[0..cnt_tileset_tiles-1] of cardinal;
+    current_tileset: integer;
+
+  public
+    procedure init;
+    procedure change_tileset(index: integer);
+    procedure next_tileset;
+    procedure load_custom_image(filename: String);
+    procedure load_tileatr(filename: String);
+    function get_tile_type(tile: word): TileType;
+    function get_fill_area_type(tile: word; special: word): FillAreaType;
+
+  end;
+
 var
-  tileset_image_filename: String;
-  tileset_attributes_filename: String;
-  tileset_image: TPicture;
-  tileset_attributes: array[0..cnt_tileset_tiles-1] of cardinal;
-  tileset_index: integer;
-  tileset_menuitems: array[0..cnt_tilesets-1] of TMenuItem;
-
-
-// Tileset functions and procedures
-  procedure tileset_init;
-  procedure tileset_change(index: integer);
-  procedure tileset_next;
-  procedure tileset_load_custom_image(filename: String);
-  procedure load_tileatr(filename: String);
-  function get_tile_type(tile: word): TileType;
-  function get_fill_area_type(tile: word; special: word): FillAreaType;
-
-
+  Tileset: TTileset;
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset_dialog, mis_file;
+uses Windows, Forms, SysUtils, main, tileset_dialog, _mission;
 
-procedure tileset_init;
+procedure TTileset.init;
 var
   i: integer;
 begin
-  tileset_image := TPicture.Create;
+  tileimage := Graphics.TBitmap.Create;
   for i := 0 to cnt_tilesets -1 do
   begin
-    tileset_menuitems[i] := TMenuItem.Create(MainWindow.Selecttileset1);
-    tileset_menuitems[i].Caption := tilesets[i].name;
-    tileset_menuitems[i].RadioItem := true;
-    tileset_menuitems[i].GroupIndex := 1;
-    tileset_menuitems[i].Tag := i;
-    tileset_menuitems[i].OnClick := MainWindow.SelectTileset;
-    MainWindow.Selecttileset1.Add(tileset_menuitems[i]);
+    menuitems[i] := TMenuItem.Create(MainWindow.Selecttileset1);
+    menuitems[i].Caption := tilesets[i].name;
+    menuitems[i].RadioItem := true;
+    menuitems[i].GroupIndex := 1;
+    menuitems[i].Tag := i;
+    menuitems[i].OnClick := MainWindow.SelectTileset;
+    MainWindow.Selecttileset1.Add(menuitems[i]);
   end;
 end;
 
-procedure tileset_change(index: integer);
+procedure TTileset.change_tileset(index: integer);
 var
-  image_filename: String;
+  tmp_filename: String;
 begin
-  tileset_index := index;
-  tileset_menuitems[tileset_index].Checked := true;
-  image_filename := current_dir+'/tilesets/'+tilesets[tileset_index].image_name+'.bmp';
+  current_tileset := index;
+  menuitems[current_tileset].Checked := true;
+  tmp_filename := current_dir+'/tilesets/'+tilesets[current_tileset].image_name+'.bmp';
   // Set tileset in .mis file
-  Move(tilesets[tileset_index].name[1], mis_data.tileset, 8);
-  Move(tilesets[tileset_index].tileatr_name[1], mis_data.tileatr, 8);
+  Move(tilesets[current_tileset].name[1], Mission.mis_data.tileset, 8);
+  Move(tilesets[current_tileset].tileatr_name[1], Mission.mis_data.tileatr, 8);
   // Load tileset graphics
-  if FileExists(image_filename) then
+  if FileExists(tmp_filename) then
   begin
-    tileset_image_filename := image_filename;
-    tileset_image.LoadFromFile(tileset_image_filename);
+    tileimage_filename := tmp_filename;
+    tileimage.LoadFromFile(tileimage_filename);
   end;
   // Load tileset attributes
-  load_tileatr(current_dir+'/tilesets/'+tilesets[tileset_index].tileatr_name+'.bin');
-  MainWindow.StatusBar.Panels[1].Text := tilesets[tileset_index].name;
+  load_tileatr(current_dir+'/tilesets/'+tilesets[current_tileset].tileatr_name+'.bin');
+  MainWindow.StatusBar.Panels[1].Text := tilesets[current_tileset].name;
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
     TilesetDialog.DrawTileset(nil);
   // Re-render everything
@@ -103,26 +110,26 @@ begin
   MainWindow.render_map;
 end;
 
-procedure tileset_next;
+procedure TTileset.next_tileset;
 begin
-  tileset_index := tileset_index + 1;
-  if tileset_index >= cnt_tilesets then
-    tileset_index := 0;
-  tileset_change(tileset_index);
+  current_tileset := current_tileset + 1;
+  if current_tileset >= cnt_tilesets then
+    current_tileset := 0;
+  change_tileset(current_tileset);
 end;
 
-procedure tileset_load_custom_image(filename: String);
+procedure TTileset.load_custom_image(filename: String);
 begin
-  tileset_image.LoadFromFile(filename);
-  tileset_image_filename := filename;
-  tileset_menuitems[tileset_index].Checked := False;
-  tileset_index := default_tileset;
-  load_tileatr(current_dir+'/tilesets/'+tilesets[tileset_index].tileatr_name+'.bin');
+  tileimage.LoadFromFile(filename);
+  tileimage_filename := filename;
+  menuitems[current_tileset].Checked := False;
+  current_tileset := default_tileset;
+  load_tileatr(current_dir+'/tilesets/'+tilesets[current_tileset].tileatr_name+'.bin');
   MainWindow.StatusBar.Panels[1].Text := 'Tileset File';
   MainWindow.render_map;
 end;
 
-procedure load_tileatr(filename: String);
+procedure TTileset.load_tileatr(filename: String);
 var
   tileatr_file: file of cardinal;
 begin
@@ -130,16 +137,16 @@ begin
     exit;
   AssignFile(tileatr_file, filename);
   Reset(tileatr_file);
-  BlockRead(tileatr_file, tileset_attributes, cnt_tileset_tiles);
+  BlockRead(tileatr_file, attributes, cnt_tileset_tiles);
   CloseFile(tileatr_file);
-  tileset_attributes_filename := filename;
+  attributes_filename := filename;
 end;
 
-function get_tile_type(tile: word): TileType;
+function TTileset.get_tile_type(tile: word): TileType;
 var
   atr: cardinal;
 begin
-  atr := tileset_attributes[tile];
+  atr := attributes[tile];
   if (atr and $00006000) = 0 then
     result := ttImpassable
   else if (atr and $00006000) = $00004000 then
@@ -156,11 +163,11 @@ begin
     result := ttNormal
 end;
 
-function get_fill_area_type(tile: word; special: word): FillAreaType;
+function TTileset.get_fill_area_type(tile: word; special: word): FillAreaType;
 var
   atr: cardinal;
 begin
-  atr := tileset_attributes[tile];
+  atr := attributes[tile];
   if (special = 1) or (special = 2) then
     result := faSpice
   else if (atr and 1) = 1 then

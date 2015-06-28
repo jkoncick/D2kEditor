@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls, StdCtrls, Spin, mis_file, Buttons, ComCtrls, Grids,
-  ValEdit, IniFiles, map_defs, Clipbrd;
+  Dialogs, ExtCtrls, StdCtrls, Spin,  Buttons, ComCtrls, Grids,
+  ValEdit, IniFiles, Clipbrd, _map, _mission;
 
 const player_names_shorter: array[0..7] of string =
   ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
@@ -113,7 +113,7 @@ var
 implementation
 
 uses
-  string_table, event_dialog, main;
+  _stringtable, event_dialog, main;
 
 {$R *.dfm}
 
@@ -221,16 +221,16 @@ var
 begin
   for i := 0 to cnt_mis_players-1 do
   begin
-    tech_level[i].Value := mis_data.tech_level[i];
-    starting_money[i].Text := inttostr(mis_data.starting_money[i]);
-    alloc_index[i].Value := mis_data.allocation_index[i];
+    tech_level[i].Value := Mission.mis_data.tech_level[i];
+    starting_money[i].Text := inttostr(Mission.mis_data.starting_money[i]);
+    alloc_index[i].Value := Mission.mis_data.allocation_index[i];
     for j := 0 to cnt_mis_players-1 do
     begin
-      allegiance_btn[i,j].Caption := allegiance_type[mis_data.allegiance[i,j]];
-      allegiance_btn[i,j].Font.Color := allegiance_type_color[mis_data.allegiance[i,j]];
+      allegiance_btn[i,j].Caption := allegiance_type[Mission.mis_data.allegiance[i,j]];
+      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
     end;
   end;
-  edTimeLimit.Text := inttostr(mis_data.time_limit);
+  edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
   fill_ai_values;
   cbUseINI.Tag := 1;
   if FileExists(get_ini_filename(map_filename)) then
@@ -251,9 +251,9 @@ var
   tmp_strings: TStringList;
 begin
   tmp_strings := TStringList.Create();
-  for i := 0 to Length(mis_data.ai_segments[0]) -1 do
+  for i := 0 to Length(Mission.mis_data.ai_segments[0]) -1 do
   begin
-    tmp_strings.Add('Byte ' + inttostr(i)+ '=' + inttostr(mis_data.ai_segments[AITabControl.TabIndex, i]));
+    tmp_strings.Add('Byte ' + inttostr(i)+ '=' + inttostr(Mission.mis_data.ai_segments[AITabControl.TabIndex, i]));
   end;
   AIValueList.Strings := tmp_strings;
   tmp_strings.Destroy;
@@ -417,49 +417,51 @@ begin
     for j := 0 to cnt_mis_players-1 do
     begin
       if i = j then
-        mis_data.allegiance[i,j] := 0
+        Mission.mis_data.allegiance[i,j] := 0
       else
-        mis_data.allegiance[i,j] := 1;
-      allegiance_btn[i,j].Caption := allegiance_type[mis_data.allegiance[i,j]];
-      allegiance_btn[i,j].Font.Color := allegiance_type_color[mis_data.allegiance[i,j]];
+        Mission.mis_data.allegiance[i,j] := 1;
+      allegiance_btn[i,j].Caption := allegiance_type[Mission.mis_data.allegiance[i,j]];
+      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
     end;
 end;
 
 procedure TMissionDialog.tech_level_change(Sender: TObject);
 begin
-  mis_data.tech_level[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
+  Mission.mis_data.tech_level[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
 end;
 
 procedure TMissionDialog.starting_money_change(Sender: TObject);
 begin
-  mis_data.starting_money[(Sender as TEdit).Tag] := StrToIntDef((Sender as TEdit).Text, 0);
+  Mission.mis_data.starting_money[(Sender as TEdit).Tag] := StrToIntDef((Sender as TEdit).Text, 0);
 end;
 
 procedure TMissionDialog.alloc_index_change(Sender: TObject);
 begin
-  mis_data.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
+  Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
 end;
 
 procedure TMissionDialog.allegiance_btn_click(Sender: TObject);
 var
   i, j: integer;
+  new_allegiance: byte;
 begin
   i := (Sender as TBitBtn).Tag div cnt_mis_players;
   j := (Sender as TBitBtn).Tag mod cnt_mis_players;
-  mis_data.allegiance[i,j] := (mis_data.allegiance[i,j] + 1) mod Length(allegiance_type);
-  allegiance_btn[i,j].Caption := allegiance_type[mis_data.allegiance[i,j]];
-  allegiance_btn[i,j].Font.Color := allegiance_type_color[mis_data.allegiance[i,j]];
+  new_allegiance := (Mission.mis_data.allegiance[i,j] + 1) mod Length(allegiance_type);
+  Mission.mis_data.allegiance[i,j] := new_allegiance;
+  allegiance_btn[i,j].Caption := allegiance_type[new_allegiance];
+  allegiance_btn[i,j].Font.Color := allegiance_type_color[new_allegiance];
   if cbSetBothSides.Checked and (i <> j) then
   begin
-    mis_data.allegiance[j,i] := (mis_data.allegiance[j,i] + 1) mod Length(allegiance_type);
-    allegiance_btn[j,i].Caption := allegiance_type[mis_data.allegiance[j,i]];
-    allegiance_btn[j,i].Font.Color := allegiance_type_color[mis_data.allegiance[j,i]];
+    Mission.mis_data.allegiance[j,i] := new_allegiance;
+    allegiance_btn[j,i].Caption := allegiance_type[new_allegiance];
+    allegiance_btn[j,i].Font.Color := allegiance_type_color[new_allegiance];
   end;
 end;
 
 procedure TMissionDialog.time_limit_change(Sender: TObject);
 begin
-  mis_data.time_limit := StrToIntDef(edTimeLimit.Text, -1);
+  Mission.mis_data.time_limit := StrToIntDef(edTimeLimit.Text, -1);
 end;
 
 procedure TMissionDialog.AITabControlChange(Sender: TObject);
@@ -469,7 +471,7 @@ end;
 
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
 begin
-  mis_data.ai_segments[AITabControl.TabIndex, AIValueList.Row-1] := strtointdef(AIValueList.Cells[1,AIValueList.Row],0);
+  Mission.mis_data.ai_segments[AITabControl.TabIndex, AIValueList.Row-1] := strtointdef(AIValueList.Cells[1,AIValueList.Row],0);
 end;
 
 procedure TMissionDialog.cbUseINIClick(Sender: TObject);
@@ -521,7 +523,7 @@ begin
   begin
     AssignFile(ai_file, ExportAIDialog.FileName);
     ReWrite(ai_file);
-    BlockWrite(ai_file, mis_data.ai_segments[AITabControl.TabIndex][1], Length(mis_data.ai_segments[0])-1);
+    BlockWrite(ai_file, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
     CloseFile(ai_file);
   end;
 end;
@@ -534,7 +536,7 @@ begin
   begin
     AssignFile(ai_file, ImportAIDialog.FileName);
     Reset(ai_file);
-    BlockRead(ai_file, mis_data.ai_segments[AITabControl.TabIndex][1], Length(mis_data.ai_segments[0])-1);
+    BlockRead(ai_file, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
     CloseFile(ai_file);
     fill_ai_values;
   end;
@@ -551,7 +553,7 @@ begin
   handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, sizeof(TAIClipboard));
   pointer := GlobalLock(handle);
 
-  Move(mis_data.ai_segments[AITabControl.TabIndex][1], pointer.ai_data, 7607);
+  Move(Mission.mis_data.ai_segments[AITabControl.TabIndex][1], pointer.ai_data, 7607);
 
   GlobalUnLock(handle);
   SetClipboardData(ai_clipboard_format, handle);
@@ -569,7 +571,7 @@ begin
   handle := GetClipboardData(ai_clipboard_format);
   pointer := GlobalLock(handle);
 
-  Move(pointer.ai_data, mis_data.ai_segments[AITabControl.TabIndex][1], 7607);
+  Move(pointer.ai_data, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], 7607);
 
   fill_ai_values;
 

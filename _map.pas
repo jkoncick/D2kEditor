@@ -1,4 +1,4 @@
-unit map_defs;
+unit _map;
 
 // This unit contains Map-related and statistics definitions, constants
 // and several helper functions.
@@ -164,10 +164,12 @@ var
   function special_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
   procedure calculate_power_and_statistics;
   function check_map_errors: boolean;
+  procedure load_map_file(filename: String);
+  procedure save_map_file(filename: String);
 
 implementation
 
-uses Windows, Forms, SysUtils, mis_file, main;
+uses Windows, Forms, SysUtils, _mission, main;
 
 function special_value_to_params(value: word; var player,
   index: word; var is_misc: boolean): boolean;
@@ -271,6 +273,52 @@ begin
     Application.MessageBox('Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', 'Map error', MB_ICONWARNING);
     result := false;
   end;
+end;
+
+procedure load_map_file(filename: String);
+var
+  map_file: file of word;
+  x, y: integer;
+begin
+  // Reset map data
+  for x := 0 to 127 do
+    for y := 0 to 127 do
+    begin
+      map_data[x,y].tile := 0;
+      map_data[x,y].special := 0;
+    end;
+  // Read map file
+  AssignFile(map_file, filename);
+  Reset(map_file);
+  Read(map_file, map_width);
+  Read(map_file, map_height);
+  for y := 0 to map_height - 1 do
+    for x := 0 to map_width - 1 do
+    begin
+      Read(map_file, map_data[x,y].tile);
+      Read(map_file, map_data[x,y].special);
+    end;
+  CloseFile(map_file);
+  map_loaded := true;
+  map_filename := filename;
+end;
+
+procedure save_map_file(filename: String);
+var
+  map_file: file of word;
+  x, y: integer;
+begin
+  AssignFile(map_file, filename);
+  ReWrite(map_file);
+  Write(map_file, map_width);
+  Write(map_file, map_height);
+  for y := 0 to map_height - 1 do
+    for x := 0 to map_width - 1 do
+    begin
+      Write(map_file, map_data[x,y].tile);
+      Write(map_file, map_data[x,y].special);
+    end;
+  CloseFile(map_file);
 end;
 
 end.

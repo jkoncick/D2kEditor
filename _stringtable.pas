@@ -1,4 +1,4 @@
-unit string_table;
+unit _stringtable;
 
 interface
 

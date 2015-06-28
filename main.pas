@@ -7,10 +7,10 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
-  // Units
-  tileset, map_defs, mis_file, string_table,
   // Dialogs
-  set_dialog, tileset_dialog, test_map_dialog, event_dialog, mission_dialog;
+  set_dialog, tileset_dialog, test_map_dialog, event_dialog, mission_dialog,
+  // Units
+  _map, _mission, _tileset, _stringtable;
 
 const max_undo_steps = 32767;
 
@@ -334,8 +334,8 @@ procedure TMainWindow.FormCreate(Sender: TObject);
 begin
   randomize;
   current_dir := ExtractFilePath(Application.ExeName);
-  tileset_init;
-  tileset_change(default_tileset);
+  Tileset.init;
+  Tileset.change_tileset(default_tileset);
   graphics_structures := TPicture.Create;
   graphics_structures_mask := TPicture.Create;
   graphics_misc_objects := TPicture.Create;
@@ -579,8 +579,8 @@ begin
     if map_filename <> MapSaveDialog.FileName then
     begin
       map_filename := MapSaveDialog.FileName;
-      if mis_assigned then
-        mis_filename := get_mis_filename(map_filename);
+      if Mission.mis_assigned then
+        Mission.mis_filename := Mission.get_mis_filename(map_filename);
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
       test_map_settings_loaded := false;
     end;
@@ -677,19 +677,19 @@ end;
 
 procedure TMainWindow.SelectTileset(Sender: TObject);
 begin
-  tileset_change((sender as TMenuItem).Tag)
+  Tileset.change_tileset((sender as TMenuItem).Tag)
 end;
 
 procedure TMainWindow.Selectnext1Click(Sender: TObject);
 begin
-  tileset_next;
+  Tileset.next_tileset;
 end;
 
 procedure TMainWindow.Loadtileset1Click(Sender: TObject);
 begin
   if TilesetOpenDialog.Execute then
   begin
-    tileset_load_custom_image(TilesetOpenDialog.FileName);
+    Tileset.load_custom_image(TilesetOpenDialog.FileName);
   end;
 end;
 
@@ -697,7 +697,7 @@ procedure TMainWindow.Loadtilesetattributes1Click(Sender: TObject);
 begin
   if TileatrOpenDialog.Execute then
   begin
-    load_tileatr(TileatrOpenDialog.FileName);
+    Tileset.load_tileatr(TileatrOpenDialog.FileName);
     render_minimap;
     render_map;
   end;
@@ -753,7 +753,7 @@ end;
 
 procedure TMainWindow.EventsandConditions1Click(Sender: TObject);
 begin
-  if not mis_assigned then
+  if not Mission.mis_assigned then
   begin
     Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
     exit;
@@ -763,10 +763,10 @@ end;
 
 procedure TMainWindow.Missionsettings1Click(Sender: TObject);
 begin
-  if not mis_assigned then
+  if not Mission.mis_assigned then
   begin
-    //Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
-    //exit;
+    Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
+    exit;
   end;
   MissionDialog.Show;
 end;
@@ -775,15 +775,15 @@ procedure TMainWindow.Assignmisfile1Click(Sender: TObject);
 begin
   if not map_loaded then
     exit;
-  if not mis_assigned then
+  if not Mission.mis_assigned then
   begin
-    mis_assigned := true;
-    mis_filename := get_mis_filename(map_filename);
+    Mission.mis_assigned := true;
+    Mission.mis_filename := Mission.get_mis_filename(map_filename);
     StatusBar.Panels[4].Text := 'MIS';
   end else
   begin
-    mis_assigned := false;
-    mis_filename := '';
+    Mission.mis_assigned := false;
+    Mission.mis_filename := '';
     StatusBar.Panels[4].Text := '';
   end;
 end;
@@ -898,14 +898,14 @@ begin
     exit;
   mouse_already_clicked := false;
   // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
-  if mode(mStructures) and Showeventmarkers1.Checked and ((mis_map_markers[map_x,map_y].emtype = emReinforcement) or (mis_map_markers[map_x,map_y].emtype = emUnitSpawn)) then
+  if mode(mStructures) and Showeventmarkers1.Checked and ((Mission.event_markers[map_x,map_y].emtype = emReinforcement) or (Mission.event_markers[map_x,map_y].emtype = emUnitSpawn)) then
   begin
     Application.CancelHint;
-    eventnum := mis_map_markers[map_x,map_y].index;
-    numunits := mis_data.events[eventnum].num_units;
+    eventnum := Mission.event_markers[map_x,map_y].index;
+    numunits := Mission.mis_data.events[eventnum].num_units;
     tmp_hint := inttostr(numunits) + ' units:';
     for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + unit_names[mis_data.events[eventnum].units[i]];
+      tmp_hint := tmp_hint + chr(13) + unit_names[Mission.mis_data.events[eventnum].units[i]];
     MapCanvas.Hint := tmp_hint;
     MapCanvas.ShowHint := true
   end else
@@ -1056,7 +1056,7 @@ begin
       do_undo;
     // Fill area
     undo_block_start := true;
-    fill_area(mouse_old_x, mouse_old_y, get_fill_area_type(map_data[mouse_old_x, mouse_old_y].tile, map_data[mouse_old_x, mouse_old_y].special));
+    fill_area(mouse_old_x, mouse_old_y, Tileset.get_fill_area_type(map_data[mouse_old_x, mouse_old_y].tile, map_data[mouse_old_x, mouse_old_y].special));
     render_minimap;
     render_map;
   end;
@@ -1272,11 +1272,11 @@ begin
     for x:= min_x to max_x do
     begin
       tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
-      MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),tileset_image.Bitmap.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
+      MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
       // Draw tile attribute markers
       if Marktiles1.Checked then
       begin
-        tile_attr := get_tile_type(tile);
+        tile_attr := Tileset.get_tile_type(tile);
         if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) then
         begin
           if (tile_attr = ttImpassable) then
@@ -1322,7 +1322,7 @@ begin
           dest_rect := rect(x*32,y*32,x*32+structure_params[index].size_x*32,y*32+structure_params[index].size_y*32);
           // Translate player number according to allocation index
           if Useallocationindexes1.Checked then
-            player := mis_data.allocation_index[player];
+            player := Mission.mis_data.allocation_index[player];
           if player >= cnt_map_players then
             player := 0;
           if index = 0 then
@@ -1413,7 +1413,7 @@ begin
     for y:= 0 to map_canvas_height - 1 do
       for x:= 0 to map_canvas_width - 1 do
       begin
-        event_marker := addr(mis_map_markers[x + map_canvas_left, y + map_canvas_top]);
+        event_marker := addr(Mission.event_markers[x + map_canvas_left, y + map_canvas_top]);
         if event_marker.emtype = emNone then
           continue;
         if event_marker_type_info[ord(event_marker.emtype)].player_related then
@@ -1486,7 +1486,7 @@ begin
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
-      tile_attr := get_tile_type(map_data[x,y].tile);
+      tile_attr := Tileset.get_tile_type(map_data[x,y].tile);
       MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_type_colors[ord(tile_attr)];
     end;
   // Rendering structures
@@ -1503,7 +1503,7 @@ begin
       begin
         // Translate player number according to allocation index
         if Useallocationindexes1.Checked then
-          player := mis_data.allocation_index[player];
+          player := Mission.mis_data.allocation_index[player];
         if player >= cnt_map_players then
           player := 0;
         // Render structure on map
@@ -1527,9 +1527,7 @@ end;
 
 procedure TMainWindow.load_map(filename: String);
 var
-  map_file: file of word;
   tmp_mis_filename: String;
-  x, y: integer;
 begin
   if not FileExists(filename) then
     exit;
@@ -1538,81 +1536,48 @@ begin
     Application.MessageBox('Invalid file type', 'Load map error', MB_ICONERROR);
     exit;
   end;
-  // Reset map data and event markers
-  for x := 0 to 127 do
-    for y := 0 to 127 do
-    begin
-      map_data[x,y].tile := 0;
-      map_data[x,y].special := 0;
-      mis_map_markers[x,y].emtype := emNone;
-    end;
-  MainWindow.reset_undo_history;
-  // Reading map file
-  AssignFile(map_file, filename);
-  Reset(map_file);
-  Read(map_file, map_width);
-  Read(map_file, map_height);
-  for y := 0 to map_height - 1 do
-    for x := 0 to map_width - 1 do
-    begin
-      Read(map_file, map_data[x,y].tile);
-      Read(map_file, map_data[x,y].special);
-    end;
-  CloseFile(map_file);
-  // Setting variables and status bar
-  map_loaded := true;
-  map_filename := filename;
-  MainWindow.test_map_settings_loaded := false;
-  MainWindow.StatusBar.Panels[3].Text := filename;
-  MainWindow.StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  reset_undo_history;
+  // Load map file
+  load_map_file(filename);
+  // Set status bar
+  test_map_settings_loaded := false;
+  StatusBar.Panels[3].Text := filename;
+  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   // Load string table (to be moved)
   StringTable.load_from_file(ExtractFilePath(map_filename) + '..\Data\UI_DATA\text.uib');
   // Load mis file
-  tmp_mis_filename := get_mis_filename(map_filename);
+  tmp_mis_filename := Mission.get_mis_filename(map_filename);
   if FileExists(tmp_mis_filename) then
   begin
-    mis_assigned := true;
-    MainWindow.StatusBar.Panels[4].Text := 'MIS';
-    load_mis_file(tmp_mis_filename);
+    Mission.mis_assigned := true;
+    StatusBar.Panels[4].Text := 'MIS';
+    Mission.load_mis_file(tmp_mis_filename);
     // Update Mission settings and Events and Conditions dialogs.
     // Map's ini file will be loaded along with Mission dialog.
     MissionDialog.fill_data;
     EventDialog.update_contents;
   end else
   begin
-    mis_assigned := false;
-    MainWindow.StatusBar.Panels[4].Text := '';
-    mis_filename := '';
-    set_default_mis_values;
+    Mission.mis_assigned := false;
+    StatusBar.Panels[4].Text := '';
+    Mission.mis_filename := '';
+    Mission.set_default_mis_values;
     MissionDialog.Close;
     EventDialog.Close;
   end;
   // Rendering
-  MainWindow.resize_map_canvas;
-  MainWindow.render_minimap;
-  MainWindow.render_map;
+  resize_map_canvas;
+  render_minimap;
+  render_map;
   calculate_power_and_statistics;
 end;
 
 procedure TMainWindow.save_map(filename: String);
-var
-  map_file: file of word;
-  x, y: integer;
 begin
-  AssignFile(map_file, filename);
-  ReWrite(map_file);
-  Write(map_file, map_width);
-  Write(map_file, map_height);
-  for y := 0 to map_height - 1 do
-    for x := 0 to map_width - 1 do
-    begin
-      Write(map_file, map_data[x,y].tile);
-      Write(map_file, map_data[x,y].special);
-    end;
-  CloseFile(map_file);
-  if mis_assigned then
+  save_map_file(filename);
+  if Mission.mis_assigned then
   begin
-    save_mis_file(get_mis_filename(filename));
+    Mission.save_mis_file(Mission.get_mis_filename(filename));
     MissionDialog.save_ini_fields(filename);
   end;
 end;
@@ -1627,7 +1592,7 @@ begin
     Application.MessageBox('No map to test.', 'Cannot test map', MB_ICONERROR);
     result := false;
   end else
-  if not mis_assigned then
+  if not Mission.mis_assigned then
   begin
     Application.MessageBox('No mission file is assigned to this map.', 'Cannot test map', MB_ICONERROR);
     result := false;
@@ -1851,13 +1816,13 @@ end;
 
 procedure TMainWindow.fill_area(x, y: word; area_type: FillAreaType);
 begin
-  if get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
+  if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
     exit;
   if mode(mStructures) then
     set_tile_value(x, y, map_data[x,y].tile, strtoint(SpecialValue.text), false)
   else
     put_sand_rock_dunes(x, y);
-  if get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) = area_type then
+  if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) = area_type then
     exit;
   if x > 0 then
     fill_area(x-1, y, area_type);
@@ -1979,8 +1944,8 @@ begin
     begin
       tile_x := block_data[x,y].tile mod 20;
       tile_y := block_data[x,y].tile div 20;
-      BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), tileset_image.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
-      CursorImage.Canvas.CopyRect(rect(x*32,y*32, x*32+32, y*32+32), tileset_image.Bitmap.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+      BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+      CursorImage.Canvas.CopyRect(rect(x*32,y*32, x*32+32, y*32+32), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
     end;
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;
@@ -2022,7 +1987,7 @@ begin
   if y < 0 then y := 0;
   if x >= map_width then x := map_width - 1;
   if y >= map_width then y := map_height - 1;
-  atr := tileset_attributes[map_data[x,y].tile];
+  atr := Tileset.attributes[map_data[x,y].tile];
   result := false;
   if mode(mRock) and exact then // Tile is exactly clear rock
     result := (atr and 2) = 2;
@@ -2294,13 +2259,12 @@ procedure TMainWindow.new_map(new_width, new_height: integer);
 var
   x, y: integer;
 begin
-  // Reset map data and event markers
+  // Reset map data
   for x := 0 to 127 do
     for y := 0 to 127 do
     begin
       map_data[x,y].tile := 0;
       map_data[x,y].special := 0;
-      mis_map_markers[x,y].emtype := emNone;
     end;
   reset_undo_history;
   // Initialize map
@@ -2317,10 +2281,10 @@ begin
   map_filename := '';
   map_loaded := true;
   // Initialize mis file
-  mis_assigned := false;
-  mis_filename := '';
+  Mission.mis_assigned := false;
+  Mission.mis_filename := '';
   StatusBar.Panels[4].Text := '';
-  set_default_mis_values;
+  Mission.set_default_mis_values;
   // Finish it
   calculate_power_and_statistics;
   resize_map_canvas;

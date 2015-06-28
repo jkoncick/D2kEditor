@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Grids, ExtCtrls, StdCtrls, CheckLst, Spin, mis_file, Buttons,
+  Dialogs, Grids, ExtCtrls, StdCtrls, CheckLst, Spin, _mission, Buttons,
   Menus;
 
 type
@@ -199,7 +199,7 @@ var
 
 implementation
 
-uses main, string_table;
+uses main, _stringtable;
 
 {$R *.dfm}
 
@@ -303,9 +303,9 @@ var
   ct_info: ^TConditionTypeInfo;
 begin
   // Fill events
-  for i := 1 to mis_data.num_events do
+  for i := 1 to Mission.mis_data.num_events do
   begin
-    event := Addr(mis_data.events[i-1]);
+    event := Addr(Mission.mis_data.events[i-1]);
     et_info := Addr(event_type_info[event.event_type]);
     // Basic information
     EventGrid.Cells[1,i] := et_info.name;
@@ -318,20 +318,20 @@ begin
     else
       EventGrid.Cells[3,i] := '';
     // Contents
-    EventGrid.Cells[4,i] := get_event_contents(i-1);
+    EventGrid.Cells[4,i] := Mission.get_event_contents(i-1);
     // Conditions
-    EventGrid.Cells[5,i] := get_event_conditions(i-1);
+    EventGrid.Cells[5,i] := Mission.get_event_conditions(i-1);
   end;
   // Clear unused event rows
-  for i := mis_data.num_events + 1 to 64 do
+  for i := Mission.mis_data.num_events + 1 to 64 do
   begin
     EventGrid.Rows[i].Clear;
     EventGrid.Cells[0,i] := inttostr(i-1);
   end;
   // Fill conditions
-  for i := 1 to mis_data.num_conditions do
+  for i := 1 to Mission.mis_data.num_conditions do
   begin
-    cond := Addr(mis_data.conditions[i-1]);
+    cond := Addr(Mission.mis_data.conditions[i-1]);
     ct_info := Addr(condition_type_info[cond.condition_type]);
     // Basic information
     ConditionGrid.Cells[1,i] := ct_info.name;
@@ -340,10 +340,10 @@ begin
     else
       ConditionGrid.Cells[2,i] := '';
     // Contents
-    ConditionGrid.Cells[3,i] := get_condition_contents(i-1, false);
+    ConditionGrid.Cells[3,i] := Mission.get_condition_contents(i-1, false);
   end;
   // Clear unused condition rows
-  for i := mis_data.num_conditions + 1 to 48 do
+  for i := Mission.mis_data.num_conditions + 1 to 48 do
   begin
     ConditionGrid.Rows[i].Clear;
     ConditionGrid.Cells[0,i] := inttostr(i-1);
@@ -354,7 +354,7 @@ procedure TEventDialog.select_event(index: integer);
 begin
   selected_event := index;
   lblEventProperties.Caption := 'Event properties (event ' + inttostr(index) + ')';
-  if index >= mis_data.num_events then
+  if index >= Mission.mis_data.num_events then
   begin
     FillChar(tmp_event, sizeof(TEvent), 0);
     cbEventType.ItemIndex := -1;
@@ -362,12 +362,12 @@ begin
     btnApplyEventChanges.Enabled := false;
   end else
   begin
-    tmp_event := mis_data.events[index];
+    tmp_event := Mission.mis_data.events[index];
     cbEventType.ItemIndex := tmp_event.event_type;
     cbEventType.Enabled := true;
     btnApplyEventChanges.Enabled := true;
   end;
-  fill_event_ui(index < mis_data.num_events);
+  fill_event_ui(index < Mission.mis_data.num_events);
 end;
 
 procedure TEventDialog.fill_event_ui(event_valid: boolean);
@@ -451,7 +451,7 @@ procedure TEventDialog.fill_event_unit_list;
 var
   i: integer;
 begin
-  if event_type_info[mis_data.events[selected_event].event_type].use_unit_list then
+  if event_type_info[Mission.mis_data.events[selected_event].event_type].use_unit_list then
     for i := 0 to tmp_event.num_units - 1 do
       EventUnitList.Items.Add(unit_names[tmp_event.units[i]]);
 end;
@@ -464,7 +464,7 @@ begin
   for i := 0 to tmp_event.num_conditions - 1 do
   begin
     cond_index := tmp_event.condition_index[i];
-    EventConditionList.Items.Add(inttostr(cond_index) + ' - ' + condition_type_info[mis_data.conditions[cond_index].condition_type].name + '(' + get_condition_contents(tmp_event.condition_index[i], true) + ')');
+    EventConditionList.Items.Add(inttostr(cond_index) + ' - ' + condition_type_info[Mission.mis_data.conditions[cond_index].condition_type].name + '(' + Mission.get_condition_contents(tmp_event.condition_index[i], true) + ')');
     EventConditionList.Checked[i] := tmp_event.condition_not[i] = 1;
   end;
 end;
@@ -528,12 +528,12 @@ begin
         tmp_event.value := 0;
     end;
   end;
-  mis_data.events[selected_event] := tmp_event;
+  Mission.mis_data.events[selected_event] := tmp_event;
   fill_grids;
   // Update event markers on map if event has position
   if event_type_info[event_type].use_map_position then
   begin
-    process_event_markers;
+    Mission.process_event_markers;
     MainWindow.render_map;
   end;
 end;
@@ -542,7 +542,7 @@ procedure TEventDialog.select_condition(index: integer);
 begin
   selected_condition := index;
   lblConditionProperties.Caption := 'Condition properties (condition ' + inttostr(index) + ')';
-  if index >= mis_data.num_conditions then
+  if index >= Mission.mis_data.num_conditions then
   begin
     FillChar(tmp_condition, sizeof(TCondition), 0);
     cbConditionType.ItemIndex := -1;
@@ -550,12 +550,12 @@ begin
     btnApplyConditionChanges.Enabled := false;
   end else
   begin
-    tmp_condition := mis_data.conditions[index];
+    tmp_condition := Mission.mis_data.conditions[index];
     cbConditionType.ItemIndex := tmp_condition.condition_type;
     cbConditionType.Enabled := true;
     btnApplyConditionChanges.Enabled := true;
   end;
-  fill_condition_ui(index < mis_data.num_conditions);
+  fill_condition_ui(index < Mission.mis_data.num_conditions);
 end;
 
 procedure TEventDialog.fill_condition_ui(condition_valid: boolean);
@@ -673,14 +673,14 @@ begin
       tmp_condition.map_pos_y := seConditionPositionY.Value;
     end;
   end;
-  mis_data.conditions[selected_condition] := tmp_condition;
+  Mission.mis_data.conditions[selected_condition] := tmp_condition;
   fill_grids;
   EventConditionList.Clear;
   fill_event_condition_list;
   // Update event markers on map if condition has position
   if condition_type = Byte(ctTileRevealed) then
   begin
-    process_event_markers;
+    Mission.process_event_markers;
     MainWindow.render_map;
   end;
 end;
@@ -729,9 +729,9 @@ procedure TEventDialog.btnAddUnitClick(Sender: TObject);
 begin
   if UnitSelectionList.ItemIndex = -1 then
     exit;
-  if selected_event >= mis_data.num_events then
+  if selected_event >= Mission.mis_data.num_events then
     exit;
-  if not event_type_info[mis_data.events[selected_event].event_type].use_unit_list then
+  if not event_type_info[Mission.mis_data.events[selected_event].event_type].use_unit_list then
     exit;
   if tmp_event.num_units = (Length(tmp_event.units) + 4) then
   begin
@@ -801,10 +801,10 @@ var
   i: integer;
 begin
   // Check if selected event is valid
-  if selected_event >= mis_data.num_events then
+  if selected_event >= Mission.mis_data.num_events then
     exit;
   // Check if selected condition is valid
-  if selected_condition >= mis_data.num_conditions then
+  if selected_condition >= Mission.mis_data.num_conditions then
     exit;
   // Check if condition already exists in list
   for i := 0 to tmp_event.num_conditions -1 do
@@ -819,7 +819,7 @@ begin
   tmp_event.condition_index[tmp_event.num_conditions] := selected_condition;
   tmp_event.condition_not[tmp_event.num_conditions] := 0;
   inc(tmp_event.num_conditions);
-  EventConditionList.Items.Add(inttostr(selected_condition) + ' - ' + condition_type_info[mis_data.conditions[selected_condition].condition_type].name + '(' + get_condition_contents(selected_condition, true) + ')');
+  EventConditionList.Items.Add(inttostr(selected_condition) + ' - ' + condition_type_info[Mission.mis_data.conditions[selected_condition].condition_type].name + '(' + Mission.get_condition_contents(selected_condition, true) + ')');
 end;
 
 procedure TEventDialog.btnDeleteConditionClick(Sender: TObject);
@@ -881,7 +881,7 @@ end;
 procedure TEventDialog.EventGridMouseWheelDown(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
-  if EventGrid.TopRow < (Length(mis_data.events) + 1 - EventGrid.VisibleRowCount) then
+  if EventGrid.TopRow < (Length(Mission.mis_data.events) + 1 - EventGrid.VisibleRowCount) then
     EventGrid.TopRow := EventGrid.TopRow + 1;
   Handled := true;
 end;
@@ -910,7 +910,7 @@ end;
 procedure TEventDialog.ConditionGridMouseWheelDown(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
-  if ConditionGrid.TopRow < (Length(mis_data.conditions) + 1 - ConditionGrid.VisibleRowCount) then
+  if ConditionGrid.TopRow < (Length(Mission.mis_data.conditions) + 1 - ConditionGrid.VisibleRowCount) then
     ConditionGrid.TopRow := ConditionGrid.TopRow + 1;
   Handled := true;
 end;
@@ -955,34 +955,34 @@ end;
 
 procedure TEventDialog.Addevent1Click(Sender: TObject);
 begin
-  if mis_data.num_events = Length(mis_data.events) then
+  if Mission.mis_data.num_events = Length(Mission.mis_data.events) then
   begin
     beep;
     exit;
   end;
-  inc(mis_data.num_events);
+  inc(Mission.mis_data.num_events);
   fill_grids;
-  if EventGrid.Row = mis_data.num_events then
+  if EventGrid.Row = Mission.mis_data.num_events then
     select_event(EventGrid.Row-1)
   else
-    EventGrid.Row := mis_data.num_events;
+    EventGrid.Row := Mission.mis_data.num_events;
 end;
 
 procedure TEventDialog.Insertevent1Click(Sender: TObject);
 var
   i: integer;
 begin
-  if mis_data.num_events = Length(mis_data.events) then
+  if Mission.mis_data.num_events = Length(Mission.mis_data.events) then
   begin
     beep;
     exit;
   end;
-  if selected_event >= mis_data.num_events then
+  if selected_event >= Mission.mis_data.num_events then
     exit;
-  for i := mis_data.num_events downto selected_event + 1 do
-    mis_data.events[i] := mis_data.events[i-1];
-  FillChar(mis_data.events[selected_event], sizeof(TEvent), 0);
-  inc(mis_data.num_events);
+  for i := Mission.mis_data.num_events downto selected_event + 1 do
+    Mission.mis_data.events[i] := Mission.mis_data.events[i-1];
+  FillChar(Mission.mis_data.events[selected_event], sizeof(TEvent), 0);
+  inc(Mission.mis_data.num_events);
   fill_grids;
   select_event(selected_event);
 end;
@@ -991,16 +991,16 @@ procedure TEventDialog.Duplicateevent1Click(Sender: TObject);
 var
   i: integer;
 begin
-  if mis_data.num_events = Length(mis_data.events) then
+  if Mission.mis_data.num_events = Length(Mission.mis_data.events) then
   begin
     beep;
     exit;
   end;
-  if selected_event >= mis_data.num_events then
+  if selected_event >= Mission.mis_data.num_events then
     exit;
-  for i := mis_data.num_events downto selected_event + 1 do
-    mis_data.events[i] := mis_data.events[i-1];
-  inc(mis_data.num_events);
+  for i := Mission.mis_data.num_events downto selected_event + 1 do
+    Mission.mis_data.events[i] := Mission.mis_data.events[i-1];
+  inc(Mission.mis_data.num_events);
   fill_grids;
   EventGrid.Row := selected_event + 2;
 end;
@@ -1009,25 +1009,25 @@ procedure TEventDialog.Deleteselectedevent1Click(Sender: TObject);
 var
   i: integer;
 begin
-  if selected_event >= mis_data.num_events then
+  if selected_event >= Mission.mis_data.num_events then
     exit;
-  for i := selected_event to mis_data.num_events - 2 do
-    mis_data.events[i] := mis_data.events[i+1];
-  FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
-  dec(mis_data.num_events);
+  for i := selected_event to Mission.mis_data.num_events - 2 do
+    Mission.mis_data.events[i] := Mission.mis_data.events[i+1];
+  FillChar(Mission.mis_data.events[Mission.mis_data.num_events - 1], sizeof(TEvent), 0);
+  dec(Mission.mis_data.num_events);
   fill_grids;
   select_event(selected_event);
 end;
 
 procedure TEventDialog.Deletelastevent1Click(Sender: TObject);
 begin
-  if mis_data.num_events = 0 then
+  if Mission.mis_data.num_events = 0 then
   begin
     beep;
     exit;
   end;
-  FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
-  dec(mis_data.num_events);
+  FillChar(Mission.mis_data.events[Mission.mis_data.num_events - 1], sizeof(TEvent), 0);
+  dec(Mission.mis_data.num_events);
   fill_grids;
   select_event(selected_event);
 end;
@@ -1036,75 +1036,75 @@ procedure TEventDialog.MoveUp1Click(Sender: TObject);
 begin
   if selected_event = 0 then
     exit;
-  tmp_event := mis_data.events[selected_event];
-  mis_data.events[selected_event] := mis_data.events[selected_event - 1];
-  mis_data.events[selected_event - 1] := tmp_event;
+  tmp_event := Mission.mis_data.events[selected_event];
+  Mission.mis_data.events[selected_event] := Mission.mis_data.events[selected_event - 1];
+  Mission.mis_data.events[selected_event - 1] := tmp_event;
   fill_grids;
   EventGrid.Row := selected_event;
 end;
 
 procedure TEventDialog.MoveDown1Click(Sender: TObject);
 begin
-  if selected_event >= mis_data.num_events - 1 then
+  if selected_event >= Mission.mis_data.num_events - 1 then
     exit;
-  tmp_event := mis_data.events[selected_event];
-  mis_data.events[selected_event] := mis_data.events[selected_event + 1];
-  mis_data.events[selected_event + 1] := tmp_event;
+  tmp_event := Mission.mis_data.events[selected_event];
+  Mission.mis_data.events[selected_event] := Mission.mis_data.events[selected_event + 1];
+  Mission.mis_data.events[selected_event + 1] := tmp_event;
   fill_grids;
   EventGrid.Row := selected_event + 2;
 end;
 
 procedure TEventDialog.Addcondition1Click(Sender: TObject);
 begin
-  if mis_data.num_conditions = Length(mis_data.conditions) then
+  if Mission.mis_data.num_conditions = Length(Mission.mis_data.conditions) then
   begin
     beep;
     exit;
   end;
-  inc(mis_data.num_conditions);
+  inc(Mission.mis_data.num_conditions);
   fill_grids;
-  if ConditionGrid.Row = mis_data.num_conditions then
+  if ConditionGrid.Row = Mission.mis_data.num_conditions then
     select_condition(ConditionGrid.Row-1)
   else
-    ConditionGrid.Row := mis_data.num_conditions;
+    ConditionGrid.Row := Mission.mis_data.num_conditions;
 end;
 
 procedure TEventDialog.Duplicatecondition1Click(Sender: TObject);
 begin
-  if mis_data.num_conditions = Length(mis_data.conditions) then
+  if Mission.mis_data.num_conditions = Length(Mission.mis_data.conditions) then
   begin
     beep;
     exit;
   end;
-  Move(mis_data.conditions[selected_condition], mis_data.conditions[mis_data.num_conditions], sizeof(TCondition));
-  inc(mis_data.num_conditions);
+  Move(Mission.mis_data.conditions[selected_condition], Mission.mis_data.conditions[Mission.mis_data.num_conditions], sizeof(TCondition));
+  inc(Mission.mis_data.num_conditions);
   fill_grids;
-  ConditionGrid.Row := mis_data.num_conditions;
+  ConditionGrid.Row := Mission.mis_data.num_conditions;
 end;
 
 procedure TEventDialog.Deleteselectedcondition1Click(Sender: TObject);
 begin
-  if selected_condition >= mis_data.num_conditions then
+  if selected_condition >= Mission.mis_data.num_conditions then
     exit;
   if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
     exit;
-  delete_condition(selected_condition);
+  Mission.delete_condition(selected_condition);
   update_contents;
 end;
 
 procedure TEventDialog.Deletelastcondition1Click(Sender: TObject);
 begin
-  if selected_condition >= mis_data.num_conditions then
+  if selected_condition >= Mission.mis_data.num_conditions then
     exit;
   if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
     exit;
-  delete_condition(mis_data.num_conditions - 1);
+  Mission.delete_condition(Mission.mis_data.num_conditions - 1);
   update_contents;
 end;
 
 procedure TEventDialog.seFlagNumberChange(Sender: TObject);
 begin
-  if mis_data.conditions[StrToIntDef(seFlagNumber.Text,0)].condition_type = Byte(ctFlag) then
+  if Mission.mis_data.conditions[StrToIntDef(seFlagNumber.Text,0)].condition_type = Byte(ctFlag) then
     seFlagNumber.Color := clWhite
   else
     seFlagNumber.Color := clRed;

@@ -1,4 +1,4 @@
-unit mis_file;
+unit _mission;
 
 interface
 
@@ -260,31 +260,37 @@ const event_marker_type_info: array[0..5] of TEventMarkerTypeInfo =
     (letter: 'M'; player_related: false)
   );
 
-// Mis file variables
+// Mission class
+type
+  TMission = class
+
+  public
+    mis_filename: String;
+    mis_assigned: boolean;
+    mis_data: TMisFile;
+    event_markers: array[0..127, 0..127] of TEventMarker;
+
+  public
+    function get_mis_filename(filename: String): String;
+    procedure load_mis_file(filename: String);
+    procedure save_mis_file(filename: String);
+    procedure process_event_markers;
+    procedure set_default_mis_values;
+    function get_event_contents(index: integer): String;
+    function get_event_conditions(index: integer): String;
+    function get_condition_contents(index: integer; show_player: boolean): String;
+    procedure delete_condition(deleted_index: integer);
+
+  end;
+
 var
-  mis_filename: String;
-  mis_assigned: boolean;
-  mis_data: TMisFile;
-  mis_map_markers: array[0..127, 0..127] of TEventMarker;
-
-// Mis file functions and procedures
-  function get_mis_filename(filename: String): String;
-  procedure load_mis_file(filename: String);
-  procedure save_mis_file(filename: String);
-  procedure process_event_markers;
-  procedure set_default_mis_values;
-  function get_event_contents(index: integer): String;
-  function get_event_conditions(index: integer): String;
-  function get_condition_contents(index: integer; show_player: boolean): String;
-  procedure delete_condition(deleted_index: integer);
-
-
+  Mission: TMission;
 
 implementation
 
-uses SysUtils, tileset, map_defs, string_table;
+uses SysUtils, _map, _tileset, _stringtable;
 
-function get_mis_filename(filename: String): String;
+function TMission.get_mis_filename(filename: String): String;
 var
   tmp_filename: String;
 begin
@@ -294,7 +300,7 @@ begin
   result := tmp_filename;
 end;
 
-procedure load_mis_file(filename: String);
+procedure TMission.load_mis_file(filename: String);
 var
   mis_file: file of TMisFile;
   tileset_name: String;
@@ -310,12 +316,12 @@ begin
   for i:= 0 to cnt_tilesets-1 do
   begin
     if tileset_name = tilesets[i].name then
-      tileset_change(i);
+      Tileset.change_tileset(i);
   end;
   process_event_markers;
 end;
 
-procedure save_mis_file(filename: String);
+procedure TMission.save_mis_file(filename: String);
 var
   mis_file: file of TMisFile;
 begin
@@ -325,7 +331,7 @@ begin
   CloseFile(mis_file);
 end;
 
-procedure process_event_markers;
+procedure TMission.process_event_markers;
 var
   event: ^TEvent;
   condition: ^TCondition;
@@ -336,7 +342,7 @@ var
 begin
   for x := 0 to 127 do
     for y := 0 to 127 do
-      mis_map_markers[x,y].emtype := emNone;
+      event_markers[x,y].emtype := emNone;
   for i:= 0 to mis_data.num_events - 1 do
   begin
     event := Addr(mis_data.events[i]);
@@ -348,22 +354,22 @@ begin
       y := event.map_pos_y;
       // Move event marker one tile to right if this tile has already an event
       moved := false;
-      while mis_map_markers[x][y].emtype <> emNone do
+      while event_markers[x][y].emtype <> emNone do
       begin
         x := (x + 1) mod map_width;
         moved := true;
       end;
       if event_type = etUnitSpawn then
-        mis_map_markers[x][y].emtype := emUnitSpawn
+        event_markers[x][y].emtype := emUnitSpawn
       else if event_type = etRevealMap then
-         mis_map_markers[x][y].emtype := emRevealMap
+         event_markers[x][y].emtype := emRevealMap
       else if (event.num_units = 1) and (event.units[0] = 8) then
-        mis_map_markers[x][y].emtype := emHarvester
+        event_markers[x][y].emtype := emHarvester
       else
-        mis_map_markers[x][y].emtype := emReinforcement;
-      mis_map_markers[x][y].side := event.player;
-      mis_map_markers[x][y].index := i;
-      mis_map_markers[x][y].moved := moved;
+        event_markers[x][y].emtype := emReinforcement;
+      event_markers[x][y].side := event.player;
+      event_markers[x][y].index := i;
+      event_markers[x][y].moved := moved;
     end;
   end;
   for i:= 0 to mis_data.num_conditions - 1 do
@@ -374,20 +380,21 @@ begin
       // Unit in tile
       x := condition.map_pos_x;
       y := condition.map_pos_y;
-      mis_map_markers[x][y].emtype := emTileRevealed;
-      mis_map_markers[x][y].index := i;
+      event_markers[x][y].emtype := emTileRevealed;
+      event_markers[x][y].index := i;
     end;
   end;
 end;
 
-procedure set_default_mis_values;
+procedure TMission.set_default_mis_values;
 var
   i, j: integer;
+  x, y: integer;
 begin
   FillChar(mis_data, sizeof(mis_data), 0);
   // Write tileset name
-  Move(tilesets[tileset_index].name[1], mis_data.tileset, 8);
-  Move(tilesets[tileset_index].tileatr_name[1], mis_data.tileatr, 8);
+  Move(tilesets[Tileset.current_tileset].name[1], mis_data.tileset, 8);
+  Move(tilesets[Tileset.current_tileset].tileatr_name[1], mis_data.tileatr, 8);
   // Player properties
   for i := 0 to 7 do
   begin
@@ -404,9 +411,13 @@ begin
       else
         mis_data.allegiance[i,j] := 1;
     end;
+  // Clear event markers
+  for x := 0 to 127 do
+    for y := 0 to 127 do
+      Mission.event_markers[x,y].emtype := emNone;
 end;
 
-function get_event_contents(index: integer): String;
+function TMission.get_event_contents(index: integer): String;
 var
   event: ^TEvent;
   event_type: EventType;
@@ -448,7 +459,7 @@ begin
   result := contents;
 end;
 
-function get_event_conditions(index: integer): String;
+function TMission.get_event_conditions(index: integer): String;
 var
   event: ^TEvent;
   conditions: String;
@@ -470,7 +481,7 @@ begin
   result := conditions;
 end;
 
-function get_condition_contents(index: integer; show_player: boolean): String;
+function TMission.get_condition_contents(index: integer; show_player: boolean): String;
 var
   cond: ^TCondition;
   cond_type: ConditionType;
@@ -498,7 +509,7 @@ begin
   result := contents;
 end;
 
-procedure delete_condition(deleted_index: integer);
+procedure TMission.delete_condition(deleted_index: integer);
 var
   i, j, k, m: integer;
   event: ^TEvent;
