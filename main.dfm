@@ -1,6 +1,6 @@
 object MainWindow: TMainWindow
-  Left = 185
-  Top = 69
+  Left = 190
+  Top = 111
   Width = 950
   Height = 650
   HorzScrollBar.Visible = False
@@ -17,9 +17,9 @@ object MainWindow: TMainWindow
   KeyPreview = True
   Menu = AppMenu
   OldCreateOrder = False
-  Position = poScreenCenter
   Visible = True
   OnActivate = FormActivate
+  OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnDeactivate = FormDeactivate

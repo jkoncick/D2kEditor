@@ -10,7 +10,7 @@ uses
   // Dialogs
   set_dialog, tileset_dialog, test_map_dialog, event_dialog, mission_dialog,
   // Units
-  _map, _mission, _tileset, _stringtable;
+  _map, _mission, _tileset, _stringtable, _settings;
 
 const max_undo_steps = 32767;
 
@@ -31,17 +31,6 @@ type
     block_width: word;
     block_height: word;
     block_data: array[0..127,0..127] of TMapTile;
-  end;
-
-type
-  TTestMapSettings = record
-    MySideID: integer;
-    MissionNumber: integer;
-    DifficultyLevel: integer;
-    Seed: integer;
-    TextUib: String;
-    GamePath: String;
-    Parameters: String;
   end;
 
 type
@@ -147,6 +136,7 @@ type
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormResize(Sender: TObject);
     procedure FormDeactivate(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -267,10 +257,6 @@ type
     undo_pos: integer;
     undo_block_start: boolean;
 
-    // Map testing variables
-    test_map_settings: TTestMapSettings;
-    test_map_settings_loaded: boolean;
-
     // Clipboard variables
     clipboard_format: cardinal;
 
@@ -283,10 +269,10 @@ type
     // Map loading & saving procedures
     procedure load_map(filename: String);
     procedure save_map(filename: String);
+    procedure unload_mission;
 
     // Map testing procedures
     function check_map_can_be_tested: boolean;
-    procedure get_map_test_settings;
     procedure launch_game;
 
     // Miscellaneous helper procedures
@@ -350,6 +336,10 @@ begin
   DragAcceptFiles(Handle, True);
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
   draw_cursor_image;
+  // Load settings
+  Settings.load_editor_settings;
+  // Load string table
+  StringTable.load_from_file(Settings.TextUIBPath);
   // Load map given as first parameter
   if ParamCount > 0 then
     load_map(ParamStr(1));
@@ -358,6 +348,11 @@ end;
 procedure TMainWindow.FormDestroy(Sender: TObject);
 begin
   DragAcceptFiles(Handle, False);
+end;
+
+procedure TMainWindow.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  Settings.save_editor_settings;
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
@@ -582,7 +577,7 @@ begin
       if Mission.mis_assigned then
         Mission.mis_filename := Mission.get_mis_filename(map_filename);
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
-      test_map_settings_loaded := false;
+      Settings.get_file_paths_from_map_filename;
     end;
     save_map(MapSaveDialog.FileName);
   end;
@@ -779,18 +774,18 @@ begin
   begin
     Mission.mis_assigned := true;
     Mission.mis_filename := Mission.get_mis_filename(map_filename);
+    if FileExists(Mission.mis_filename) then
+      Mission.load_mis_file(Mission.mis_filename);
     StatusBar.Panels[4].Text := 'MIS';
+    MissionDialog.fill_data;
+    EventDialog.update_contents;
   end else
-  begin
-    Mission.mis_assigned := false;
-    Mission.mis_filename := '';
-    StatusBar.Panels[4].Text := '';
-  end;
+    unload_mission;
+  render_map;
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
 begin
-  get_map_test_settings;
   if not check_map_can_be_tested then
     exit;
   launch_game;
@@ -798,7 +793,6 @@ end;
 
 procedure TMainWindow.Launchwithsettings1Click(Sender: TObject);
 begin
-  get_map_test_settings;
   if not check_map_can_be_tested then
     exit;
   TestMapDialog.invoke;
@@ -1540,11 +1534,11 @@ begin
   // Load map file
   load_map_file(filename);
   // Set status bar
-  test_map_settings_loaded := false;
   StatusBar.Panels[3].Text := filename;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
-  // Load string table (to be moved)
-  StringTable.load_from_file(ExtractFilePath(map_filename) + '..\Data\UI_DATA\text.uib');
+  // Initialize settings
+  Settings.get_file_paths_from_map_filename;
+  Settings.get_map_test_settings;
   // Load mis file
   tmp_mis_filename := Mission.get_mis_filename(map_filename);
   if FileExists(tmp_mis_filename) then
@@ -1557,14 +1551,7 @@ begin
     MissionDialog.fill_data;
     EventDialog.update_contents;
   end else
-  begin
-    Mission.mis_assigned := false;
-    StatusBar.Panels[4].Text := '';
-    Mission.mis_filename := '';
-    Mission.set_default_mis_values;
-    MissionDialog.Close;
-    EventDialog.Close;
-  end;
+    unload_mission;
   // Rendering
   resize_map_canvas;
   render_minimap;
@@ -1582,11 +1569,18 @@ begin
   end;
 end;
 
-function TMainWindow.check_map_can_be_tested: boolean;
-var
-  game_executable: String;
+procedure TMainWindow.unload_mission;
 begin
-  game_executable := test_map_settings.GamePath + 'dune2000.exe';
+  Mission.mis_assigned := false;
+  Mission.mis_filename := '';
+  StatusBar.Panels[4].Text := '';
+  Mission.set_default_mis_values;
+  MissionDialog.Close;
+  EventDialog.Close;
+end;
+
+function TMainWindow.check_map_can_be_tested: boolean;
+begin
   if not map_loaded then
   begin
     Application.MessageBox('No map to test.', 'Cannot test map', MB_ICONERROR);
@@ -1597,90 +1591,21 @@ begin
     Application.MessageBox('No mission file is assigned to this map.', 'Cannot test map', MB_ICONERROR);
     result := false;
   end else
-  if not FileExists(game_executable) then
+  if not FileExists(Settings.GameExecutable) then
   begin
-    Application.MessageBox(PChar('Cannot find game executable (' + game_executable + ')'), 'Cannot test map', MB_ICONERROR);
+    Application.MessageBox(PChar('Cannot find game executable (' + Settings.GameExecutable + ')'), 'Cannot test map', MB_ICONERROR);
     result := false;
   end else
     result := check_map_errors;
 end;
 
-procedure TMainWindow.get_map_test_settings;
-var
-  ini: TIniFile;
-  game_path: String;
-  map_name: String;
-  house, mission: char;
-  house_num, mission_num: integer;
-begin
-  if test_map_settings_loaded then
-    exit;
-  // Get Game path (folder where Dune2000.exe is located) from map filename
-  if (test_map_settings.GamePath = '') or (not FileExists(test_map_settings.GamePath + 'Dune2000.exe')) then
-  begin
-    game_path := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(map_filename)));
-    test_map_settings.GamePath := game_path;
-    if not FileExists(game_path + 'Dune2000.exe') then
-      exit;
-  end else
-    game_path := test_map_settings.GamePath;
-  ini := TIniFile.Create(game_path + 'spawn.ini');
-  // Try to detect MissionNumber and MySideID from map file name
-  if map_filename <> '' then
-  begin
-    map_name := ChangeFileExt(ExtractFileName(map_filename),'');
-    house := map_name[Length(map_name)-3];
-    mission := map_name[Length(map_name)-2];
-  end else
-  begin
-    house := 'X';
-    mission := 'X';
-  end;
-  house_num := ini.ReadInteger('Settings', 'MySideID', 0);
-  case house of
-  'A': house_num := 0;
-  'H': house_num := 1;
-  'O': house_num := 2;
-  end;
-  if (ord(mission) >= ord('1')) and (ord(mission) <= ord('9')) then
-    mission_num := strtoint(mission)
-  else
-    mission_num := ini.ReadInteger('Settings', 'MissionNumber', 1);
-  with test_map_settings do
-  begin
-    MySideID := house_num;
-    MissionNumber := mission_num;
-    DifficultyLevel := ini.ReadInteger('Settings', 'DifficultyLevel', 1);
-    Seed := ini.ReadInteger('Settings', 'Seed', random(2000000000));
-    TextUib := ini.ReadString('Settings', 'TextUib', '');
-  end;
-  ini.Destroy;
-  test_map_settings_loaded := true;
-end;
-
 procedure TMainWindow.launch_game;
-var
-  ini: TIniFile;
-  game_path: String;
 begin
-  // Write settings to ini file
-  game_path := test_map_settings.GamePath;
-  ini := TIniFile.Create(game_path + 'spawn.ini');
-  with test_map_settings do
-  begin
-    ini.WriteString('Settings', 'Scenario', 'TESTMAP');
-    ini.WriteInteger('Settings', 'MySideID', MySideID);
-    ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);
-    ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
-    ini.WriteInteger('Settings', 'Seed', Seed);
-    if TextUib <> '' then
-      ini.WriteString('Settings', 'TextUib', TextUib);
-  end;
-  ini.Destroy;
-  save_map(game_path + 'Missions\TESTMAP.MAP');
+  Settings.save_map_test_settings;
+  save_map(Settings.GamePath + 'Missions\TESTMAP.MAP');
   if not MissionDialog.cbUseINI.Checked then
-    DeleteFile(game_path + 'Missions\TESTMAP.INI');
-  ShellExecuteA(0, 'open', PChar(game_path + 'dune2000.exe'), PChar('-SPAWN ' + test_map_settings.Parameters), PChar(game_path), SW_SHOWNORMAL);
+    DeleteFile(Settings.GamePath + 'Missions\TESTMAP.INI');
+  ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), PChar('-SPAWN ' + Settings.TestMapParameters), PChar(Settings.GamePath), SW_SHOWNORMAL);
 end;
 
 procedure TMainWindow.set_special_value;
@@ -2280,11 +2205,10 @@ begin
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';
   map_loaded := true;
-  // Initialize mis file
-  Mission.mis_assigned := false;
-  Mission.mis_filename := '';
-  StatusBar.Panels[4].Text := '';
-  Mission.set_default_mis_values;
+  // Clear mission
+  unload_mission;
+  // Get test map settings
+  Settings.get_map_test_settings;
   // Finish it
   calculate_power_and_statistics;
   resize_map_canvas;

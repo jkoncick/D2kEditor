@@ -42,7 +42,7 @@ var
 implementation
 
 uses
-  main;
+  main, _settings;
 
 {$R *.dfm}
 
@@ -80,14 +80,14 @@ end;
 
 procedure TTestMapDialog.btnLaunchClick(Sender: TObject);
 begin
-  with MainWindow.test_map_settings do
+  with Settings do
   begin
     MySideId := eMySideID.ItemIndex;
     MissionNumber := eMissionNumber.Value;
     DifficultyLevel := eDifficultyLevel.ItemIndex;
     Seed := strtoint(eSeed.Text);
     TextUib := eTextUib.Text;
-    Parameters := eParameters.Text;
+    TestMapParameters := eParameters.Text;
   end;
   MainWindow.launch_game;
   close;
@@ -95,14 +95,14 @@ end;
 
 procedure TTestMapDialog.invoke;
 begin
-  with MainWindow.test_map_settings do
+  with Settings do
   begin
     eMySideID.ItemIndex := MySideID;
     eMissionNumber.Value := MissionNumber;
     eDifficultyLevel.ItemIndex := DifficultyLevel;
     eSeed.Text := inttostr(Seed);
     eTextUib.Text := TextUib;
-    eParameters.Text := Parameters;
+    eParameters.Text := TestMapParameters;
   end;
   ShowModal;
 end;
