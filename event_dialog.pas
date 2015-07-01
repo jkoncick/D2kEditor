@@ -8,6 +8,9 @@ uses
   Menus;
 
 type
+  CreateEventType = (ceUnitSpawn, ceHarvRepl, ceAnnihMsg);
+
+type
   TEventDialog = class(TForm)
     EventGrid: TStringGrid;
     LowerPanel: TPanel;
@@ -115,6 +118,22 @@ type
     Insertevent1: TMenuItem;
     Duplicateevent1: TMenuItem;
     Duplicatecondition1: TMenuItem;
+    N1: TMenuItem;
+    Createevent1: TMenuItem;
+    Unitspawn1: TMenuItem;
+    Harvesterreplacement1: TMenuItem;
+    Annihilatemessage1: TMenuItem;
+    Createrunonceflag1: TMenuItem;
+    CreateEventsPanel: TPanel;
+    lblCreateEvents: TLabel;
+    btnCreateEventsCancel: TBitBtn;
+    btnCreateEventsOk: TBitBtn;
+    lblCreateEventsPlayer: TLabel;
+    cbCreateEventsPlayer: TComboBox;
+    lblCreateEventsCount: TLabel;
+    seCreateEventsNum: TSpinEdit;
+    cbCreateEventsAllocIndex: TCheckBox;
+    btnPlusCondition: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -166,6 +185,14 @@ type
     procedure Deleteselectedcondition1Click(Sender: TObject);
     procedure Deletelastcondition1Click(Sender: TObject);
     procedure seFlagNumberChange(Sender: TObject);
+    procedure Unitspawn1Click(Sender: TObject);
+    procedure Harvesterreplacement1Click(Sender: TObject);
+    procedure Annihilatemessage1Click(Sender: TObject);
+    procedure Createrunonceflag1Click(Sender: TObject);
+    procedure btnCreateEventsCancelClick(Sender: TObject);
+    procedure cbCreateEventsPlayerChange(Sender: TObject);
+    procedure btnCreateEventsOkClick(Sender: TObject);
+    procedure btnPlusConditionClick(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -173,6 +200,7 @@ type
     selected_condition: integer;
 
     condition_position: boolean;
+    create_event_type: CreateEventType;
   public
     procedure update_contents;
     procedure fill_grids;
@@ -274,6 +302,8 @@ begin
   // Initialize comparison functions
   for i:= 0 to Length(comparison_function)-1 do
     cbTimerCompareFunc.Items.Add(comparison_function[i]);
+  cbCreateEventsPlayer.Items := cbEventPlayer.Items;
+  cbCreateEventsPlayer.ItemIndex := 0;
   select_event(0);
   select_condition(0);
 end;
@@ -281,7 +311,9 @@ end;
 procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  if key = 27 then
+  if (key = 27) and CreateEventsPanel.Visible then
+    btnCreateEventsCancelClick(Sender);
+  if (key = 27) and not CreateEventsPanel.Visible then
     Close;
   if key = 123 then
     MainWindow.Show;
@@ -638,8 +670,11 @@ begin
   tmp_condition.casualty_flags := 0;
   tmp_condition.building_type := 0;
   tmp_condition.unit_type_or_comparison_function := 0;
-  if (condition_type = Byte(ctTileRevealed)) or (condition_type = Byte(ctBaseDestroyed)) or (condition_type = Byte(ctUnitsDestroyed)) then
+  if (condition_type = Byte(ctInterval)) or (condition_type = Byte(ctTileRevealed)) or
+     (condition_type = Byte(ctBaseDestroyed)) or (condition_type = Byte(ctUnitsDestroyed)) then
     tmp_condition.value := 1;
+  if (condition_type = Byte(ctTimer)) then
+    tmp_condition.unit_type_or_comparison_function := 2;
   fill_condition_ui(true);
 end;
 
@@ -926,11 +961,13 @@ end;
 procedure TEventDialog.btnApplyEventChangesClick(Sender: TObject);
 begin
   apply_event_changes;
+  EventGrid.SetFocus;
 end;
 
 procedure TEventDialog.btnApplyConditionChangesClick(Sender: TObject);
 begin
   apply_condition_changes;
+  ConditionGrid.SetFocus;
 end;
 
 procedure TEventDialog.EventConditionListDblClick(Sender: TObject);
@@ -955,66 +992,40 @@ end;
 
 procedure TEventDialog.Addevent1Click(Sender: TObject);
 begin
-  if Mission.mis_data.num_events = Length(Mission.mis_data.events) then
+  if Mission.add_event(Mission.mis_data.num_events) then
   begin
-    beep;
-    exit;
+    fill_grids;
+    if EventGrid.Row = Mission.mis_data.num_events then
+      select_event(EventGrid.Row-1)
+    else
+      EventGrid.Row := Mission.mis_data.num_events;
   end;
-  inc(Mission.mis_data.num_events);
-  fill_grids;
-  if EventGrid.Row = Mission.mis_data.num_events then
-    select_event(EventGrid.Row-1)
-  else
-    EventGrid.Row := Mission.mis_data.num_events;
 end;
 
 procedure TEventDialog.Insertevent1Click(Sender: TObject);
-var
-  i: integer;
 begin
-  if Mission.mis_data.num_events = Length(Mission.mis_data.events) then
+  if Mission.add_event(selected_event) then
   begin
-    beep;
-    exit;
+    fill_grids;
+    select_event(selected_event);
   end;
-  if selected_event >= Mission.mis_data.num_events then
-    exit;
-  for i := Mission.mis_data.num_events downto selected_event + 1 do
-    Mission.mis_data.events[i] := Mission.mis_data.events[i-1];
-  FillChar(Mission.mis_data.events[selected_event], sizeof(TEvent), 0);
-  inc(Mission.mis_data.num_events);
-  fill_grids;
-  select_event(selected_event);
 end;
 
 procedure TEventDialog.Duplicateevent1Click(Sender: TObject);
-var
-  i: integer;
 begin
-  if Mission.mis_data.num_events = Length(Mission.mis_data.events) then
+  if Mission.add_event(selected_event + 1) then
   begin
-    beep;
-    exit;
+    Mission.mis_data.events[selected_event + 1] := Mission.mis_data.events[selected_event];
+    fill_grids;
+    EventGrid.Row := selected_event + 2;
   end;
-  if selected_event >= Mission.mis_data.num_events then
-    exit;
-  for i := Mission.mis_data.num_events downto selected_event + 1 do
-    Mission.mis_data.events[i] := Mission.mis_data.events[i-1];
-  inc(Mission.mis_data.num_events);
-  fill_grids;
-  EventGrid.Row := selected_event + 2;
 end;
 
 procedure TEventDialog.Deleteselectedevent1Click(Sender: TObject);
-var
-  i: integer;
 begin
   if selected_event >= Mission.mis_data.num_events then
     exit;
-  for i := selected_event to Mission.mis_data.num_events - 2 do
-    Mission.mis_data.events[i] := Mission.mis_data.events[i+1];
-  FillChar(Mission.mis_data.events[Mission.mis_data.num_events - 1], sizeof(TEvent), 0);
-  dec(Mission.mis_data.num_events);
+  Mission.delete_event(selected_event);
   fill_grids;
   select_event(selected_event);
 end;
@@ -1022,12 +1033,8 @@ end;
 procedure TEventDialog.Deletelastevent1Click(Sender: TObject);
 begin
   if Mission.mis_data.num_events = 0 then
-  begin
-    beep;
     exit;
-  end;
-  FillChar(Mission.mis_data.events[Mission.mis_data.num_events - 1], sizeof(TEvent), 0);
-  dec(Mission.mis_data.num_events);
+  Mission.delete_event(Mission.mis_data.num_events - 1);
   fill_grids;
   select_event(selected_event);
 end;
@@ -1056,30 +1063,24 @@ end;
 
 procedure TEventDialog.Addcondition1Click(Sender: TObject);
 begin
-  if Mission.mis_data.num_conditions = Length(Mission.mis_data.conditions) then
+  if Mission.add_condition then
   begin
-    beep;
-    exit;
+    fill_grids;
+    if ConditionGrid.Row = Mission.mis_data.num_conditions then
+      select_condition(ConditionGrid.Row-1)
+    else
+      ConditionGrid.Row := Mission.mis_data.num_conditions;
   end;
-  inc(Mission.mis_data.num_conditions);
-  fill_grids;
-  if ConditionGrid.Row = Mission.mis_data.num_conditions then
-    select_condition(ConditionGrid.Row-1)
-  else
-    ConditionGrid.Row := Mission.mis_data.num_conditions;
 end;
 
 procedure TEventDialog.Duplicatecondition1Click(Sender: TObject);
 begin
-  if Mission.mis_data.num_conditions = Length(Mission.mis_data.conditions) then
+  if Mission.add_condition then
   begin
-    beep;
-    exit;
+    Mission.mis_data.conditions[Mission.mis_data.num_conditions-1] := Mission.mis_data.conditions[selected_condition];
+    fill_grids;
+    ConditionGrid.Row := Mission.mis_data.num_conditions;
   end;
-  Move(Mission.mis_data.conditions[selected_condition], Mission.mis_data.conditions[Mission.mis_data.num_conditions], sizeof(TCondition));
-  inc(Mission.mis_data.num_conditions);
-  fill_grids;
-  ConditionGrid.Row := Mission.mis_data.num_conditions;
 end;
 
 procedure TEventDialog.Deleteselectedcondition1Click(Sender: TObject);
@@ -1094,7 +1095,7 @@ end;
 
 procedure TEventDialog.Deletelastcondition1Click(Sender: TObject);
 begin
-  if selected_condition >= Mission.mis_data.num_conditions then
+  if Mission.mis_data.num_conditions = 0 then
     exit;
   if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
     exit;
@@ -1108,6 +1109,80 @@ begin
     seFlagNumber.Color := clWhite
   else
     seFlagNumber.Color := clRed;
+end;
+
+procedure TEventDialog.Unitspawn1Click(Sender: TObject);
+begin
+  CreateEventsPanel.Visible := true;
+  lblCreateEvents.Caption := 'Create Unit spawn events';
+  seCreateEventsNum.Visible := true;
+  lblCreateEventsCount.Visible := true;
+  cbCreateEventsAllocIndex.Visible := false;
+  create_event_type := ceUnitSpawn;
+end;
+
+procedure TEventDialog.Harvesterreplacement1Click(Sender: TObject);
+begin
+  CreateEventsPanel.Visible := true;
+  lblCreateEvents.Caption := 'Create Harvester replacement';
+  seCreateEventsNum.Visible := false;
+  lblCreateEventsCount.Visible := false;
+  cbCreateEventsAllocIndex.Visible := false;
+  create_event_type := ceHarvRepl;
+end;
+
+procedure TEventDialog.Annihilatemessage1Click(Sender: TObject);
+begin
+  CreateEventsPanel.Visible := true;
+  lblCreateEvents.Caption := 'Create Side annihilated message';
+  seCreateEventsNum.Visible := true;
+  lblCreateEventsCount.Visible := false;
+  cbCreateEventsAllocIndex.Visible := true;
+  create_event_type := ceAnnihMsg;
+  seCreateEventsNum.Value := cbCreateEventsPlayer.ItemIndex;
+end;
+
+procedure TEventDialog.Createrunonceflag1Click(Sender: TObject);
+begin
+  Mission.add_run_once_flag(selected_event);
+  update_contents;
+end;
+
+procedure TEventDialog.btnCreateEventsCancelClick(Sender: TObject);
+begin
+  CreateEventsPanel.Visible := false;
+  EventGrid.SetFocus;
+end;
+
+procedure TEventDialog.cbCreateEventsPlayerChange(Sender: TObject);
+begin
+  if create_event_type = ceAnnihMsg then
+    seCreateEventsNum.Value := cbCreateEventsPlayer.ItemIndex;
+end;
+
+procedure TEventDialog.btnCreateEventsOkClick(Sender: TObject);
+var
+  event_index: integer;
+begin
+  event_index := Mission.mis_data.num_events;
+  case create_event_type of
+    ceUnitSpawn: Mission.create_unit_spawn(cbCreateEventsPlayer.ItemIndex, seCreateEventsNum.Value);
+    ceHarvRepl: Mission.create_harvester_replacement(cbCreateEventsPlayer.ItemIndex);
+    ceAnnihMsg: Mission.create_annihilated_message(cbCreateEventsPlayer.ItemIndex, cbCreateEventsAllocIndex.Checked, seCreateEventsNum.Value);
+  end;
+  CreateEventsPanel.Visible := false;
+  EventGrid.SetFocus;
+  fill_grids;
+  if EventGrid.Row = (event_index + 1) then
+    select_event(event_index)
+  else
+    EventGrid.Row := event_index + 1;
+end;
+
+procedure TEventDialog.btnPlusConditionClick(Sender: TObject);
+begin
+  Addcondition1Click(Sender);
+  btnAddConditionClick(Sender);
 end;
 
 end.

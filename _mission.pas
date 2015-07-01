@@ -11,6 +11,7 @@ const player_names: array[0..7] of string =
   ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
 const player_names_short: array[0..7] of string =
   ('Atr', 'Hark', 'Ord', 'Emp', 'Fre', 'Smug', 'Merc', 'Sdwm');
+const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
 
 const flag_value: array[0..1] of string = ('False', 'True');
 const deploy_action: array[0..2] of string = ('None', 'Hunt', 'Free');
@@ -271,16 +272,27 @@ type
     event_markers: array[0..127, 0..127] of TEventMarker;
 
   public
+    // Loading and saving
     function get_mis_filename(filename: String): String;
     procedure load_mis_file(filename: String);
     procedure save_mis_file(filename: String);
     procedure process_event_markers;
     procedure set_default_mis_values;
+    // Getting text descriptions
     function get_event_contents(index: integer): String;
     function get_event_conditions(index: integer): String;
     function get_condition_contents(index: integer; show_player: boolean): String;
+    // Creating/deleting events/conditions
+    function add_event(position: integer): boolean;
+    function add_condition: boolean;
+    procedure delete_event(deleted_index: integer);
     procedure delete_condition(deleted_index: integer);
-
+    // Auto-creating usual events
+    function get_or_create_condition(condition_type: ConditionType; player: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
+    procedure create_unit_spawn(player: integer; num_events: integer);
+    procedure create_harvester_replacement(player: integer);
+    procedure create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
+    procedure add_run_once_flag(event_num: integer);
   end;
 
 var
@@ -288,7 +300,7 @@ var
 
 implementation
 
-uses SysUtils, _map, _tileset, _stringtable;
+uses SysUtils, main, _map, _tileset, _stringtable;
 
 function TMission.get_mis_filename(filename: String): String;
 var
@@ -509,13 +521,64 @@ begin
   result := contents;
 end;
 
+function TMission.add_event(position: integer): boolean;
+var
+  i: integer;
+begin
+  if (mis_data.num_events = Length(mis_data.events)) or (position > mis_data.num_events) then
+  begin
+    result := false;
+    exit;
+  end;
+  for i := mis_data.num_events downto position + 1 do
+    mis_data.events[i] := mis_data.events[i-1];
+  FillChar(mis_data.events[position], sizeof(TEvent), 0);
+  inc(mis_data.num_events);
+  result := true;
+end;
+
+function TMission.add_condition: boolean;
+begin
+  if mis_data.num_conditions = Length(mis_data.conditions) then
+  begin
+    result := false;
+    exit;
+  end;
+  FillChar(mis_data.conditions[mis_data.num_conditions], sizeof(TCondition), 0);
+  inc(mis_data.num_conditions);
+  result := true;
+end;
+
+procedure TMission.delete_event(deleted_index: integer);
+var
+  event_used_position: boolean;
+  i: integer;
+begin
+  if deleted_index >= mis_data.num_events then
+    exit;
+  event_used_position := event_type_info[mis_data.events[deleted_index].event_type].use_map_position;
+  // Delete event and shift all events up
+  for i := deleted_index to mis_data.num_events - 2 do
+    mis_data.events[i] := mis_data.events[i+1];
+  FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
+  dec(mis_data.num_events);
+  // Update event markers on map if event had position
+  if event_used_position then
+  begin
+    process_event_markers;
+    MainWindow.render_map;
+  end;
+end;
+
 procedure TMission.delete_condition(deleted_index: integer);
 var
+  condition_used_position: boolean;
   i, j, k, m: integer;
   event: ^TEvent;
 begin
   if deleted_index >= mis_data.num_conditions then
     exit;
+  condition_used_position := mis_data.conditions[deleted_index].condition_type = Byte(ctTileRevealed);
   // Delete condition and shift all conditions up
   for i := deleted_index to mis_data.num_conditions - 2 do
     mis_data.conditions[i] := mis_data.conditions[i+1];
@@ -556,6 +619,212 @@ begin
   end;
   // Finally decrease number of conditions and fill event dialog grids
   dec(mis_data.num_conditions);
+  // Update event markers on map if condition had position
+  if condition_used_position then
+  begin
+    process_event_markers;
+    MainWindow.render_map;
+  end;
+end;
+
+function TMission.get_or_create_condition(condition_type: ConditionType;
+  player: integer; time_amount: cardinal;
+  unit_type_or_comp_func: byte): integer;
+var
+  i: integer;
+  cond: ^TCondition;
+begin
+  // Try to find condition if it already exists
+  for i := 0 to mis_data.num_conditions - 1 do
+  begin
+    cond := Addr(mis_data.conditions[i]);
+    if  (cond.condition_type = Byte(condition_type)) and
+        (cond.player = player) and
+        (cond.time_amount = time_amount) and
+        (cond.unit_type_or_comparison_function = unit_type_or_comp_func) and
+        (condition_type <> ctFlag) then // Always create new flag
+    begin
+      result := i;
+      exit;
+    end;
+  end;
+  // Condition does not exist, must create one
+  if not add_condition then
+  begin
+    result := -1;
+    exit;
+  end;
+  result := mis_data.num_conditions - 1;
+  cond := Addr(mis_data.conditions[result]);
+  cond.condition_type := Byte(condition_type);
+  cond.player := player;
+  cond.time_amount := time_amount;
+  cond.unit_type_or_comparison_function := unit_type_or_comp_func;
+  if (condition_type = ctBaseDestroyed) or (condition_type = ctUnitsDestroyed) then
+    cond.value := 1;
+end;
+
+procedure TMission.create_unit_spawn(player, num_events: integer);
+var
+  i: integer;
+  cond_index: integer;
+  event: ^TEvent;
+begin
+  cond_index := get_or_create_condition(ctTimer,0,1,2);
+  if cond_index = -1 then
+    exit;
+  for i := 0 to num_events - 1 do
+  begin
+    if not add_event(mis_data.num_events) then
+      exit;
+    event := Addr(mis_data.events[mis_data.num_events-1]);
+    event.event_type := Byte(etUnitSpawn);
+    event.player := player;
+    event.deploy_action := 2;
+    event.num_conditions := 1;
+    event.condition_index[0] := cond_index;
+  end;
+  process_event_markers;
+  MainWindow.render_map;
+end;
+
+procedure TMission.create_harvester_replacement(player: integer);
+var
+  event: array[1..3] of ^TEvent;
+  cond_index: array[1..4] of integer;
+  i: integer;
+begin
+  // Create all needed conditions
+  cond_index[1] := get_or_create_condition(ctBaseDestroyed, player, 0, 0);
+  cond_index[2] := get_or_create_condition(ctUnitExists, player, 0, 8);
+  cond_index[3] := get_or_create_condition(ctTimer, 0, 500, 3);
+  cond_index[4] := get_or_create_condition(ctFlag, 0, 0, 0);
+  for i := 1 to 4 do
+    if cond_index[i] = -1 then
+      exit;
+  // Create all needed events
+  for i := 1 to 3 do
+  begin
+    if not add_event(mis_data.num_events) then
+      exit;
+    event[i] := Addr(mis_data.events[mis_data.num_events-1]);
+  end;
+  // Fill all event contents
+  event[1].event_type := Byte(etReinforcement);
+  event[1].player := player;
+  event[1].num_units := 1;
+  event[1].units[0] := 8;
+  event[2].event_type := Byte(etSetFlag);
+  event[2].player := cond_index[4];
+  event[2].value := 0;
+  event[3].event_type := Byte(etSetFlag);
+  event[3].player := cond_index[4];
+  event[3].value := 1;
+  // Fill all event conditions
+  event[1].num_conditions := 4;
+  event[2].num_conditions := 4;
+  event[3].num_conditions := 2;
+  for i := 1 to 4 do
+  begin
+    event[1].condition_index[i-1] := cond_index[i];
+    event[2].condition_index[i-1] := cond_index[i];
+  end;
+  event[1].condition_not[0] := 1;
+  event[1].condition_not[1] := 1;
+  event[2].condition_not[0] := 1;
+  event[2].condition_not[1] := 1;
+  event[3].condition_index[0] := cond_index[2];
+  event[3].condition_index[1] := cond_index[4];
+  event[3].condition_not[1] := 1;
+  process_event_markers;
+  MainWindow.render_map;
+end;
+
+procedure TMission.create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
+var
+  players: array[0..cnt_mis_players-1] of integer;
+  num_players: integer;
+  event: ^TEvent;
+  cond1_index, cond2_index: integer;
+  i: integer;
+begin
+  num_players := 0;
+  // Get list of players to make base/units destroyed conditions for
+  if use_alloc_index then
+  begin
+    // All players having given allocation index
+    for i := 0 to cnt_mis_players-1 do
+      if mis_data.allocation_index[i] = alloc_index then
+      begin
+        players[num_players] := i;
+        inc(num_players);
+      end;
+  end else
+  begin
+    // Just the player itself
+    players[0] := player;
+    num_players := 1;
+  end;
+  if num_players = 0 then
+    exit;
+  // Create message event
+  if not add_event(mis_data.num_events) then
+    exit;
+  event := Addr(mis_data.events[mis_data.num_events - 1]);
+  event.event_type := Byte(etShowMessage);
+  event.message_index := player_annihilated_msgid[player];
+  event.value := 300;
+  // Create base/units destroyed conditions
+  for i := 0 to num_players - 1 do
+  begin
+    cond1_index := get_or_create_condition(ctBaseDestroyed, players[i], 0, 0);
+    cond2_index := get_or_create_condition(ctUnitsDestroyed, players[i], 0, 0);
+    if (cond1_index = -1) or (cond2_index = -1) then
+      exit;
+    event.condition_index[i*2] := cond1_index;
+    event.condition_index[i*2+1] := cond2_index;
+    event.num_conditions := event.num_conditions + 2;
+  end;
+  // Finally create run-once flag
+  add_run_once_flag(mis_data.num_events - 1);
+end;
+
+procedure TMission.add_run_once_flag(event_num: integer);
+var
+  flag_number: integer;
+  new_condition: integer;
+  i: integer;
+begin
+  if event_num >= mis_data.num_events then
+    exit;
+  // Check if this event is Set flag (can be ignored)
+  if mis_data.events[event_num].event_type = Byte(etSetFlag) then
+    exit;
+  // Check if this event has already flag in list of conditions
+  for i := 0 to mis_data.events[event_num].num_conditions do
+  begin
+    if (mis_data.events[event_num].condition_not[i] = 1) and
+      (mis_data.conditions[mis_data.events[event_num].condition_index[i]].condition_type = Byte(ctFlag)) then
+      exit;
+  end;
+  // Try to create new event (Set flag) and condition (Flag)
+  if not add_event(event_num+1) or not add_condition then
+    exit;
+  flag_number := mis_data.num_conditions - 1;
+  new_condition := mis_data.events[event_num].num_conditions;
+  // Add new flag to event's conditions
+  mis_data.events[event_num].num_conditions := new_condition + 1;
+  mis_data.events[event_num].condition_index[new_condition] := flag_number;
+  mis_data.events[event_num].condition_not[new_condition] := 1;
+  // Fill new event
+  mis_data.events[event_num+1].event_type := Byte(etSetFlag);
+  mis_data.events[event_num+1].player := flag_number;
+  mis_data.events[event_num+1].value := 1;
+  mis_data.events[event_num+1].num_conditions := new_condition + 1;
+  Move(mis_data.events[event_num].condition_index, mis_data.events[event_num+1].condition_index, Length(mis_data.events[0].condition_index));
+  Move(mis_data.events[event_num].condition_not, mis_data.events[event_num+1].condition_not, Length(mis_data.events[0].condition_not));
+  // Fill new condition
+  mis_data.conditions[flag_number].condition_type := Byte(ctFlag);
 end;
 
 end.

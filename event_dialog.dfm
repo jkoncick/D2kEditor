@@ -578,9 +578,9 @@ object EventDialog: TEventDialog
       end
       object btnAddCondition: TButton
         Left = 196
-        Top = 64
+        Top = 80
         Width = 24
-        Height = 49
+        Height = 33
         Caption = '<--'
         TabOrder = 2
         OnClick = btnAddConditionClick
@@ -611,6 +611,15 @@ object EventDialog: TEventDialog
         Caption = 'C'
         TabOrder = 5
         OnClick = btnDeleteAllConditionsClick
+      end
+      object btnPlusCondition: TButton
+        Left = 196
+        Top = 40
+        Width = 24
+        Height = 33
+        Caption = '+'
+        TabOrder = 6
+        OnClick = btnPlusConditionClick
       end
     end
     object ConditionPropertiesPanel: TPanel
@@ -894,6 +903,80 @@ object EventDialog: TEventDialog
       end
     end
   end
+  object CreateEventsPanel: TPanel
+    Left = 528
+    Top = 96
+    Width = 209
+    Height = 177
+    TabOrder = 2
+    Visible = False
+    object lblCreateEvents: TLabel
+      Left = 24
+      Top = 24
+      Width = 128
+      Height = 13
+      Caption = 'Create Unit spawn event(s)'
+    end
+    object lblCreateEventsPlayer: TLabel
+      Left = 24
+      Top = 60
+      Width = 32
+      Height = 13
+      Caption = 'Player:'
+    end
+    object lblCreateEventsCount: TLabel
+      Left = 24
+      Top = 92
+      Width = 87
+      Height = 13
+      Caption = 'Number of events:'
+    end
+    object btnCreateEventsCancel: TBitBtn
+      Left = 24
+      Top = 128
+      Width = 75
+      Height = 25
+      TabOrder = 0
+      OnClick = btnCreateEventsCancelClick
+      Kind = bkCancel
+    end
+    object btnCreateEventsOk: TBitBtn
+      Left = 112
+      Top = 128
+      Width = 75
+      Height = 25
+      TabOrder = 1
+      OnClick = btnCreateEventsOkClick
+      Kind = bkOK
+    end
+    object cbCreateEventsPlayer: TComboBox
+      Left = 72
+      Top = 56
+      Width = 113
+      Height = 21
+      ItemHeight = 13
+      TabOrder = 2
+      OnChange = cbCreateEventsPlayerChange
+    end
+    object seCreateEventsNum: TSpinEdit
+      Left = 128
+      Top = 88
+      Width = 57
+      Height = 22
+      MaxValue = 255
+      MinValue = 0
+      TabOrder = 3
+      Value = 1
+    end
+    object cbCreateEventsAllocIndex: TCheckBox
+      Left = 24
+      Top = 90
+      Width = 97
+      Height = 17
+      Caption = 'Use alloc. index:'
+      TabOrder = 4
+    end
+  end
   object EventGridPopupMenu: TPopupMenu
     Left = 392
     object Addevent1: TMenuItem
@@ -930,6 +1013,32 @@ object EventDialog: TEventDialog
       Caption = 'Move Down'
       ShortCut = 34
       OnClick = MoveDown1Click
+    end
+    object N1: TMenuItem
+      Caption = '-'
+    end
+    object Createevent1: TMenuItem
+      Caption = 'Create events'
+      object Unitspawn1: TMenuItem
+        Caption = 'Unit spawn'
+        ShortCut = 112
+        OnClick = Unitspawn1Click
+      end
+      object Harvesterreplacement1: TMenuItem
+        Caption = 'Harvester replacement'
+        ShortCut = 113
+        OnClick = Harvesterreplacement1Click
+      end
+      object Annihilatemessage1: TMenuItem
+        Caption = 'Side annihilated message'
+        ShortCut = 114
+        OnClick = Annihilatemessage1Click
+      end
+    end
+    object Createrunonceflag1: TMenuItem
+      Caption = 'Add run-once flag'
+      ShortCut = 115
+      OnClick = Createrunonceflag1Click
     end
   end
   object ConditionGridPopupMenu: TPopupMenu
