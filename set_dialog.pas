@@ -47,7 +47,7 @@ var
 implementation
 
 uses
-  main;
+  main, _settings;
 
 {$R *.dfm}
 
@@ -60,6 +60,8 @@ begin
   ChStrOwn_PlayerTo.Items := MainWindow.PlayerSelect.Items;
   ChStrOwn_PlayerTo.Items.Add('None (delete)');
   ChStrOwn_PlayerTo.ItemIndex := 0;
+  SetMapSize_Width.Value := Settings.DefaultMapWidth;
+  SetMapSize_Height.Value := Settings.DefaultMapHeight;
 end;
 
 procedure TSetDialog.select_menu(menu: integer);

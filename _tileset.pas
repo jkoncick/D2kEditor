@@ -7,7 +7,6 @@ uses Graphics, Menus;
 // Tileset constants
 const cnt_tilesets = 7;
 const cnt_tileset_tiles = 800;
-const default_tileset = 2;
 const mmap_tile_type_colors: array[0..6] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4,$509CDC,$F0827F);
 
 // Tileset type definitions
@@ -64,7 +63,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset_dialog, _mission;
+uses Windows, Forms, SysUtils, main, tileset_dialog, _mission, _settings;
 
 procedure TTileset.init;
 var
@@ -123,7 +122,7 @@ begin
   tileimage.LoadFromFile(filename);
   tileimage_filename := filename;
   menuitems[current_tileset].Checked := False;
-  current_tileset := default_tileset;
+  current_tileset := Settings.DefaultTileset;
   load_tileatr(current_dir+'/tilesets/'+tilesets[current_tileset].tileatr_name+'.bin');
   MainWindow.StatusBar.Panels[1].Text := 'Tileset File';
   MainWindow.render_map;

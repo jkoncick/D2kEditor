@@ -300,7 +300,7 @@ var
 
 implementation
 
-uses SysUtils, main, _map, _tileset, _stringtable;
+uses SysUtils, main, _map, _tileset, _stringtable, _settings;
 
 function TMission.get_mis_filename(filename: String): String;
 var
@@ -410,8 +410,8 @@ begin
   // Player properties
   for i := 0 to 7 do
   begin
-    mis_data.tech_level[i] := 8;
-    mis_data.starting_money[i] := 5000;
+    mis_data.tech_level[i] := Settings.DefaultMisTechLevel;
+    mis_data.starting_money[i] := Settings.DefaultMisStartingMoney;
     mis_data.allocation_index[i] := i;
   end;
   // Allegiance
@@ -423,6 +423,8 @@ begin
       else
         mis_data.allegiance[i,j] := 1;
     end;
+  // Time limit
+  mis_data.time_limit := -1;
   // Clear event markers
   for x := 0 to 127 do
     for y := 0 to 127 do

@@ -29,5 +29,7 @@ begin
   Application.CreateForm(TTestMapDialog, TestMapDialog);
   Application.CreateForm(TEventDialog, EventDialog);
   Application.CreateForm(TMissionDialog, MissionDialog);
+  // All GUI settings must be loaded after all dialogs are created.
+  Settings.load_postcreate_editor_settings;
   Application.Run;
 end.

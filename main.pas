@@ -318,10 +318,22 @@ implementation
 
 procedure TMainWindow.FormCreate(Sender: TObject);
 begin
+  // Miscellaneous initializations
   randomize;
   current_dir := ExtractFilePath(Application.ExeName);
+  Application.HintPause := 100;
+  Application.HintHidePause:= 100000;
+  DragAcceptFiles(Handle, True);
+  clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
+  top := 60;
+  // Load settings
+  Settings.load_precreate_editor_settings;
+  // Initialize tilesets
   Tileset.init;
-  Tileset.change_tileset(default_tileset);
+  Tileset.change_tileset(Settings.DefaultTileset);
+  // Load string table
+  StringTable.load_from_file(Settings.TextUIBPath);
+  // Load and initialize graphics
   graphics_structures := TPicture.Create;
   graphics_structures_mask := TPicture.Create;
   graphics_misc_objects := TPicture.Create;
@@ -329,17 +341,7 @@ begin
   graphics_structures.LoadFromFile(current_dir + '/graphics/structures.bmp');
   graphics_structures_mask.LoadFromFile(current_dir + '/graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
-  map_loaded := false;
-  top := 60;
-  Application.HintPause := 100;
-  Application.HintHidePause:= 100000;
-  DragAcceptFiles(Handle, True);
-  clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
   draw_cursor_image;
-  // Load settings
-  Settings.load_editor_settings;
-  // Load string table
-  StringTable.load_from_file(Settings.TextUIBPath);
   // Load map given as first parameter
   if ParamCount > 0 then
     load_map(ParamStr(1));
@@ -777,6 +779,7 @@ begin
     if FileExists(Mission.mis_filename) then
       Mission.load_mis_file(Mission.mis_filename);
     StatusBar.Panels[4].Text := 'MIS';
+    Assignmisfile1.Caption := 'Unassign .mis file';
     MissionDialog.fill_data;
     EventDialog.update_contents;
   end else
@@ -950,6 +953,10 @@ begin
     finish_event_position_selection(map_x, map_y);
     exit;
   end;
+  // Check for spice-to-sand restriction
+  if Settings.RestrictSpiceToSand and (Tileset.get_fill_area_type(map_data[map_x, map_y].tile, 0) <> faSand) and
+     mode(mStructures) and ((MiscObjList.ItemIndex = 1) or (MiscObjList.ItemIndex = 2)) then
+    exit;
   if mode(mStructures) then
     begin
     // Editing structures
@@ -1546,6 +1553,7 @@ begin
     Mission.mis_assigned := true;
     StatusBar.Panels[4].Text := 'MIS';
     Mission.load_mis_file(tmp_mis_filename);
+    Assignmisfile1.Caption := 'Unassign .mis file';
     // Update Mission settings and Events and Conditions dialogs.
     // Map's ini file will be loaded along with Mission dialog.
     MissionDialog.fill_data;
@@ -1575,6 +1583,7 @@ begin
   Mission.mis_filename := '';
   StatusBar.Panels[4].Text := '';
   Mission.set_default_mis_values;
+  Assignmisfile1.Caption := 'Assign .mis file';
   MissionDialog.Close;
   EventDialog.Close;
 end;
@@ -2206,7 +2215,13 @@ begin
   map_filename := '';
   map_loaded := true;
   // Clear mission
-  unload_mission;
+  if Settings.AssignMisFileToNewMap then
+  begin
+    Mission.mis_assigned := false;
+    Mission.set_default_mis_values;
+    Assignmisfile1Click(nil);
+  end else
+    unload_mission;
   // Get test map settings
   Settings.get_map_test_settings;
   // Finish it
