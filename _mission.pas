@@ -368,7 +368,7 @@ begin
       moved := false;
       while event_markers[x][y].emtype <> emNone do
       begin
-        x := (x + 1) mod map_width;
+        x := (x + 1) mod 127;
         moved := true;
       end;
       if event_type = etUnitSpawn then

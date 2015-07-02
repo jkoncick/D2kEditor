@@ -978,14 +978,14 @@ end;
 
 procedure TEventDialog.btnEventPositionGotoMapClick(Sender: TObject);
 begin
-  MainWindow.start_event_position_selection(seEventPositionX.Value, seEventPositionY.Value);
+  MainWindow.start_event_position_selection(Mission.mis_data.events[selected_event].map_pos_x, Mission.mis_data.events[selected_event].map_pos_y);
   condition_position := false;
   close;
 end;
 
 procedure TEventDialog.btnConditionPositionGotoMapClick(Sender: TObject);
 begin
-  MainWindow.start_event_position_selection(seConditionPositionX.Value, seConditionPositionY.Value);
+  MainWindow.start_event_position_selection(Mission.mis_data.conditions[selected_condition].map_pos_x, Mission.mis_data.conditions[selected_condition].map_pos_y);
   condition_position := true;
   close;
 end;

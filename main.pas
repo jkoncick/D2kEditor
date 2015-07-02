@@ -250,6 +250,11 @@ type
     block_select_end_x: word;
     block_select_end_y: word;
 
+    // Event marker moving variables
+    moving_disable: boolean;
+    moving_event: integer;
+    moving_condition: integer;
+
     // Undo variables
     undo_history: array[0..max_undo_steps] of TUndoEntry;
     undo_start: integer;
@@ -325,6 +330,8 @@ begin
   Application.HintHidePause:= 100000;
   DragAcceptFiles(Handle, True);
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
+  moving_event := -1;
+  moving_condition := -1;
   top := 60;
   // Load settings
   Settings.load_precreate_editor_settings;
@@ -917,6 +924,23 @@ begin
     mouse_old_x := map_x;
     mouse_old_y := map_y;
   end;
+  // Move event marker
+  if (moving_event <> -1) then
+  begin
+    Mission.mis_data.events[moving_event].map_pos_x := map_x;
+    Mission.mis_data.events[moving_event].map_pos_y := map_y;
+    Mission.process_event_markers;
+    render_map;
+    exit;
+  end;
+  if (moving_condition <> -1) then
+  begin
+    Mission.mis_data.conditions[moving_condition].map_pos_x := map_x;
+    Mission.mis_data.conditions[moving_condition].map_pos_y := map_y;
+    Mission.process_event_markers;
+    render_map;
+    exit;
+  end;
   // Move cursor image and resize if exceeding map canvas border
   CursorImage.Left := canvas_x * 32 + MapCanvas.Left;
   CursorImage.Top := canvas_y * 32 + MapCanvas.Top;
@@ -940,6 +964,7 @@ var
   map_x, map_y: integer;
   index, player: word;
   is_misc: boolean;
+  event_marker: ^TEventMarker;
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
@@ -954,9 +979,22 @@ begin
     exit;
   end;
   // Check for spice-to-sand restriction
-  if Settings.RestrictSpiceToSand and (Tileset.get_fill_area_type(map_data[map_x, map_y].tile, 0) <> faSand) and
-     mode(mStructures) and ((MiscObjList.ItemIndex = 1) or (MiscObjList.ItemIndex = 2)) then
+  if ((MiscObjList.ItemIndex = 1) or (MiscObjList.ItemIndex = 2)) and Settings.RestrictSpiceToSand and (Tileset.get_fill_area_type(map_data[map_x, map_y].tile, 0) <> faSand) and
+    mode(mStructures) and (Button = mbLeft) then
     exit;
+  // Moving event markers
+  if (Mission.event_markers[map_x, map_y].emtype <> emNone) and Showeventmarkers1.Checked and not moving_disable and
+    mode(mStructures) and (Button = mbLeft) then
+  begin
+    event_marker := Addr(Mission.event_markers[map_x, map_y]);
+    if event_marker.emtype = emTileRevealed then
+      moving_condition := event_marker.index
+    else
+      moving_event := event_marker.index;
+    exit;
+  end;
+  moving_disable := true;
+  // Finally placing/painting structures/terrain
   if mode(mStructures) then
     begin
     // Editing structures
@@ -1045,7 +1083,24 @@ end;
 procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
 var
   tmp_pos: integer;
+  event_marker: ^TEventMarker;
 begin
+  // Double-click on event marker
+  if mode(mStructures) and Showeventmarkers1.Checked and (Mission.event_markers[mouse_old_x, mouse_old_y].emtype <> emNone) then
+  begin
+    event_marker := Addr(Mission.event_markers[mouse_old_x, mouse_old_y]);
+    EventDialog.Show;
+    if event_marker.emtype = emTileRevealed then
+    begin
+      EventDialog.ConditionGrid.Row := event_marker.index + 1;
+      EventDialog.ConditionGrid.SetFocus;
+    end else
+    begin
+      EventDialog.EventGrid.Row := event_marker.index + 1;
+      EventDialog.EventGrid.SetFocus;
+    end;
+  end else
+  // Double click for filling
   if mode(mAnyPaint) then
   begin
     // Undo the action which was made by first click
@@ -1068,6 +1123,13 @@ procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
 var
   min_x, max_x, min_y, max_y: word;
 begin
+  moving_disable := false;
+  if (moving_event <> -1) or (moving_condition <> -1) then
+  begin
+    moving_event := -1;
+    moving_condition := -1;
+    EventDialog.update_contents;
+  end;
   if block_select_started and (Button = mbLeft) then
   begin
     block_select_started := false;
@@ -1654,10 +1716,11 @@ end;
 
 procedure TMainWindow.start_event_position_selection(x, y: integer);
 begin
-  if (x <> 0) and (y <> 0) then
+  if (x <> 0) or (y <> 0) then
   begin
     MapScrollH.Position := x - (map_canvas_width div 2);
     MapScrollV.Position := y - (map_canvas_height div 2);
+    exit;
   end;
   EditorPages.Visible := false;
   File1.Enabled := false;
