@@ -238,6 +238,7 @@ object MissionDialog: TMissionDialog
         Height = 21
         ItemHeight = 13
         TabOrder = 12
+        OnChange = cbMapSideIdChange
       end
       object seMapMissionNumber: TSpinEdit
         Left = 640
@@ -248,6 +249,7 @@ object MissionDialog: TMissionDialog
         MinValue = 0
         TabOrder = 13
         Value = 0
+        OnChange = seMapMissionNumberChange
       end
     end
     object RulesAndStringsPanel: TPanel

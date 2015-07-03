@@ -293,6 +293,7 @@ type
     function add_condition: boolean;
     procedure delete_event(deleted_index: integer);
     procedure delete_condition(deleted_index: integer);
+    function condition_is_used(index: integer): boolean;
     // Auto-creating usual events
     function get_or_create_condition(condition_type: ConditionType; player: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
     procedure create_unit_spawn(player: integer; num_events: integer);
@@ -673,6 +674,26 @@ begin
   begin
     process_event_markers;
     MainWindow.render_map;
+  end;
+end;
+
+function TMission.condition_is_used(index: integer): boolean;
+var
+  i, j: integer;
+  event: ^TEvent;
+begin
+  result := false;
+  if index >= mis_data.num_conditions then
+    exit;
+  for i := 0 to mis_data.num_events - 1 do
+  begin
+    event := Addr(mis_data.events[i]);
+    for j := 0 to event.num_conditions - 1 do
+      if event.condition_index[j] = index then
+      begin
+        result := true;
+        exit;
+      end;
   end;
 end;
 

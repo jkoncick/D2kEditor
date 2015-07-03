@@ -88,6 +88,8 @@ type
     procedure btnImportAIClick(Sender: TObject);
     procedure btnCopyAIClick(Sender: TObject);
     procedure btnPasteAIClick(Sender: TObject);
+    procedure cbMapSideIdChange(Sender: TObject);
+    procedure seMapMissionNumberChange(Sender: TObject);
   private
     player_label: array[0..cnt_mis_players-1] of TLabel;
     tech_level: array[0..cnt_mis_players-1] of TSpinEdit;
@@ -113,7 +115,7 @@ var
 implementation
 
 uses
-  _stringtable, event_dialog, main;
+  _stringtable, _settings, event_dialog, main;
 
 {$R *.dfm}
 
@@ -284,6 +286,8 @@ begin
   cbMapSideId.ItemIndex := ini.ReadInteger('Basic','SideId',-1);
   seMapMissionNumber.Enabled := true;
   seMapMissionNumber.Value := ini.ReadInteger('Basic','MissionNumber',0);
+  cbMapSideIdChange(nil);
+  seMapMissionNumberChange(nil);
   // Load rules
   RuleValueList.Enabled := true;
   tmp_strings := TStringList.Create;
@@ -586,6 +590,18 @@ begin
 
   GlobalUnLock(handle);
   CloseClipboard;
+end;
+
+procedure TMissionDialog.cbMapSideIdChange(Sender: TObject);
+begin
+  if cbMapSideId.ItemIndex <> -1 then
+    Settings.MySideID := cbMapSideId.ItemIndex;
+end;
+
+procedure TMissionDialog.seMapMissionNumberChange(Sender: TObject);
+begin
+  if seMapMissionNumber.Value <> 0 then
+    Settings.MissionNumber := seMapMissionNumber.Value;
 end;
 
 end.

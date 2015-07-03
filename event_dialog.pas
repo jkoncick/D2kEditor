@@ -139,9 +139,13 @@ type
     lblConditionNote: TLabel;
     edConditionNote: TEdit;
     btnCustomMsgText: TButton;
+    EventConditionListButtonPanel: TPanel;
+    btnEventConditionListCopy: TButton;
+    btnEventConditionListPaste: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
     procedure seMessageIdChange(Sender: TObject);
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer;
       var CanSelect: Boolean);
@@ -199,6 +203,8 @@ type
     procedure btnCreateEventsOkClick(Sender: TObject);
     procedure btnPlusConditionClick(Sender: TObject);
     procedure btnCustomMsgTextClick(Sender: TObject);
+    procedure btnEventConditionListCopyClick(Sender: TObject);
+    procedure btnEventConditionListPasteClick(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -209,6 +215,7 @@ type
     create_event_type: CreateEventType;
     notes_enabled: boolean;
     msg_text_is_custom: boolean;
+    copy_conditions_from: integer;
   public
     procedure update_contents;
     procedure fill_grids;
@@ -320,12 +327,34 @@ end;
 procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
+  if (key = 13) and CreateEventsPanel.Visible then
+    btnCreateEventsOkClick(Sender);
+  if (key = 13) and not CreateEventsPanel.Visible then
+  begin
+    if (ActiveControl.Parent = ConditionPropertiesPanel) or
+     ((ActiveControl.Parent.Parent <> Nil) and (ActiveControl.Parent.Parent = ConditionPropertiesPanel)) then
+      btnApplyConditionChangesClick(nil)
+    else
+      btnApplyEventChangesClick(nil);
+  end;
   if (key = 27) and CreateEventsPanel.Visible then
     btnCreateEventsCancelClick(Sender);
   if (key = 27) and not CreateEventsPanel.Visible then
     Close;
-  if key = 123 then
+  if key = 123 then // F2
     MainWindow.Show;
+end;
+
+procedure TEventDialog.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+var
+  key: word;
+begin
+  if Msg.CharCode = 13 then
+  begin
+    key := 13;
+    FormKeyDown(nil, key, []);
+    Handled := true;
+  end;
 end;
 
 procedure TEventDialog.update_contents;
@@ -1138,7 +1167,8 @@ procedure TEventDialog.Deleteselectedcondition1Click(Sender: TObject);
 begin
   if selected_condition >= Mission.mis_data.num_conditions then
     exit;
-  if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
+  if Mission.condition_is_used(selected_condition) and
+    (Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO) then
     exit;
   Mission.delete_condition(selected_condition);
   update_contents;
@@ -1148,7 +1178,8 @@ procedure TEventDialog.Deletelastcondition1Click(Sender: TObject);
 begin
   if Mission.mis_data.num_conditions = 0 then
     exit;
-  if Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO then
+  if Mission.condition_is_used(Mission.mis_data.num_conditions - 1) and
+    (Application.MessageBox('Do you really want to delete condition? All condition references will be updated.', 'Delete condition', MB_YESNO or MB_ICONQUESTION) = IDNO) then
     exit;
   Mission.delete_condition(Mission.mis_data.num_conditions - 1);
   update_contents;
@@ -1234,6 +1265,7 @@ procedure TEventDialog.btnPlusConditionClick(Sender: TObject);
 begin
   Addcondition1Click(Sender);
   btnAddConditionClick(Sender);
+  ConditionGrid.SetFocus;
 end;
 
 procedure TEventDialog.btnCustomMsgTextClick(Sender: TObject);
@@ -1253,6 +1285,22 @@ begin
     edMessageText.ReadOnly := true;
     fill_grids;
   end;
+end;
+
+procedure TEventDialog.btnEventConditionListCopyClick(Sender: TObject);
+begin
+  copy_conditions_from := selected_event;
+  EventGrid.SetFocus;
+end;
+
+procedure TEventDialog.btnEventConditionListPasteClick(Sender: TObject);
+begin
+  tmp_event.num_conditions := Mission.mis_data.events[copy_conditions_from].num_conditions;
+  Move(Mission.mis_data.events[copy_conditions_from].condition_index, tmp_event.condition_index, Length(tmp_event.condition_index));
+  Move(Mission.mis_data.events[copy_conditions_from].condition_not, tmp_event.condition_not, Length(tmp_event.condition_not));
+  EventConditionList.Clear;
+  fill_event_condition_list;
+  EventGrid.SetFocus;
 end;
 
 end.

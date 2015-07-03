@@ -16,6 +16,7 @@ object EventDialog: TEventDialog
   OldCreateOrder = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
+  OnShortCut = FormShortCut
   PixelsPerInch = 96
   TextHeight = 13
   object Splitter1: TSplitter
@@ -575,7 +576,7 @@ object EventDialog: TEventDialog
         Left = 0
         Top = 16
         Width = 196
-        Height = 240
+        Height = 216
         OnClickCheck = EventConditionListClickCheck
         Align = alLeft
         ItemHeight = 16
@@ -643,6 +644,33 @@ object EventDialog: TEventDialog
         Caption = '+'
         TabOrder = 6
         OnClick = btnPlusConditionClick
+      end
+      object EventConditionListButtonPanel: TPanel
+        Left = 0
+        Top = 232
+        Width = 220
+        Height = 24
+        Align = alBottom
+        BevelOuter = bvNone
+        TabOrder = 7
+        object btnEventConditionListCopy: TButton
+          Left = 0
+          Top = 0
+          Width = 96
+          Height = 24
+          Caption = 'Copy list'
+          TabOrder = 0
+          OnClick = btnEventConditionListCopyClick
+        end
+        object btnEventConditionListPaste: TButton
+          Left = 100
+          Top = 0
+          Width = 96
+          Height = 25
+          Caption = 'Paste list'
+          TabOrder = 1
+          OnClick = btnEventConditionListPasteClick
+        end
       end
     end
     object ConditionPropertiesPanel: TPanel
