@@ -23,7 +23,10 @@ type
     procedure init_value_list(value_list: TValueListEditor);
     procedure load_from_file(filename: String);
     function get_table_size: integer;
-    function get_text(index: integer): String;
+    function get_text(index: integer; var is_custom: boolean): String;
+    procedure set_custom_text(index: integer; text: String);
+    procedure remove_custom_text(index: integer);
+    // Loading and saving custom texts
     procedure load_custom_texts_from_ini(ini: TMemIniFile);
     procedure save_custom_texts_to_ini(ini: TMemIniFile);
     procedure clear_custom_texts;
@@ -80,16 +83,33 @@ begin
   result := num_entries;
 end;
 
-function TStringTable.get_text(index: integer): String;
+function TStringTable.get_text(index: integer; var is_custom: boolean): String;
 var
   row: integer;
 begin
+  is_custom := false;
   if custom_text_value_list.FindRow(inttostr(index), row) then
-    result := custom_text_value_list.Cells[1,row]
-  else if (index >= num_entries) or (index < 0) then
+  begin
+    result := custom_text_value_list.Cells[1,row];
+    is_custom := true;
+  end else
+  if (index >= num_entries) or (index < 0) then
     result := '(undefined)'
   else
     result := entries[index].text;
+end;
+
+procedure TStringTable.set_custom_text(index: integer; text: String);
+begin
+  custom_text_value_list.Values[inttostr(index)] := text;
+end;
+
+procedure TStringTable.remove_custom_text(index: integer);
+var
+  row: integer;
+begin
+   if custom_text_value_list.FindRow(inttostr(index), row) then
+     custom_text_value_list.DeleteRow(row);
 end;
 
 procedure TStringTable.load_custom_texts_from_ini(ini: TMemIniFile);

@@ -138,6 +138,7 @@ type
     lblEventNote: TLabel;
     lblConditionNote: TLabel;
     edConditionNote: TEdit;
+    btnCustomMsgText: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -197,6 +198,7 @@ type
     procedure cbCreateEventsPlayerChange(Sender: TObject);
     procedure btnCreateEventsOkClick(Sender: TObject);
     procedure btnPlusConditionClick(Sender: TObject);
+    procedure btnCustomMsgTextClick(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -206,6 +208,7 @@ type
     condition_position: boolean;
     create_event_type: CreateEventType;
     notes_enabled: boolean;
+    msg_text_is_custom: boolean;
   public
     procedure update_contents;
     procedure fill_grids;
@@ -483,7 +486,12 @@ begin
     edEventValue.Text := inttostr(tmp_event.value);
   end;
   if panel = epMessage then
-    seMessageId.Value := tmp_event.message_index;
+  begin
+    if seMessageId.Value = Integer(tmp_event.message_index) then
+      seMessageIdChange(nil)
+    else
+      seMessageId.Value := tmp_event.message_index;
+  end;
   panel.Visible := true;
   panel.Top := panel_top;
   panel_top := panel_top + panel.Height + 2;
@@ -574,6 +582,9 @@ begin
   // Save event note
   if notes_enabled then
     Mission.event_notes[selected_event] := edeventNote.Text;
+  // Save custom message text
+  if (event_type = Byte(etShowMessage)) and msg_text_is_custom then
+    StringTable.set_custom_text(tmp_event.message_index, edMessageText.Text);
   // Update GUI
   fill_grids;
   // Update event markers on map if event has position
@@ -762,11 +773,20 @@ begin
   lblConditionNote.Visible := notes_enabled;
   edEventNote.Visible := notes_enabled;
   edConditionNote.Visible := notes_enabled;
+  btnCustomMsgText.Visible := enabled;
+  seMessageIdChange(nil);
 end;
 
 procedure TEventDialog.seMessageIdChange(Sender: TObject);
 begin
-  edMessageText.Text := StringTable.get_text(StrToIntDef(seMessageId.Text,0));
+  edMessageText.Text := StringTable.get_text(StrToIntDef(seMessageId.Text,0), msg_text_is_custom);
+  edMessageText.ReadOnly := not msg_text_is_custom;
+  if not btnCustomMsgText.Visible then
+    exit;
+  if msg_text_is_custom then
+    btnCustomMsgText.Caption := 'Original text'
+  else
+    btnCustomMsgText.Caption := 'Custom text'
 end;
 
 procedure TEventDialog.EventGridSelectCell(Sender: TObject; ACol,
@@ -1214,6 +1234,25 @@ procedure TEventDialog.btnPlusConditionClick(Sender: TObject);
 begin
   Addcondition1Click(Sender);
   btnAddConditionClick(Sender);
+end;
+
+procedure TEventDialog.btnCustomMsgTextClick(Sender: TObject);
+begin
+  if not msg_text_is_custom then
+  begin
+    btnCustomMsgText.Caption := 'Original text';
+    edMessageText.Text := '';
+    edMessageText.ReadOnly := false;
+    edMessageText.SetFocus;
+    msg_text_is_custom := true;
+  end else
+  begin
+    btnCustomMsgText.Caption := 'Custom text';
+    StringTable.remove_custom_text(seMessageId.Value);
+    edMessageText.Text := StringTable.get_text(seMessageId.Value, msg_text_is_custom);
+    edMessageText.ReadOnly := true;
+    fill_grids;
+  end;
 end;
 
 end.

@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
-  Left = 191
-  Top = 40
+  Left = 212
+  Top = 7
   Width = 1288
   Height = 720
   Caption = 'Events and Conditions'
@@ -437,6 +437,15 @@ object EventDialog: TEventDialog
           Height = 21
           ReadOnly = True
           TabOrder = 1
+        end
+        object btnCustomMsgText: TButton
+          Left = 152
+          Top = 4
+          Width = 81
+          Height = 22
+          Caption = 'Custom text'
+          TabOrder = 2
+          OnClick = btnCustomMsgTextClick
         end
       end
       object btnApplyEventChanges: TBitBtn

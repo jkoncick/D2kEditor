@@ -482,6 +482,7 @@ var
   event_type: EventType;
   contents: string;
   i: integer;
+  dummy: boolean;
 begin
   event := Addr(mis_data.events[index]);
   event_type := EventType(event.event_type);
@@ -507,7 +508,7 @@ begin
     etShowMessage:
     begin
       contents := '(' + inttostr(event.message_index) + ') ';
-      contents := contents + StringTable.get_text(event.message_index);
+      contents := contents + StringTable.get_text(event.message_index, dummy);
     end;
     etSetFlag:      contents := inttostr(event.player) + ' = ' + flag_value[event.value];
   end;
