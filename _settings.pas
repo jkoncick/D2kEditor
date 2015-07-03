@@ -13,6 +13,7 @@ type
     AssignMisFileToNewMap: boolean;
     PreserveGUISettings: boolean;
     RestrictSpiceToSand: boolean;
+    EnableEventNotes: boolean;
 
     // Default values
     DefaultMapWidth: integer;
@@ -35,7 +36,7 @@ type
     TestMapParameters: String;
 
   private
-    tmp_ini: TIniFile;
+    tmp_ini: TMemIniFile;
 
   public
     procedure load_precreate_editor_settings;
@@ -57,19 +58,20 @@ uses
 
 procedure TSettings.load_precreate_editor_settings;
 var
-  ini: TIniFile;
+  ini: TMemIniFile;
 begin
-  ini := TIniFile.Create(current_dir + 'D2kEditor.ini');
+  ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   tmp_ini := ini;
   // Load preferences
-  AssignMisFileToNewMap := ini.ReadBool('Preferences', 'AssignMisFileToNewMap', false);
+  AssignMisFileToNewMap := ini.ReadBool('Preferences', 'AssignMisFileToNewMap', true);
   PreserveGUISettings := ini.ReadBool('Preferences', 'PreserveGUISettings', true);
-  RestrictSpiceToSand := ini.ReadBool('Preferences', 'RestrictSpiceToSand', false);
+  RestrictSpiceToSand := ini.ReadBool('Preferences', 'RestrictSpiceToSand', true);
+  EnableEventNotes := ini.ReadBool('Preferences', 'EnableEventNotes', true);
   // Load default values
-  DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 32);
-  DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 32);
-  DefaultMisTechLevel := ini.ReadInteger('Defaults', 'DefaultMisTechLevel', 8);
-  DefaultMisStartingMoney := ini.ReadInteger('Defaults', 'DefaultMisStartingMoney', 5000);
+  DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
+  DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 64);
+  DefaultMisTechLevel := ini.ReadInteger('Defaults', 'DefaultMisTechLevel', 1);
+  DefaultMisStartingMoney := ini.ReadInteger('Defaults', 'DefaultMisStartingMoney', 3000);
   DefaultTileset := ini.ReadInteger('Defaults', 'DefaultTileset', 2);
   // Load file paths
   GamePath := ini.ReadString('Paths','GamePath', current_dir + '..\');
@@ -86,7 +88,7 @@ end;
 
 procedure TSettings.load_postcreate_editor_settings;
 var
-  ini: TIniFile;
+  ini: TMemIniFile;
 begin
   ini := tmp_ini;
   // Load GUI settings for all other dialogs
@@ -116,13 +118,14 @@ end;
 
 procedure TSettings.save_editor_settings;
 var
-  ini: TIniFile;
+  ini: TMemIniFile;
 begin
-  ini := TIniFile.Create(current_dir + 'D2kEditor.ini');
+  ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   // Save preferences
   ini.WriteBool('Preferences', 'AssignMisFileToNewMap', AssignMisFileToNewMap);
   ini.WriteBool('Preferences', 'PreserveGUISettings', PreserveGUISettings);
   ini.WriteBool('Preferences', 'RestrictSpiceToSand', RestrictSpiceToSand);
+  ini.WriteBool('Preferences', 'EnableEventNotes', EnableEventNotes);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);
   ini.WriteInteger('Defaults', 'DefaultMapHeight', DefaultMapHeight);
@@ -153,6 +156,7 @@ begin
   ini.WriteInteger('GUI','EventDialog.Width',EventDialog.Width);
   ini.WriteInteger('GUI','EventDialog.Height',EventDialog.Height);
   ini.WriteInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
+  ini.UpdateFile;
   ini.Destroy;
 end;
 

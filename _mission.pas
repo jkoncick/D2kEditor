@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics;
+uses Graphics, IniFiles;
 
 // Mis file constants
 const cnt_mis_players = 8;
@@ -270,14 +270,20 @@ type
     mis_assigned: boolean;
     mis_data: TMisFile;
     event_markers: array[0..127, 0..127] of TEventMarker;
+    event_notes: array[0..63] of String;
+    condition_notes: array[0..47] of String;
 
   public
-    // Loading and saving
+    // Loading and saving mission
     function get_mis_filename(filename: String): String;
     procedure load_mis_file(filename: String);
     procedure save_mis_file(filename: String);
     procedure process_event_markers;
     procedure set_default_mis_values;
+    // Loading and saving notes
+    procedure load_notes_from_ini(ini: TMemIniFile);
+    procedure save_notes_to_ini(ini: TMemIniFile);
+    procedure clear_notes;
     // Getting text descriptions
     function get_event_contents(index: integer): String;
     function get_event_conditions(index: integer): String;
@@ -429,6 +435,45 @@ begin
   for x := 0 to 127 do
     for y := 0 to 127 do
       Mission.event_markers[x,y].emtype := emNone;
+  // Clear notes
+  clear_notes;
+end;
+
+procedure TMission.load_notes_from_ini(ini: TMemIniFile);
+var
+  i: integer;
+begin
+  if not Settings.EnableEventNotes then
+    exit;
+  for i := 0 to Length(event_notes) - 1 do
+    event_notes[i] := ini.ReadString('Notes', 'event'+inttostr(i), '');
+  for i := 0 to Length(condition_notes) - 1 do
+    condition_notes[i] := ini.ReadString('Notes', 'condition'+inttostr(i), '');
+end;
+
+procedure TMission.save_notes_to_ini(ini: TMemIniFile);
+var
+  i: integer;
+begin
+  if not Settings.EnableEventNotes then
+    exit;
+  ini.EraseSection('Notes');
+  for i := 0 to Length(event_notes) - 1 do
+    if event_notes[i] <> '' then
+      ini.WriteString('Notes', 'event'+inttostr(i), event_notes[i]);
+  for i := 0 to Length(condition_notes) - 1 do
+    if condition_notes[i] <> '' then
+      ini.WriteString('Notes', 'condition'+inttostr(i), condition_notes[i]);
+end;
+
+procedure TMission.clear_notes;
+var
+  i: integer;
+begin
+  for i := 0 to Length(event_notes) - 1 do
+    event_notes[i] := '';
+  for i := 0 to Length(condition_notes) - 1 do
+    condition_notes[i] := '';
 end;
 
 function TMission.get_event_contents(index: integer): String;
@@ -518,6 +563,7 @@ begin
     ctCasualties:     contents := contents + space + inttostr(cond.value) + ' ' + IntToHex(cond.casualty_flags, 8);
     ctTileRevealed:   contents := contents + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y);
     ctSpiceHarvested: contents := contents + inttostr(cond.value);
+    ctFlag:           contents := contents + condition_notes[index];
   end;
   //contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.more_uses) + ' ' + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y) + ' ' + inttostr(cond.casualty_flags) + ' ' + inttostr(cond.side) + ' ' + inttostr(cond.building_type) + ' ' + inttostr(cond.unit_type_or_comparison_function);
   result := contents;

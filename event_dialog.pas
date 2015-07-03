@@ -134,6 +134,10 @@ type
     seCreateEventsNum: TSpinEdit;
     cbCreateEventsAllocIndex: TCheckBox;
     btnPlusCondition: TButton;
+    edEventNote: TEdit;
+    lblEventNote: TLabel;
+    lblConditionNote: TLabel;
+    edConditionNote: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -201,10 +205,11 @@ type
 
     condition_position: boolean;
     create_event_type: CreateEventType;
+    notes_enabled: boolean;
   public
     procedure update_contents;
     procedure fill_grids;
-
+    // Event-related procedures
     procedure select_event(index: integer);
     procedure fill_event_ui(event_valid: boolean);
     procedure fill_event_ui_panel(panel: TPanel; var panel_top: integer);
@@ -212,14 +217,15 @@ type
     procedure fill_event_condition_list;
     procedure change_event_type(event_type: integer);
     procedure apply_event_changes;
-
+    // Condition-related prodcedures
     procedure select_condition(index: integer);
     procedure fill_condition_ui(condition_valid: boolean);
     procedure fill_condition_ui_panel(panel: TPanel; var panel_top: integer);
     procedure change_condition_type(condition_type: integer);
     procedure apply_condition_changes;
-
+    // Procedures called from different forms
     procedure finish_event_position_selection(x, y: integer);
+    procedure enable_map_ini_features(enabled: boolean);
   end;
 
 var
@@ -227,7 +233,7 @@ var
 
 implementation
 
-uses main, _stringtable;
+uses main, _stringtable, _settings;
 
 {$R *.dfm}
 
@@ -392,12 +398,14 @@ begin
     cbEventType.ItemIndex := -1;
     cbEventType.Enabled := false;
     btnApplyEventChanges.Enabled := false;
+    edEventNote.Enabled := false;
   end else
   begin
     tmp_event := Mission.mis_data.events[index];
     cbEventType.ItemIndex := tmp_event.event_type;
     cbEventType.Enabled := true;
     btnApplyEventChanges.Enabled := true;
+    edEventNote.Enabled := true;
   end;
   fill_event_ui(index < Mission.mis_data.num_events);
 end;
@@ -434,6 +442,8 @@ begin
   end;
   if event_type_info[tmp_event.event_type].value_name <> '' then
     fill_event_ui_panel(epEventValue, panel_top);
+  if notes_enabled then
+    edEventNote.Text := Mission.event_notes[selected_event];
   // Fill unit list
   fill_event_unit_list;
   // Fill condition list
@@ -561,6 +571,10 @@ begin
     end;
   end;
   Mission.mis_data.events[selected_event] := tmp_event;
+  // Save event note
+  if notes_enabled then
+    Mission.event_notes[selected_event] := edeventNote.Text;
+  // Update GUI
   fill_grids;
   // Update event markers on map if event has position
   if event_type_info[event_type].use_map_position then
@@ -580,12 +594,14 @@ begin
     cbConditionType.ItemIndex := -1;
     cbConditionType.Enabled := false;
     btnApplyConditionChanges.Enabled := false;
+    edConditionNote.Enabled := false;
   end else
   begin
     tmp_condition := Mission.mis_data.conditions[index];
     cbConditionType.ItemIndex := tmp_condition.condition_type;
     cbConditionType.Enabled := true;
     btnApplyConditionChanges.Enabled := true;
+    edConditionNote.Enabled := true;
   end;
   fill_condition_ui(index < Mission.mis_data.num_conditions);
 end;
@@ -617,6 +633,8 @@ begin
   end;
   if condition_type_info[tmp_condition.condition_type].value_name <> '' then
     fill_condition_ui_panel(cpConditionValue, panel_top);
+  if notes_enabled then
+    edConditionNote.Text := Mission.condition_notes[selected_condition];
 end;
 
 procedure TEventDialog.fill_condition_ui_panel(panel: TPanel;
@@ -709,6 +727,10 @@ begin
     end;
   end;
   Mission.mis_data.conditions[selected_condition] := tmp_condition;
+  // Save condition note
+  if notes_enabled then
+    Mission.condition_notes[selected_condition] := edConditionNote.Text;
+  // Update GUI
   fill_grids;
   EventConditionList.Clear;
   fill_event_condition_list;
@@ -731,6 +753,15 @@ begin
     seConditionPositionX.Value := x;
     seConditionPositionY.Value := y;
   end;
+end;
+
+procedure TEventDialog.enable_map_ini_features(enabled: boolean);
+begin
+  notes_enabled := enabled and Settings.EnableEventNotes;
+  lblEventNote.Visible := notes_enabled;
+  lblConditionNote.Visible := notes_enabled;
+  edEventNote.Visible := notes_enabled;
+  edConditionNote.Visible := notes_enabled;
 end;
 
 procedure TEventDialog.seMessageIdChange(Sender: TObject);

@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
-  Left = 192
-  Top = 112
+  Left = 191
+  Top = 40
   Width = 1288
   Height = 720
   Caption = 'Events and Conditions'
@@ -149,6 +149,13 @@ object EventDialog: TEventDialog
         Height = 13
         Caption = 'Event type:'
       end
+      object lblEventNote: TLabel
+        Left = 4
+        Top = 184
+        Width = 26
+        Height = 13
+        Caption = 'Note:'
+      end
       object cbEventType: TComboBox
         Left = 64
         Top = 24
@@ -183,7 +190,7 @@ object EventDialog: TEventDialog
       end
       object epEventPosition: TPanel
         Left = 0
-        Top = 80
+        Top = 64
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -227,7 +234,7 @@ object EventDialog: TEventDialog
       end
       object epDeployAction: TPanel
         Left = 0
-        Top = 112
+        Top = 80
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -250,7 +257,7 @@ object EventDialog: TEventDialog
       end
       object epAllegiance: TPanel
         Left = 0
-        Top = 128
+        Top = 96
         Width = 240
         Height = 58
         BevelOuter = bvNone
@@ -308,7 +315,7 @@ object EventDialog: TEventDialog
       end
       object epSetFlag: TPanel
         Left = 0
-        Top = 140
+        Top = 108
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -352,7 +359,7 @@ object EventDialog: TEventDialog
       end
       object epRadius: TPanel
         Left = 0
-        Top = 156
+        Top = 124
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -377,7 +384,7 @@ object EventDialog: TEventDialog
       end
       object epEventValue: TPanel
         Left = 0
-        Top = 188
+        Top = 140
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -426,7 +433,7 @@ object EventDialog: TEventDialog
         object edMessageText: TEdit
           Left = 4
           Top = 36
-          Width = 229
+          Width = 232
           Height = 21
           ReadOnly = True
           TabOrder = 1
@@ -441,6 +448,13 @@ object EventDialog: TEventDialog
         TabOrder = 9
         OnClick = btnApplyEventChangesClick
         Kind = bkOK
+      end
+      object edEventNote: TEdit
+        Left = 4
+        Top = 200
+        Width = 232
+        Height = 21
+        TabOrder = 10
       end
     end
     object EventUnitListPanel: TPanel
@@ -644,6 +658,13 @@ object EventDialog: TEventDialog
         Height = 13
         Caption = 'Condition type:'
       end
+      object lblConditionNote: TLabel
+        Left = 4
+        Top = 184
+        Width = 26
+        Height = 13
+        Caption = 'Note:'
+      end
       object cbConditionType: TComboBox
         Left = 80
         Top = 24
@@ -678,7 +699,7 @@ object EventDialog: TEventDialog
       end
       object cpConditionPosition: TPanel
         Left = 0
-        Top = 80
+        Top = 64
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -722,7 +743,7 @@ object EventDialog: TEventDialog
       end
       object cpBuildingType: TPanel
         Left = 0
-        Top = 112
+        Top = 80
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -745,7 +766,7 @@ object EventDialog: TEventDialog
       end
       object cpUnitType: TPanel
         Left = 0
-        Top = 128
+        Top = 96
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -768,7 +789,7 @@ object EventDialog: TEventDialog
       end
       object cpTimer: TPanel
         Left = 0
-        Top = 144
+        Top = 112
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -805,7 +826,7 @@ object EventDialog: TEventDialog
       end
       object cpInterval: TPanel
         Left = 0
-        Top = 160
+        Top = 128
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -842,7 +863,7 @@ object EventDialog: TEventDialog
       end
       object cpConditionValue: TPanel
         Left = 0
-        Top = 192
+        Top = 208
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -900,6 +921,13 @@ object EventDialog: TEventDialog
         TabOrder = 9
         OnClick = btnApplyConditionChangesClick
         Kind = bkOK
+      end
+      object edConditionNote: TEdit
+        Left = 4
+        Top = 200
+        Width = 196
+        Height = 21
+        TabOrder = 10
       end
     end
   end

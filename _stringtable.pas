@@ -24,8 +24,8 @@ type
     procedure load_from_file(filename: String);
     function get_table_size: integer;
     function get_text(index: integer): String;
-    procedure load_custom_texts_from_ini(ini: TIniFile);
-    procedure save_custom_texts_to_ini(ini: TIniFile);
+    procedure load_custom_texts_from_ini(ini: TMemIniFile);
+    procedure save_custom_texts_to_ini(ini: TMemIniFile);
     procedure clear_custom_texts;
 
   end;
@@ -92,7 +92,7 @@ begin
     result := entries[index].text;
 end;
 
-procedure TStringTable.load_custom_texts_from_ini(ini: TIniFile);
+procedure TStringTable.load_custom_texts_from_ini(ini: TMemIniFile);
 var
   tmp_strings: TStringList;
   i: integer;
@@ -107,7 +107,7 @@ begin
   tmp_strings.Destroy;
 end;
 
-procedure TStringTable.save_custom_texts_to_ini(ini: TIniFile);
+procedure TStringTable.save_custom_texts_to_ini(ini: TMemIniFile);
 var
   i: integer;
 begin

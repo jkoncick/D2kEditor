@@ -268,9 +268,9 @@ procedure TMissionDialog.load_ini_fields;
 var
   i: integer;
   tmp_strings: TStringList;
-  ini: TIniFile;
+  ini: TMemIniFile;
 begin
-  ini := TIniFile.Create(get_ini_filename(map_filename));
+  ini := TMemIniFile.Create(get_ini_filename(map_filename));
   btnResetToDefaults.Enabled := true;
   btnRefreshStrings.Enabled := true;
   // Load basic map settings
@@ -306,6 +306,9 @@ begin
   end;
   MapBriefing.Lines := tmp_strings;
   tmp_strings.Destroy;
+  // Load event/condition notes
+  Mission.load_notes_from_ini(ini);
+  EventDialog.enable_map_ini_features(true);
   ini.Destroy;
 end;
 
@@ -329,17 +332,19 @@ begin
   StringTable.clear_custom_texts;
   MapBriefing.Enabled := false;
   MapBriefing.Lines.Clear;
+  Mission.clear_notes;
+  EventDialog.enable_map_ini_features(false);  
 end;
 
 procedure TMissionDialog.save_ini_fields(map_filename: String);
 var
   i: integer;
   tmp_string: String;
-  ini: TIniFile;
+  ini: TMemIniFile;
 begin
   if not cbUseINI.Checked then
     exit;
-  ini := TIniFile.Create(get_ini_filename(map_filename));
+  ini := TMemIniFile.Create(get_ini_filename(map_filename));
   // Save basic map settings
   if edMapName.Text = '' then
     ini.DeleteKey('Basic','Name')
@@ -383,6 +388,10 @@ begin
     end;
     ini.WriteString('Basic','Briefing',tmp_string);
   end;
+  // Save event/condition notes
+  Mission.save_notes_to_ini(ini);
+  ini.UpdateFile;
+  ini.Destroy;
 end;
 
 procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
