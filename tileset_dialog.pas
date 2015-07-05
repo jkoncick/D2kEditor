@@ -22,6 +22,7 @@ type
     sbPreset32: TSpeedButton;
     sbPreset23: TSpeedButton;
     procedure FormCreate(Sender: TObject);
+    procedure FormResize(Sender: TObject);
     procedure DrawTileset(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -38,7 +39,8 @@ type
     procedure SetBlockSize(Sender: TObject);
   private
     { Private declarations }
-    tileset_top: word;
+    tileset_top: integer;
+    tileset_height: integer;
 
     preset_buttons: array[0..8] of TSpeedButton;
     preset_width: word;
@@ -80,6 +82,17 @@ begin
   preset_buttons[6] := sbPreset12;
   preset_buttons[7] := sbPreset32;
   preset_buttons[8] := sbPreset23;
+  TilesetImage.Picture.Bitmap.Width := 640;
+end;
+
+procedure TTilesetDialog.FormResize(Sender: TObject);
+begin
+  tileset_height := (ClientHeight - 32) div 32;
+  TilesetImage.Height := tileset_height * 32;
+  TilesetImage.Picture.Bitmap.Height := tileset_height * 32;
+  TilesetScroll.Height := tileset_height * 32;
+  TilesetScroll.Max := 40 - tileset_height;
+  DrawTileset(nil);
 end;
 
 procedure TTilesetDialog.DrawTileset(Sender: TObject);
@@ -88,10 +101,10 @@ var
   tile_attr: TileType;
 begin
   tileset_top := TilesetScroll.Position;
-  TilesetImage.Canvas.CopyRect(rect(0,0,640,576),Tileset.tileimage.Canvas,rect(0,tileset_top*32,640,tileset_top*32+576));
+  TilesetImage.Canvas.CopyRect(rect(0,0,640,tileset_height*32),Tileset.tileimage.Canvas,rect(0,tileset_top*32,640,tileset_top*32+tileset_height*32));
   if TilesetMarkTiles.Checked then
     for x := 0 to 20 - 1 do
-      for y := tileset_top to tileset_top + 18 - 1 do
+      for y := tileset_top to tileset_top + tileset_height - 1 do
       begin
         tile_attr := Tileset.get_tile_type(x + y * 20);
         if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) or (tile_attr = ttBuildable) then
@@ -116,9 +129,9 @@ begin
     for x:= 0 to 20-1 do
     begin
       TilesetImage.Canvas.MoveTo(x*32,0);
-      TilesetImage.Canvas.LineTo(x*32,576);
+      TilesetImage.Canvas.LineTo(x*32,tileset_height*32);
     end;
-    for y:= 0 to 18-1 do
+    for y:= 0 to tileset_height-1 do
     begin
       TilesetImage.Canvas.MoveTo(0,y*32);
       TilesetImage.Canvas.LineTo(640,y*32);

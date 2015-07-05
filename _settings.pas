@@ -99,6 +99,7 @@ begin
   end;
   TilesetDialog.Left := ini.ReadInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
   TilesetDialog.Top := ini.ReadInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
+  TilesetDialog.Height := ini.ReadInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
   SetDialog.Left := ini.ReadInteger('GUI','SetDialog.Left',SetDialog.Left);
   SetDialog.Top := ini.ReadInteger('GUI','SetDialog.Top',SetDialog.Top);
   TestMapDialog.Left := ini.ReadInteger('GUI','TestMapDialog.Left',TestMapDialog.Left);
@@ -143,6 +144,7 @@ begin
   ini.WriteInteger('GUI','MainWindow.Height',MainWindow.Height);
   ini.WriteInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
   ini.WriteInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
+  ini.WriteInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
   ini.WriteInteger('GUI','SetDialog.Left',SetDialog.Left);
   ini.WriteInteger('GUI','SetDialog.Top',SetDialog.Top);
   ini.WriteInteger('GUI','TestMapDialog.Left',TestMapDialog.Left);

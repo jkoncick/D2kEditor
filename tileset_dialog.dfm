@@ -1,11 +1,14 @@
 object TilesetDialog: TTilesetDialog
   Left = 326
   Top = 66
-  BorderStyle = bsDialog
+  Width = 682
+  Height = 642
   Caption = 'Tile block selection'
-  ClientHeight = 608
-  ClientWidth = 674
   Color = clBtnFace
+  Constraints.MaxHeight = 1348
+  Constraints.MaxWidth = 682
+  Constraints.MinHeight = 578
+  Constraints.MinWidth = 682
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -17,6 +20,7 @@ object TilesetDialog: TTilesetDialog
   OnKeyDown = FormKeyDown
   OnMouseWheelDown = FormMouseWheelDown
   OnMouseWheelUp = FormMouseWheelUp
+  OnResize = FormResize
   OnShow = DrawTileset
   PixelsPerInch = 96
   TextHeight = 13
