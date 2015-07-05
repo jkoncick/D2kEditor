@@ -332,9 +332,9 @@ begin
   mis_filename := filename;
 
   tileset_name := String(mis_data.tileset);
-  for i:= 0 to cnt_tilesets-1 do
+  for i:= 0 to Tileset.cnt_tilesets-1 do
   begin
-    if tileset_name = tilesets[i].name then
+    if tileset_name = Tileset.tileset_info[i].name then
       Tileset.change_tileset(i);
   end;
   process_event_markers;
@@ -412,8 +412,8 @@ var
 begin
   FillChar(mis_data, sizeof(mis_data), 0);
   // Write tileset name
-  Move(tilesets[Tileset.current_tileset].name[1], mis_data.tileset, 8);
-  Move(tilesets[Tileset.current_tileset].tileatr_name[1], mis_data.tileatr, 8);
+  Move(Tileset.tileset_info[Tileset.current_tileset].name[1], mis_data.tileset, 8);
+  Move(Tileset.tileset_info[Tileset.current_tileset].tileatr_name[1], mis_data.tileatr, 8);
   // Player properties
   for i := 0 to 7 do
   begin

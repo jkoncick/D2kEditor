@@ -5,7 +5,6 @@ interface
 uses Graphics, Menus;
 
 // Tileset constants
-const cnt_tilesets = 7;
 const cnt_tileset_tiles = 800;
 const mmap_tile_type_colors: array[0..6] of TColor = ($8CDFEF,$29285A,$375582,$ACDFEF,$58A4E4,$509CDC,$F0827F);
 
@@ -21,24 +20,12 @@ type
     tileatr_name: String;
   end;
 
-// Tileset type definition constants
-const tilesets: array[0..cnt_tilesets-1] of TTilesetInfo =
-  (
-    (name: 'BLOXBASE'; image_name: 'd2k_BLOXBASE'; tileatr_name: 'TILEATR2'),
-    (name: 'BLOXBAT';  image_name: 'd2k_BLOXBAT';  tileatr_name: 'TILEATR6'),
-    (name: 'BLOXBGBS'; image_name: 'd2k_BLOXBGBS'; tileatr_name: 'TILEATR3'),
-    (name: 'BLOXICE';  image_name: 'd2k_BLOXICE' ; tileatr_name: 'TILEATR5'),
-    (name: 'BLOXTREE'; image_name: 'd2k_BLOXTREE'; tileatr_name: 'TILEATR1'),
-    (name: 'BLOXWAST'; image_name: 'd2k_BLOXWAST'; tileatr_name: 'TILEATR4'),
-    (name: 'BLOXXMAS'; image_name: 'd2k_BLOXXMAS'; tileatr_name: 'TILEATR7')
-  );
-
 // Tileset class
 type
   TTileset = class
 
   private
-    menuitems: array[0..cnt_tilesets-1] of TMenuItem;
+    menuitems: array of TMenuItem;
 
   public
     tileimage_filename: String;
@@ -46,6 +33,8 @@ type
     tileimage: TBitmap;
     attributes: array[0..cnt_tileset_tiles-1] of cardinal;
     current_tileset: integer;
+    cnt_tilesets: integer;
+    tileset_info: array of TTilesetInfo;
 
   public
     procedure init;
@@ -63,23 +52,36 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset_dialog, _mission, _settings;
+uses Windows, Forms, SysUtils, main, tileset_dialog, _mission, _settings, IniFiles, Classes;
 
 procedure TTileset.init;
 var
+  ini: TMemIniFile;
+  tmp_strings: TStringList;
   i: integer;
 begin
   tileimage := Graphics.TBitmap.Create;
+  ini := TMemIniFile.Create(current_dir + 'config/tilesets.ini');
+  tmp_strings := TStringList.Create;
+  ini.ReadSections(tmp_strings);
+  cnt_tilesets := tmp_strings.Count;
+  SetLength(tileset_info, cnt_tilesets);
+  SetLength(menuitems, cnt_tilesets);
   for i := 0 to cnt_tilesets -1 do
   begin
+    tileset_info[i].name := tmp_strings[i];
+    tileset_info[i].image_name := ini.ReadString(tmp_strings[i], 'image', '');
+    tileset_info[i].tileatr_name := ini.ReadString(tmp_strings[i], 'tileatr', '');
     menuitems[i] := TMenuItem.Create(MainWindow.Selecttileset1);
-    menuitems[i].Caption := tilesets[i].name;
+    menuitems[i].Caption := tileset_info[i].name;
     menuitems[i].RadioItem := true;
     menuitems[i].GroupIndex := 1;
     menuitems[i].Tag := i;
     menuitems[i].OnClick := MainWindow.SelectTileset;
     MainWindow.Selecttileset1.Add(menuitems[i]);
   end;
+  ini.Destroy;
+  tmp_strings.Destroy;
 end;
 
 procedure TTileset.change_tileset(index: integer);
@@ -88,10 +90,10 @@ var
 begin
   current_tileset := index;
   menuitems[current_tileset].Checked := true;
-  tmp_filename := current_dir+'/tilesets/'+tilesets[current_tileset].image_name+'.bmp';
+  tmp_filename := current_dir+'/tilesets/'+tileset_info[current_tileset].image_name+'.bmp';
   // Set tileset in .mis file
-  Move(tilesets[current_tileset].name[1], Mission.mis_data.tileset, 8);
-  Move(tilesets[current_tileset].tileatr_name[1], Mission.mis_data.tileatr, 8);
+  Move(tileset_info[current_tileset].name[1], Mission.mis_data.tileset, 8);
+  Move(tileset_info[current_tileset].tileatr_name[1], Mission.mis_data.tileatr, 8);
   // Load tileset graphics
   if FileExists(tmp_filename) then
   begin
@@ -99,8 +101,8 @@ begin
     tileimage.LoadFromFile(tileimage_filename);
   end;
   // Load tileset attributes
-  load_tileatr(current_dir+'/tilesets/'+tilesets[current_tileset].tileatr_name+'.bin');
-  MainWindow.StatusBar.Panels[1].Text := tilesets[current_tileset].name;
+  load_tileatr(current_dir+'/tilesets/'+tileset_info[current_tileset].tileatr_name+'.bin');
+  MainWindow.StatusBar.Panels[1].Text := tileset_info[current_tileset].name;
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
     TilesetDialog.DrawTileset(nil);
   // Re-render everything
@@ -123,7 +125,7 @@ begin
   tileimage_filename := filename;
   menuitems[current_tileset].Checked := False;
   current_tileset := Settings.DefaultTileset;
-  load_tileatr(current_dir+'/tilesets/'+tilesets[current_tileset].tileatr_name+'.bin');
+  load_tileatr(current_dir+'/tilesets/'+tileset_info[current_tileset].tileatr_name+'.bin');
   MainWindow.StatusBar.Panels[1].Text := 'Tileset File';
   MainWindow.render_map;
 end;
