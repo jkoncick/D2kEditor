@@ -11,6 +11,13 @@ const player_names_shorter: array[0..7] of string =
   ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
 
 type
+  TMisAIProperty = record
+    name: String;
+    data_type: char;
+    position: integer;
+  end;
+
+type
   TRuleDefinition = record
     name: String;
     default_value: String;
@@ -98,6 +105,7 @@ type
     player_label_alleg: array[0..cnt_mis_players-1] of TLabel;
     allegiance_btn: array[0..cnt_mis_players-1, 0..cnt_mis_players-1] of TBitBtn;
     rule_definitions: array of TRuleDefinition;
+    misai_properties: array of TMisAIProperty;
     ai_clipboard_format: cardinal;
   public
     procedure fill_data;
@@ -122,7 +130,7 @@ uses
 procedure TMissionDialog.FormCreate(Sender: TObject);
 var
   i, j: integer;
-  rules_ini: TIniFile;
+  ini: TMemIniFile;
   tmp_strings: TStringList;
 begin
   StringTable.init_value_list(StringValueList);
@@ -193,16 +201,28 @@ begin
     cbMapSideId.Items.Add(inttostr(i) + ' - ' + player_names[i]);
   end;
   // Load rule definitions from ini file
-  rules_ini := TIniFile.Create(current_dir + 'rules.ini');
   tmp_strings := TStringList.Create;
-  rules_ini.ReadSection('Vars',tmp_strings);
+  ini := TMemIniFile.Create(current_dir + 'config/rules.ini');
+  ini.ReadSection('Vars',tmp_strings);
   SetLength(rule_definitions, tmp_strings.Count);
   for i := 0 to tmp_strings.Count - 1 do
   begin
     rule_definitions[i].name := tmp_strings[i];
-    rule_definitions[i].default_value := rules_ini.ReadString('Vars',tmp_strings[i],'');
+    rule_definitions[i].default_value := ini.ReadString('Vars',tmp_strings[i],'');
   end;
-  rules_ini.Destroy;
+  ini.Destroy;
+  tmp_strings.Clear;
+  // Load misai properties from ini file
+  ini := TMemIniFile.Create(current_dir + 'config/mis_ai.ini');
+  ini.ReadSection('AI',tmp_strings);
+  SetLength(misai_properties, tmp_strings.Count);
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    misai_properties[i].name := ini.ReadString('AI',tmp_strings[i],'');
+    misai_properties[i].data_type := tmp_strings[i][1];
+    misai_properties[i].position := strtoint(Copy(tmp_strings[i], 3, Length(tmp_strings[i]) - 2));
+  end;
+  ini.Destroy;
   tmp_strings.Destroy;
   // Register AI clipboard format
   ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
@@ -250,12 +270,33 @@ end;
 procedure TMissionDialog.fill_ai_values;
 var
   i: integer;
+  b: integer;
+  bytes: integer;
+  i_val: integer;
+  f_val: single;
+  f_ptr: ^single;
   tmp_strings: TStringList;
 begin
   tmp_strings := TStringList.Create();
-  for i := 0 to Length(Mission.mis_data.ai_segments[0]) -1 do
+  for i := 0 to Length(misai_properties) -1 do
   begin
-    tmp_strings.Add('Byte ' + inttostr(i)+ '=' + inttostr(Mission.mis_data.ai_segments[AITabControl.TabIndex, i]));
+    i_val := 0;
+    bytes := 1;
+    case misai_properties[i].data_type of
+      'b': bytes := 1;
+      'w': bytes := 2;
+      'd': bytes := 4;
+      'f':
+        begin
+          f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, misai_properties[i].position]);
+          f_val := f_ptr^;
+          tmp_strings.Add(misai_properties[i].name + '=' + floattostrf(f_val, ffFixed, 8, 3));
+          continue;
+        end;
+      end;
+    for b := 0 to bytes - 1 do
+      i_val := i_val + (Mission.mis_data.ai_segments[AITabControl.TabIndex, misai_properties[i].position + b] shl (8 * b));
+    tmp_strings.Add(misai_properties[i].name + '=' + inttostr(i_val));
   end;
   AIValueList.Strings := tmp_strings;
   tmp_strings.Destroy;
@@ -483,8 +524,31 @@ begin
 end;
 
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
+var
+  prop: ^TMisAIProperty;
+  i_val: integer;
+  f_val: single;
+  f_ptr: ^single;
+  bytes: integer;
+  b: integer;
 begin
-  Mission.mis_data.ai_segments[AITabControl.TabIndex, AIValueList.Row-1] := strtointdef(AIValueList.Cells[1,AIValueList.Row],0);
+  prop := Addr(misai_properties[AIValueList.Row-1]);
+  bytes := 1;
+  case prop.data_type of
+    'b': bytes := 1;
+    'w': bytes := 2;
+    'd': bytes := 4;
+    'f':
+      begin
+        f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row],0.0);
+        f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position]);
+        f_ptr^ := f_val;
+        exit;
+      end;
+  end;
+  i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row],0);
+  for b := 0 to bytes - 1 do
+    Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position+b] := (i_val shr (8 * b)) and 255;
 end;
 
 procedure TMissionDialog.cbUseINIClick(Sender: TObject);
