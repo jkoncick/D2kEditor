@@ -5,7 +5,7 @@ object MainWindow: TMainWindow
   Height = 650
   HorzScrollBar.Visible = False
   VertScrollBar.Visible = False
-  Caption = 'Dune 2000 Campaign Map Editor'
+  Caption = 'Dune 2000 Map and Mission Editor'
   Color = clBtnFace
   Constraints.MinHeight = 544
   Constraints.MinWidth = 528

@@ -277,6 +277,7 @@ type
     procedure load_map(filename: String);
     procedure save_map(filename: String);
     procedure unload_mission;
+    procedure set_window_titles(map_name: String);
 
     // Map testing procedures
     function check_map_can_be_tested: boolean;
@@ -589,6 +590,7 @@ begin
         Mission.mis_filename := Mission.get_mis_filename(map_filename);
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
       Settings.get_file_paths_from_map_filename;
+      set_window_titles(ChangeFileExt(ExtractFileName(map_filename),''));
     end;
     save_map(MapSaveDialog.FileName);
   end;
@@ -1650,6 +1652,7 @@ begin
     EventDialog.update_contents;
   end else
     unload_mission;
+  set_window_titles(ChangeFileExt(ExtractFileName(map_filename), ''));
   // Rendering
   resize_map_canvas;
   render_minimap;
@@ -1676,6 +1679,19 @@ begin
   Assignmisfile1.Caption := 'Assign .mis file';
   MissionDialog.Close;
   EventDialog.Close;
+end;
+
+procedure TMainWindow.set_window_titles(map_name: String);
+begin
+  Caption := 'Dune 2000 Map and Mission Editor';
+  MissionDialog.Caption := 'Mission settings';
+  EventDialog.Caption := 'Events and Conditions';
+  if map_name <> '' then
+  begin
+    Caption := Caption + ' - ' + map_name;
+    MissionDialog.Caption := MissionDialog.Caption + ' - ' + map_name;
+    EventDialog.Caption := EventDialog.Caption + ' - ' + map_name;
+  end;
 end;
 
 function TMainWindow.check_map_can_be_tested: boolean;
@@ -2316,6 +2332,7 @@ begin
   // Get test map settings
   Settings.get_map_test_settings;
   // Finish it
+  set_window_titles('');
   calculate_power_and_statistics;
   resize_map_canvas;
   render_minimap;
