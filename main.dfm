@@ -602,6 +602,12 @@ object MainWindow: TMainWindow
         ShortCut = 16453
         OnClick = Showeventmarkers1Click
       end
+      object Markdefenceareas1: TMenuItem
+        Caption = 'Mark defence areas'
+        Checked = True
+        ShortCut = 16452
+        OnClick = Markdefenceareas1Click
+      end
       object N6: TMenuItem
         Caption = '-'
       end

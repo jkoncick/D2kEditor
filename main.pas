@@ -133,6 +133,7 @@ type
     Missionsettings1: TMenuItem;
     N9: TMenuItem;
     Assignmisfile1: TMenuItem;
+    Markdefenceareas1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -169,6 +170,7 @@ type
     procedure Showunknownspecials1Click(Sender: TObject);
     procedure Useallocationindexes1Click(Sender: TObject);
     procedure Showeventmarkers1Click(Sender: TObject);
+    procedure Markdefenceareas1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
@@ -735,6 +737,12 @@ end;
 procedure TMainWindow.Showeventmarkers1Click(Sender: TObject);
 begin
   Showeventmarkers1.Checked := not Showeventmarkers1.Checked;
+  render_map;
+end;
+
+procedure TMainWindow.Markdefenceareas1Click(Sender: TObject);
+begin
+  Markdefenceareas1.Checked := not Markdefenceareas1.Checked;
   render_map;
 end;
 
@@ -1482,7 +1490,7 @@ begin
         if event_marker_type_info[ord(event_marker.emtype)].player_related then
         begin
           player := event_marker.side;
-          if player >= cnt_map_players then
+          if player >= cnt_mis_players then
             player := 0;
           MapCanvas.Canvas.Pen.Color := mmap_player_colors[player];
           MapCanvas.Canvas.Brush.Color := mmap_player_colors[player];
@@ -1497,6 +1505,26 @@ begin
         MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
         if event_marker.moved then
           MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 10, '<');
+      end;
+  end;
+  // Draw defence area markers
+  if Markdefenceareas1.Checked then
+  begin
+    MapCanvas.Canvas.Brush.Style := bsClear;
+    MapCanvas.Canvas.pen.Width := 2;
+    for x := 0 to cnt_mis_players - 1 do
+      for y := 0 to Mission.mis_data.ai_segments[x,7505] - 1 do
+      begin
+        MapCanvas.Canvas.Pen.Color := mmap_player_colors[x];
+        MapCanvas.Canvas.Rectangle(
+          (Mission.mis_data.ai_segments[x,7508+y*20] - map_canvas_left) * 32,
+          (Mission.mis_data.ai_segments[x,7510+y*20] - map_canvas_top) * 32,
+          (Mission.mis_data.ai_segments[x,7509+y*20] - map_canvas_left) * 32 + 32,
+          (Mission.mis_data.ai_segments[x,7511+y*20] - map_canvas_top) * 32 + 32);
+        MapCanvas.Canvas.TextOut(
+          (Mission.mis_data.ai_segments[x,7508+y*20] - map_canvas_left) * 32 + 3,
+          (Mission.mis_data.ai_segments[x,7510+y*20] - map_canvas_top) * 32 + 3,
+          'Area' + inttostr(y+1));
       end;
   end;
   // Draw grid
@@ -1567,7 +1595,7 @@ begin
         // Translate player number according to allocation index
         if Useallocationindexes1.Checked then
           player := Mission.mis_data.allocation_index[player];
-        if player >= cnt_map_players then
+        if player >= cnt_mis_players then
           player := 0;
         // Render structure on map
         MiniMapTmp.Canvas.Pen.Color := mmap_player_colors[player];

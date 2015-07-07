@@ -73,7 +73,7 @@ const structure_params: array[0..31] of TMapStructureInfo =
 
 const misc_obj_values: array[0..9] of word = (0,1,2,20,23,45,41,42,43,44);
 
-const mmap_player_colors: array[0..cnt_map_players-1] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C);
+const mmap_player_colors: array[0..7] of TColor = ($84614A,$3231C6,$63824A,$6B0063,$747274,$00106B,$08728C,$406088);
 const mmap_misc_objects_colors: array[1..9] of TColor = ($52AEF7,$2179E7,$FF00FF,$FFFF00,$0000FF,$0000B0,$0000C0,$0000D0,$0000E0);
 
 const tiles_sand: array[0..9] of word = (48,49,50,51,52,68,69,70,71,72);
