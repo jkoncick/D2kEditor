@@ -431,6 +431,7 @@ begin
     cbEventType.Enabled := false;
     btnApplyEventChanges.Enabled := false;
     edEventNote.Enabled := false;
+    edEventNote.Text := '';
   end else
   begin
     tmp_event := Mission.mis_data.events[index];

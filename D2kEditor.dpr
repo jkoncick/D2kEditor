@@ -18,7 +18,7 @@ uses
 
 begin
   Application.Initialize;
-  Application.Title := 'D2K+ map Editor';
+  Application.Title := 'D2kEditor';
   Mission := TMission.Create;
   Tileset := TTileset.Create;
   StringTable := TStringTable.Create;

@@ -218,7 +218,7 @@ const event_type_info: array[0..19] of TEventTypeInfo =
     (name: 'Reinforcement';             use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
     (name: 'Starport Delivery';         use_map_position: false; use_player_index: true;  use_unit_list: true;  value_name: '';),
     (name: 'Allegiance';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unsupported)';             use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
     (name: 'Berserk';                   use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
     (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
     (name: 'Set Build Rate';            use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),

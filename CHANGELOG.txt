@@ -1,5 +1,43 @@
 D2kEditor changelog
 
+Version 1.0 (released 2015-07-10)
+---------------------------------
+Added: "Smooth rock/dunes edge" feature:
+       - Select "Paint Rock" or "Paint Dunes", and then Shift-Click somewhere onto the edge of rock or dunes area. 
+         All the edge will become smoothed: the rock/dunes tiles neighbouring with sand are turned into edge tiles.
+       - The smoothing process starts in the point you click on and continues in the counterclockwise direction.
+       - The process ends when any obstacle is encountered. That means you need to click onto appropriate tile.
+       - The smoothed edge sometimes won't look as good as if you made it manually.
+Added: New editor-specific tileset attributes are used in order to make the "Smooth edges" feature work properly.
+       These attributes are also used in "Fill area" feature. Modified TILEATRx.BIN files are distributed with the editor.
+Added: Ice has its own color on minimap
+Added: You can drag .map files into editor window to open them
+Added: Copy&Paste feature: You can copy and transfer selected block between two instances of the editor
+Added: New key shortcuts for spice (ctrl+Q, ctrl+W) and selecting player (Num 0 - Num 6) in Structures mode
+Added: Map name is shown in window title
+Added: Program now stores persistent settings in D2kEditor.ini file:
+       - Editor window position and size is preserved when you close and open editor again.
+       - Game path is is stored in ini file and can be edited.
+       - Several default values are stored in ini file and can be edited.
+       - Several preferences are stored in ini file and can be edited. More preferences will be possibly added in future.
+Added: Tileset window is vertically resizable
+
+Complete Mission (.mis file) editor was implemented. Program was renamed to "Dune 2000 Map and Mission Editor".
+- Two new windows were added: "Mission settings" and "Events and conditions"
+- Added support for map .ini file features (supported by FunkyFr3sh's Dune 2000 Patch and Mission launcher)
+- Event editor provides complete tabular overview of events, with detailed information about events and their conditions.
+- Events can be easily manipulated (move up/down, insert event, delete event, duplicate event etc.)
+- "Create common events" feature: You can quickly create events like Harvester replacement, or add flag to run the event only once.
+- Added event and condition notes (stored in map .ini file). If you set note to a Flag condition it is displayed like Flag name.
+- You can directly edit Message text in event editor (if map .ini is used)
+- You can easily set reinforcement (and other event) position by using "Go to map" and then clicking into map. You can also 
+  drag event markers in map editor to move the events. Double-click on event marker to show the event in Event editor.
+- You can easily edit all AI properties (which are known). The list of AI properties (and some other configuration) is stored
+  externally and can be modified.
+- Added "Mark defence areas" feature (they are stored within AI and known uses are only in A4V1 and H4V1 Fremen bases).
+
+
+
 Alpha 0.6 (released 2015-05-30)
 -------------------------------
 Added: "Mark tiles" option also to Tileset window. Buildable tiles are marked there too.
