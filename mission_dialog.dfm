@@ -1,13 +1,13 @@
 object MissionDialog: TMissionDialog
   Left = 192
   Top = 80
-  Width = 1024
+  Width = 1056
   Height = 640
   Caption = 'Mission settings'
   Color = clBtnFace
-  Constraints.MaxWidth = 1024
+  Constraints.MaxWidth = 1056
   Constraints.MinHeight = 560
-  Constraints.MinWidth = 1024
+  Constraints.MinWidth = 1056
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -22,7 +22,7 @@ object MissionDialog: TMissionDialog
   object SettingsPanel: TPanel
     Left = 0
     Top = 0
-    Width = 714
+    Width = 712
     Height = 606
     Align = alClient
     BevelOuter = bvNone
@@ -30,7 +30,7 @@ object MissionDialog: TMissionDialog
     object PlayerSettingsPanel: TPanel
       Left = 0
       Top = 0
-      Width = 714
+      Width = 712
       Height = 369
       Align = alTop
       BevelOuter = bvNone
@@ -255,7 +255,7 @@ object MissionDialog: TMissionDialog
     object RulesAndStringsPanel: TPanel
       Left = 0
       Top = 369
-      Width = 714
+      Width = 712
       Height = 237
       Align = alClient
       BevelOuter = bvNone
@@ -279,7 +279,7 @@ object MissionDialog: TMissionDialog
       object StringsPanel: TPanel
         Left = 272
         Top = 0
-        Width = 442
+        Width = 440
         Height = 237
         Align = alClient
         BevelOuter = bvNone
@@ -287,7 +287,7 @@ object MissionDialog: TMissionDialog
         object StringsSplitter: TSplitter
           Left = 0
           Top = 114
-          Width = 442
+          Width = 440
           Height = 3
           Cursor = crVSplit
           Align = alBottom
@@ -295,7 +295,7 @@ object MissionDialog: TMissionDialog
         object StringValueList: TValueListEditor
           Left = 0
           Top = 117
-          Width = 442
+          Width = 440
           Height = 120
           Align = alBottom
           Constraints.MinHeight = 60
@@ -308,12 +308,12 @@ object MissionDialog: TMissionDialog
             'Text')
           ColWidths = (
             50
-            386)
+            384)
         end
         object MapBriefing: TMemo
           Left = 0
           Top = 0
-          Width = 442
+          Width = 440
           Height = 114
           Align = alClient
           ScrollBars = ssVertical
@@ -323,21 +323,21 @@ object MissionDialog: TMissionDialog
     end
   end
   object AITabControl: TTabControl
-    Left = 714
+    Left = 712
     Top = 0
-    Width = 302
+    Width = 336
     Height = 606
     Align = alRight
     TabOrder = 1
-    TabWidth = 37
+    TabWidth = 41
     OnChange = AITabControlChange
     object AIValueList: TValueListEditor
       Left = 4
       Top = 6
-      Width = 294
+      Width = 328
       Height = 572
       Align = alClient
-      DefaultColWidth = 180
+      DefaultColWidth = 232
       ScrollBars = ssVertical
       TabOrder = 0
       TitleCaptions.Strings = (
@@ -345,21 +345,21 @@ object MissionDialog: TMissionDialog
         'Value')
       OnStringsChange = AIValueListStringsChange
       ColWidths = (
-        180
-        108)
+        232
+        90)
     end
     object AIOptionsPanel: TPanel
       Left = 4
       Top = 578
-      Width = 294
+      Width = 328
       Height = 24
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 1
       object btnImportAI: TButton
-        Left = 72
+        Left = 80
         Top = 0
-        Width = 73
+        Width = 81
         Height = 24
         Caption = 'Import AI'
         TabOrder = 0
@@ -368,25 +368,25 @@ object MissionDialog: TMissionDialog
       object btnExportAI: TButton
         Left = 0
         Top = 0
-        Width = 73
+        Width = 81
         Height = 24
         Caption = 'Export AI'
         TabOrder = 1
         OnClick = btnExportAIClick
       end
       object btnCopyAI: TButton
-        Left = 150
+        Left = 168
         Top = 0
-        Width = 73
+        Width = 81
         Height = 24
         Caption = 'Copy AI'
         TabOrder = 2
         OnClick = btnCopyAIClick
       end
       object btnPasteAI: TButton
-        Left = 222
+        Left = 248
         Top = 0
-        Width = 73
+        Width = 81
         Height = 24
         Caption = 'Paste AI'
         TabOrder = 3
