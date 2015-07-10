@@ -338,9 +338,10 @@ begin
   top := 60;
   // Load settings
   Settings.load_precreate_editor_settings;
+  // Initialize mission
+  Mission.init;
   // Initialize tilesets
   Tileset.init;
-  Tileset.change_tileset(Settings.DefaultTileset);
   // Load string table
   StringTable.load_from_file(Settings.TextUIBPath);
   // Load and initialize graphics

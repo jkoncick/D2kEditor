@@ -265,6 +265,9 @@ const event_marker_type_info: array[0..5] of TEventMarkerTypeInfo =
 type
   TMission = class
 
+  private
+    default_ai: array[0..7606] of byte;
+
   public
     mis_filename: String;
     mis_assigned: boolean;
@@ -274,6 +277,7 @@ type
     condition_notes: array[0..47] of String;
 
   public
+    procedure init;
     // Loading and saving mission
     function get_mis_filename(filename: String): String;
     procedure load_mis_file(filename: String);
@@ -308,6 +312,17 @@ var
 implementation
 
 uses SysUtils, main, _map, _tileset, _stringtable, _settings;
+
+procedure TMission.init;
+var
+  ai_file: file of byte;
+begin
+  // Load default AI
+  AssignFile(ai_file, current_dir + 'config/default_ai.misai');
+  Reset(ai_file);
+  BlockRead(ai_file, default_ai, Length(default_ai));
+  CloseFile(ai_file);
+end;
 
 function TMission.get_mis_filename(filename: String): String;
 var
@@ -414,12 +429,14 @@ begin
   // Write tileset name
   Move(Tileset.tileset_info[Tileset.current_tileset].name[1], mis_data.tileset, 8);
   Move(Tileset.tileset_info[Tileset.current_tileset].tileatr_name[1], mis_data.tileatr, 8);
-  // Player properties
+  // Player properties and AI
   for i := 0 to 7 do
   begin
     mis_data.tech_level[i] := Settings.DefaultMisTechLevel;
     mis_data.starting_money[i] := Settings.DefaultMisStartingMoney;
     mis_data.allocation_index[i] := i;
+    mis_data.ai_segments[i,0] := i;
+    Move(default_ai, mis_data.ai_segments[i,1], Length(default_ai));
   end;
   // Allegiance
   for i := 0 to 7 do

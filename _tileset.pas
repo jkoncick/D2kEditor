@@ -82,6 +82,7 @@ begin
   end;
   ini.Destroy;
   tmp_strings.Destroy;
+  change_tileset(Settings.DefaultTileset);
 end;
 
 procedure TTileset.change_tileset(index: integer);
