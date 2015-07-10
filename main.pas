@@ -439,11 +439,6 @@ begin
     113: {F2} BlockPresetGroupSelect.ItemIndex := 1;
     114: {F3} BlockPresetGroupSelect.ItemIndex := 2;
     115: {F4} BlockPresetGroupSelect.ItemIndex := 3;
-    // Move cursor image
-    98:  {Num2} begin CursorImage.Top := CursorImage.Top + 32; resize_cursor_image; end;
-    100: {Num4} begin CursorImage.Left := CursorImage.Left - 32; resize_cursor_image; end;
-    102: {Num6} begin CursorImage.Left := CursorImage.Left + 32; resize_cursor_image; end;
-    104: {Num8} begin CursorImage.Top := CursorImage.Top - 32; resize_cursor_image; end;
     // Paint sand/rock/dunes
     192: begin
       SetBlockSize(Block11);
@@ -454,6 +449,20 @@ begin
       else if BlockPresetGroupSelect.ItemIndex = 3 then
         RbDunes.Checked := true;
     end;
+  end;
+  if mode(mTileBlock) then
+  case key of
+    // Move cursor image
+    98:  {Num2} begin CursorImage.Top := CursorImage.Top + 32; resize_cursor_image; end;
+    100: {Num4} begin CursorImage.Left := CursorImage.Left - 32; resize_cursor_image; end;
+    102: {Num6} begin CursorImage.Left := CursorImage.Left + 32; resize_cursor_image; end;
+    104: {Num8} begin CursorImage.Top := CursorImage.Top - 32; resize_cursor_image; end;
+    end
+  else if mode(mStructures) and (ActiveControl <> SpecialValue) and (key >= 96) and (key <= 102) then
+  begin
+    // Select player
+    PlayerSelect.ItemIndex := key - 96;
+    PlayerSelectChange(nil);
   end;
   // Shift+key
   if ssShift in Shift then
@@ -467,12 +476,16 @@ begin
     ord('6'): SetBlockSize(Block12);
     ord('7'): SetBlockSize(Block32);
     ord('8'): SetBlockSize(Block23);
+    // Structures editing mode selection
+    ord('Q'): begin MiscObjList.ItemIndex := 1; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
+    ord('W'): begin MiscObjList.ItemIndex := 2; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
+    ord('E'): begin MiscObjList.ItemIndex := 5; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
     // Terrain editing mode selection
-    ord('B'): RbTileBlock.Checked := true;
-    ord('D'): RbDunes.Checked := true;
-    ord('R'): RbRock.Checked := true;
-    ord('S'): RbSand.Checked := true;
-    ord('C'): RbSelectMode.Checked := true;
+    ord('B'): begin RbTileBlock.Checked := true; EditorPages.TabIndex := 1; end;
+    ord('D'): begin RbDunes.Checked := true; EditorPages.TabIndex := 1; end;
+    ord('R'): begin RbRock.Checked := true; EditorPages.TabIndex := 1; end;
+    ord('S'): begin RbSand.Checked := true; EditorPages.TabIndex := 1; end;
+    ord('C'): begin RbSelectMode.Checked := true; EditorPages.TabIndex := 1; end;
     ord('T'): CbSelectStructures.Checked := not CbSelectStructures.Checked;
   end else
     case key of
@@ -821,13 +834,17 @@ end;
 
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
 begin
-  ShowMessage('Key Shortcuts:'#13#13'Space = Open tileset window'#13'Esc = Close tileset window'#13'Tab = Switch Structures / Terrain'#13'Shift + 1 - 8 = Block size preset'#13+
-              'Shift + S = Paint sand'#13'Shift + R = Paint rock'#13'Shift + D = Paint dunes'#13'Shift + B = Tile block'#13'Shift + C = Select and copy mode'#13'Shift + T = Select structures'#13'Ctrl + Z = Undo'#13'Ctrl + Y = Redo'#13'F1 - F4 = Block key-preset group'#13'Num 2,4,6,8 = Move block on map');
+  ShowMessage('Key Shortcuts:'#13#13'Space = Open tileset window'#13'Tab = Switch Structures / Terrain'#13'Shift + 1 - 8 = Block size preset'#13+
+              'Shift + Q = Thin spice'#13'Shift + W = Thick spice'#13'Shift + E = Spice bloom'#13'Shift + S = Paint sand'#13'Shift + R = Paint rock'#13'Shift + D = Paint dunes'#13'Shift + B = Tile block'#13'Shift + C = Select and copy mode'#13'Shift + T = Select structures'#13+
+              'F1 - F4 = Block key-preset group'#13'Num 2,4,6,8 = Move block on map'#13'Num 0 - Num 6 = Select player');
 end;
 
 procedure TMainWindow.Mouseactions1Click(Sender: TObject);
 begin
-  ShowMessage('Mouse actions'#13#13'When editing structures:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13+'When editing terrain:'#13'Left = Draw / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right = Drag and scroll map');
+  ShowMessage('Mouse actions'#13#13+
+              'In Structures mode:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13+
+              'Event marker in Struct. mode:'#13'Double click = Go to event'#13'Left+drag = Move event'#13#13+
+              'In Terrain mode:'#13'Left = Paint / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right+drag = Scroll map');
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
