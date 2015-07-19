@@ -142,6 +142,9 @@ type
     EventConditionListButtonPanel: TPanel;
     btnEventConditionListCopy: TButton;
     btnEventConditionListPaste: TButton;
+    epMusic: TPanel;
+    lblMusic: TLabel;
+    edMusic: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -455,6 +458,7 @@ begin
   epRadius.Visible := tmp_event.event_type = Byte(etRevealMap);
   epEventValue.Visible := event_valid and (event_type_info[tmp_event.event_type].value_name <> '');
   epMessage.Visible := tmp_event.event_type = Byte(etShowMessage);
+  epMusic.Visible := tmp_event.event_type = Byte(etPlayMusic);
   EventUnitList.Items.Clear;
   EventConditionList.Items.Clear;
   UnitSelectionList.Enabled := event_valid and event_type_info[tmp_event.event_type].use_unit_list;
@@ -472,6 +476,7 @@ begin
     etShowMessage:    fill_event_ui_panel(epMessage, panel_top);
     etUnitSpawn:      fill_event_ui_panel(epDeployAction, panel_top);
     etSetFlag:        fill_event_ui_panel(epSetFlag, panel_top);
+    etPlayMusic:      fill_event_ui_panel(epMusic, panel_top);
   end;
   if event_type_info[tmp_event.event_type].value_name <> '' then
     fill_event_ui_panel(epEventValue, panel_top);
@@ -484,6 +489,8 @@ begin
 end;
 
 procedure TEventDialog.fill_event_ui_panel(panel: TPanel; var panel_top: integer);
+var
+  tmp: string;
 begin
   if panel = epEventPlayer then
     cbEventPlayer.ItemIndex := tmp_event.player;
@@ -521,6 +528,11 @@ begin
       seMessageIdChange(nil)
     else
       seMessageId.Value := tmp_event.message_index;
+  end;
+  if panel = epMusic then
+  begin
+    SetString(tmp, PChar(Addr(tmp_event.units[0])), StrLen(PChar(Addr(tmp_event.units[0]))));
+    edMusic.Text := tmp;
   end;
   panel.Visible := true;
   panel.Top := panel_top;
@@ -606,6 +618,11 @@ begin
         tmp_event.value := 1
       else
         tmp_event.value := 0;
+    end;
+    etPlayMusic:
+    begin
+      FillChar(tmp_event.units[0], 25, 0);
+      Move(edMusic.Text[1], tmp_event.units[0], Length(edMusic.Text));
     end;
   end;
   Mission.mis_data.events[selected_event] := tmp_event;

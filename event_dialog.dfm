@@ -466,6 +466,29 @@ object EventDialog: TEventDialog
         Height = 21
         TabOrder = 10
       end
+      object epMusic: TPanel
+        Left = 0
+        Top = 156
+        Width = 240
+        Height = 30
+        BevelOuter = bvNone
+        TabOrder = 11
+        object lblMusic: TLabel
+          Left = 4
+          Top = 8
+          Width = 31
+          Height = 13
+          Caption = 'Music:'
+        end
+        object edMusic: TEdit
+          Left = 64
+          Top = 4
+          Width = 169
+          Height = 21
+          MaxLength = 24
+          TabOrder = 0
+        end
+      end
     end
     object EventUnitListPanel: TPanel
       Left = 240

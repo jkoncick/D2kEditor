@@ -122,7 +122,8 @@ type
   EventType = (etReinforcement, etStarportDelivery, etAllegiance, etLeave,
     etBerserk, etPlaySound, etSetBuildRate, etSetAttackBuildingRate, etSetCash,
     etSetTech, etMissionWin, etMissionFail, etBloxFile, etAttribFile,
-    etRevealMap, etShowTimer, etHideTimer, etShowMessage, etUnitSpawn, etSetFlag);
+    etRevealMap, etShowTimer, etHideTimer, etShowMessage, etUnitSpawn, etSetFlag,
+    etUnused, etPlayMusic);
 
 type
   ConditionType = (ctBuildingExists, ctUnitExists, ctInterval, ctTimer,
@@ -213,14 +214,14 @@ type
   end;
 
 // Mis file type definition constants
-const event_type_info: array[0..19] of TEventTypeInfo =
+const event_type_info: array[0..21] of TEventTypeInfo =
   (
     (name: 'Reinforcement';             use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
     (name: 'Starport Delivery';         use_map_position: false; use_player_index: true;  use_unit_list: true;  value_name: '';),
     (name: 'Allegiance';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: '(unsupported)';             use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
+    (name: 'Leave';                     use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
     (name: 'Berserk';                   use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
-    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Play Sound';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Sound';),
     (name: 'Set Build Rate';            use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
     (name: 'Set Attack Building Rate';  use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
     (name: 'Set Cash';                  use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Cash';),
@@ -234,7 +235,9 @@ const event_type_info: array[0..19] of TEventTypeInfo =
     (name: 'Hide Timer';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
     (name: 'Show Message';              use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Unknown';),
     (name: 'Unit Spawn';                use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
-    (name: 'Set Flag';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';)
+    (name: 'Set Flag';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unused)';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Play Music';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';)
   );
 
 const condition_type_info: array[0..9] of TConditionTypeInfo =
@@ -517,6 +520,7 @@ begin
   end;
   case event_type of
     etAllegiance:   contents := player_names[event.player] + ' -> ' + player_names[event.allegiance_target] + ' (' + allegiance_type[event.allegiance_type] + ')';
+    etPlaySound:    contents := inttostr(event.value);
     etSetBuildRate: contents := inttostr(event.value);
     etSetAttackBuildingRate: contents := inttostr(event.value);
     etSetCash:      contents := inttostr(event.value);
@@ -529,6 +533,7 @@ begin
       contents := contents + StringTable.get_text(event.message_index, dummy);
     end;
     etSetFlag:      contents := inttostr(event.player) + ' = ' + flag_value[event.value];
+    etPlayMusic:    SetString(contents, PChar(Addr(event.units[0])), StrLen(PChar(Addr(event.units[0]))));
   end;
   {contents := inttostr(event.map_pos_x) + ' ' + inttostr(event.map_pos_y) + ' ' + inttostr(event.value) + ' ' + inttostr(event.num_units)  + ' ' + inttostr(event.player) + ' ' + inttostr(event.allegiance_target) + ' ' + inttostr(event.allegiance_type) + ' ' + inttostr(event.deploy_action);
   for i := 0 to 20 do
