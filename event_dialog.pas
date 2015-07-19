@@ -208,6 +208,10 @@ type
     procedure btnCustomMsgTextClick(Sender: TObject);
     procedure btnEventConditionListCopyClick(Sender: TObject);
     procedure btnEventConditionListPasteClick(Sender: TObject);
+    procedure EventGridKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure ConditionGridKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -346,6 +350,8 @@ begin
     Close;
   if key = 123 then // F2
     MainWindow.Show;
+  if (key = 107) and (ActiveControl <> edMessageText)  then // Num +
+    btnPlusConditionClick(nil);
 end;
 
 procedure TEventDialog.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
@@ -589,6 +595,7 @@ end;
 procedure TEventDialog.apply_event_changes;
 var
   event_type: integer;
+  old_event_used_position: boolean;
 begin
   event_type := tmp_event.event_type;
   if event_type_info[event_type].use_player_index then
@@ -625,6 +632,8 @@ begin
       Move(edMusic.Text[1], tmp_event.units[0], Length(edMusic.Text));
     end;
   end;
+  old_event_used_position := event_type_info[Mission.mis_data.events[selected_event].event_type].use_map_position;
+  // Save event
   Mission.mis_data.events[selected_event] := tmp_event;
   // Save event note
   if notes_enabled then
@@ -634,8 +643,8 @@ begin
     StringTable.set_custom_text(tmp_event.message_index, edMessageText.Text);
   // Update GUI
   fill_grids;
-  // Update event markers on map if event has position
-  if event_type_info[event_type].use_map_position then
+  // Update event markers on map if old or new event has position
+  if old_event_used_position or event_type_info[event_type].use_map_position then
   begin
     Mission.process_event_markers;
     MainWindow.render_map;
@@ -1319,6 +1328,87 @@ begin
   EventConditionList.Clear;
   fill_event_condition_list;
   EventGrid.SetFocus;
+end;
+
+procedure TEventDialog.EventGridKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  event_type: EventType;
+begin
+  if EventGrid.Row > Mission.mis_data.num_events then
+    exit;
+  event_type := EventType(tmp_event.event_type);
+  case key of
+    ord('R'): event_type := etReinforcement;
+    ord('D'): event_type := etStarportDelivery;
+    ord('A'): event_type := etAllegiance;
+    ord('L'): event_type := etLeave;
+    ord('B'): event_type := etBerserk;
+    ord('O'): event_type := etPlaySound;
+    ord('G'): event_type := etSetBuildRate;
+    ord('T'): event_type := etSetTech;
+    ord('W'): event_type := etMissionWin;
+    ord('F'): event_type := etMissionFail;
+    ord('V'): event_type := etRevealMap;
+    ord('I'): event_type := etShowTimer;
+    ord('H'): event_type := etHideTimer;
+    ord('M'): event_type := etShowMessage;
+    ord('S'): event_type := etUnitSpawn;
+    ord('E'): event_type := etSetFlag;
+    ord('U'): event_type := etPlayMusic;
+    ord('C'): btnEventConditionListCopyClick(nil);
+    ord('P'): btnEventConditionListPasteClick(nil);
+    end;
+  if event_type <> EventType(tmp_event.event_type) then
+  begin
+    cbEventType.ItemIndex := Ord(event_type);
+    cbEventTypeChange(nil);
+  end;
+  if epEventPlayer.Visible and (key >= 96) and (key <= 103) then
+  begin
+    cbEventPlayer.ItemIndex := key - 96;
+  end;
+  if epEventPosition.Visible and (key = 32) then
+  begin
+    btnEventPositionGotoMapClick(nil);
+  end;
+end;
+
+procedure TEventDialog.ConditionGridKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  condition_type: ConditionType;
+begin
+  if ConditionGrid.Row > Mission.mis_data.num_conditions then
+    exit;
+  condition_type := ConditionType(tmp_condition.condition_type);
+  case key of
+    ord('B'): condition_type := ctBuildingExists;
+    ord('U'): condition_type := ctUnitExists;
+    ord('I'): condition_type := ctInterval;
+    ord('T'): condition_type := ctTimer;
+    ord('C'): condition_type := ctCasualties;
+    ord('A'): condition_type := ctBaseDestroyed;
+    ord('E'): condition_type := ctUnitsDestroyed;
+    ord('R'): condition_type := ctTileRevealed;
+    ord('H'): condition_type := ctSpiceHarvested;
+    ord('F'): condition_type := ctFlag;
+    end;
+  if condition_type <> ConditionType(tmp_condition.condition_type) then
+  begin
+    cbConditionType.ItemIndex := Ord(condition_type);
+    cbConditionTypeChange(nil);
+  end;
+  if cpConditionPlayer.Visible and (key >= 96) and (key <= 103) then
+  begin
+    cbConditionPlayer.SetFocus;
+    cbConditionPlayer.ItemIndex := key - 96;
+  end;
+  if cpConditionPosition.Visible and (key = 32) then
+  begin
+    btnConditionPositionGotoMap.SetFocus;
+    btnConditionPositionGotoMapClick(nil);
+  end;
 end;
 
 end.

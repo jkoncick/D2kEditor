@@ -46,6 +46,7 @@ object EventDialog: TEventDialog
     PopupMenu = EventGridPopupMenu
     ScrollBars = ssVertical
     TabOrder = 0
+    OnKeyDown = EventGridKeyDown
     OnMouseDown = EventGridMouseDown
     OnMouseWheelDown = EventGridMouseWheelDown
     OnMouseWheelUp = EventGridMouseWheelUp
@@ -73,6 +74,7 @@ object EventDialog: TEventDialog
       PopupMenu = ConditionGridPopupMenu
       TabOrder = 0
       OnDblClick = ConditionGridDblClick
+      OnKeyDown = ConditionGridKeyDown
       OnMouseDown = ConditionGridMouseDown
       OnMouseWheelDown = ConditionGridMouseWheelDown
       OnMouseWheelUp = ConditionGridMouseWheelUp
@@ -162,9 +164,11 @@ object EventDialog: TEventDialog
         Top = 24
         Width = 169
         Height = 21
+        Style = csDropDownList
         ItemHeight = 13
         TabOrder = 0
         OnChange = cbEventTypeChange
+        OnKeyDown = EventGridKeyDown
       end
       object epEventPlayer: TPanel
         Left = 0
@@ -185,6 +189,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 100
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 0
         end
@@ -252,6 +257,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 97
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 0
         end
@@ -294,6 +300,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 101
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 0
         end
@@ -302,6 +309,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 101
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 1
         end
@@ -310,6 +318,7 @@ object EventDialog: TEventDialog
           Top = 32
           Width = 97
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 2
         end
@@ -468,7 +477,7 @@ object EventDialog: TEventDialog
       end
       object epMusic: TPanel
         Left = 0
-        Top = 156
+        Top = 172
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -730,9 +739,11 @@ object EventDialog: TEventDialog
         Top = 24
         Width = 120
         Height = 21
+        Style = csDropDownList
         ItemHeight = 13
         TabOrder = 0
         OnChange = cbConditionTypeChange
+        OnKeyDown = ConditionGridKeyDown
       end
       object cpConditionPlayer: TPanel
         Left = 0
@@ -753,6 +764,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 100
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 0
         end
@@ -820,6 +832,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 152
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 0
         end
@@ -843,6 +856,7 @@ object EventDialog: TEventDialog
           Top = 4
           Width = 152
           Height = 21
+          Style = csDropDownList
           ItemHeight = 13
           TabOrder = 0
         end
@@ -867,6 +881,7 @@ object EventDialog: TEventDialog
           Width = 49
           Height = 21
           Hint = 'Comparison function'
+          Style = csDropDownList
           ItemHeight = 13
           ParentShowHint = False
           ShowHint = False
@@ -1042,6 +1057,7 @@ object EventDialog: TEventDialog
       Top = 56
       Width = 113
       Height = 21
+      Style = csDropDownList
       ItemHeight = 13
       TabOrder = 2
       OnChange = cbCreateEventsPlayerChange

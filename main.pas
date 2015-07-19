@@ -1249,7 +1249,7 @@ begin
   if mode(mTileBlock) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
   begin
     CursorImage.Visible := true;
-    if (not TilesetDialog.Visible) and EditorPages.Visible and (not EventDialog.Visible) then
+    if (not TilesetDialog.Visible) and EditorPages.Visible and (not EventDialog.Visible) and (not MissionDialog.Visible) then
       RbTileBlock.SetFocus;
   end else
     CursorImage.Visible := false;
@@ -1781,6 +1781,7 @@ end;
 
 procedure TMainWindow.start_event_position_selection(x, y: integer);
 begin
+  EditorPages.TabIndex := 0;
   if (x <> 0) or (y <> 0) then
   begin
     MapScrollH.Position := x - (map_canvas_width div 2);
