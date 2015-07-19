@@ -2048,7 +2048,7 @@ begin
   if x < 0 then x := 0;
   if y < 0 then y := 0;
   if x >= map_width then x := map_width - 1;
-  if y >= map_width then y := map_height - 1;
+  if y >= map_height then y := map_height - 1;
   atr := Tileset.attributes[map_data[x,y].tile];
   result := false;
   if mode(mRock) and exact then // Tile is exactly clear rock
