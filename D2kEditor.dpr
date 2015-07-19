@@ -31,5 +31,8 @@ begin
   Application.CreateForm(TMissionDialog, MissionDialog);
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
+  // Load map given as first parameter
+  if ParamCount > 0 then
+    MainWindow.load_map(ParamStr(1));
   Application.Run;
 end.

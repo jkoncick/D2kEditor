@@ -353,9 +353,6 @@ begin
   graphics_structures_mask.LoadFromFile(current_dir + '/graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
   draw_cursor_image;
-  // Load map given as first parameter
-  if ParamCount > 0 then
-    load_map(ParamStr(1));
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
