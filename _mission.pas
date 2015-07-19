@@ -301,12 +301,15 @@ type
     procedure delete_event(deleted_index: integer);
     procedure delete_condition(deleted_index: integer);
     function condition_is_used(index: integer): boolean;
-    // Auto-creating usual events
+    // Auto-creating common events
     function get_or_create_condition(condition_type: ConditionType; player: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
     procedure create_unit_spawn(player: integer; num_events: integer);
     procedure create_harvester_replacement(player: integer);
     procedure create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
     procedure add_run_once_flag(event_num: integer);
+    // Miscellaneous
+    procedure shift_event_positions(shift_x: integer; shift_y: integer);
+    procedure adjust_event_positions_on_map_resize;
   end;
 
 var
@@ -917,6 +920,85 @@ begin
   Move(mis_data.events[event_num].condition_not, mis_data.events[event_num+1].condition_not, Length(mis_data.events[0].condition_not));
   // Fill new condition
   mis_data.conditions[flag_number].condition_type := Byte(ctFlag);
+end;
+
+procedure TMission.shift_event_positions(shift_x, shift_y: integer);
+var
+  i: integer;
+  event: ^TEvent;
+  condition: ^TCondition;
+  new_pos_x, new_pos_y: integer;
+begin
+  for i := 0 to mis_data.num_events - 1 do
+  begin
+    event := Addr(mis_data.events[i]);
+    if event_type_info[event.event_type].use_map_position then
+    begin
+      new_pos_x := Integer(event.map_pos_x) + shift_x;
+      new_pos_y := Integer(event.map_pos_y) + shift_y;
+      if new_pos_x < 0 then
+        new_pos_x := 0;
+      if new_pos_x >= map_width then
+        new_pos_x := map_width - 1;
+      if new_pos_y < 0 then
+        new_pos_y := 0;
+      if new_pos_y >= map_height then
+        new_pos_y := map_height - 1;
+      event.map_pos_x := new_pos_x;
+      event.map_pos_y := new_pos_y;
+    end;
+  end;
+  for i := 0 to mis_data.num_conditions - 1 do
+  begin
+    condition := Addr(mis_data.conditions[i]);
+    if condition.condition_type = Byte(ctTileRevealed) then
+    begin
+      new_pos_x := Integer(condition.map_pos_x) + shift_x;
+      new_pos_y := Integer(condition.map_pos_y) + shift_y;
+      if new_pos_x < 0 then
+        new_pos_x := 0;
+      if new_pos_x >= map_width then
+        new_pos_x := map_width - 1;
+      if new_pos_y < 0 then
+        new_pos_y := 0;
+      if new_pos_y >= map_height then
+        new_pos_y := map_height - 1;
+      condition.map_pos_x := new_pos_x;
+      condition.map_pos_y := new_pos_y;
+    end;
+  end;
+  process_event_markers;
+end;
+
+procedure TMission.adjust_event_positions_on_map_resize;
+var
+  i: integer;
+  event: ^TEvent;
+  condition: ^TCondition;
+begin
+  for i := 0 to mis_data.num_events - 1 do
+  begin
+    event := Addr(mis_data.events[i]);
+    if event_type_info[event.event_type].use_map_position then
+    begin
+      if event.map_pos_x >= map_width then
+        event.map_pos_x := map_width - 1;
+      if event.map_pos_y >= map_height then
+        event.map_pos_y := map_height - 1;
+    end;
+  end;
+  for i := 0 to mis_data.num_conditions - 1 do
+  begin
+    condition := Addr(mis_data.conditions[i]);
+    if condition.condition_type = Byte(ctTileRevealed) then
+    begin
+      if condition.map_pos_x >= map_width then
+        condition.map_pos_x := map_width - 1;
+      if condition.map_pos_y >= map_height then
+        condition.map_pos_y := map_height - 1;
+    end;
+  end;
+  process_event_markers;
 end;
 
 end.

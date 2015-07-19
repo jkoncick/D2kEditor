@@ -2207,6 +2207,7 @@ begin
       end;
   map_width := new_width;
   map_height := new_height;
+  Mission.adjust_event_positions_on_map_resize;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   reset_undo_history;
   calculate_power_and_statistics;
@@ -2234,6 +2235,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
+          Mission.shift_event_positions(num_tiles * -1, 0);
         end;
     2:  begin // Up
           for y := 0 to map_height - 1 do
@@ -2248,6 +2250,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
+          Mission.shift_event_positions(0, num_tiles * -1);
         end;
     3:  begin // Right
           for y := map_height - 1 downto 0 do
@@ -2262,6 +2265,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
+          Mission.shift_event_positions(num_tiles, 0);
         end;
     4:  begin
           for y := map_height - 1 downto 0 do
@@ -2276,6 +2280,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
+          Mission.shift_event_positions(0, num_tiles);
         end;
   end;
   reset_undo_history;
