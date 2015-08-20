@@ -1,7 +1,7 @@
 object EventDialog: TEventDialog
   Left = 212
   Top = 7
-  Width = 1288
+  Width = 1280
   Height = 720
   Caption = 'Events and Conditions'
   Color = clBtnFace
@@ -22,15 +22,21 @@ object EventDialog: TEventDialog
   object Splitter1: TSplitter
     Left = 0
     Top = 426
-    Width = 1280
+    Width = 1272
     Height = 4
     Cursor = crVSplit
     Align = alBottom
   end
+  object BevelSizeHolder: TBevel
+    Left = 0
+    Top = 0
+    Width = 1264
+    Height = 50
+  end
   object EventGrid: TStringGrid
     Left = 0
     Top = 0
-    Width = 1280
+    Width = 1272
     Height = 426
     Align = alClient
     ColCount = 6
@@ -55,7 +61,7 @@ object EventDialog: TEventDialog
   object LowerPanel: TPanel
     Left = 0
     Top = 430
-    Width = 1280
+    Width = 1272
     Height = 256
     Align = alBottom
     BevelOuter = bvNone
@@ -64,7 +70,7 @@ object EventDialog: TEventDialog
     object ConditionGrid: TStringGrid
       Left = 748
       Top = 0
-      Width = 320
+      Width = 312
       Height = 256
       Align = alLeft
       ColCount = 4
@@ -706,7 +712,7 @@ object EventDialog: TEventDialog
       end
     end
     object ConditionPropertiesPanel: TPanel
-      Left = 1068
+      Left = 1060
       Top = 0
       Width = 200
       Height = 256

@@ -369,9 +369,9 @@ procedure TMainWindow.FormResize(Sender: TObject);
 begin
   resize_map_canvas;
   EditorMenu.Left := ClientWidth - 168;
-  EditorMenu.Height := Height - 72;
-  StructureList.Height := EditorMenu.Height - 354;
-  EditorPages.Height := Height - 214;
+  EditorMenu.Height := ClientHeight - StatusBar.Height;
+  StructureList.Height := EditorMenu.Height - 356;
+  EditorPages.Height := EditorMenu.Height - 146;
   StatusBar.Panels[3].Width := ClientWidth - 550;
 end;
 

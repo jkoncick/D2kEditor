@@ -84,17 +84,17 @@ object MainWindow: TMainWindow
       end
       item
         Text = 'BLOXBGBS'
-        Width = 60
+        Width = 70
       end
       item
-        Width = 60
+        Width = 64
       end
       item
         Text = 'No map loaded'
         Width = 230
       end
       item
-        Width = 30
+        Width = 32
       end
       item
         Text = 'W: 0  S: 0  B: 0'

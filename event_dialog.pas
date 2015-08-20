@@ -145,6 +145,7 @@ type
     epMusic: TPanel;
     lblMusic: TLabel;
     edMusic: TEdit;
+    BevelSizeHolder: TBevel;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -290,7 +291,7 @@ begin
   ConditionGrid.Cells[2,0] := 'Player';
   ConditionGrid.ColWidths[2] := 64;
   ConditionGrid.Cells[3,0] := 'Contents';
-  ConditionGrid.ColWidths[3] := 120;
+  ConditionGrid.ColWidths[3] := 112;
   for i:= 1 to 48 do
   begin
     ConditionGrid.Cells[0,i] := inttostr(i-1);
