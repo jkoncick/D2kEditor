@@ -74,6 +74,7 @@ type
     ExportAIDialog: TSaveDialog;
     ImportAIDialog: TOpenDialog;
     lblTimeLimitHelp: TLabel;
+    cbDiffMode: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -95,6 +96,7 @@ type
     procedure btnImportAIClick(Sender: TObject);
     procedure btnCopyAIClick(Sender: TObject);
     procedure btnPasteAIClick(Sender: TObject);
+    procedure cbDiffModeClick(Sender: TObject);
     procedure cbMapSideIdChange(Sender: TObject);
     procedure seMapMissionNumberChange(Sender: TObject);
   private
@@ -109,6 +111,9 @@ type
     ai_clipboard_format: cardinal;
   public
     procedure fill_data;
+
+    function get_integer_value(source: array of byte; pos, bytes: integer): integer;
+    function get_float_value(source: array of byte; pos: integer): single;
     procedure fill_ai_values;
 
     function get_ini_filename(map_filename: String): String;
@@ -267,20 +272,34 @@ begin
   cbUseINI.Tag := 0;
 end;
 
+function TMissionDialog.get_integer_value(source: array of byte; pos, bytes: integer): integer;
+var
+  b: integer;
+begin
+  result := 0;
+  for b := 0 to bytes - 1 do
+    result := result + (source[pos + b] shl (8 * b));
+end;
+
+function TMissionDialog.get_float_value(source: array of byte; pos: integer): single;
+var
+  f_ptr: ^single;
+begin
+  f_ptr := Addr(source[pos]);
+  result := f_ptr^;
+end;
+
 procedure TMissionDialog.fill_ai_values;
 var
   i: integer;
-  b: integer;
   bytes: integer;
   i_val: integer;
   f_val: single;
-  f_ptr: ^single;
   tmp_strings: TStringList;
 begin
   tmp_strings := TStringList.Create();
   for i := 0 to Length(misai_properties) -1 do
   begin
-    i_val := 0;
     bytes := 1;
     case misai_properties[i].data_type of
       'b': bytes := 1;
@@ -288,15 +307,19 @@ begin
       'd': bytes := 4;
       'f':
         begin
-          f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, misai_properties[i].position]);
-          f_val := f_ptr^;
-          tmp_strings.Add(misai_properties[i].name + '=' + floattostrf(f_val, ffFixed, 8, 3));
+          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], misai_properties[i].position);
+          if cbDiffMode.Checked and (f_val = get_float_value(Mission.default_ai, misai_properties[i].position)) then
+            tmp_strings.Add(misai_properties[i].name + '=')
+          else
+            tmp_strings.Add(misai_properties[i].name + '=' + floattostrf(f_val, ffFixed, 8, 3));
           continue;
         end;
       end;
-    for b := 0 to bytes - 1 do
-      i_val := i_val + (Mission.mis_data.ai_segments[AITabControl.TabIndex, misai_properties[i].position + b] shl (8 * b));
-    tmp_strings.Add(misai_properties[i].name + '=' + inttostr(i_val));
+    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], misai_properties[i].position, bytes);
+    if cbDiffMode.Checked and (i_val = get_integer_value(Mission.default_ai, misai_properties[i].position, bytes)) then
+      tmp_strings.Add(misai_properties[i].name + '=')
+    else
+      tmp_strings.Add(misai_properties[i].name + '=' + inttostr(i_val));
   end;
   AIValueList.Strings := tmp_strings;
   tmp_strings.Destroy;
@@ -540,13 +563,13 @@ begin
     'd': bytes := 4;
     'f':
       begin
-        f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row],0.0);
+        f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Mission.default_ai, prop.position));
         f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position]);
         f_ptr^ := f_val;
         exit;
       end;
   end;
-  i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row],0);
+  i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Mission.default_ai, prop.position, bytes));
   for b := 0 to bytes - 1 do
     Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position+b] := (i_val shr (8 * b)) and 255;
 end;
@@ -654,6 +677,11 @@ begin
 
   GlobalUnLock(handle);
   CloseClipboard;
+end;
+
+procedure TMissionDialog.cbDiffModeClick(Sender: TObject);
+begin
+  fill_ai_values;
 end;
 
 procedure TMissionDialog.cbMapSideIdChange(Sender: TObject);

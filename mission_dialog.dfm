@@ -357,9 +357,9 @@ object MissionDialog: TMissionDialog
       BevelOuter = bvNone
       TabOrder = 1
       object btnImportAI: TButton
-        Left = 80
+        Left = 64
         Top = 0
-        Width = 81
+        Width = 65
         Height = 24
         Caption = 'Import AI'
         TabOrder = 0
@@ -368,29 +368,38 @@ object MissionDialog: TMissionDialog
       object btnExportAI: TButton
         Left = 0
         Top = 0
-        Width = 81
+        Width = 65
         Height = 24
         Caption = 'Export AI'
         TabOrder = 1
         OnClick = btnExportAIClick
       end
       object btnCopyAI: TButton
-        Left = 168
+        Left = 136
         Top = 0
-        Width = 81
+        Width = 65
         Height = 24
         Caption = 'Copy AI'
         TabOrder = 2
         OnClick = btnCopyAIClick
       end
       object btnPasteAI: TButton
-        Left = 248
+        Left = 200
         Top = 0
-        Width = 81
+        Width = 65
         Height = 24
         Caption = 'Paste AI'
         TabOrder = 3
         OnClick = btnPasteAIClick
+      end
+      object cbDiffMode: TCheckBox
+        Left = 272
+        Top = 4
+        Width = 48
+        Height = 17
+        Caption = 'Diff'
+        TabOrder = 4
+        OnClick = cbDiffModeClick
       end
     end
   end

@@ -270,9 +270,6 @@ const event_marker_type_info: array[0..5] of TEventMarkerTypeInfo =
 type
   TMission = class
 
-  private
-    default_ai: array[0..7606] of byte;
-
   public
     mis_filename: String;
     mis_assigned: boolean;
@@ -280,6 +277,7 @@ type
     event_markers: array[0..127, 0..127] of TEventMarker;
     event_notes: array[0..63] of String;
     condition_notes: array[0..47] of String;
+    default_ai: array[0..7607] of byte;
 
   public
     procedure init;
@@ -328,7 +326,7 @@ begin
   // Load default AI
   AssignFile(ai_file, current_dir + 'config/default_ai.misai');
   Reset(ai_file);
-  BlockRead(ai_file, default_ai, Length(default_ai));
+  BlockRead(ai_file, default_ai[1], Length(default_ai)-1);
   CloseFile(ai_file);
 end;
 
@@ -444,7 +442,7 @@ begin
     mis_data.starting_money[i] := Settings.DefaultMisStartingMoney;
     mis_data.allocation_index[i] := i;
     mis_data.ai_segments[i,0] := i;
-    Move(default_ai, mis_data.ai_segments[i,1], Length(default_ai));
+    Move(default_ai[1], mis_data.ai_segments[i,1], Length(default_ai)-1);
   end;
   // Allegiance
   for i := 0 to 7 do
