@@ -10,7 +10,7 @@ uses
   // Dialogs
   set_dialog, tileset_dialog, test_map_dialog, event_dialog, mission_dialog,
   // Units
-  _map, _mission, _tileset, _stringtable, _settings;
+  _map, _mission, _tileset, _structures, _stringtable, _settings;
 
 const max_undo_steps = 32767;
 
@@ -325,6 +325,8 @@ implementation
 {$R *.dfm}
 
 procedure TMainWindow.FormCreate(Sender: TObject);
+var
+  i: integer;
 begin
   // Miscellaneous initializations
   randomize;
@@ -353,6 +355,14 @@ begin
   graphics_structures_mask.LoadFromFile(current_dir + '/graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
   draw_cursor_image;
+  // Initialize Structures
+  for i := 0 to Length(misc_object_info) - 1 do
+    MiscObjList.Items.Add(misc_object_info[i].name);
+  for i := 0 to cnt_map_players - 1 do
+    PlayerSelect.Items.Add(inttostr(i) + ' - '+ map_player_info[i].name);
+  PlayerSelect.ItemIndex := 0;
+  for i := 0 to Length(structure_info) - 1 do
+    StructureList.Items.Add(structure_info[i].name);
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -1410,7 +1420,7 @@ begin
         end else
         begin
           // Value is structure
-          dest_rect := rect(x*32,y*32,x*32+structure_params[index].size_x*32,y*32+structure_params[index].size_y*32);
+          dest_rect := rect(x*32,y*32,x*32+structure_info[index].size_x*32,y*32+structure_info[index].size_y*32);
           // Translate player number according to allocation index
           if Useallocationindexes1.Checked then
             player := Mission.mis_data.allocation_index[player];
@@ -1424,28 +1434,28 @@ begin
             if (actual_x - 1) >= 0 then
             begin
               value := map_data[actual_x - 1, actual_y].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 1
             end;
             // Checking up of wall
             if (actual_y - 1) >= 0 then
             begin
               value := map_data[actual_x, actual_y - 1].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 2
             end;
             // Checking right of wall
             if (actual_x + 1) < map_width then
             begin
               value := map_data[actual_x + 1, actual_y].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 4
             end;
             // Checking down of wall
             if (actual_y + 1) < map_height then
             begin
               value := map_data[actual_x, actual_y + 1].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_params[index].lnwall then
+              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 8
             end;
             // Wall source rect
@@ -1453,22 +1463,22 @@ begin
             index := 0;
           end else
             // Structure is not wall
-            src_rect := rect(structure_params[index].offs_x*32,32+player*128+structure_params[index].offs_y*32,structure_params[index].offs_x*32+structure_params[index].size_x*32,32+player*128+structure_params[index].offs_y*32+structure_params[index].size_y*32);
+            src_rect := rect(structure_info[index].offs_x*32,32+player*128+structure_info[index].offs_y*32,structure_info[index].offs_x*32+structure_info[index].size_x*32,32+player*128+structure_info[index].offs_y*32+structure_info[index].size_y*32);
           // Buildings / units overflows
           // Overflow up (buildings)
-          if structure_params[index].overfl = 1 then
+          if structure_info[index].overfl = 1 then
           begin
             src_rect.Top := src_rect.Top - 16;
             dest_rect.Top := dest_rect.Top - 16;
           end else
           // Overflow down (infantry)
-          if structure_params[index].overfl = 2 then
+          if structure_info[index].overfl = 2 then
           begin
             src_rect.Bottom := src_rect.Bottom - 16;
             dest_rect.Bottom := dest_rect.Bottom - 16;
           end else
           // Overflow to all sides (harvester, MCV)
-          if structure_params[index].overfl = 3 then
+          if structure_info[index].overfl = 3 then
           begin
             src_rect.Top := src_rect.Top - 4;
             dest_rect.Top := dest_rect.Top - 4;
@@ -1482,9 +1492,9 @@ begin
           // Drawing only overflow up when under map canvas
           if (y > max_y) then
           begin
-            if structure_params[index].overfl <> 1 then
+            if structure_info[index].overfl <> 1 then
               continue;
-            src_rect.Bottom := 32+player*128+structure_params[index].offs_y*32;
+            src_rect.Bottom := 32+player*128+structure_info[index].offs_y*32;
             dest_rect.Bottom := y*32;
           end;
           // Drawing structure
@@ -1512,8 +1522,8 @@ begin
           player := event_marker.side;
           if player >= cnt_mis_players then
             player := 0;
-          MapCanvas.Canvas.Pen.Color := mmap_player_colors[player];
-          MapCanvas.Canvas.Brush.Color := mmap_player_colors[player];
+          MapCanvas.Canvas.Pen.Color := map_player_info[player].color;
+          MapCanvas.Canvas.Brush.Color := map_player_info[player].color;
         end else
         begin
           MapCanvas.Canvas.Pen.Color := clGray;
@@ -1535,7 +1545,7 @@ begin
     for x := 0 to cnt_mis_players - 1 do
       for y := 0 to Mission.mis_data.ai_segments[x,7505] - 1 do
       begin
-        MapCanvas.Canvas.Pen.Color := mmap_player_colors[x];
+        MapCanvas.Canvas.Pen.Color := map_player_info[x].color;
         MapCanvas.Canvas.Rectangle(
           (Mission.mis_data.ai_segments[x,7508+y*20] - map_canvas_left) * 32,
           (Mission.mis_data.ai_segments[x,7510+y*20] - map_canvas_top) * 32,
@@ -1609,7 +1619,7 @@ begin
         continue
       else if is_misc then
       begin
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_misc_objects_colors[index];
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := misc_object_info[index].color;
       end else
       begin
         // Translate player number according to allocation index
@@ -1618,10 +1628,10 @@ begin
         if player >= cnt_mis_players then
           player := 0;
         // Render structure on map
-        MiniMapTmp.Canvas.Pen.Color := mmap_player_colors[player];
-        MiniMapTmp.Canvas.Brush.Color := mmap_player_colors[player];
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_player_colors[player];
-        MiniMapTmp.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+structure_params[index].size_x,y+mmap_border_y+structure_params[index].size_y);
+        MiniMapTmp.Canvas.Pen.Color := map_player_info[player].color;
+        MiniMapTmp.Canvas.Brush.Color := map_player_info[player].color;
+        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := map_player_info[player].color;
+        MiniMapTmp.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+structure_info[index].size_x,y+mmap_border_y+structure_info[index].size_y);
       end;
     end;
   render_minimap_position_marker;
@@ -1746,9 +1756,9 @@ var
   value: word;
 begin
   if MiscObjList.ItemIndex > -1 then
-    value := misc_obj_values[MiscObjList.ItemIndex]
+    value := misc_object_info[MiscObjList.ItemIndex].value
   else
-    value := structure_params[StructureList.ItemIndex].values[PlayerSelect.ItemIndex];
+    value := structure_info[StructureList.ItemIndex].values[PlayerSelect.ItemIndex];
   SpecialValue.Text := inttostr(value);
 end;
 
@@ -1772,8 +1782,8 @@ var
   i: integer;
 begin
   i := PlayerSelect.ItemIndex;
-  StatusBar.Panels[5].Text := 'W: '+inttostr(mstat_num_worm_spawners)+'  S: '+inttostr(mstat_num_player_starts)+'  B: '+inttostr(mstat_num_spice_blooms);
-  StatusBar.Panels[6].Text := 'Power: '+inttostr(mstat_player[i].power_percent)+'%   ('+inttostr(mstat_player[i].power_output)+'/'+inttostr(mstat_player[i].power_need)+')';
+  StatusBar.Panels[5].Text := 'W: '+inttostr(map_stats.objects[1])+'  S: '+inttostr(map_stats.objects[2])+'  B: '+inttostr(map_stats.objects[3]);
+  StatusBar.Panels[6].Text := 'Power: '+inttostr(map_stats.players[i].power_percent)+'%   ('+inttostr(map_stats.players[i].power_output)+'/'+inttostr(map_stats.players[i].power_need)+')';
 end;
 
 procedure TMainWindow.start_event_position_selection(x, y: integer);
@@ -1936,6 +1946,7 @@ begin
   if undo_pos = undo_start then
     Undo1.Enabled := false;
   Redo1.Enabled := true;
+  calculate_power_and_statistics;
   render_minimap;
   render_map;
 end;
@@ -1955,6 +1966,7 @@ begin
   if undo_pos = undo_max then
     Redo1.Enabled := false;
   Undo1.Enabled := true;
+  calculate_power_and_statistics;
   render_minimap;
   render_map;
 end;
@@ -2308,11 +2320,11 @@ begin
           if player_to = cnt_map_players then
             set_tile_value(x, y, map_data[x,y].tile, 0, false)
           else
-            set_tile_value(x, y, map_data[x,y].tile, structure_params[index].values[player_to], false);
+            set_tile_value(x, y, map_data[x,y].tile, structure_info[index].values[player_to], false);
         end;
         // Swap is checked (change to -> from)
         if (player = player_to) and swap then
-          set_tile_value(x, y, map_data[x,y].tile, structure_params[index].values[player_from], false);
+          set_tile_value(x, y, map_data[x,y].tile, structure_info[index].values[player_from], false);
       end;
     end;
   calculate_power_and_statistics;

@@ -12,7 +12,8 @@ uses
   _mission in '_mission.pas',
   _tileset in '_tileset.pas',
   _stringtable in '_stringtable.pas',
-  _settings in '_settings.pas';
+  _settings in '_settings.pas',
+  _structures in '_structures.pas';
 
 {$R *.res}
 

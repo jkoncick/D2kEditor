@@ -191,17 +191,6 @@ object MainWindow: TMainWindow
           Width = 145
           Height = 82
           ItemHeight = 13
-          Items.Strings = (
-            'Nothing'
-            'Thin Spice'
-            'Thick Spice'
-            'Worm Spawner'
-            'Player Start'
-            'Spice Bloom'
-            'Spice Bloom (Finite 41)'
-            'Spice Bloom (Finite 42)'
-            'Spice Bloom (Finite 43)'
-            'Spice Bloom (Finite 44)')
           TabOrder = 1
           OnClick = MiscObjListClick
         end
@@ -212,18 +201,8 @@ object MainWindow: TMainWindow
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
-          ItemIndex = 0
           TabOrder = 2
-          Text = '0 - Atreides'
           OnChange = PlayerSelectChange
-          Items.Strings = (
-            '0 - Atreides'
-            '1 - Harkonnen'
-            '2 - Ordos'
-            '3 - Emperor'
-            '4 - Fremen'
-            '5 - Smugglers'
-            '6 - Mercenaries')
         end
         object StructureList: TListBox
           Left = 8
@@ -231,39 +210,6 @@ object MainWindow: TMainWindow
           Width = 145
           Height = 123
           ItemHeight = 13
-          Items.Strings = (
-            'Wall'
-            'Wind Trap'
-            'Construction Yard'
-            'Barracks'
-            'Refinery'
-            'Outpost'
-            'Light Factory'
-            'Silo'
-            'Heavy Factory'
-            'Repair Pad'
-            'Gun Turret'
-            'High Tech Factory'
-            'Rocket Turret'
-            'IX Research Centre'
-            'Starport'
-            'Palace'
-            'Sietch'
-            'Modified Outpost'
-            'Light Infantry'
-            'Trooper'
-            'St. Fremen / Saboteur'
-            'Sardaukar / Fremen'
-            'Engineer'
-            'Harvester'
-            'MCV'
-            'Trike / Raider'
-            'Quad'
-            'Combat Tank'
-            'Missile Tank'
-            'Siege Tank'
-            'Carryall'
-            'House Special Tank')
           TabOrder = 3
           OnClick = StructureListClick
         end
