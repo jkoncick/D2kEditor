@@ -119,7 +119,7 @@ begin
       exit;
     end;
   end;
-  for i := 0 to Length(structure_info) do
+  for i := 0 to Length(structure_info) - 1 do
   begin
     for j:= 0 to cnt_map_players - 1 do
     begin

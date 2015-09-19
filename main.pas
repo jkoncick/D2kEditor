@@ -219,9 +219,9 @@ type
   public
 
     // Graphic data
-    graphics_structures: TPicture;
-    graphics_structures_mask: TPicture;
-    graphics_misc_objects: TPicture;
+    graphics_structures: TBitmap;
+    graphics_structures_mask: TBitmap;
+    graphics_misc_objects: TBitmap;
 
     // Map canvas variables
     map_canvas_width: word;
@@ -266,6 +266,9 @@ type
 
     // Clipboard variables
     clipboard_format: cardinal;
+
+    // Initialization procedures
+    procedure load_or_create_mask(graph: TBitmap; mask: TBitmap; filename: String);
 
     // Rendering procedures
     procedure resize_map_canvas;
@@ -347,12 +350,11 @@ begin
   // Load string table
   StringTable.load_from_file(Settings.TextUIBPath);
   // Load and initialize graphics
-  graphics_structures := TPicture.Create;
-  graphics_structures_mask := TPicture.Create;
-  graphics_misc_objects := TPicture.Create;
-  graphics_structures_mask.bitmap.pixelformat := pf1bit;
+  graphics_structures := TBitmap.Create;
+  graphics_structures_mask := TBitmap.Create;
+  graphics_misc_objects := TBitmap.Create;
   graphics_structures.LoadFromFile(current_dir + '/graphics/structures.bmp');
-  graphics_structures_mask.LoadFromFile(current_dir + '/graphics/structures_mask.bmp');
+  load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + '/graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
   draw_cursor_image;
   // Initialize Structures
@@ -1262,6 +1264,28 @@ begin
     CursorImage.Visible := false;
 end;
 
+procedure TMainWindow.load_or_create_mask(graph, mask: TBitmap; filename: String);
+var
+  x, y: integer;
+  black: TColor;
+begin
+  mask.PixelFormat := pf1bit;
+  if FileExists(filename) then
+    mask.LoadFromFile(filename)
+  else begin
+    mask.Width := graph.Width;
+    mask.Height := graph.Height;
+    black := graph.Canvas.Pixels[0,0];
+    for y := 0 to graph.Height - 1 do
+      for x := 0 to graph.Width - 1 do
+      begin
+        if graph.Canvas.Pixels[x,y] <> black then
+          mask.Canvas.Pixels[x,y] := clBlack;
+      end;
+    mask.SaveToFile(filename);
+  end;
+end;
+
 procedure TMainWindow.resize_map_canvas;
 begin
   map_canvas_width := (ClientWidth - 200) div 32;
@@ -1416,7 +1440,7 @@ begin
           src_rect := rect((index-1)*32,0,(index-1)*32+32,32);
           dest_rect := rect(x*32,y*32,x*32+32,y*32+32);
           MapCanvas.Canvas.CopyMode:=cmSrcCopy;
-          MapCanvas.Canvas.CopyRect(dest_rect,graphics_misc_objects.Bitmap.Canvas,src_rect);
+          MapCanvas.Canvas.CopyRect(dest_rect,graphics_misc_objects.Canvas,src_rect);
         end else
         begin
           // Value is structure
@@ -1499,9 +1523,9 @@ begin
           end;
           // Drawing structure
           MapCanvas.Canvas.CopyMode := cmSrcAnd;
-          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures_mask.Bitmap.Canvas,src_rect);
+          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures_mask.Canvas,src_rect);
           MapCanvas.Canvas.CopyMode := cmSrcPaint;
-          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures.Bitmap.Canvas,src_rect);
+          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures.Canvas,src_rect);
         end;
       end
       else if (value <> 0) and Showunknownspecials1.Checked then
