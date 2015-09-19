@@ -1334,41 +1334,30 @@ end;
 procedure TEventDialog.EventGridKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 var
-  event_type: EventType;
+  i: integer;
 begin
   if EventGrid.Row > Mission.mis_data.num_events then
     exit;
-  event_type := EventType(tmp_event.event_type);
-  case key of
-    ord('R'): event_type := etReinforcement;
-    ord('D'): event_type := etStarportDelivery;
-    ord('A'): event_type := etAllegiance;
-    ord('L'): event_type := etLeave;
-    ord('B'): event_type := etBerserk;
-    ord('O'): event_type := etPlaySound;
-    ord('G'): event_type := etSetBuildRate;
-    ord('T'): event_type := etSetTech;
-    ord('W'): event_type := etMissionWin;
-    ord('F'): event_type := etMissionFail;
-    ord('V'): event_type := etRevealMap;
-    ord('I'): event_type := etShowTimer;
-    ord('H'): event_type := etHideTimer;
-    ord('M'): event_type := etShowMessage;
-    ord('S'): event_type := etUnitSpawn;
-    ord('E'): event_type := etSetFlag;
-    ord('U'): event_type := etPlayMusic;
-    ord('C'): btnEventConditionListCopyClick(nil);
-    ord('P'): btnEventConditionListPasteClick(nil);
-    end;
-  if event_type <> EventType(tmp_event.event_type) then
+  if (key = ord('C')) then
+    btnEventConditionListCopyClick(nil);
+  if (key = ord('P')) then
+    btnEventConditionListPasteClick(nil);
+  // Letters = Set Event Type
+  if (key >= ord('A')) and (key <= ord('Z')) then
   begin
-    cbEventType.ItemIndex := Ord(event_type);
-    cbEventTypeChange(nil);
+    for i := 0 to Length(event_type_info) do
+      if (key = event_type_info[i].key) and (i <> cbEventType.ItemIndex) then
+      begin
+        cbEventType.ItemIndex := i;
+        cbEventTypeChange(nil);
+      end;
   end;
+  // Num0 - Num7 = Set Eevent Player
   if epEventPlayer.Visible and (key >= 96) and (key <= 103) then
   begin
     cbEventPlayer.ItemIndex := key - 96;
   end;
+  // Space = Go to map
   if epEventPosition.Visible and (key = 32) then
   begin
     btnEventPositionGotoMapClick(nil);
@@ -1378,33 +1367,27 @@ end;
 procedure TEventDialog.ConditionGridKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 var
-  condition_type: ConditionType;
+  i: integer;
 begin
   if ConditionGrid.Row > Mission.mis_data.num_conditions then
     exit;
-  condition_type := ConditionType(tmp_condition.condition_type);
-  case key of
-    ord('B'): condition_type := ctBuildingExists;
-    ord('U'): condition_type := ctUnitExists;
-    ord('I'): condition_type := ctInterval;
-    ord('T'): condition_type := ctTimer;
-    ord('C'): condition_type := ctCasualties;
-    ord('A'): condition_type := ctBaseDestroyed;
-    ord('E'): condition_type := ctUnitsDestroyed;
-    ord('R'): condition_type := ctTileRevealed;
-    ord('H'): condition_type := ctSpiceHarvested;
-    ord('F'): condition_type := ctFlag;
-    end;
-  if condition_type <> ConditionType(tmp_condition.condition_type) then
+  // Letters = Set Condition Type
+  if (key >= ord('A')) and (key <= ord('Z')) then
   begin
-    cbConditionType.ItemIndex := Ord(condition_type);
-    cbConditionTypeChange(nil);
+    for i := 0 to Length(condition_type_info) do
+      if (key = condition_type_info[i].key) and (i <> cbConditionType.ItemIndex) then
+      begin
+        cbConditionType.ItemIndex := i;
+        cbConditionTypeChange(nil);
+      end;
   end;
+  // Num0 - Num7 = Set Condition Player
   if cpConditionPlayer.Visible and (key >= 96) and (key <= 103) then
   begin
     cbConditionPlayer.SetFocus;
     cbConditionPlayer.ItemIndex := key - 96;
   end;
+  // Space = Go to map
   if cpConditionPosition.Visible and (key = 32) then
   begin
     btnConditionPositionGotoMap.SetFocus;

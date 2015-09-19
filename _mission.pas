@@ -194,6 +194,7 @@ type
 type
   TEventTypeInfo = record
     name: String;
+    key: word;
     use_map_position: boolean;
     use_player_index: boolean;
     use_unit_list: boolean;
@@ -203,6 +204,7 @@ type
 type
   TConditionTypeInfo = record
     name: String;
+    key: word;
     use_player_index: boolean;
     value_name: string;
   end;
@@ -216,42 +218,42 @@ type
 // Mis file type definition constants
 const event_type_info: array[0..21] of TEventTypeInfo =
   (
-    (name: 'Reinforcement';             use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
-    (name: 'Starport Delivery';         use_map_position: false; use_player_index: true;  use_unit_list: true;  value_name: '';),
-    (name: 'Allegiance';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: 'Leave';                     use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
-    (name: 'Berserk';                   use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
-    (name: 'Play Sound';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Sound';),
-    (name: 'Set Build Rate';            use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
-    (name: 'Set Attack Building Rate';  use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
-    (name: 'Set Cash';                  use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Cash';),
-    (name: 'Set Tech';                  use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Tech level';),
-    (name: 'Mission Win';               use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: 'Mission Fail';              use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: '(unsupported)';             use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: 'Reveal Map';                use_map_position: true;  use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: 'Show Timer';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Time';),
-    (name: 'Hide Timer';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: 'Show Message';              use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Unknown';),
-    (name: 'Unit Spawn';                use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
-    (name: 'Set Flag';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: '(unused)';                  use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
-    (name: 'Play Music';                use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';)
+    (name: 'Reinforcement';             key: ord('R'); use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
+    (name: 'Starport Delivery';         key: ord('D'); use_map_position: false; use_player_index: true;  use_unit_list: true;  value_name: '';),
+    (name: 'Allegiance';                key: ord('A'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Leave';                     key: ord('L'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
+    (name: 'Berserk';                   key: ord('B'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
+    (name: 'Play Sound';                key: ord('O'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Sound';),
+    (name: 'Set Build Rate';            key: ord('G'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Set Attack Building Rate';  key: ord('J'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Set Cash';                  key: ord('Y'); use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Cash';),
+    (name: 'Set Tech';                  key: ord('T'); use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Tech level';),
+    (name: 'Mission Win';               key: ord('W'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Mission Fail';              key: ord('F'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unsupported)';             key: ord(' '); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unsupported)';             key: ord(' '); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Reveal Map';                key: ord('V'); use_map_position: true;  use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Show Timer';                key: ord('I'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Time';),
+    (name: 'Hide Timer';                key: ord('H'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Show Message';              key: ord('M'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Unit Spawn';                key: ord('S'); use_map_position: true;  use_player_index: true;  use_unit_list: true;  value_name: '';),
+    (name: 'Set Flag';                  key: ord('E'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: '(unused)';                  key: ord(' '); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
+    (name: 'Play Music';                key: ord('U'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';)
   );
 
 const condition_type_info: array[0..9] of TConditionTypeInfo =
   (
-    (name: 'Building Exists'; use_player_index: true;  value_name: '';),
-    (name: 'Unit Exists';     use_player_index: true;  value_name: '';),
-    (name: 'Interval';        use_player_index: false; value_name: 'Run count';),
-    (name: 'Timer';           use_player_index: false; value_name: '';),
-    (name: 'Casualties';      use_player_index: true;  value_name: 'Threshold';),
-    (name: 'Base Destroyed';  use_player_index: true;  value_name: 'Unknown';),
-    (name: 'Units Destroyed'; use_player_index: true;  value_name: 'Unknown';),
-    (name: 'Tile Revealed';   use_player_index: false; value_name: 'Unknown';),
-    (name: 'Spice Harvested'; use_player_index: false; value_name: 'Credits';),
-    (name: 'Flag';            use_player_index: false; value_name: '';)
+    (name: 'Building Exists'; key: ord('B'); use_player_index: true;  value_name: '';),
+    (name: 'Unit Exists';     key: ord('U'); use_player_index: true;  value_name: '';),
+    (name: 'Interval';        key: ord('I'); use_player_index: false; value_name: 'Run count';),
+    (name: 'Timer';           key: ord('T'); use_player_index: false; value_name: '';),
+    (name: 'Casualties';      key: ord('C'); use_player_index: true;  value_name: 'Threshold';),
+    (name: 'Base Destroyed';  key: ord('A'); use_player_index: true;  value_name: 'Unknown';),
+    (name: 'Units Destroyed'; key: ord('E'); use_player_index: true;  value_name: 'Unknown';),
+    (name: 'Tile Revealed';   key: ord('R'); use_player_index: false; value_name: 'Unknown';),
+    (name: 'Spice Harvested'; key: ord('H'); use_player_index: false; value_name: 'Credits';),
+    (name: 'Flag';            key: ord('F'); use_player_index: false; value_name: '';)
   );
 
 const event_marker_type_info: array[0..5] of TEventMarkerTypeInfo =
