@@ -51,7 +51,6 @@ type
     MapSaveDialog: TSaveDialog;
     Selecttileset1: TMenuItem;
     MiniMap: TImage;
-    MiniMapTmp: TImage;
     Settings1: TMenuItem;
     ShowGrid1: TMenuItem;
     XPManifest1: TXPManifest;
@@ -134,6 +133,7 @@ type
     N9: TMenuItem;
     Assignmisfile1: TMenuItem;
     Markdefenceareas1: TMenuItem;
+    BlockFrame: TBevel;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -222,6 +222,7 @@ type
     graphics_structures: TBitmap;
     graphics_structures_mask: TBitmap;
     graphics_misc_objects: TBitmap;
+    minimap_buffer: TBitmap;
 
     // Map canvas variables
     map_canvas_width: word;
@@ -356,6 +357,9 @@ begin
   graphics_structures.LoadFromFile(current_dir + '/graphics/structures.bmp');
   load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + '/graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
+  minimap_buffer := TBitmap.Create;
+  minimap_buffer.Width := 128;
+  minimap_buffer.Height := 128;
   draw_cursor_image;
   // Initialize Structures
   for i := 0 to Length(misc_object_info) - 1 do
@@ -1300,6 +1304,7 @@ begin
   MapCanvas.Height := map_canvas_height * 32;
   MapScrollH.Top := map_canvas_height * 32 + 8;
   MapScrollH.Width := map_canvas_width * 32;
+  MapScrollH.Visible := MapScrollH.Width > 0;
   MapScrollH.Max := map_width - map_canvas_width;
   if map_width = map_canvas_width then
     MapScrollH.Enabled := False
@@ -1307,6 +1312,7 @@ begin
     MapScrollH.Enabled := True;
   MapScrollV.Left := map_canvas_width * 32 + 8;
   MapScrollV.Height := map_canvas_height * 32;
+  MapScrollV.Visible := MapScrollV.Height > 0;
   MapScrollV.Max := map_height - map_canvas_height;
   if map_height = map_canvas_height then
     MapScrollV.Enabled := False
@@ -1622,9 +1628,9 @@ var
 begin
   if not map_loaded then
     exit;
-  MiniMapTmp.Canvas.Brush.Color := ClBtnFace;
-  MiniMapTmp.Canvas.Pen.Color := ClBtnFace;
-  MiniMapTmp.Canvas.Rectangle(0,0,128,128);
+  minimap_buffer.Canvas.Brush.Color := ClBtnFace;
+  minimap_buffer.Canvas.Pen.Color := ClBtnFace;
+  minimap_buffer.Canvas.Rectangle(0,0,128,128);
   mmap_border_x := (128 - map_width) div 2;
   mmap_border_y := (128 - map_height) div 2;
   // Rendering terrain
@@ -1632,7 +1638,7 @@ begin
     for x:= 0 to map_width - 1 do
     begin
       tile_attr := Tileset.get_tile_type(map_data[x,y].tile);
-      MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_type_colors[ord(tile_attr)];
+      minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_type_colors[ord(tile_attr)];
     end;
   // Rendering structures
   for y:= 0 to map_height - 1 do
@@ -1643,7 +1649,7 @@ begin
         continue
       else if is_misc then
       begin
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := misc_object_info[index].color;
+        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := misc_object_info[index].color;
       end else
       begin
         // Translate player number according to allocation index
@@ -1652,10 +1658,10 @@ begin
         if player >= cnt_mis_players then
           player := 0;
         // Render structure on map
-        MiniMapTmp.Canvas.Pen.Color := map_player_info[player].color;
-        MiniMapTmp.Canvas.Brush.Color := map_player_info[player].color;
-        MiniMapTmp.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := map_player_info[player].color;
-        MiniMapTmp.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+structure_info[index].size_x,y+mmap_border_y+structure_info[index].size_y);
+        minimap_buffer.Canvas.Pen.Color := map_player_info[player].color;
+        minimap_buffer.Canvas.Brush.Color := map_player_info[player].color;
+        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := map_player_info[player].color;
+        minimap_buffer.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+structure_info[index].size_x,y+mmap_border_y+structure_info[index].size_y);
       end;
     end;
   render_minimap_position_marker;
@@ -1663,7 +1669,7 @@ end;
 
 procedure TMainWindow.render_minimap_position_marker;
 begin
-  MiniMap.Canvas.CopyRect(rect(0,0,128,128),MiniMapTmp.Canvas,rect(0,0,128,128));
+  MiniMap.Canvas.CopyRect(rect(0,0,128,128),minimap_buffer.Canvas,rect(0,0,128,128));
   MiniMap.Canvas.Pen.Color:= $00FF00;
   MiniMap.Canvas.Brush.Style := bsClear;
   MiniMap.Canvas.Rectangle(mmap_border_x + map_canvas_left,mmap_border_y + map_canvas_top,mmap_border_x + map_canvas_left + map_canvas_width,mmap_border_y + map_canvas_top + map_canvas_height);
@@ -2030,6 +2036,7 @@ begin
   border_x := (128 - block_width * 32) div 2;
   border_y := (128 - block_height * 32) div 2;
   BlockImage.Canvas.Brush.Color := clBtnFace;
+  BlockImage.Canvas.Pen.Color := clBtnFace;
   BlockImage.Canvas.Rectangle(0,0,128,128);
   CursorImage.Width := block_width * 32 + 1;
   CursorImage.Height := block_height * 32 + 1;

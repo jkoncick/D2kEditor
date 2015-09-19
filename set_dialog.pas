@@ -29,6 +29,9 @@ type
     ChStrOwn_LbPlayerFrom: TLabel;
     ChStrOwn_LbPlayerTo: TLabel;
     procedure FormCreate(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure FormShow(Sender: TObject);  
     procedure BtnCancelClick(Sender: TObject);
     procedure BtnOKClick(Sender: TObject);
     procedure ShiftMap_SelectDirection(Sender: TObject);
@@ -62,6 +65,20 @@ begin
   ChStrOwn_PlayerTo.ItemIndex := 0;
   SetMapSize_Width.Value := Settings.DefaultMapWidth;
   SetMapSize_Height.Value := Settings.DefaultMapHeight;
+end;
+
+procedure TSetDialog.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if key = 13 then
+    BtnOKClick(nil);
+  if key = 27 then
+    BtnCancelClick(nil);
+end;
+
+procedure TSetDialog.FormShow(Sender: TObject);
+begin
+  BtnOK.SetFocus;
 end;
 
 procedure TSetDialog.select_menu(menu: integer);

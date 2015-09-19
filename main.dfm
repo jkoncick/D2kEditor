@@ -132,13 +132,6 @@ object MainWindow: TMainWindow
       OnMouseDown = MiniMapMouseDown
       OnMouseMove = MiniMapMouseMove
     end
-    object MiniMapTmp: TImage
-      Left = 16
-      Top = 8
-      Width = 128
-      Height = 128
-      Visible = False
-    end
     object EditorPages: TPageControl
       Left = 1
       Top = 141
@@ -230,6 +223,14 @@ object MainWindow: TMainWindow
           Width = 7
           Height = 13
           Caption = 'X'
+        end
+        object BlockFrame: TBevel
+          Left = 14
+          Top = 126
+          Width = 132
+          Height = 132
+          Shape = bsFrame
+          Style = bsRaised
         end
         object BlockImage: TImage
           Left = 16

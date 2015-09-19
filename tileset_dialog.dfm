@@ -123,12 +123,13 @@ object TilesetDialog: TTilesetDialog
     OnClick = SetBlockSize
   end
   object TilesetScroll: TScrollBar
-    Left = 648
+    Left = 650
     Top = 24
     Width = 16
     Height = 576
     Kind = sbVertical
-    Max = 22
+    LargeChange = 2
+    Max = 39
     PageSize = 0
     TabOrder = 0
     OnChange = DrawTileset

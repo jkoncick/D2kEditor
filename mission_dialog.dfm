@@ -1,13 +1,13 @@
 object MissionDialog: TMissionDialog
   Left = 192
   Top = 80
-  Width = 1056
+  Width = 1064
   Height = 640
   Caption = 'Mission settings'
   Color = clBtnFace
-  Constraints.MaxWidth = 1056
+  Constraints.MaxWidth = 1064
   Constraints.MinHeight = 560
-  Constraints.MinWidth = 1056
+  Constraints.MinWidth = 1064
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -22,7 +22,7 @@ object MissionDialog: TMissionDialog
   object SettingsPanel: TPanel
     Left = 0
     Top = 0
-    Width = 712
+    Width = 720
     Height = 606
     Align = alClient
     BevelOuter = bvNone
@@ -30,7 +30,7 @@ object MissionDialog: TMissionDialog
     object PlayerSettingsPanel: TPanel
       Left = 0
       Top = 0
-      Width = 712
+      Width = 720
       Height = 369
       Align = alTop
       BevelOuter = bvNone
@@ -73,7 +73,7 @@ object MissionDialog: TMissionDialog
       object Bevel1: TBevel
         Left = 0
         Top = 280
-        Width = 713
+        Width = 721
         Height = 10
         Shape = bsBottomLine
       end
@@ -255,7 +255,7 @@ object MissionDialog: TMissionDialog
     object RulesAndStringsPanel: TPanel
       Left = 0
       Top = 369
-      Width = 712
+      Width = 720
       Height = 237
       Align = alClient
       BevelOuter = bvNone
@@ -279,7 +279,7 @@ object MissionDialog: TMissionDialog
       object StringsPanel: TPanel
         Left = 272
         Top = 0
-        Width = 440
+        Width = 448
         Height = 237
         Align = alClient
         BevelOuter = bvNone
@@ -287,7 +287,7 @@ object MissionDialog: TMissionDialog
         object StringsSplitter: TSplitter
           Left = 0
           Top = 114
-          Width = 440
+          Width = 448
           Height = 3
           Cursor = crVSplit
           Align = alBottom
@@ -295,7 +295,7 @@ object MissionDialog: TMissionDialog
         object StringValueList: TValueListEditor
           Left = 0
           Top = 117
-          Width = 440
+          Width = 448
           Height = 120
           Align = alBottom
           Constraints.MinHeight = 60
@@ -308,12 +308,12 @@ object MissionDialog: TMissionDialog
             'Text')
           ColWidths = (
             50
-            384)
+            392)
         end
         object MapBriefing: TMemo
           Left = 0
           Top = 0
-          Width = 440
+          Width = 448
           Height = 114
           Align = alClient
           ScrollBars = ssVertical
@@ -323,7 +323,7 @@ object MissionDialog: TMissionDialog
     end
   end
   object AITabControl: TTabControl
-    Left = 712
+    Left = 720
     Top = 0
     Width = 336
     Height = 606

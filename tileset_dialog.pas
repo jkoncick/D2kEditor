@@ -91,7 +91,7 @@ begin
   TilesetImage.Height := tileset_height * 32;
   TilesetImage.Picture.Bitmap.Height := tileset_height * 32;
   TilesetScroll.Height := tileset_height * 32;
-  TilesetScroll.Max := 40 - tileset_height;
+  TilesetScroll.PageSize := tileset_height;
   DrawTileset(nil);
 end;
 
@@ -100,6 +100,11 @@ var
   x,y: integer;
   tile_attr: TileType;
 begin
+  if TilesetScroll.Position > (40 - tileset_height) then
+  begin
+    TilesetScroll.Position := 40 - tileset_height;
+    exit;
+  end;
   tileset_top := TilesetScroll.Position;
   TilesetImage.Canvas.CopyRect(rect(0,0,640,tileset_height*32),Tileset.tileimage.Canvas,rect(0,tileset_top*32,640,tileset_top*32+tileset_height*32));
   if TilesetMarkTiles.Checked then

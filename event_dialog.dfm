@@ -47,7 +47,7 @@ object EventDialog: TEventDialog
     Font.Height = -11
     Font.Name = 'MS Sans Serif'
     Font.Style = []
-    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
     ParentFont = False
     PopupMenu = EventGridPopupMenu
     ScrollBars = ssVertical
@@ -57,6 +57,72 @@ object EventDialog: TEventDialog
     OnMouseWheelDown = EventGridMouseWheelDown
     OnMouseWheelUp = EventGridMouseWheelUp
     OnSelectCell = EventGridSelectCell
+    RowHeights = (
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18
+      18)
   end
   object LowerPanel: TPanel
     Left = 0
@@ -76,7 +142,7 @@ object EventDialog: TEventDialog
       ColCount = 4
       DefaultRowHeight = 18
       RowCount = 49
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
       PopupMenu = ConditionGridPopupMenu
       TabOrder = 0
       OnDblClick = ConditionGridDblClick
