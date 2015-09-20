@@ -1624,7 +1624,6 @@ var
   value: integer;
   player, index: word;
   is_misc: boolean;
-  tile_attr: TileType;
 begin
   if not map_loaded then
     exit;
@@ -1637,8 +1636,7 @@ begin
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
-      tile_attr := Tileset.get_tile_type(map_data[x,y].tile);
-      minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := mmap_tile_type_colors[ord(tile_attr)];
+      minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.get_tile_color(map_data[x,y].tile);
     end;
   // Rendering structures
   for y:= 0 to map_height - 1 do
@@ -1937,11 +1935,11 @@ end;
 procedure TMainWindow.put_sand_rock_dunes(x, y: word);
 begin
   if mode(mSand) then
-    set_tile_value(x, y, tiles_sand[random(10)], 0, false)
+    set_tile_value(x, y, Tileset.get_random_paint_tile(0), 0, false)
   else if mode(mRock) then
-    set_tile_value(x, y, tiles_rock[random(15)], 0, false)
+    set_tile_value(x, y, Tileset.get_random_paint_tile(1), 0, false)
   else if mode(mDunes) then
-    set_tile_value(x, y, tiles_dunes[random(8)], 0, false);
+    set_tile_value(x, y, Tileset.get_random_paint_tile(2), 0, false);
 end;
 
 procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boolean);
@@ -2241,11 +2239,12 @@ var
 begin
   if (map_width = new_width) and (map_height = new_height) then
     exit;
+  // Fill additional area with clean sand
   for i := 0 to new_height - 1 do
     for j := 0 to new_width - 1 do
       if (i >= map_height) or (j >= map_width) then
       begin
-        map_data[j,i].tile := tiles_sand[random(10)];
+        map_data[j,i].tile := Tileset.get_random_paint_tile(0);
         map_data[j,i].special := 0;
       end;
   map_width := new_width;
@@ -2274,7 +2273,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := tiles_sand[random(10)];
+                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -2289,7 +2288,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := tiles_sand[random(10)];
+                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -2304,7 +2303,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := tiles_sand[random(10)];
+                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -2319,7 +2318,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := tiles_sand[random(10)];
+                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -2381,7 +2380,7 @@ begin
   for x := 0 to map_width - 1 do
     for y := 0 to map_height - 1 do
     begin
-      map_data[x,y].tile := tiles_sand[random(10)];
+      map_data[x,y].tile := Tileset.get_random_paint_tile(0);
       map_data[x,y].special := 0;
     end;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);

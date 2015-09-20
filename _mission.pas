@@ -344,7 +344,6 @@ procedure TMission.load_mis_file(filename: String);
 var
   mis_file: file of TMisFile;
   tileset_name: String;
-  i: integer;
 begin
   AssignFile(mis_file, filename);
   Reset(mis_file);
@@ -353,11 +352,7 @@ begin
   mis_filename := filename;
 
   tileset_name := String(mis_data.tileset);
-  for i:= 0 to Tileset.cnt_tilesets-1 do
-  begin
-    if tileset_name = Tileset.tileset_info[i].name then
-      Tileset.change_tileset(i);
-  end;
+  Tileset.change_tileset_by_name(tileset_name);
   process_event_markers;
 end;
 

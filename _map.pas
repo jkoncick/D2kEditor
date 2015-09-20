@@ -26,10 +26,6 @@ type
     objects: array[0..3] of integer;
   end;
 
-const tiles_sand: array[0..9] of word = (48,49,50,51,52,68,69,70,71,72);
-const tiles_rock: array[0..14] of word = (552,553,554,555,556,572,573,574,575,576,592,593,594,595,596);
-const tiles_dunes: array[0..7] of word = (63,64,65,66,83,84,103,104);
-
 const block_key_presets: array[1..53,0..3,0..3] of word = (
   // Up
   ((2,2,16,18), (2,2, 5, 4), (1,1, 8,14), (1,1, 0, 3)),
