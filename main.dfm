@@ -394,10 +394,10 @@ object MainWindow: TMainWindow
           Caption = ' Block key-preset group '
           ItemIndex = 0
           Items.Strings = (
-            'Cliff rock-sand'
-            'Cliff sand-sand'
-            'Rock border'
-            'Dunes border')
+            ''
+            ''
+            ''
+            '')
           TabOrder = 15
         end
         object RbSelectMode: TRadioButton

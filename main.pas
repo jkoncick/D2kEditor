@@ -246,7 +246,6 @@ type
     block_width: word;
     block_height: word;
     block_data: array[0..127,0..127] of TMapTile;
-    block_preset_order: integer;
     block_select_started: boolean;
     block_select_start_x: word;
     block_select_start_y: word;
@@ -267,6 +266,9 @@ type
 
     // Clipboard variables
     clipboard_format: cardinal;
+
+    // Paint-mode controls
+    paint_tile_select: array[0..cnt_paint_tile_groups-1] of TRadioButton;
 
     // Initialization procedures
     procedure load_or_create_mask(graph: TBitmap; mask: TBitmap; filename: String);
@@ -298,7 +300,7 @@ type
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
     procedure put_block_on_map;
-    procedure fill_area(x,y: word; area_type: FillAreaType);
+    procedure fill_area(x,y: word; area_type: integer);
     procedure put_sand_rock_dunes(x,y: word);
     procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
     procedure do_undo;
@@ -306,11 +308,11 @@ type
     procedure reset_undo_history;
     procedure resize_cursor_image;
     procedure draw_cursor_image;
-    procedure apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
+    procedure apply_key_preset(key: word);
 
     // Procedures related to auto-smoothing edges
     function is_rock_dunes(x,y: integer; exact: boolean): boolean;
-    procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y, block_preset, variants_rock: integer);
+    procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
     procedure smooth_edges(x, y: integer);
 
     // Procedures called from other dialog
@@ -342,12 +344,13 @@ begin
   moving_event := -1;
   moving_condition := -1;
   top := 60;
+  paint_tile_select[0] := RbSand;
+  paint_tile_select[1] := RbRock;
+  paint_tile_select[2] := RbDunes;
   // Load settings
   Settings.load_precreate_editor_settings;
   // Initialize mission
   Mission.init;
-  // Initialize tilesets
-  Tileset.init;
   // Load string table
   StringTable.load_from_file(Settings.TextUIBPath);
   // Load and initialize graphics
@@ -361,6 +364,8 @@ begin
   minimap_buffer.Width := 128;
   minimap_buffer.Height := 128;
   draw_cursor_image;
+  // Initialize tilesets
+  Tileset.init;
   // Initialize Structures
   for i := 0 to Length(misc_object_info) - 1 do
     MiscObjList.Items.Add(misc_object_info[i].name);
@@ -455,12 +460,7 @@ begin
     // Paint sand/rock/dunes
     192: begin
       SetBlockSize(Block11);
-      if (BlockPresetGroupSelect.ItemIndex = 0) or (BlockPresetGroupSelect.ItemIndex = 2) then
-        RbRock.Checked := true
-      else if BlockPresetGroupSelect.ItemIndex = 1 then
-        RbSand.Checked := true
-      else if BlockPresetGroupSelect.ItemIndex = 3 then
-        RbDunes.Checked := true;
+      paint_tile_select[Tileset.block_preset_groups[BlockPresetGroupSelect.ItemIndex].paint_group].Checked := true;
     end;
   end;
   if mode(mTileBlock) then
@@ -501,45 +501,10 @@ begin
     ord('C'): begin RbSelectMode.Checked := true; EditorPages.TabIndex := 1; end;
     ord('T'): CbSelectStructures.Checked := not CbSelectStructures.Checked;
   end else
-    case key of
-    ord('1'): apply_key_preset(1, 1, 1); // Up
-    ord('2'): apply_key_preset(2, 1, 1);
-    ord('3'): apply_key_preset(3, 4, 5);
-    ord('4'): apply_key_preset(8, 1, 1);
-    ord('5'): apply_key_preset(9, 1, 2);
-    ord('Q'): apply_key_preset(11, 1, 1); // Left
-    ord('E'): apply_key_preset(12, 4, 5);
-    ord('A'): apply_key_preset(17, 1, 1);
-    ord('T'): apply_key_preset(18, 1, 1); // Right
-    ord('D'): apply_key_preset(19, 4, 4);
-    ord('G'): apply_key_preset(23, 1, 1);
-    ord('Z'): apply_key_preset(24, 1, 1); // Down
-    ord('X'): apply_key_preset(25, 1, 1);
-    ord('C'): apply_key_preset(26, 4, 3);
-    ord('V'): apply_key_preset(30, 1, 1);
-    ord('B'): apply_key_preset(31, 1, 1);
-    ord('W'): apply_key_preset(32, 1, 1); // Inner curves
-    ord('S'): apply_key_preset(33, 1, 1);
-    ord('R'): apply_key_preset(34, 1, 1);
-    ord('F'): apply_key_preset(35, 1, 1);
-    ord('6'): apply_key_preset(36, 1, 1); // Up
-    ord('7'): apply_key_preset(37, 1, 1);
-    ord('8'): apply_key_preset(38, 1, 1);
-    ord('9'): apply_key_preset(39, 1, 1);
-    ord('Y'): apply_key_preset(40, 1, 1); // Left
-    ord('U'): apply_key_preset(41, 1, 1);
-    ord('J'): apply_key_preset(42, 1, 1);
-    ord('H'): apply_key_preset(43, 1, 1);
-    ord('O'): apply_key_preset(44, 1, 1); // Right
-    ord('I'): apply_key_preset(45, 1, 1);
-    ord('K'): apply_key_preset(46, 1, 1);
-    ord('L'): apply_key_preset(47, 1, 1);
-    ord('N'): apply_key_preset(48, 1, 1); // Down
-    ord('M'): apply_key_preset(49, 1, 1);
-    188:      apply_key_preset(50, 1, 1);
-    190:      apply_key_preset(51, 1, 1);
-    ord('0'): apply_key_preset(52, 1, 1); // Others
-    ord('P'): apply_key_preset(53, 1, 1);
+  begin
+    // Block key presets
+    if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 188) or (key = 190) then
+      apply_key_preset(key);
   end;
 end;
 
@@ -1023,7 +988,7 @@ begin
     exit;
   end;
   // Check for spice-to-sand restriction
-  if ((MiscObjList.ItemIndex = 1) or (MiscObjList.ItemIndex = 2)) and Settings.RestrictSpiceToSand and (Tileset.get_fill_area_type(map_data[map_x, map_y].tile, 0) <> faSand) and
+  if ((MiscObjList.ItemIndex = 1) or (MiscObjList.ItemIndex = 2)) and Settings.RestrictSpiceToSand and (Tileset.get_fill_area_type(map_data[map_x, map_y].tile, 0) <> 2) and
     mode(mStructures) and (Button = mbLeft) then
     exit;
   // Moving event markers
@@ -1912,7 +1877,7 @@ begin
         set_tile_value(cursor_left + x, cursor_top + y, block_data[x,y].tile, block_data[x,y].special, false);
 end;
 
-procedure TMainWindow.fill_area(x, y: word; area_type: FillAreaType);
+procedure TMainWindow.fill_area(x, y: word; area_type: integer);
 begin
   if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
     exit;
@@ -2054,30 +2019,12 @@ begin
   resize_cursor_image;
 end;
 
-procedure TMainWindow.apply_key_preset(num: integer; count_cliff: integer; count_border: integer);
+procedure TMainWindow.apply_key_preset(key: word);
 var
-  grp: integer;
-  count: integer;
+  preset: TBlockPreset;
 begin
-  grp := BlockPresetGroupSelect.ItemIndex;
-  if (grp = 0) or (grp = 1) then
-    count := count_cliff
-  else if grp = 2 then
-    count := count_border
-  else
-    count := 1;
-  if count > 1 then
-  begin
-    inc(block_preset_order);
-    if block_preset_order >= count then
-      block_preset_order := 0;
-    num := num + block_preset_order;
-  end;
-  select_block_from_tileset(
-    block_key_presets[num, grp, 0],
-    block_key_presets[num, grp, 1],
-    block_key_presets[num, grp, 2],
-    block_key_presets[num, grp, 3]);
+  preset := Tileset.get_block_preset(BlockPresetGroupSelect.ItemIndex, key, bpNext);
+  select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
 end;
 
 function TMainWindow.is_rock_dunes(x, y: integer; exact: boolean): boolean;
@@ -2091,31 +2038,31 @@ begin
   atr := Tileset.attributes[map_data[x,y].tile];
   result := false;
   if mode(mRock) and exact then // Tile is exactly clear rock
-    result := (atr and 2) = 2;
+    result := (atr and taEdCleanRock) = taEdCleanRock;
   if mode(mRock) and not exact then // Tile is part of rock area
-    result := (atr and 16) = 16;
+    result := (atr and taEdRockArea) = taEdRockArea;
   if mode(mDunes) and exact then // Tile is exactly clear dunes
-    result := (atr and 4) = 4;
+    result := (atr and taEdCleanDunes) = taEdCleanDunes;
   if mode(mDunes) and not exact then // Tile is part of dunes area
-    result := (atr and 8) = 8;
+    result := (atr and taEdDunesArea) = taEdDunesArea;
 end;
 
 procedure TMainWindow.put_edge_block(var xpos, ypos: integer; moveoff_x,
-  moveoff_y, blockoff_x, blockoff_y, block_preset, variants_rock: integer);
+  moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
 var
-  preset_type: integer;
+  block_preset: TBlockPreset;
+  block_preset_group: integer;
   x, y: integer;
 begin
-  // Reuse already defined block-key-presets for this purpose
-  preset_type := 3;
   if mode(mRock) then
-  begin
-    preset_type := 2;
-    block_preset := block_preset + random(variants_rock);
-  end;
+    block_preset_group := 2
+  else
+    block_preset_group := 3;
+  block_preset := Tileset.get_block_preset(block_preset_group, ord(block_preset_key), bpRandom);
+  // Reuse already defined block-key-presets for this purpose
   // Place edge block (it can be either 1x1 or 2x2, so we use loops)
-  for y := 0 to block_key_presets[block_preset, preset_type, 1] - 1 do
-    for x := 0 to 0 + block_key_presets[block_preset, preset_type, 0] - 1 do
+  for y := 0 to block_preset.height - 1 do
+    for x := 0 to block_preset.width - 1 do
     begin
       // We cannot place the edge block immediately physically into map,
       // because it would interfere with checks for tiles around following tile.
@@ -2123,7 +2070,7 @@ begin
       // into history and in the end we apply the changes (like doing redo)
       undo_history[undo_max].x := x + xpos + blockoff_x;
       undo_history[undo_max].y := y + ypos + blockoff_y;
-      undo_history[undo_max].data.tile := (block_key_presets[block_preset, preset_type, 3] + y) * 20 + block_key_presets[block_preset, preset_type, 2] + x;
+      undo_history[undo_max].data.tile := (block_preset.pos_y + y) * 20 + block_preset.pos_x + x;
       undo_history[undo_max].data.special := 0;
       undo_history[undo_max].is_first := false;
       undo_max := (undo_max + 1) and max_undo_steps;
@@ -2160,58 +2107,58 @@ begin
     case (sum and 15) of
        7: begin // down
           if (sum and 128 > 0) and not is_rock_dunes(x+1,y+2, false) then
-            put_edge_block(x,y,2,1,0,0,25,1)
+            put_edge_block(x,y,2,1,0,0,'X')
           else
-            put_edge_block(x,y,1,0,0,0,26,3);
+            put_edge_block(x,y,1,0,0,0,'C');
         end;
       11: begin // right
           if (sum and 32 > 0) and not is_rock_dunes(x+2,y-1, false) then
-            put_edge_block(x,y,1,-2,0,-1,23,1)
+            put_edge_block(x,y,1,-2,0,-1,'G')
           else
-            put_edge_block(x,y,0,-1,0,0,19,4);
+            put_edge_block(x,y,0,-1,0,0,'D');
         end;
       14: begin // up
           if (sum and 16 > 0) and not is_rock_dunes(x-1,y-2, false) then
-            put_edge_block(x,y,-2,-1,-1,-1,8,1)
+            put_edge_block(x,y,-2,-1,-1,-1,'4')
           else
-            put_edge_block(x,y,-1,0,0,0,3,5);
+            put_edge_block(x,y,-1,0,0,0,'3');
         end;
       13: begin // left
           if (sum and 64 > 0) and not is_rock_dunes(x-2,y+1, false) then
-            put_edge_block(x,y,-1,2,-1,0,11,1)
+            put_edge_block(x,y,-1,2,-1,0,'Q')
           else
-            put_edge_block(x,y,0,1,0,0,12,5);
+            put_edge_block(x,y,0,1,0,0,'E');
         end;
        3: begin // down-right corner
           if (sum and 32 > 0) and is_rock_dunes(x+2,y-1, false) then
-            put_edge_block(x,y,2,-1,0,-1,30,1)
+            put_edge_block(x,y,2,-1,0,-1,'V')
           else
-            put_edge_block(x,y,0,-1,0,0,31,1);
+            put_edge_block(x,y,0,-1,0,0,'B');
         end;
       10: begin // up-right corner
           if (sum and 16 > 0) and is_rock_dunes(x-1,y-2, false) then
-            put_edge_block(x,y,-1,-2,-1,-1,18,1)
+            put_edge_block(x,y,-1,-2,-1,-1,'T')
           else
-            put_edge_block(x,y,-1,0,0,0,9,2);
+            put_edge_block(x,y,-1,0,0,0,'5');
         end;
       12: begin // up-left corner
           if (sum and 64 > 0) and is_rock_dunes(x-2,y+1, false) then
-            put_edge_block(x,y,-2,1,-1,0,2,1)
+            put_edge_block(x,y,-2,1,-1,0,'2')
           else
-            put_edge_block(x,y,0,1,0,0,1,1);
+            put_edge_block(x,y,0,1,0,0,'1');
         end;
        5: begin // down-left corner
           if (sum and 128 > 0) and is_rock_dunes(x+1,y+2, false) then
-            put_edge_block(x,y,1,2,0,0,17,1)
+            put_edge_block(x,y,1,2,0,0,'A')
           else
-            put_edge_block(x,y,1,0,0,0,24,1);
+            put_edge_block(x,y,1,0,0,0,'Z');
         end;
       15: begin // inner curves
         case sum of
-          239: put_edge_block(x,y,-1,0,0,0,35,1); // down-right curve
-          191: put_edge_block(x,y,0,1,0,0,34,1);  // up-right curve
-          127: put_edge_block(x,y,1,0,0,0,32,1);  // up-left curve
-          223: put_edge_block(x,y,0,-1,0,0,33,1); // down-left curve
+          239: put_edge_block(x,y,-1,0,0,0,'F'); // down-right curve
+          191: put_edge_block(x,y,0,1,0,0,'R');  // up-right curve
+          127: put_edge_block(x,y,1,0,0,0,'W');  // up-left curve
+          223: put_edge_block(x,y,0,-1,0,0,'S'); // down-left curve
           else break; // Invalid combination - end
         end;
         end;
