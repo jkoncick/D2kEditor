@@ -54,7 +54,8 @@ var
 implementation
 
 uses
-  SysUtils, main, tileset_dialog, set_dialog, test_map_dialog, mission_dialog, event_dialog, _map, _stringtable;
+  SysUtils, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
+  mission_dialog, event_dialog, _map, _stringtable;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -100,6 +101,8 @@ begin
   TilesetDialog.Left := ini.ReadInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
   TilesetDialog.Top := ini.ReadInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
   TilesetDialog.Height := ini.ReadInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
+  BlockPresetDialog.Left := ini.ReadInteger('GUI','BlockPresetDialog.Left',BlockPresetDialog.Left);
+  BlockPresetDialog.Top := ini.ReadInteger('GUI','BlockPresetDialog.Top',BlockPresetDialog.Top);
   SetDialog.Left := ini.ReadInteger('GUI','SetDialog.Left',SetDialog.Left);
   SetDialog.Top := ini.ReadInteger('GUI','SetDialog.Top',SetDialog.Top);
   TestMapDialog.Left := ini.ReadInteger('GUI','TestMapDialog.Left',TestMapDialog.Left);
@@ -145,6 +148,8 @@ begin
   ini.WriteInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
   ini.WriteInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
   ini.WriteInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
+  ini.WriteInteger('GUI','BlockPresetDialog.Left',BlockPresetDialog .Left);
+  ini.WriteInteger('GUI','BlockPresetDialog.Top',BlockPresetDialog.Top);
   ini.WriteInteger('GUI','SetDialog.Left',SetDialog.Left);
   ini.WriteInteger('GUI','SetDialog.Top',SetDialog.Top);
   ini.WriteInteger('GUI','TestMapDialog.Left',TestMapDialog.Left);

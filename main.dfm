@@ -211,7 +211,7 @@ object MainWindow: TMainWindow
         Caption = 'Terrain            '
         ImageIndex = 1
         object LbBlockSize: TLabel
-          Left = 0
+          Left = 4
           Top = 8
           Width = 48
           Height = 13
@@ -237,21 +237,21 @@ object MainWindow: TMainWindow
           Top = 128
           Width = 128
           Height = 128
-          OnClick = OpenTilesetClick
+          OnClick = BlockImageClick
         end
-        object RbTileBlock: TRadioButton
-          Left = 8
+        object RbBlockMode: TRadioButton
+          Left = 4
           Top = 100
-          Width = 73
+          Width = 77
           Height = 17
-          Caption = 'Tile Block'
+          Caption = 'Block mode'
           Checked = True
           TabOrder = 0
           TabStop = True
           OnClick = SetCursorImageVisibility
         end
         object RbSand: TRadioButton
-          Left = 8
+          Left = 4
           Top = 74
           Width = 49
           Height = 17
@@ -338,7 +338,7 @@ object MainWindow: TMainWindow
           OnClick = SetBlockSize
         end
         object OpenTileset: TButton
-          Left = 84
+          Left = 88
           Top = 96
           Width = 65
           Height = 25
@@ -391,7 +391,7 @@ object MainWindow: TMainWindow
           Top = 296
           Width = 153
           Height = 105
-          Caption = ' Block key-preset group '
+          Caption = ' Block preset group '
           ItemIndex = 0
           Items.Strings = (
             ''
@@ -399,9 +399,10 @@ object MainWindow: TMainWindow
             ''
             '')
           TabOrder = 15
+          OnClick = BlockPresetGroupSelectClick
         end
         object RbSelectMode: TRadioButton
-          Left = 8
+          Left = 4
           Top = 268
           Width = 81
           Height = 17

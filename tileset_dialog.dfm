@@ -17,6 +17,7 @@ object TilesetDialog: TTilesetDialog
   KeyPreview = True
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnHide = FormHide
   OnKeyDown = FormKeyDown
   OnMouseWheelDown = FormMouseWheelDown
   OnMouseWheelUp = FormMouseWheelUp

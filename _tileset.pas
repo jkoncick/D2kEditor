@@ -63,9 +63,9 @@ type
   end;
 
 type
-  TBlockPresetKeyEntry = record
-    index: word;
-    count: word;
+  TBlockPresetVariantList = record
+    first_preset_index: word;
+    num_variants: word;
   end;
 
 type
@@ -115,7 +115,7 @@ type
     paint_tiles_cnt: array[0..cnt_paint_tile_groups-1] of integer;
 
     block_preset_groups: array[0..cnt_block_preset_groups-1] of TBlockPresetGroup;
-    block_preset_key_entries: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of TBlockPresetKeyEntry;
+    block_preset_key_variants: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of TBlockPresetVariantList;
     block_presets: array[0..cnt_block_preset_groups-1, 0..max_block_presets-1] of TBlockPreset;
 
   public
@@ -143,7 +143,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, main, tileset_dialog, _mission, _settings, IniFiles, Classes, Dialogs;
+uses Windows, Forms, SysUtils, main, tileset_dialog, block_preset_dialog, _mission, _settings, IniFiles, Classes, Dialogs;
 
 procedure TTileset.init;
 var
@@ -203,8 +203,11 @@ begin
   // Load tileset attributes
   load_tileatr(current_dir+'/tilesets/'+tileset_info[current_tileset].tileatr_name+'.bin');
   MainWindow.StatusBar.Panels[1].Text := tileset_info[current_tileset].name;
+  // Redraw dialogs
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
     TilesetDialog.DrawTileset(nil);
+  if (BlockPresetDialog <> nil) then
+    BlockPresetDialog.init_presets;
   // Re-render everything
   MainWindow.draw_cursor_image;
   MainWindow.render_minimap;
@@ -344,8 +347,8 @@ begin
       else if j = 37 then
         key := '>';
       decoder.DelimitedText := ini.ReadString('Block_Preset_Group_'+(inttostr(i+1)), key, '');
-      block_preset_key_entries[i, j].count := decoder.Count;
-      block_preset_key_entries[i, j].index := preset_index;
+      block_preset_key_variants[i, j].num_variants := decoder.Count;
+      block_preset_key_variants[i, j].first_preset_index := preset_index;
       for k := 0 to decoder.Count - 1 do
       begin
         decoder2.DelimitedText := decoder[k];
@@ -445,7 +448,7 @@ end;
 function TTileset.get_block_preset(group: integer; key: word; variant: integer): TBlockPreset;
 var
   num_variants: integer;
-  key_index, block_index: integer;
+  key_index, preset_index: integer;
 begin
   key_index := block_key_to_index(key);
   // Unknown key
@@ -454,7 +457,7 @@ begin
     result := empty_block_preset;
     exit;
   end;
-  num_variants := block_preset_key_entries[group, key_index].count;
+  num_variants := block_preset_key_variants[group, key_index].num_variants;
   // No block preset for this key
   if num_variants = 0 then
   begin
@@ -484,8 +487,8 @@ begin
       last_block_preset_variant := variant;
     end;
   end;
-  block_index := block_preset_key_entries[group, key_index].index + variant;
-  result := block_presets[group, block_index];
+  preset_index := block_preset_key_variants[group, key_index].first_preset_index + variant;
+  result := block_presets[group, preset_index];
 end;
 
 end.

@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Dialogs
-  set_dialog, tileset_dialog, test_map_dialog, event_dialog, mission_dialog,
+  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog,
   // Units
   _map, _mission, _tileset, _structures, _stringtable, _settings;
 
@@ -77,7 +77,7 @@ type
     PlayerSelect: TComboBox;
     LbStructureList: TLabel;
     StructureList: TListBox;
-    RbTileBlock: TRadioButton;
+    RbBlockMode: TRadioButton;
     RbSand: TRadioButton;
     RbRock: TRadioButton;
     RbDunes: TRadioButton;
@@ -214,7 +214,9 @@ type
     // Terrain editor
     procedure SetBlockSize(Sender: TObject);
     procedure OpenTilesetClick(Sender: TObject);
+    procedure BlockImageClick(Sender: TObject);
     procedure SetCursorImageVisibility(Sender: TObject);
+    procedure BlockPresetGroupSelectClick(Sender: TObject);
 
   public
 
@@ -266,6 +268,9 @@ type
 
     // Clipboard variables
     clipboard_format: cardinal;
+
+    // Miscellaneous variables
+    block_preset_dialog_opened: boolean;
 
     // Paint-mode controls
     paint_tile_select: array[0..cnt_paint_tile_groups-1] of TRadioButton;
@@ -448,7 +453,10 @@ begin
     32:
     begin
       EditorPages.TabIndex := 1;
-      OpenTilesetClick(nil);
+      if block_preset_dialog_opened then
+        BlockPresetDialog.Show
+      else
+        TilesetDialog.Show;
       key := 0;
       exit;
     end;
@@ -494,7 +502,7 @@ begin
     ord('W'): begin MiscObjList.ItemIndex := 2; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
     ord('E'): begin MiscObjList.ItemIndex := 5; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
     // Terrain editing mode selection
-    ord('B'): begin RbTileBlock.Checked := true; EditorPages.TabIndex := 1; end;
+    ord('B'): begin RbBlockMode.Checked := true; EditorPages.TabIndex := 1; end;
     ord('D'): begin RbDunes.Checked := true; EditorPages.TabIndex := 1; end;
     ord('R'): begin RbRock.Checked := true; EditorPages.TabIndex := 1; end;
     ord('S'): begin RbSand.Checked := true; EditorPages.TabIndex := 1; end;
@@ -667,7 +675,8 @@ begin
   block_height := pointer.block_height;
   Move(pointer.block_data, block_data, sizeof(block_data));
 
-  RbTileBlock.Checked := true;
+  RbBlockMode.Checked := true;
+  RbBlockMode.SetFocus;
   EditorPages.TabIndex := 1;
   draw_cursor_image;
 
@@ -1222,15 +1231,23 @@ begin
   TilesetDialog.Show;
 end;
 
+procedure TMainWindow.BlockImageClick(Sender: TObject);
+begin
+  BlockPresetDialog.Show;
+end;
+
 procedure TMainWindow.SetCursorImageVisibility(Sender: TObject);
 begin
   if mode(mTileBlock) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
   begin
     CursorImage.Visible := true;
-    if (not TilesetDialog.Visible) and EditorPages.Visible and (not EventDialog.Visible) and (not MissionDialog.Visible) then
-      RbTileBlock.SetFocus;
   end else
     CursorImage.Visible := false;
+end;
+
+procedure TMainWindow.BlockPresetGroupSelectClick(Sender: TObject);
+begin
+  BlockPresetDialog.init_presets;
 end;
 
 procedure TMainWindow.load_or_create_mask(graph, mask: TBitmap; filename: String);
@@ -1765,7 +1782,7 @@ begin
     mSand:            result := (EditorPages.TabIndex = 1) and RbSand.Checked;
     mRock:            result := (EditorPages.TabIndex = 1) and RbRock.Checked;
     mDunes:           result := (EditorPages.TabIndex = 1) and RbDunes.Checked;
-    mTileBlock:       result := (EditorPages.TabIndex = 1) and RbTileBlock.Checked;
+    mTileBlock:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;
     mSelectMode:      result := (EditorPages.TabIndex = 1) and RbSelectMode.Checked;
   end;
 end;
@@ -1831,7 +1848,8 @@ begin
       block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
       block_data[x,y].special := 0;
     end;
-  RbTileBlock.Checked := true;
+  RbBlockMode.Checked := true;
+  RbBlockMode.SetFocus;
   draw_cursor_image;
 end;
 
@@ -1858,7 +1876,8 @@ begin
       end;
       block_data[x,y] := value;
     end;
-  RbTileBlock.Checked := True;
+  RbBlockMode.Checked := True;
+  RbBlockMode.SetFocus;
   draw_cursor_image;
 end;
 

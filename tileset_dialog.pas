@@ -22,6 +22,7 @@ type
     sbPreset32: TSpeedButton;
     sbPreset23: TSpeedButton;
     procedure FormCreate(Sender: TObject);
+    procedure FormHide(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure DrawTileset(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
@@ -65,7 +66,7 @@ var
 implementation
 
 uses
-  main;
+  main, block_preset_dialog;
 
 {$R *.dfm}
 
@@ -83,6 +84,11 @@ begin
   preset_buttons[7] := sbPreset32;
   preset_buttons[8] := sbPreset23;
   TilesetImage.Picture.Bitmap.Width := 640;
+end;
+
+procedure TTilesetDialog.FormHide(Sender: TObject);
+begin
+  MainWindow.block_preset_dialog_opened := false;
 end;
 
 procedure TTilesetDialog.FormResize(Sender: TObject);
@@ -153,6 +159,7 @@ procedure TTilesetDialog.FormKeyDown(Sender: TObject; var Key: Word;
 begin
   case key of
   27: Close;
+  32: begin BlockPresetDialog.Show; Hide; end;
   71: TilesetGrid.Checked := not TilesetGrid.Checked;
   77: TilesetMarkTiles.Checked := not TilesetMarkTiles.Checked;
   192: sbCustomSize.Down := true;
@@ -204,7 +211,7 @@ begin
   if Button = mbLeft then
   begin
     close;
-    MainWindow.RbTileBlock.Checked := True;
+    MainWindow.RbBlockMode.Checked := True;
   end;
 end;
 
@@ -237,7 +244,7 @@ begin
     if Button = mbLeft then
     begin
       close;
-      MainWindow.RbTileBlock.Checked := True;
+      MainWindow.RbBlockMode.Checked := True;
     end;
   end;
 end;
