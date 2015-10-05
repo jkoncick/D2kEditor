@@ -83,11 +83,9 @@ const map_player_info: array[0..7] of TMapPlayerInfo =
     (name: 'Sandworm';    color: $406088)
   );
 
-const misc_object_info: array[0..9] of TMiscObjectInfo =
+const misc_object_info: array[0..7] of TMiscObjectInfo =
   (
     (name: 'Nothing';                 value: 0;  color: $000000; stats_group: sgNone;),
-    (name: 'Thin Spice';              value: 1;  color: $52AEF7; stats_group: sgNone;),
-    (name: 'Thick Spice';             value: 2;  color: $2179E7; stats_group: sgNone;),
     (name: 'Worm Spawner';            value: 20; color: $FF00FF; stats_group: sgWormSpawners;),
     (name: 'Player Start';            value: 23; color: $FFFF00; stats_group: sgPlayerStarts;),
     (name: 'Spice Bloom';             value: 45; color: $0000FF; stats_group: SgSpiceBlooms;),

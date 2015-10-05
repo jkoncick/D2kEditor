@@ -254,8 +254,8 @@ var
   tag: integer;
 begin
   tag := (Sender as TSpeedButton).Tag;
-  preset_width := block_size_presets[tag][1];
-  preset_height := block_size_presets[tag][2];
+  preset_width := brush_size_presets[tag][1];
+  preset_height := brush_size_presets[tag][2];
 end;
 
 end.

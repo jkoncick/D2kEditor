@@ -14,10 +14,10 @@ uses
 
 const max_undo_steps = 32767;
 
-const block_size_presets: array[1..8,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
+const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
 type
-  SelectedMode = (mStructures, mTerrain, mAnyPaint, mSand, mRock, mDunes, mTileBlock, mSelectMode);
+  SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
 
 type
   TUndoEntry = record
@@ -78,23 +78,10 @@ type
     LbStructureList: TLabel;
     StructureList: TListBox;
     RbBlockMode: TRadioButton;
-    RbSand: TRadioButton;
-    RbRock: TRadioButton;
-    RbDunes: TRadioButton;
-    LbBlockSize: TLabel;
-    BlockWidth: TSpinEdit;
-    BlockHeight: TSpinEdit;
-    LbX: TLabel;
-    Block11: TButton;
-    Block22: TButton;
-    Block33: TButton;
-    Block44: TButton;
+    RbPaintMode: TRadioButton;
+    LbBrushSize: TLabel;
     OpenTileset: TButton;
     BlockImage: TImage;
-    Block21: TButton;
-    Block12: TButton;
-    Block32: TButton;
-    Block23: TButton;
     Newmap1: TMenuItem;
     N4: TMenuItem;
     Help1: TMenuItem;
@@ -111,7 +98,6 @@ type
     Savemapimage1: TMenuItem;
     N8: TMenuItem;
     CursorImage: TImage;
-    BlockPresetGroupSelect: TRadioGroup;
     RbSelectMode: TRadioButton;
     MapImageSaveDialog: TSaveDialog;
     CbSelectStructures: TCheckBox;
@@ -134,6 +120,12 @@ type
     Assignmisfile1: TMenuItem;
     Markdefenceareas1: TMenuItem;
     BlockFrame: TBevel;
+    Bevel1: TBevel;
+    Bevel2: TBevel;
+    cbBrushSize: TComboBox;
+    sbThinSpice: TSpeedButton;
+    sbThickSpice: TSpeedButton;
+    LbPaintTileGroupName: TLabel;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -211,11 +203,10 @@ type
     procedure StructureListClick(Sender: TObject);
     procedure PlayerSelectChange(Sender: TObject);
     procedure MiscObjListClick(Sender: TObject);
-    // Terrain editor
-    procedure SetBlockSize(Sender: TObject);
     procedure OpenTilesetClick(Sender: TObject);
     procedure BlockImageClick(Sender: TObject);
-    procedure SetCursorImageVisibility(Sender: TObject);
+    procedure RbTerrainModeClick(Sender: TObject);
+    procedure PaintTileSelectClick(Sender: TObject);
     procedure BlockPresetGroupSelectClick(Sender: TObject);
 
   public
@@ -244,6 +235,13 @@ type
     mmap_border_x: word;
     mmap_border_y: word;
 
+    // Terrain editing variables
+    paint_tile_group: integer;
+    paint_tile_select: array[-2..cnt_paint_tile_groups-1] of TSpeedButton;
+    block_preset_group: integer;
+    block_preset_select: array[0..cnt_block_preset_groups-1] of TSpeedButton;
+    block_preset_dialog_opened: boolean;
+
     // Tile block variables
     block_width: word;
     block_height: word;
@@ -269,12 +267,6 @@ type
     // Clipboard variables
     clipboard_format: cardinal;
 
-    // Miscellaneous variables
-    block_preset_dialog_opened: boolean;
-
-    // Paint-mode controls
-    paint_tile_select: array[0..cnt_paint_tile_groups-1] of TRadioButton;
-
     // Initialization procedures
     procedure load_or_create_mask(graph: TBitmap; mask: TBitmap; filename: String);
 
@@ -283,6 +275,7 @@ type
     procedure render_map;
     procedure render_minimap;
     procedure render_minimap_position_marker;
+    procedure render_tileset;
 
     // Map loading & saving procedures
     procedure load_map(filename: String);
@@ -300,18 +293,20 @@ type
     procedure show_power_and_statistics;
     procedure start_event_position_selection(x, y: integer);
     procedure finish_event_position_selection(x, y: integer);
+    procedure draw_paint_tile_select_glyph(target: integer; tile_index: integer; source_canvas: TCanvas);
 
     // Procedures related to drawing tiles/terrain and cursor image
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
     procedure put_block_on_map;
     procedure fill_area(x,y: word; area_type: integer);
-    procedure put_sand_rock_dunes(x,y: word);
+    procedure paint_tile(x,y: word);
     procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
     procedure do_undo;
     procedure do_redo;
     procedure reset_undo_history;
     procedure resize_cursor_image;
+    procedure set_cursor_image_visibility;
     procedure draw_cursor_image;
     procedure apply_key_preset(key: word);
 
@@ -338,6 +333,7 @@ implementation
 procedure TMainWindow.FormCreate(Sender: TObject);
 var
   i: integer;
+  btn: TSpeedButton;
 begin
   // Miscellaneous initializations
   randomize;
@@ -349,9 +345,48 @@ begin
   moving_event := -1;
   moving_condition := -1;
   top := 60;
-  paint_tile_select[0] := RbSand;
-  paint_tile_select[1] := RbRock;
-  paint_tile_select[2] := RbDunes;
+  // Initialize terrain editing controls
+  for i := 0 to Length(brush_size_presets) - 1 do
+    cbBrushSize.Items.Add(inttostr(brush_size_presets[i,1]) + ' x ' + inttostr(brush_size_presets[i,2]));
+  cbBrushSize.ItemIndex := 0;
+  sbThinSpice.Glyph.Width := 28;
+  sbThinSpice.Glyph.Height := 28;
+  sbThickSpice.Glyph.Width := 28;
+  sbThickSpice.Glyph.Height := 28;
+  paint_tile_select[-1] := sbThinSpice;
+  paint_tile_select[-2] := sbThickSpice;
+  for i := 0 to cnt_paint_tile_groups-1 do
+  begin
+    btn := TSpeedButton.Create(self);
+    btn.Tag := i;
+    btn.GroupIndex := 1;
+    btn.Top := 70;
+    btn.Left := 2 + i * 38;
+    btn.Width := 38;
+    btn.Height := 38;
+    btn.Glyph.Width := 28;
+    btn.Glyph.Height := 28;
+    btn.ShowHint := True;
+    btn.AllowAllUp := True;
+    btn.OnClick := PaintTileSelectClick;
+    btn.Parent := PageTerrain;
+    paint_tile_select[i] := btn;
+  end;
+  for i := 0 to cnt_block_preset_groups-1 do
+  begin
+    btn := TSpeedButton.Create(self);
+    btn.Tag := i;
+    btn.GroupIndex := 2;
+    btn.Top := 320 + 20 * (i mod (cnt_block_preset_groups div 2));
+    btn.Left := 2 + 76 * (i div (cnt_block_preset_groups div 2));
+    btn.Width := 76;
+    btn.Height := 20;
+    btn.OnClick := BlockPresetGroupSelectClick;
+    btn.OnDblClick := BlockImageClick;
+    btn.Parent := PageTerrain;
+    block_preset_select[i] := btn;
+  end;
+  block_preset_select[0].Down := True;
   // Load settings
   Settings.load_precreate_editor_settings;
   // Initialize mission
@@ -399,6 +434,11 @@ begin
   StructureList.Height := EditorMenu.Height - 356;
   EditorPages.Height := EditorMenu.Height - 146;
   StatusBar.Panels[3].Width := ClientWidth - 550;
+  if map_loaded then
+  begin
+    render_minimap_position_marker;
+    render_map;
+  end;
 end;
 
 procedure TMainWindow.FormDeactivate(Sender: TObject);
@@ -441,6 +481,8 @@ end;
 
 procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
+var
+  index: integer;
 begin
   case key of
     // Esc: cancel event position selection
@@ -460,18 +502,14 @@ begin
       key := 0;
       exit;
     end;
-    // Block preset group selection
-    112: {F1} BlockPresetGroupSelect.ItemIndex := 0;
-    113: {F2} BlockPresetGroupSelect.ItemIndex := 1;
-    114: {F3} BlockPresetGroupSelect.ItemIndex := 2;
-    115: {F4} BlockPresetGroupSelect.ItemIndex := 3;
     // Paint sand/rock/dunes
     192: begin
-      SetBlockSize(Block11);
-      paint_tile_select[Tileset.block_preset_groups[BlockPresetGroupSelect.ItemIndex].paint_group].Checked := true;
+      cbBrushSize.ItemIndex := 0;
+      paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group].Down := true;
+      PaintTileSelectClick(paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group]);
     end;
   end;
-  if mode(mTileBlock) then
+  if mode(mBlockMode) then
   case key of
     // Move cursor image
     98:  {Num2} begin CursorImage.Top := CursorImage.Top + 32; resize_cursor_image; end;
@@ -485,29 +523,36 @@ begin
     PlayerSelect.ItemIndex := key - 96;
     PlayerSelectChange(nil);
   end;
+  // F1-F4 - Select block preset group
+  if (key >= 112) and (key <= 115) then
+  begin
+    index := key - 112;
+    if block_preset_group = index then
+      index := index + 4;
+    if not block_preset_select[index].Enabled then
+      exit;
+    block_preset_select[index].Down := true;
+    BlockPresetGroupSelectClick(block_preset_select[index]);
+  end;
   // Shift+key
   if ssShift in Shift then
+  begin
+    // Brush size preset selection
+    if (key >= ord('1')) and (key <= ord('8')) then
+      cbBrushSize.ItemIndex := key - ord('1');
     case key of
-    // Block size preset selection
-    ord('1'): SetBlockSize(Block11);
-    ord('2'): SetBlockSize(Block22);
-    ord('3'): SetBlockSize(Block33);
-    ord('4'): SetBlockSize(Block44);
-    ord('5'): SetBlockSize(Block21);
-    ord('6'): SetBlockSize(Block12);
-    ord('7'): SetBlockSize(Block32);
-    ord('8'): SetBlockSize(Block23);
     // Structures editing mode selection
-    ord('Q'): begin MiscObjList.ItemIndex := 1; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
-    ord('W'): begin MiscObjList.ItemIndex := 2; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
-    ord('E'): begin MiscObjList.ItemIndex := 5; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
+    ord('E'): begin MiscObjList.ItemIndex := 3; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
     // Terrain editing mode selection
-    ord('B'): begin RbBlockMode.Checked := true; EditorPages.TabIndex := 1; end;
-    ord('D'): begin RbDunes.Checked := true; EditorPages.TabIndex := 1; end;
-    ord('R'): begin RbRock.Checked := true; EditorPages.TabIndex := 1; end;
-    ord('S'): begin RbSand.Checked := true; EditorPages.TabIndex := 1; end;
-    ord('C'): begin RbSelectMode.Checked := true; EditorPages.TabIndex := 1; end;
+    ord('Q'): begin EditorPages.TabIndex := 1; sbThinSpice.Down := true; PaintTileSelectClick(sbThinSpice); end;
+    ord('W'): begin EditorPages.TabIndex := 1; sbThickSpice.Down := true; PaintTileSelectClick(sbThickSpice);  end;
+    ord('S'): begin EditorPages.TabIndex := 1; paint_tile_select[0].Down := true; PaintTileSelectClick(paint_tile_select[0]); end;
+    ord('R'): begin EditorPages.TabIndex := 1; paint_tile_select[1].Down := true; PaintTileSelectClick(paint_tile_select[1]); end;
+    ord('D'): begin EditorPages.TabIndex := 1; paint_tile_select[2].Down := true; PaintTileSelectClick(paint_tile_select[2]); end;
+    ord('C'): begin EditorPages.TabIndex := 1; RbSelectMode.Checked := true; end;
     ord('T'): CbSelectStructures.Checked := not CbSelectStructures.Checked;
+    ord('B'): begin EditorPages.TabIndex := 1; RbBlockMode.Checked := true; end;
+    end
   end else
   begin
     // Block key presets
@@ -617,6 +662,7 @@ begin
     map_canvas_left := MapScrollH.Position;
     map_canvas_top := MapScrollV.Position;
     resize_map_canvas;
+    render_map;
     Fastrendering1.Checked := fast_rendering;
   end;
 end;
@@ -629,12 +675,16 @@ end;
 procedure TMainWindow.Undo1Click(Sender: TObject);
 begin
   do_undo;
+  render_minimap;
+  render_map;
   mouse_already_clicked := false;
 end;
 
 procedure TMainWindow.Redo1Click(Sender: TObject);
 begin
   do_redo;
+  render_minimap;
+  render_map;
   mouse_already_clicked := false;
 end;
 
@@ -643,7 +693,7 @@ var
   handle: THandle;
   pointer: ^TBlockClipboard;
 begin
-  if not map_loaded or not mode(mTileBlock) then
+  if not map_loaded or not mode(mBlockMode) then
     exit;
   OpenClipboard(Application.Handle);
   EmptyClipboard;
@@ -676,7 +726,6 @@ begin
   Move(pointer.block_data, block_data, sizeof(block_data));
 
   RbBlockMode.Checked := true;
-  RbBlockMode.SetFocus;
   EditorPages.TabIndex := 1;
   draw_cursor_image;
 
@@ -686,19 +735,27 @@ end;
 
 procedure TMainWindow.SelectTileset(Sender: TObject);
 begin
-  Tileset.change_tileset((sender as TMenuItem).Tag)
+  Tileset.change_tileset((sender as TMenuItem).Tag);
+  // Re-render everything
+  render_minimap;
+  render_map;
 end;
 
 procedure TMainWindow.Selectnext1Click(Sender: TObject);
 begin
   Tileset.next_tileset;
+  // Re-render everything
+  render_minimap;
+  render_map;
 end;
 
 procedure TMainWindow.Loadtileset1Click(Sender: TObject);
 begin
   if TilesetOpenDialog.Execute then
   begin
-    Tileset.load_custom_image(TilesetOpenDialog.FileName);
+    Tileset.use_custom_image(TilesetOpenDialog.FileName);
+    // Re-render everything
+    render_map;
   end;
 end;
 
@@ -706,7 +763,8 @@ procedure TMainWindow.Loadtilesetattributes1Click(Sender: TObject);
 begin
   if TileatrOpenDialog.Execute then
   begin
-    Tileset.load_tileatr(TileatrOpenDialog.FileName);
+    Tileset.load_attributes(TileatrOpenDialog.FileName);
+    // Re-render everything
     render_minimap;
     render_map;
   end;
@@ -914,7 +972,7 @@ begin
   // Write coordinates on status bar
   StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
   // Show cursor image if needed
-  SetCursorImageVisibility(Sender);
+  set_cursor_image_visibility;
   // If mouse is still inside same tile, exit (for optimization)
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
@@ -971,7 +1029,7 @@ begin
     render_map;
   end else
   // If left button is held, paint sand/rock/dunes/spice during mouse move
-  if (ssLeft in shift) and mode(mAnyPaint) then
+  if (ssLeft in shift) and (mode(mPaintMode) or mode(mStructuresPaint)) then
     MapCanvasMouseDown(sender,mbLeft,Shift,x,y);
 end;
 
@@ -996,10 +1054,6 @@ begin
     finish_event_position_selection(map_x, map_y);
     exit;
   end;
-  // Check for spice-to-sand restriction
-  if ((MiscObjList.ItemIndex = 1) or (MiscObjList.ItemIndex = 2)) and Settings.RestrictSpiceToSand and (Tileset.get_fill_area_type(map_data[map_x, map_y].tile, 0) <> 2) and
-    mode(mStructures) and (Button = mbLeft) then
-    exit;
   // Moving event markers
   if (Mission.event_markers[map_x, map_y].emtype <> emNone) and Showeventmarkers1.Checked and not moving_disable and
     mode(mStructures) and (Button = mbLeft) then
@@ -1060,37 +1114,37 @@ begin
         block_select_end_x := map_x;
         block_select_end_y := map_y;
       end
-      else if mode(mTileBlock) then
+      else if mode(mBlockMode) then
       begin
         // Draw selected block
         put_block_on_map;
       end
-      else if (ssShift in Shift) and (mode(mRock) or mode(mDunes)) then
+      else if (ssShift in Shift) and mode(mPaintMode) and ((paint_tile_group = 1) or (paint_tile_group = 2)) then
       begin
         // Smooth rock/dunes edge
         smooth_edges(map_x, map_y);
       end
-      else if mode(mAnyPaint) then
+      else if mode(mPaintMode) then
       begin
-        // Paint Sand/Rock/Dunes
+        // Paint
         undo_block_start := true;
-        for xx := map_x to map_x + BlockWidth.Value - 1 do
-          for yy := map_y to map_y + BlockHeight.Value - 1 do
+        for xx := map_x to map_x + brush_size_presets[cbBrushSize.ItemIndex,1] - 1 do
+          for yy := map_y to map_y + brush_size_presets[cbBrushSize.ItemIndex,2] - 1 do
           begin
             if (xx >= map_width) or (xx < 0) or (yy >= map_height) or (yy < 0) then
               continue;
-            put_sand_rock_dunes(xx, yy);
+            paint_tile(xx, yy);
           end;
       end;
     end
     else if button = mbMiddle then
     begin
       // Copy selected block
-      copy_block_from_map(BlockWidth.Value, BlockHeight.Value, map_x, map_y, false);
+      copy_block_from_map(brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], map_x, map_y, false);
       exit;
     end;
   end;
-  if not mode(mAnyPaint) then
+  if not mode(mPaintMode) then
   begin
     render_minimap;
     calculate_power_and_statistics;
@@ -1119,7 +1173,7 @@ begin
     end;
   end else
   // Double click for filling
-  if mode(mAnyPaint) then
+  if mode(mPaintMode) then
   begin
     // Undo the action which was made by first click
     tmp_pos := undo_pos;
@@ -1158,7 +1212,7 @@ begin
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true);
     render_map;
   end;
-  if mode(mAnyPaint) then
+  if mode(mPaintMode) then
   begin
     render_minimap;
     calculate_power_and_statistics;
@@ -1220,12 +1274,6 @@ begin
   set_special_value;
 end;
 
-procedure TMainWindow.SetBlockSize(Sender: TObject);
-begin
-  BlockWidth.Value := block_size_presets[(Sender as TButton).Tag,1];
-  BlockHeight.Value := block_size_presets[(Sender as TButton).Tag,2];
-end;
-
 procedure TMainWindow.OpenTilesetClick(Sender: TObject);
 begin
   TilesetDialog.Show;
@@ -1236,17 +1284,33 @@ begin
   BlockPresetDialog.Show;
 end;
 
-procedure TMainWindow.SetCursorImageVisibility(Sender: TObject);
+procedure TMainWindow.RbTerrainModeClick(Sender: TObject);
 begin
-  if mode(mTileBlock) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
+  if sender <> nil then
+    (Sender as TRadioButton).SetFocus;
+  if not RbPaintMode.Checked then
   begin
-    CursorImage.Visible := true;
-  end else
-    CursorImage.Visible := false;
+    paint_tile_select[paint_tile_group].Down := false;
+    LbPaintTileGroupName.Caption := '';
+  end;
+  set_cursor_image_visibility;
+end;
+
+procedure TMainWindow.PaintTileSelectClick(Sender: TObject);
+var
+  index: integer;
+begin
+  index := (Sender as TSpeedButton).Tag;
+  paint_tile_group := index;
+  LbPaintTileGroupName.Caption := (Sender as TSpeedButton).Hint;
+  RbPaintMode.Checked := true;
 end;
 
 procedure TMainWindow.BlockPresetGroupSelectClick(Sender: TObject);
 begin
+  block_preset_group := (Sender as TSpeedButton).Tag;
+  if BlockPresetDialog.Visible then
+    BlockPresetDialog.Show;
   BlockPresetDialog.init_presets;
 end;
 
@@ -1300,11 +1364,6 @@ begin
     MapScrollV.Enabled := False
   else
     MapScrollV.Enabled := True;
-  if map_loaded then
-  begin
-    render_map;
-    render_minimap_position_marker;
-  end;
 end;
 
 
@@ -1316,7 +1375,7 @@ var
   x, y: integer;
   actual_x, actual_y: integer;
   tile: word;
-  value: word;
+  special: word;
   player, index: word;
   is_misc: boolean;
   wall_bitmap: word;
@@ -1384,7 +1443,15 @@ begin
   begin
     for x:= min_x to max_x do
     begin
-      tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
+      special := map_data[x + map_canvas_left, y + map_canvas_top].special;
+      // Draw spice like a normal terrain tile
+      if special = 1 then
+        tile := Tileset.thin_spice_tile
+      else if special = 2 then
+        tile := Tileset.thick_spice_tile
+      else
+        // No spice, draw terrain tile normally
+        tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
       MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
       // Draw tile attribute markers
       if Marktiles1.Checked then
@@ -1417,9 +1484,12 @@ begin
       // If tile is out of map
       if (actual_x < 0) or (actual_x >= map_width) or (actual_y < 0) or (actual_y >= map_height) then
         continue;
-      value := map_data[actual_x, actual_y].special;
+      special := map_data[actual_x, actual_y].special;
+      // Do not draw spice tiles (already drawn during terrain rendering)
+      if special <= 2 then
+        continue;
       // Getting structure parameters
-      if special_value_to_params(value,player,index,is_misc) then
+      if special_value_to_params(special,player,index,is_misc) then
       begin
         // Structure is not empty
         if is_misc then
@@ -1445,29 +1515,29 @@ begin
             // Checking left of wall
             if (actual_x - 1) >= 0 then
             begin
-              value := map_data[actual_x - 1, actual_y].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
+              special := map_data[actual_x - 1, actual_y].special;
+              if special_value_to_params(special,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 1
             end;
             // Checking up of wall
             if (actual_y - 1) >= 0 then
             begin
-              value := map_data[actual_x, actual_y - 1].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
+              special := map_data[actual_x, actual_y - 1].special;
+              if special_value_to_params(special,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 2
             end;
             // Checking right of wall
             if (actual_x + 1) < map_width then
             begin
-              value := map_data[actual_x + 1, actual_y].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
+              special := map_data[actual_x + 1, actual_y].special;
+              if special_value_to_params(special,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 4
             end;
             // Checking down of wall
             if (actual_y + 1) < map_height then
             begin
-              value := map_data[actual_x, actual_y + 1].special;
-              if special_value_to_params(value,player,index,is_misc) and structure_info[index].lnwall then
+              special := map_data[actual_x, actual_y + 1].special;
+              if special_value_to_params(special,player,index,is_misc) and structure_info[index].lnwall then
                 wall_bitmap := wall_bitmap + 8
             end;
             // Wall source rect
@@ -1516,8 +1586,8 @@ begin
           MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures.Canvas,src_rect);
         end;
       end
-      else if (value <> 0) and Showunknownspecials1.Checked then
-        MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 2, inttostr(value));
+      else if (special <> 0) and Showunknownspecials1.Checked then
+        MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 2, inttostr(special));
     end;
   end;
   // Draw event markers
@@ -1603,7 +1673,7 @@ end;
 procedure TMainWindow.render_minimap;
 var
   x, y: integer;
-  value: integer;
+  special: word;
   player, index: word;
   is_misc: boolean;
 begin
@@ -1624,8 +1694,12 @@ begin
   for y:= 0 to map_height - 1 do
     for x:= 0 to map_width - 1 do
     begin
-      value := map_data[x,y].special;
-      if not special_value_to_params(value,player,index,is_misc) then
+      special := map_data[x,y].special;
+      if special = 1 then
+        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.thin_spice_color;
+      if special = 2 then
+        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.thick_spice_color;
+      if not special_value_to_params(special,player,index,is_misc) then
         continue
       else if is_misc then
       begin
@@ -1654,6 +1728,15 @@ begin
   MiniMap.Canvas.Brush.Style := bsClear;
   MiniMap.Canvas.Rectangle(mmap_border_x + map_canvas_left,mmap_border_y + map_canvas_top,mmap_border_x + map_canvas_left + map_canvas_width,mmap_border_y + map_canvas_top + map_canvas_height);
   MiniMap.Canvas.Brush.Style := bsSolid;
+end;
+
+procedure TMainWindow.render_tileset;
+begin
+  draw_cursor_image;
+  if (TilesetDialog <> nil) and TilesetDialog.Visible then
+    TilesetDialog.DrawTileset(nil);
+  if (BlockPresetDialog <> nil) then
+    BlockPresetDialog.init_presets;
 end;
 
 procedure TMainWindow.load_map(filename: String);
@@ -1777,12 +1860,10 @@ begin
   result := false;
   case m of
     mStructures:      result := EditorPages.TabIndex = 0;
+    mStructuresPaint: result := (EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) <= 2);
     mTerrain:         result := EditorPages.TabIndex = 1;
-    mAnyPaint:        result := ((EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) <= 2)) or ((EditorPages.TabIndex = 1) and (RbSand.Checked or RbRock.Checked or RbDunes.Checked));
-    mSand:            result := (EditorPages.TabIndex = 1) and RbSand.Checked;
-    mRock:            result := (EditorPages.TabIndex = 1) and RbRock.Checked;
-    mDunes:           result := (EditorPages.TabIndex = 1) and RbDunes.Checked;
-    mTileBlock:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;
+    mPaintMode:       result := (EditorPages.TabIndex = 1) and RbPaintMode.Checked;
+    mBlockMode:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;
     mSelectMode:      result := (EditorPages.TabIndex = 1) and RbSelectMode.Checked;
   end;
 end;
@@ -1831,6 +1912,16 @@ begin
   EventDialog.finish_event_position_selection(x, y);
 end;
 
+procedure TMainWindow.draw_paint_tile_select_glyph(target, tile_index: integer; source_canvas: TCanvas);
+var
+  tile_x, tile_y: integer;
+begin
+  tile_x := tile_index mod 20;
+  tile_y := tile_index div 20;
+  paint_tile_select[target].Glyph.Canvas.CopyRect(Rect(0,0,28,28), source_canvas, Rect(tile_x*32+2, tile_y*32+2, tile_x*32+30, tile_y*32+30));
+  paint_tile_select[target].Glyph.Canvas.Pixels[0,27] := $0;
+end;
+
 procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left,
   b_top: word);
 var
@@ -1849,7 +1940,6 @@ begin
       block_data[x,y].special := 0;
     end;
   RbBlockMode.Checked := true;
-  RbBlockMode.SetFocus;
   draw_cursor_image;
 end;
 
@@ -1877,7 +1967,6 @@ begin
       block_data[x,y] := value;
     end;
   RbBlockMode.Checked := True;
-  RbBlockMode.SetFocus;
   draw_cursor_image;
 end;
 
@@ -1900,10 +1989,7 @@ procedure TMainWindow.fill_area(x, y: word; area_type: integer);
 begin
   if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
     exit;
-  if mode(mStructures) then
-    set_tile_value(x, y, map_data[x,y].tile, strtoint(SpecialValue.text), false)
-  else
-    put_sand_rock_dunes(x, y);
+  paint_tile(x, y);
   if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) = area_type then
     exit;
   if x > 0 then
@@ -1916,14 +2002,17 @@ begin
     fill_area(x, y+1, area_type);
 end;
 
-procedure TMainWindow.put_sand_rock_dunes(x, y: word);
+procedure TMainWindow.paint_tile(x, y: word);
 begin
-  if mode(mSand) then
-    set_tile_value(x, y, Tileset.get_random_paint_tile(0), 0, false)
-  else if mode(mRock) then
-    set_tile_value(x, y, Tileset.get_random_paint_tile(1), 0, false)
-  else if mode(mDunes) then
-    set_tile_value(x, y, Tileset.get_random_paint_tile(2), 0, false);
+  if paint_tile_group < 0 then
+  begin
+    // Paint spice. Check for spice-to-sand restriction.
+    if Settings.RestrictSpiceToSand and not Tileset.check_spice_can_be_placed(map_data[x, y].tile) then
+      exit;
+    set_tile_value(x, y, map_data[x,y].tile, paint_tile_group * -1, false)
+  end else
+    // Paint sand/rock/dunes
+    set_tile_value(x, y, Tileset.get_random_paint_tile(paint_tile_group), 0, false);
 end;
 
 procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boolean);
@@ -1959,8 +2048,6 @@ begin
     Undo1.Enabled := false;
   Redo1.Enabled := true;
   calculate_power_and_statistics;
-  render_minimap;
-  render_map;
 end;
 
 procedure TMainWindow.do_redo;
@@ -1979,8 +2066,6 @@ begin
     Redo1.Enabled := false;
   Undo1.Enabled := true;
   calculate_power_and_statistics;
-  render_minimap;
-  render_map;
 end;
 
 procedure TMainWindow.reset_undo_history;
@@ -2007,6 +2092,15 @@ begin
     CursorImage.Height := (map_canvas_height - cursor_image_top) * 32
   else
     CursorImage.Height := block_height * 32 + 1;
+end;
+
+procedure TMainWindow.set_cursor_image_visibility;
+begin
+  if mode(mBlockMode) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
+  begin
+    CursorImage.Visible := true;
+  end else
+    CursorImage.Visible := false;
 end;
 
 procedure TMainWindow.draw_cursor_image;
@@ -2042,7 +2136,7 @@ procedure TMainWindow.apply_key_preset(key: word);
 var
   preset: TBlockPreset;
 begin
-  preset := Tileset.get_block_preset(BlockPresetGroupSelect.ItemIndex, key, bpNext);
+  preset := Tileset.get_block_preset(block_preset_group, key, bpNext);
   select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
 end;
 
@@ -2056,13 +2150,13 @@ begin
   if y >= map_height then y := map_height - 1;
   atr := Tileset.attributes[map_data[x,y].tile];
   result := false;
-  if mode(mRock) and exact then // Tile is exactly clear rock
+  if (paint_tile_group = 1) and exact then // Tile is exactly clear rock
     result := (atr and taEdCleanRock) = taEdCleanRock;
-  if mode(mRock) and not exact then // Tile is part of rock area
+  if (paint_tile_group = 1) and not exact then // Tile is part of rock area
     result := (atr and taEdRockArea) = taEdRockArea;
-  if mode(mDunes) and exact then // Tile is exactly clear dunes
+  if (paint_tile_group = 2) and exact then // Tile is exactly clear dunes
     result := (atr and taEdCleanDunes) = taEdCleanDunes;
-  if mode(mDunes) and not exact then // Tile is part of dunes area
+  if (paint_tile_group = 2) and not exact then // Tile is part of dunes area
     result := (atr and taEdDunesArea) = taEdDunesArea;
 end;
 
@@ -2073,7 +2167,7 @@ var
   block_preset_group: integer;
   x, y: integer;
 begin
-  if mode(mRock) then
+  if paint_tile_group = 1 then
     block_preset_group := 2
   else
     block_preset_group := 3;

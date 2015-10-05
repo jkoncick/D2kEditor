@@ -6,8 +6,8 @@ uses Graphics, Menus;
 
 // Tileset constants
 const cnt_tileset_tiles = 800;
-const cnt_paint_tile_groups = 3;
-const cnt_block_preset_groups = 4;
+const cnt_paint_tile_groups = 4;
+const cnt_block_preset_groups = 8;
 const cnt_block_preset_keys = 38; // 0-9, A-Z, ',', '.'
 const max_tile_color_rules = 10;
 const max_fill_area_rules = 10;
@@ -36,8 +36,6 @@ const taEdRockArea = $10;
 const taEdSandDecorations = $20;
 const taEdIceArea = $40;
 
-const paint_tiles_group_attrs: array[0..cnt_paint_tile_groups-1] of cardinal =
-  (taEdCleanSand, taEdCleanRock, taEdCleanDunes);
 
 // Tileset type definitions
 type
@@ -54,6 +52,12 @@ type
   TFillAreaRule = record
     and_attr: cardinal;
     check_attr: cardinal;
+  end;
+
+type
+  TPaintTileGroup = record
+    name: string;
+    tile_index: integer;
   end;
 
 type
@@ -111,6 +115,14 @@ type
     fill_area_rules: array[0..max_tile_color_rules-1] of TFillAreaRule;
     fill_area_rules_cnt: integer;
 
+    thin_spice_tile: integer;
+    thin_spice_color: TColor;
+    thick_spice_tile: integer;
+    thick_spice_color: TColor;
+    spice_restriction_and_attr: cardinal;
+    spice_restriction_check_attr: cardinal;
+
+    paint_tile_groups: array[0..cnt_paint_tile_groups-1] of TPaintTileGroup;
     paint_tiles: array[0..cnt_paint_tile_groups-1, 0..max_paint_tiles-1] of integer; // Tile numbers of clean sand/rock/dunes
     paint_tiles_cnt: array[0..cnt_paint_tile_groups-1] of integer;
 
@@ -123,13 +135,15 @@ type
     procedure change_tileset(index: integer);
     procedure change_tileset_by_name(name: String);
     procedure next_tileset;
-    procedure load_custom_image(filename: String);
-    procedure load_tileatr(filename: String);
-    procedure load_tileset_config(filename: String);
+    procedure use_custom_image(filename: String);
+    procedure load_image(filename: String);
+    procedure load_attributes(filename: String);
+    procedure load_config(filename: String);
 
     function get_tile_type(tile: word): TileType;
     function get_tile_color(tile: word): TColor;
     function get_fill_area_type(tile: word; special: word): integer;
+    function check_spice_can_be_placed(tile: word): boolean;
 
     function block_key_to_index(key: word): integer;
 
@@ -183,35 +197,20 @@ var
 begin
   current_tileset := index;
   menuitems[current_tileset].Checked := true;
-  tmp_filename := current_dir+'/tilesets/'+tileset_info[current_tileset].image_name+'.bmp';
+  MainWindow.StatusBar.Panels[1].Text := tileset_info[current_tileset].name;
   // Set tileset in .mis file
   Move(tileset_info[current_tileset].name[1], Mission.mis_data.tileset, 8);
   Move(tileset_info[current_tileset].tileatr_name[1], Mission.mis_data.tileatr, 8);
-  // Load tileset graphics
-  if FileExists(tmp_filename) then
-  begin
-    tileimage_filename := tmp_filename;
-    tileimage.LoadFromFile(tileimage_filename);
-    // Copy spice tiles ftom tileset
-    MainWindow.graphics_misc_objects.Canvas.CopyRect(Rect(0, 0, 32, 32), tileimage.Canvas, Rect(256, 1184, 288, 1216));
-    MainWindow.graphics_misc_objects.Canvas.CopyRect(Rect(32, 0, 64, 32), tileimage.Canvas, Rect(32, 480, 64, 512));
-  end;
   // Load tileset configuration if it is different
   tmp_filename := current_dir+'/tilesets/'+tileset_info[current_tileset].config_name+'.ini';
   if tmp_filename <> tileset_config_filename then
-    load_tileset_config(tmp_filename);
+    load_config(tmp_filename);
   // Load tileset attributes
-  load_tileatr(current_dir+'/tilesets/'+tileset_info[current_tileset].tileatr_name+'.bin');
-  MainWindow.StatusBar.Panels[1].Text := tileset_info[current_tileset].name;
-  // Redraw dialogs
-  if (TilesetDialog <> nil) and TilesetDialog.Visible then
-    TilesetDialog.DrawTileset(nil);
-  if (BlockPresetDialog <> nil) then
-    BlockPresetDialog.init_presets;
-  // Re-render everything
-  MainWindow.draw_cursor_image;
-  MainWindow.render_minimap;
-  MainWindow.render_map;
+  load_attributes(current_dir+'/tilesets/'+tileset_info[current_tileset].tileatr_name+'.bin');
+  // Load tileset image
+  tmp_filename := current_dir+'/tilesets/'+tileset_info[current_tileset].image_name+'.bmp';
+  if FileExists(tmp_filename) then
+    load_image(tmp_filename);
 end;
 
 procedure TTileset.change_tileset_by_name(name: String);
@@ -233,18 +232,30 @@ begin
   change_tileset(current_tileset);
 end;
 
-procedure TTileset.load_custom_image(filename: String);
+procedure TTileset.use_custom_image(filename: String);
 begin
-  tileimage.LoadFromFile(filename);
-  tileimage_filename := filename;
+  load_image(filename);
   menuitems[current_tileset].Checked := False;
   current_tileset := Settings.DefaultTileset;
-  load_tileatr(current_dir+'/tilesets/'+tileset_info[current_tileset].tileatr_name+'.bin');
-  MainWindow.StatusBar.Panels[1].Text := 'Tileset File';
-  MainWindow.render_map;
+  MainWindow.StatusBar.Panels[1].Text := 'Custom image';
 end;
 
-procedure TTileset.load_tileatr(filename: String);
+procedure TTileset.load_image(filename: String);
+var
+  i:integer;
+begin
+  tileimage_filename := filename;
+  tileimage.LoadFromFile(tileimage_filename);
+  // Draw glyphs in terrain editing GUI
+  MainWindow.draw_paint_tile_select_glyph(-1, thin_spice_tile, tileimage.Canvas);
+  MainWindow.draw_paint_tile_select_glyph(-2, thick_spice_tile, tileimage.Canvas);
+  for i := 0 to cnt_paint_tile_groups-1 do
+    MainWindow.draw_paint_tile_select_glyph(i, paint_tile_groups[i].tile_index, tileimage.Canvas);
+  // Redraw dialogs
+  MainWindow.render_tileset;
+end;
+
+procedure TTileset.load_attributes(filename: String);
 var
   tileatr_file: file of cardinal;
   i, j: integer;
@@ -263,7 +274,7 @@ begin
   for i := 0 to cnt_tileset_tiles - 1 do
     for j := 0 to cnt_paint_tile_groups - 1 do
     begin
-      if ((attributes[i] and paint_tiles_group_attrs[j]) <> 0) and (paint_tiles_cnt[j] < max_paint_tiles) then
+      if ((attributes[i] and (1 shl j)) <> 0) and (paint_tiles_cnt[j] < max_paint_tiles) then
       begin
         paint_tiles[j, paint_tiles_cnt[j]] := i;
         inc(paint_tiles_cnt[j]);
@@ -271,7 +282,7 @@ begin
     end;
 end;
 
-procedure TTileset.load_tileset_config(filename: String);
+procedure TTileset.load_config(filename: String);
 var
   ini: TMemIniFile;
   tmp_strings: TStringList;
@@ -319,17 +330,32 @@ begin
       fill_area_rules[i].check_attr := strtoint(decoder[0]);
     inc(fill_area_rules_cnt);
   end;
+  // Load spice settings
+  thin_spice_tile := ini.ReadInteger('Spice_Settings', 'ThinSpice_tile', 0);
+  thin_spice_color := ini.ReadInteger('Spice_Settings', 'ThinSpice_color', 0);
+  thick_spice_tile := ini.ReadInteger('Spice_Settings', 'ThickSpice_tile', 0);
+  thick_spice_color := ini.ReadInteger('Spice_Settings', 'ThickSpice_color', 0);
+  decoder.DelimitedText := ini.ReadString('Spice_Settings', 'SpiceRestrictionRule', '0');
+  spice_restriction_and_attr := strtoint(decoder[0]);
+  if decoder.Count = 2 then
+    spice_restriction_check_attr := strtoint(decoder[1])
+  else
+    spice_restriction_check_attr := strtoint(decoder[0]);
   // Load paint tile groups
   for i := 0 to cnt_paint_tile_groups - 1 do
   begin
-    MainWindow.paint_tile_select[i].Caption := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_name', '');
+    paint_tile_groups[i].name := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_name', '');
+    MainWindow.paint_tile_select[i].Enabled := paint_tile_groups[i].name <> '';
+    MainWindow.paint_tile_select[i].Hint := paint_tile_groups[i].name;
+    paint_tile_groups[i].tile_index := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_tile', 0);
   end;
   // Load block preset groups
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
     block_preset_groups[i].name := ini.ReadString('Block_Preset_Groups', 'Group'+inttostr(i+1)+'_name', '');
     block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'_paint', 0) - 1;
-    MainWindow.BlockPresetGroupSelect.Items[i] := block_preset_groups[i].name;
+    MainWindow.block_preset_select[i].Enabled := block_preset_groups[i].name <> '';
+    MainWindow.block_preset_select[i].Caption := block_preset_groups[i].name;
   end;
   // Load block preset
   for i := 0 to cnt_block_preset_groups - 1 do
@@ -421,15 +447,20 @@ begin
   result := 1;
 end;
 
+function TTileset.check_spice_can_be_placed(tile: word): boolean;
+begin
+  result := (attributes[tile] and spice_restriction_and_attr) = spice_restriction_check_attr;
+end;
+
 function TTileset.block_key_to_index(key: word): integer;
 begin
   if (key >= ord('0')) and (key <= ord('9')) then
     result := key - ord('0')
   else if (key >= ord('A')) and (key <= ord('Z')) then
     result := key - ord('A') + 10
-  else if key = 188 then
+  else if (key = 188) or (key = ord('<')) then
     result := 36
-  else if key = 190 then
+  else if (key = 190) or (key = ord('>')) then
     result := 37
   else
     result := -1;

@@ -210,23 +210,16 @@ object MainWindow: TMainWindow
       object PageTerrain: TTabSheet
         Caption = 'Terrain            '
         ImageIndex = 1
-        object LbBlockSize: TLabel
+        object LbBrushSize: TLabel
           Left = 4
           Top = 8
-          Width = 48
+          Width = 51
           Height = 13
-          Caption = 'Block size'
-        end
-        object LbX: TLabel
-          Left = 100
-          Top = 8
-          Width = 7
-          Height = 13
-          Caption = 'X'
+          Caption = 'Brush size:'
         end
         object BlockFrame: TBevel
           Left = 14
-          Top = 126
+          Top = 182
           Width = 132
           Height = 132
           Shape = bsFrame
@@ -234,189 +227,111 @@ object MainWindow: TMainWindow
         end
         object BlockImage: TImage
           Left = 16
-          Top = 128
+          Top = 184
           Width = 128
           Height = 128
           OnClick = BlockImageClick
         end
+        object Bevel1: TBevel
+          Left = 2
+          Top = 112
+          Width = 152
+          Height = 4
+          Shape = bsBottomLine
+        end
+        object Bevel2: TBevel
+          Left = 2
+          Top = 144
+          Width = 152
+          Height = 4
+          Shape = bsBottomLine
+        end
+        object sbThinSpice: TSpeedButton
+          Tag = -1
+          Left = 78
+          Top = 32
+          Width = 38
+          Height = 38
+          Hint = 'Thin spice'
+          AllowAllUp = True
+          GroupIndex = 1
+          ParentShowHint = False
+          ShowHint = True
+          OnClick = PaintTileSelectClick
+        end
+        object sbThickSpice: TSpeedButton
+          Tag = -2
+          Left = 116
+          Top = 32
+          Width = 38
+          Height = 38
+          Hint = 'Thick spice'
+          AllowAllUp = True
+          GroupIndex = 1
+          ParentShowHint = False
+          ShowHint = True
+          OnClick = PaintTileSelectClick
+        end
+        object LbPaintTileGroupName: TLabel
+          Left = 20
+          Top = 52
+          Width = 3
+          Height = 13
+        end
         object RbBlockMode: TRadioButton
           Left = 4
-          Top = 100
+          Top = 156
           Width = 77
           Height = 17
           Caption = 'Block mode'
           Checked = True
           TabOrder = 0
           TabStop = True
-          OnClick = SetCursorImageVisibility
+          OnClick = RbTerrainModeClick
         end
-        object RbSand: TRadioButton
+        object RbPaintMode: TRadioButton
           Left = 4
-          Top = 74
-          Width = 49
+          Top = 32
+          Width = 74
           Height = 17
-          Caption = 'Sand'
+          Caption = 'Paint mode'
           TabOrder = 1
-          OnClick = SetCursorImageVisibility
-        end
-        object RbRock: TRadioButton
-          Left = 56
-          Top = 74
-          Width = 49
-          Height = 17
-          Caption = 'Rock'
-          TabOrder = 2
-          OnClick = SetCursorImageVisibility
-        end
-        object RbDunes: TRadioButton
-          Left = 104
-          Top = 74
-          Width = 57
-          Height = 17
-          Caption = 'Dunes'
-          TabOrder = 3
-          OnClick = SetCursorImageVisibility
-        end
-        object BlockWidth: TSpinEdit
-          Left = 56
-          Top = 4
-          Width = 41
-          Height = 22
-          MaxValue = 4
-          MinValue = 1
-          TabOrder = 4
-          Value = 1
-        end
-        object BlockHeight: TSpinEdit
-          Left = 112
-          Top = 4
-          Width = 41
-          Height = 22
-          MaxValue = 4
-          MinValue = 1
-          TabOrder = 5
-          Value = 1
-        end
-        object Block11: TButton
-          Tag = 1
-          Left = 4
-          Top = 32
-          Width = 38
-          Height = 17
-          Caption = '1 x 1'
-          TabOrder = 6
-          OnClick = SetBlockSize
-        end
-        object Block22: TButton
-          Tag = 2
-          Left = 41
-          Top = 32
-          Width = 38
-          Height = 17
-          Caption = '2 x 2'
-          TabOrder = 7
-          OnClick = SetBlockSize
-        end
-        object Block33: TButton
-          Tag = 3
-          Left = 78
-          Top = 32
-          Width = 38
-          Height = 17
-          Caption = '3 x 3'
-          TabOrder = 8
-          OnClick = SetBlockSize
-        end
-        object Block44: TButton
-          Tag = 4
-          Left = 115
-          Top = 32
-          Width = 38
-          Height = 17
-          Caption = '4 x 4'
-          TabOrder = 9
-          OnClick = SetBlockSize
+          OnClick = RbTerrainModeClick
         end
         object OpenTileset: TButton
           Left = 88
-          Top = 96
+          Top = 152
           Width = 65
           Height = 25
           Caption = 'Open tileset'
-          TabOrder = 10
+          TabOrder = 2
           OnClick = OpenTilesetClick
-        end
-        object Block21: TButton
-          Tag = 5
-          Left = 4
-          Top = 48
-          Width = 38
-          Height = 17
-          Caption = '2 x 1'
-          TabOrder = 11
-          OnClick = SetBlockSize
-        end
-        object Block12: TButton
-          Tag = 6
-          Left = 41
-          Top = 48
-          Width = 38
-          Height = 17
-          Caption = '1 x 2'
-          TabOrder = 12
-          OnClick = SetBlockSize
-        end
-        object Block32: TButton
-          Tag = 7
-          Left = 78
-          Top = 48
-          Width = 38
-          Height = 17
-          Caption = '3 x 2'
-          TabOrder = 13
-          OnClick = SetBlockSize
-        end
-        object Block23: TButton
-          Tag = 8
-          Left = 115
-          Top = 48
-          Width = 38
-          Height = 17
-          Caption = '2 x 3'
-          TabOrder = 14
-          OnClick = SetBlockSize
-        end
-        object BlockPresetGroupSelect: TRadioGroup
-          Left = 2
-          Top = 296
-          Width = 153
-          Height = 105
-          Caption = ' Block preset group '
-          ItemIndex = 0
-          Items.Strings = (
-            ''
-            ''
-            ''
-            '')
-          TabOrder = 15
-          OnClick = BlockPresetGroupSelectClick
         end
         object RbSelectMode: TRadioButton
           Left = 4
-          Top = 268
+          Top = 122
           Width = 81
           Height = 17
           Caption = 'Select mode'
-          TabOrder = 16
-          OnClick = SetCursorImageVisibility
+          TabOrder = 3
+          OnClick = RbTerrainModeClick
         end
         object CbSelectStructures: TCheckBox
           Left = 90
-          Top = 268
+          Top = 122
           Width = 97
           Height = 17
           Caption = 'Structures'
-          TabOrder = 17
+          TabOrder = 4
+        end
+        object cbBrushSize: TComboBox
+          Left = 80
+          Top = 4
+          Width = 73
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 5
         end
       end
     end
