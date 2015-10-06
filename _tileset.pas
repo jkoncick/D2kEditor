@@ -27,15 +27,6 @@ const taSand = $10000;
 const taRock = $20000000;
 const taDunes = $40000000;
 const taRoughRock = $80000000;
-// Tileset attributes (editor)
-const taEdCleanSand = $01;
-const taEdCleanRock = $02;
-const taEdCleanDunes = $04;
-const taEdDunesArea = $08;
-const taEdRockArea = $10;
-const taEdSandDecorations = $20;
-const taEdIceArea = $40;
-
 
 // Tileset type definitions
 type
@@ -58,6 +49,7 @@ type
   TPaintTileGroup = record
     name: string;
     tile_index: integer;
+    smooth_group: integer;
   end;
 
 type
@@ -348,6 +340,7 @@ begin
     MainWindow.paint_tile_select[i].Enabled := paint_tile_groups[i].name <> '';
     MainWindow.paint_tile_select[i].Hint := paint_tile_groups[i].name;
     paint_tile_groups[i].tile_index := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_tile', 0);
+    paint_tile_groups[i].smooth_group := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_smoothgroup', 0) - 1;
   end;
   // Load block preset groups
   for i := 0 to cnt_block_preset_groups - 1 do

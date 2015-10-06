@@ -311,7 +311,7 @@ type
     procedure apply_key_preset(key: word);
 
     // Procedures related to auto-smoothing edges
-    function is_rock_dunes(x,y: integer; exact: boolean): boolean;
+    function check_edge_tile(x,y: integer; exact: boolean): boolean;
     procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
     procedure smooth_edges(x, y: integer);
 
@@ -1119,7 +1119,7 @@ begin
         // Draw selected block
         put_block_on_map;
       end
-      else if (ssShift in Shift) and mode(mPaintMode) and ((paint_tile_group = 1) or (paint_tile_group = 2)) then
+      else if (ssShift in Shift) and mode(mPaintMode) and (Tileset.paint_tile_groups[paint_tile_group].smooth_group > -1) then
       begin
         // Smooth rock/dunes edge
         smooth_edges(map_x, map_y);
@@ -2140,7 +2140,7 @@ begin
   select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
 end;
 
-function TMainWindow.is_rock_dunes(x, y: integer; exact: boolean): boolean;
+function TMainWindow.check_edge_tile(x, y: integer; exact: boolean): boolean;
 var
   atr: cardinal;
 begin
@@ -2149,29 +2149,21 @@ begin
   if x >= map_width then x := map_width - 1;
   if y >= map_height then y := map_height - 1;
   atr := Tileset.attributes[map_data[x,y].tile];
-  result := false;
-  if (paint_tile_group = 1) and exact then // Tile is exactly clear rock
-    result := (atr and taEdCleanRock) = taEdCleanRock;
-  if (paint_tile_group = 1) and not exact then // Tile is part of rock area
-    result := (atr and taEdRockArea) = taEdRockArea;
-  if (paint_tile_group = 2) and exact then // Tile is exactly clear dunes
-    result := (atr and taEdCleanDunes) = taEdCleanDunes;
-  if (paint_tile_group = 2) and not exact then // Tile is part of dunes area
-    result := (atr and taEdDunesArea) = taEdDunesArea;
+  if exact then
+    result := (atr and ($01 shl paint_tile_group)) <> 0
+  else
+    result := (atr and ($10 shl paint_tile_group)) <> 0;
 end;
 
 procedure TMainWindow.put_edge_block(var xpos, ypos: integer; moveoff_x,
   moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
 var
   block_preset: TBlockPreset;
-  block_preset_group: integer;
+  smooth_group: integer;
   x, y: integer;
 begin
-  if paint_tile_group = 1 then
-    block_preset_group := 2
-  else
-    block_preset_group := 3;
-  block_preset := Tileset.get_block_preset(block_preset_group, ord(block_preset_key), bpRandom);
+  smooth_group := Tileset.paint_tile_groups[paint_tile_group].smooth_group;
+  block_preset := Tileset.get_block_preset(smooth_group, ord(block_preset_key), bpRandom);
   // Reuse already defined block-key-presets for this purpose
   // Place edge block (it can be either 1x1 or 2x2, so we use loops)
   for y := 0 to block_preset.height - 1 do
@@ -2204,64 +2196,64 @@ begin
   undo_max := undo_pos;
   steps := 0;
   // Start smoothing edge from starting point (where user shift-clicked)
-  while is_rock_dunes(x, y, true) do
+  while check_edge_tile(x, y, true) do
   begin
     // Check for all 8 tiles around current tile to determine the direction of edge
     sum := 0;
-    if is_rock_dunes(x,   y-1, false) then sum := sum + 1;   // 16 1 32
-    if is_rock_dunes(x-1, y  , false) then sum := sum + 2;   //  2 X 4
-    if is_rock_dunes(x+1, y  , false) then sum := sum + 4;   // 64 8 128
-    if is_rock_dunes(x  , y+1, false) then sum := sum + 8;
-    if is_rock_dunes(x-1, y-1, false) then sum := sum + 16;
-    if is_rock_dunes(x+1, y-1, false) then sum := sum + 32;
-    if is_rock_dunes(x-1, y+1, false) then sum := sum + 64;
-    if is_rock_dunes(x+1, y+1, false) then sum := sum + 128;
+    if check_edge_tile(x,   y-1, false) then sum := sum + 1;   // 16 1 32
+    if check_edge_tile(x-1, y  , false) then sum := sum + 2;   //  2 X 4
+    if check_edge_tile(x+1, y  , false) then sum := sum + 4;   // 64 8 128
+    if check_edge_tile(x  , y+1, false) then sum := sum + 8;
+    if check_edge_tile(x-1, y-1, false) then sum := sum + 16;
+    if check_edge_tile(x+1, y-1, false) then sum := sum + 32;
+    if check_edge_tile(x-1, y+1, false) then sum := sum + 64;
+    if check_edge_tile(x+1, y+1, false) then sum := sum + 128;
     // Transform current tile into edge tile and move to following tile
     case (sum and 15) of
        7: begin // down
-          if (sum and 128 > 0) and not is_rock_dunes(x+1,y+2, false) then
+          if (sum and 128 > 0) and not check_edge_tile(x+1,y+2, false) then
             put_edge_block(x,y,2,1,0,0,'X')
           else
             put_edge_block(x,y,1,0,0,0,'C');
         end;
       11: begin // right
-          if (sum and 32 > 0) and not is_rock_dunes(x+2,y-1, false) then
+          if (sum and 32 > 0) and not check_edge_tile(x+2,y-1, false) then
             put_edge_block(x,y,1,-2,0,-1,'G')
           else
             put_edge_block(x,y,0,-1,0,0,'D');
         end;
       14: begin // up
-          if (sum and 16 > 0) and not is_rock_dunes(x-1,y-2, false) then
+          if (sum and 16 > 0) and not check_edge_tile(x-1,y-2, false) then
             put_edge_block(x,y,-2,-1,-1,-1,'4')
           else
             put_edge_block(x,y,-1,0,0,0,'3');
         end;
       13: begin // left
-          if (sum and 64 > 0) and not is_rock_dunes(x-2,y+1, false) then
+          if (sum and 64 > 0) and not check_edge_tile(x-2,y+1, false) then
             put_edge_block(x,y,-1,2,-1,0,'Q')
           else
             put_edge_block(x,y,0,1,0,0,'E');
         end;
        3: begin // down-right corner
-          if (sum and 32 > 0) and is_rock_dunes(x+2,y-1, false) then
+          if (sum and 32 > 0) and check_edge_tile(x+2,y-1, false) then
             put_edge_block(x,y,2,-1,0,-1,'V')
           else
             put_edge_block(x,y,0,-1,0,0,'B');
         end;
       10: begin // up-right corner
-          if (sum and 16 > 0) and is_rock_dunes(x-1,y-2, false) then
+          if (sum and 16 > 0) and check_edge_tile(x-1,y-2, false) then
             put_edge_block(x,y,-1,-2,-1,-1,'T')
           else
             put_edge_block(x,y,-1,0,0,0,'5');
         end;
       12: begin // up-left corner
-          if (sum and 64 > 0) and is_rock_dunes(x-2,y+1, false) then
+          if (sum and 64 > 0) and check_edge_tile(x-2,y+1, false) then
             put_edge_block(x,y,-2,1,-1,0,'2')
           else
             put_edge_block(x,y,0,1,0,0,'1');
         end;
        5: begin // down-left corner
-          if (sum and 128 > 0) and is_rock_dunes(x+1,y+2, false) then
+          if (sum and 128 > 0) and check_edge_tile(x+1,y+2, false) then
             put_edge_block(x,y,1,2,0,0,'A')
           else
             put_edge_block(x,y,1,0,0,0,'Z');
