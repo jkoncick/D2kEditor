@@ -895,7 +895,7 @@ end;
 procedure TMainWindow.About1Click(Sender: TObject);
 begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13'Part of D2K+ Editing tools'#13#13+
-              'Made by Klofkac'#13'Version 1.0'#13'Date: 2015-07-10'#13#13+
+              'Made by Klofkac'#13'Version 1.1'#13'Date: 2015-10-16'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13'mvi - for making the original Mission editor'#13'FunkyFr3sh - for patching Dune 2000'#13'FED2k community - for their support');
 end;

@@ -1,5 +1,30 @@
 D2kEditor changelog
 
+Version 1.1 (released 2015-10-16)
+---------------------------------
+Fixed: Auto-smooth rock/dunes edge feature did not work properly on non-square maps
+Fixed: Tried to fix the status bar cut-off (status bar is now okay hopefully)
+Fixed: When a map is shifted, event positions were not shifted
+Fixed: When saving Briefing, newlines were erroneously inserted where a line was only visually broken
+Fixed: Error message when opening a map from commandline
+Added: Support for new event types added in FunkyFr3sh's Dune 2000 patch (Leave, Play Sound...)
+Added: Key shortcuts for selecting event/condition type
+Added: "Diff mode" in AI settings - only values which are different from default values are shown
+Added: Several minor and cosmetic improvements
+
+Remade terrain editing GUI and added possibility to configure block presets and other things for each tileset.
+- You can paint spice in Terrain mode instead of Structures mode.
+- Added new "Block preset selection" window where you can see all presets for selected group in the same order
+  as how you select them with the keyboard. It can be displayed by clicking on current block, double-clicking on 
+  block-preset group or pressing space two times. Use right-click to change to next block variant, middle-click to
+  display keyboard keys and Tab to change variant for all presets.
+  If you set "HidePresetWindow" setting in D2kEditor.ini to 0, the window will stay open after selecting a preset.
+- Added presets also all for tileset-specific blocks
+- Each tileset has its own .ini file. There you can configure minimap colors, names of paint and block-preset groups,
+  block presets and other things. This way you can easily add custom tilesets and tailor the editor for using them.
+
+
+
 Version 1.0 (released 2015-07-10)
 ---------------------------------
 Added: "Smooth rock/dunes edge" feature:
