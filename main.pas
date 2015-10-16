@@ -556,7 +556,7 @@ begin
   end else
   begin
     // Block key presets
-    if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 188) or (key = 190) then
+    if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 186) or (key = 188) or (key = 190) or (key = 191) then
       apply_key_preset(key);
   end;
 end;

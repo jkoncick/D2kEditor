@@ -8,7 +8,7 @@ uses Graphics, Menus;
 const cnt_tileset_tiles = 800;
 const cnt_paint_tile_groups = 4;
 const cnt_block_preset_groups = 8;
-const cnt_block_preset_keys = 38; // 0-9, A-Z, ',', '.'
+const cnt_block_preset_keys = 40; // 0-9, A-Z...
 const max_tile_color_rules = 10;
 const max_fill_area_rules = 10;
 const max_paint_tiles = 80;
@@ -77,7 +77,6 @@ type
     name: String;
     image_name: String;
     tileatr_name: String;
-    config_name: String;
   end;
 
 const empty_block_preset: TBlockPreset = (width: 0; height: 0; pos_x: 0; pos_y: 0);
@@ -169,7 +168,6 @@ begin
     tileset_info[i].name := tmp_strings[i];
     tileset_info[i].image_name := ini.ReadString(tmp_strings[i], 'image', '');
     tileset_info[i].tileatr_name := ini.ReadString(tmp_strings[i], 'tileatr', '');
-    tileset_info[i].config_name := ini.ReadString(tmp_strings[i], 'config', 'd2k_tilesets');
     menuitems[i] := TMenuItem.Create(MainWindow.Selecttileset1);
     menuitems[i].Caption := tileset_info[i].name;
     menuitems[i].RadioItem := true;
@@ -187,6 +185,8 @@ procedure TTileset.change_tileset(index: integer);
 var
   tmp_filename: String;
 begin
+  if index = current_tileset then
+    exit;
   current_tileset := index;
   menuitems[current_tileset].Checked := true;
   MainWindow.StatusBar.Panels[1].Text := tileset_info[current_tileset].name;
@@ -194,9 +194,8 @@ begin
   Move(tileset_info[current_tileset].name[1], Mission.mis_data.tileset, 8);
   Move(tileset_info[current_tileset].tileatr_name[1], Mission.mis_data.tileatr, 8);
   // Load tileset configuration if it is different
-  tmp_filename := current_dir+'/tilesets/'+tileset_info[current_tileset].config_name+'.ini';
-  if tmp_filename <> tileset_config_filename then
-    load_config(tmp_filename);
+  tmp_filename := current_dir+'/tilesets/'+tileset_info[current_tileset].name+'.ini';
+  load_config(tmp_filename);
   // Load tileset attributes
   load_attributes(current_dir+'/tilesets/'+tileset_info[current_tileset].tileatr_name+'.bin');
   // Load tileset image
@@ -217,11 +216,13 @@ begin
 end;
 
 procedure TTileset.next_tileset;
+var
+  new_tileset: integer;
 begin
-  current_tileset := current_tileset + 1;
-  if current_tileset >= cnt_tilesets then
-    current_tileset := 0;
-  change_tileset(current_tileset);
+  new_tileset := current_tileset + 1;
+  if new_tileset >= cnt_tilesets then
+    new_tileset := 0;
+  change_tileset(new_tileset);
 end;
 
 procedure TTileset.use_custom_image(filename: String);
@@ -323,10 +324,10 @@ begin
     inc(fill_area_rules_cnt);
   end;
   // Load spice settings
-  thin_spice_tile := ini.ReadInteger('Spice_Settings', 'ThinSpice_tile', 0);
-  thin_spice_color := ini.ReadInteger('Spice_Settings', 'ThinSpice_color', 0);
-  thick_spice_tile := ini.ReadInteger('Spice_Settings', 'ThickSpice_tile', 0);
-  thick_spice_color := ini.ReadInteger('Spice_Settings', 'ThickSpice_color', 0);
+  thin_spice_tile := ini.ReadInteger('Spice_Settings', 'ThinSpice.tile', 0);
+  thin_spice_color := ini.ReadInteger('Spice_Settings', 'ThinSpice.color', 0);
+  thick_spice_tile := ini.ReadInteger('Spice_Settings', 'ThickSpice.tile', 0);
+  thick_spice_color := ini.ReadInteger('Spice_Settings', 'ThickSpice.color', 0);
   decoder.DelimitedText := ini.ReadString('Spice_Settings', 'SpiceRestrictionRule', '0');
   spice_restriction_and_attr := strtoint(decoder[0]);
   if decoder.Count = 2 then
@@ -336,17 +337,17 @@ begin
   // Load paint tile groups
   for i := 0 to cnt_paint_tile_groups - 1 do
   begin
-    paint_tile_groups[i].name := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_name', '');
+    paint_tile_groups[i].name := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.name', '');
     MainWindow.paint_tile_select[i].Enabled := paint_tile_groups[i].name <> '';
     MainWindow.paint_tile_select[i].Hint := paint_tile_groups[i].name;
-    paint_tile_groups[i].tile_index := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_tile', 0);
-    paint_tile_groups[i].smooth_group := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'_smoothgroup', 0) - 1;
+    paint_tile_groups[i].tile_index := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.tile', 0);
+    paint_tile_groups[i].smooth_group := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.smoothgroup', 0) - 1;
   end;
   // Load block preset groups
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
-    block_preset_groups[i].name := ini.ReadString('Block_Preset_Groups', 'Group'+inttostr(i+1)+'_name', '');
-    block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'_paint', 0) - 1;
+    block_preset_groups[i].name := ini.ReadString('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.name', '');
+    block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.paint', 0) - 1;
     MainWindow.block_preset_select[i].Enabled := block_preset_groups[i].name <> '';
     MainWindow.block_preset_select[i].Caption := block_preset_groups[i].name;
   end;
@@ -364,7 +365,11 @@ begin
       else if j = 36 then
         key := '<'
       else if j = 37 then
-        key := '>';
+        key := '>'
+      else if j = 38 then
+        key := ':'
+      else if j = 39 then
+        key := '?';
       decoder.DelimitedText := ini.ReadString('Block_Preset_Group_'+(inttostr(i+1)), key, '');
       block_preset_key_variants[i, j].num_variants := decoder.Count;
       block_preset_key_variants[i, j].first_preset_index := preset_index;
@@ -455,6 +460,10 @@ begin
     result := 36
   else if (key = 190) or (key = ord('>')) then
     result := 37
+  else if (key = 186) or (key = ord(':')) then
+    result := 38
+  else if (key = 191) or (key = ord('?')) then
+    result := 39
   else
     result := -1;
 end;

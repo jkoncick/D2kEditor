@@ -12,8 +12,8 @@ const block_preset_keys: array[0..num_rows-1, 0..num_cols-1] of char =
   (
     ('1', '2', '3', '4', '5', '6', '7', '8', '9', '0'),
     ('Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'),
-    ('A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ' '),
-    ('Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', ' ')
+    ('A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':'),
+    ('Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?')
   );
 
 type
@@ -47,7 +47,7 @@ var
 
 implementation
 
-uses _tileset, main, tileset_dialog;
+uses _tileset, _settings, main, tileset_dialog;
 
 {$R *.dfm}
 
@@ -76,12 +76,16 @@ begin
   if (key >= 112) and (key <= 115) then
     MainWindow.FormKeyDown(Sender, Key, Shift);
   // Number/letter: Select preset
-  if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 188) or (key = 190) then
+  if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 186) or (key = 188) or (key = 190) or (key = 191) then
   begin
     if key = 188 then
       key := ord('<');
     if key = 190 then
       key := ord('>');
+    if key = 186 then
+      key := ord(':');
+    if key = 191 then
+      key := ord('?');
     for i := 0 to num_rows -1 do
       for j:= 0 to num_cols -1 do
       begin
@@ -179,7 +183,8 @@ begin
   key := ord(block_preset_keys[row, col]);
   preset := tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row, col]);
   MainWindow.select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
-  Hide;
+  if settings.HidePresetWindow then
+    Hide;
 end;
 
 procedure TBlockPresetDialog.draw_all;

@@ -14,6 +14,7 @@ type
     PreserveGUISettings: boolean;
     RestrictSpiceToSand: boolean;
     EnableEventNotes: boolean;
+    HidePresetWindow: boolean;
 
     // Default values
     DefaultMapWidth: integer;
@@ -68,6 +69,7 @@ begin
   PreserveGUISettings := ini.ReadBool('Preferences', 'PreserveGUISettings', true);
   RestrictSpiceToSand := ini.ReadBool('Preferences', 'RestrictSpiceToSand', true);
   EnableEventNotes := ini.ReadBool('Preferences', 'EnableEventNotes', true);
+  HidePresetWindow := ini.ReadBool('Preferences', 'HidePresetWindow', true);
   // Load default values
   DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
   DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 64);
@@ -130,6 +132,7 @@ begin
   ini.WriteBool('Preferences', 'PreserveGUISettings', PreserveGUISettings);
   ini.WriteBool('Preferences', 'RestrictSpiceToSand', RestrictSpiceToSand);
   ini.WriteBool('Preferences', 'EnableEventNotes', EnableEventNotes);
+  ini.WriteBool('Preferences', 'HidePresetWindow', HidePresetWindow);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);
   ini.WriteInteger('Defaults', 'DefaultMapHeight', DefaultMapHeight);
