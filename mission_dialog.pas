@@ -373,6 +373,8 @@ begin
     tmp_strings[i] := StringReplace(tmp_strings[i],'^',' ',[rfReplaceAll]);
   end;
   MapBriefing.Lines := tmp_strings;
+  // Remove additional trailing newline from the Memo
+  MapBriefing.Text := Copy(MapBriefing.Text, 1, Length(MapBriefing.Text) - 2);
   tmp_strings.Destroy;
   // Load event/condition notes
   Mission.load_notes_from_ini(ini);
@@ -448,12 +450,7 @@ begin
   if MapBriefing.Lines.Count = 0 then
     ini.DeleteKey('Basic','Briefing')
   else begin
-    for i := 0 to MapBriefing.Lines.Count - 1 do
-    begin
-      if i > 0 then
-        tmp_string := tmp_string + '_';
-      tmp_string := tmp_string + MapBriefing.Lines[i];
-    end;
+    tmp_string := StringReplace(MapBriefing.Text,chr(13)+chr(10),'_',[rfReplaceAll]);
     ini.WriteString('Basic','Briefing',tmp_string);
   end;
   // Save event/condition notes
