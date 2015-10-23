@@ -437,19 +437,28 @@ object MainWindow: TMainWindow
     object Settings1: TMenuItem
       Caption = 'Settings'
       object ShowGrid1: TMenuItem
+        AutoCheck = True
         Caption = 'Show Grid'
         ShortCut = 16455
-        OnClick = ShowGrid1Click
+        OnClick = SettingChange
       end
       object Marktiles1: TMenuItem
+        AutoCheck = True
         Caption = 'Mark impassable tiles'
         ShortCut = 16461
-        OnClick = Marktiles1Click
+        OnClick = SettingChange
+      end
+      object Markbuildabletiles1: TMenuItem
+        AutoCheck = True
+        Caption = 'Mark buildable tiles'
+        ShortCut = 16450
+        OnClick = SettingChange
       end
       object Showunknownspecials1: TMenuItem
+        AutoCheck = True
         Caption = 'Show unknown specials'
         ShortCut = 16469
-        OnClick = Showunknownspecials1Click
+        OnClick = SettingChange
       end
       object N7: TMenuItem
         Caption = '-'
@@ -460,16 +469,18 @@ object MainWindow: TMainWindow
         OnClick = Useallocationindexes1Click
       end
       object Showeventmarkers1: TMenuItem
+        AutoCheck = True
         Caption = 'Show event markers'
         Checked = True
         ShortCut = 16453
-        OnClick = Showeventmarkers1Click
+        OnClick = SettingChange
       end
       object Markdefenceareas1: TMenuItem
+        AutoCheck = True
         Caption = 'Mark defence areas'
         Checked = True
         ShortCut = 16452
-        OnClick = Markdefenceareas1Click
+        OnClick = SettingChange
       end
       object N6: TMenuItem
         Caption = '-'

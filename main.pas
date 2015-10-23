@@ -126,6 +126,7 @@ type
     sbThinSpice: TSpeedButton;
     sbThickSpice: TSpeedButton;
     LbPaintTileGroupName: TLabel;
+    Markbuildabletiles1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -157,12 +158,8 @@ type
     procedure Selectnext1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
     procedure Loadtilesetattributes1Click(Sender: TObject);
-    procedure ShowGrid1Click(Sender: TObject);
-    procedure Marktiles1Click(Sender: TObject);
-    procedure Showunknownspecials1Click(Sender: TObject);
+    procedure SettingChange(Sender: TObject);
     procedure Useallocationindexes1Click(Sender: TObject);
-    procedure Showeventmarkers1Click(Sender: TObject);
-    procedure Markdefenceareas1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
@@ -770,21 +767,8 @@ begin
   end;
 end;
 
-procedure TMainWindow.ShowGrid1Click(Sender: TObject);
+procedure TMainWindow.SettingChange(Sender: TObject);
 begin
-  ShowGrid1.Checked := not ShowGrid1.Checked;
-  render_map;
-end;
-
-procedure TMainWindow.Marktiles1Click(Sender: TObject);
-begin
-  Marktiles1.Checked := not Marktiles1.Checked;
-  render_map;
-end;
-
-procedure TMainWindow.Showunknownspecials1Click(Sender: TObject);
-begin
-  Showunknownspecials1.Checked := not Showunknownspecials1.Checked;
   render_map;
 end;
 
@@ -792,18 +776,6 @@ procedure TMainWindow.Useallocationindexes1Click(Sender: TObject);
 begin
   Useallocationindexes1.Checked := not Useallocationindexes1.Checked;
   render_minimap;
-  render_map;
-end;
-
-procedure TMainWindow.Showeventmarkers1Click(Sender: TObject);
-begin
-  Showeventmarkers1.Checked := not Showeventmarkers1.Checked;
-  render_map;
-end;
-
-procedure TMainWindow.Markdefenceareas1Click(Sender: TObject);
-begin
-  Markdefenceareas1.Checked := not Markdefenceareas1.Checked;
   render_map;
 end;
 
@@ -1464,21 +1436,23 @@ begin
         tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
       MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
       // Draw tile attribute markers
-      if Marktiles1.Checked then
+      if Marktiles1.Checked or Markbuildabletiles1.Checked then
       begin
+        tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
         tile_attr := Tileset.get_tile_type(tile);
-        if (tile_attr = ttImpassable) or (tile_attr = ttInfantryOnly) then
-        begin
-          if (tile_attr = ttImpassable) then
-            MapCanvas.Canvas.Pen.Color := clRed
-          else if (tile_attr = ttInfantryOnly) then
-            MapCanvas.Canvas.Pen.Color := $4080FF;
-          MapCanvas.Canvas.Pen.Width := 2;
-          MapCanvas.Canvas.MoveTo(x*32, y*32);
-          MapCanvas.Canvas.LineTo(x*32+31, y*32+31);
-          MapCanvas.Canvas.MoveTo(x*32+31, y*32);
-          MapCanvas.Canvas.LineTo(x*32, y*32+31);
-        end;
+        if (tile_attr = ttImpassable) and Marktiles1.Checked then
+          MapCanvas.Canvas.Pen.Color := clRed
+        else if (tile_attr = ttInfantryOnly) and Marktiles1.Checked then
+          MapCanvas.Canvas.Pen.Color := $4080FF
+        else if (tile_attr = ttBuildable) and Markbuildabletiles1.Checked then
+          MapCanvas.Canvas.Pen.Color := $40FF80
+        else
+          continue;
+        MapCanvas.Canvas.Pen.Width := 2;
+        MapCanvas.Canvas.MoveTo(x*32, y*32);
+        MapCanvas.Canvas.LineTo(x*32+31, y*32+31);
+        MapCanvas.Canvas.MoveTo(x*32+31, y*32);
+        MapCanvas.Canvas.LineTo(x*32, y*32+31);
       end;
     end;
   end;
