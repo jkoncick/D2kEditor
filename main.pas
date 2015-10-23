@@ -1194,6 +1194,7 @@ procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   min_x, max_x, min_y, max_y: word;
+  xx, yy: word;
 begin
   moving_disable := false;
   if (moving_event <> -1) or (moving_condition <> -1) then
@@ -1210,6 +1211,15 @@ begin
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true);
+    if ssShift in Shift then
+    begin
+      undo_block_start := true;
+      paint_tile_group := 0;
+      for yy := min_y to max_y do
+        for xx := min_x to max_x do
+          paint_tile(xx, yy);
+      render_minimap;
+    end;
     render_map;
   end;
   if mode(mPaintMode) then
