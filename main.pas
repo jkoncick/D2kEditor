@@ -75,8 +75,8 @@ type
     MiscObjList: TListBox;
     LbPlayerSelect: TLabel;
     PlayerSelect: TComboBox;
-    LbStructureList: TLabel;
-    StructureList: TListBox;
+    LbBuildingList: TLabel;
+    BuildingList: TListBox;
     RbBlockMode: TRadioButton;
     RbPaintMode: TRadioButton;
     LbBrushSize: TLabel;
@@ -127,6 +127,8 @@ type
     sbThickSpice: TSpeedButton;
     LbPaintTileGroupName: TLabel;
     Markbuildabletiles1: TMenuItem;
+    UnitList: TListBox;
+    LbUnitList: TLabel;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -197,7 +199,8 @@ type
     procedure MiniMapMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
     // Structure editor
-    procedure StructureListClick(Sender: TObject);
+    procedure BuildingListClick(Sender: TObject);
+    procedure UnitListClick(Sender: TObject);
     procedure PlayerSelectChange(Sender: TObject);
     procedure MiscObjListClick(Sender: TObject);
     procedure OpenTilesetClick(Sender: TObject);
@@ -410,7 +413,10 @@ begin
     PlayerSelect.Items.Add(inttostr(i) + ' - '+ map_player_info[i].name);
   PlayerSelect.ItemIndex := 0;
   for i := 0 to Length(structure_info) - 1 do
-    StructureList.Items.Add(structure_info[i].name);
+    if i < first_unit_index then
+      BuildingList.Items.Add(structure_info[i].name)
+    else
+      UnitList.Items.Add(structure_info[i].name);
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -424,11 +430,17 @@ begin
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
+var
+  tmp_height: integer;
 begin
   resize_map_canvas;
   EditorMenu.Left := ClientWidth - 168;
   EditorMenu.Height := ClientHeight - StatusBar.Height;
-  StructureList.Height := EditorMenu.Height - 356;
+  tmp_height := EditorMenu.Height - 376;
+  BuildingList.Height := tmp_height div 2;
+  UnitList.Height := tmp_height div 2;
+  LbUnitList.Top := BuildingList.Top + BuildingList.Height + 3;
+  UnitList.Top := LbUnitList.Top + 16;
   EditorPages.Height := EditorMenu.Height - 146;
   StatusBar.Panels[3].Width := ClientWidth - 550;
   if map_loaded then
@@ -1057,18 +1069,28 @@ begin
         if is_misc then
         begin
           MiscObjList.ItemIndex := index;
-          StructureList.ItemIndex := -1;
+          BuildingList.ItemIndex := -1;
+          UnitList.ItemIndex := -1;
         end else
         begin
           MiscObjList.ItemIndex := -1;
-          StructureList.ItemIndex := index;
+          if index < first_unit_index then
+          begin
+            BuildingList.ItemIndex := index;
+            UnitList.ItemIndex := -1;
+          end else
+          begin
+            BuildingList.ItemIndex := -1;
+            UnitList.ItemIndex := index - first_unit_index;
+          end;
           PlayerSelect.ItemIndex := player;
           show_power_and_statistics;
         end;
       end else
       begin
         MiscObjList.ItemIndex := -1;
-        StructureList.ItemIndex := -1;
+        BuildingList.ItemIndex := -1;
+        UnitList.ItemIndex := -1;
       end;
       exit;
     end;
@@ -1238,9 +1260,17 @@ begin
     MiniMapMouseDown(Sender, mbLeft, Shift, X, Y);
 end;
 
-procedure TMainWindow.StructureListClick(Sender: TObject);
+procedure TMainWindow.BuildingListClick(Sender: TObject);
 begin
   MiscObjList.ItemIndex := -1;
+  UnitList.ItemIndex := -1;
+  set_special_value;
+end;
+
+procedure TMainWindow.UnitListClick(Sender: TObject);
+begin
+  MiscObjList.ItemIndex := -1;
+  BuildingList.ItemIndex := -1;
   set_special_value;
 end;
 
@@ -1252,7 +1282,8 @@ end;
 
 procedure TMainWindow.MiscObjListClick(Sender: TObject);
 begin
-  StructureList.ItemIndex := -1;
+  BuildingList.ItemIndex := -1;
+  UnitList.ItemIndex := -1;
   set_special_value;
 end;
 
@@ -1834,8 +1865,10 @@ var
 begin
   if MiscObjList.ItemIndex > -1 then
     value := misc_object_info[MiscObjList.ItemIndex].value
+  else if BuildingList.ItemIndex > -1 then
+    value := structure_info[BuildingList.ItemIndex].values[PlayerSelect.ItemIndex]
   else
-    value := structure_info[StructureList.ItemIndex].values[PlayerSelect.ItemIndex];
+    value := structure_info[UnitList.ItemIndex + first_unit_index].values[PlayerSelect.ItemIndex];
   SpecialValue.Text := inttostr(value);
 end;
 

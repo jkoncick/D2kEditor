@@ -35,6 +35,8 @@ type
     stats_group: TObjectStatsGroup;
   end;
 
+const first_unit_index = 18;
+
 const structure_info: array[0..31] of TStructureInfo =
   (
     (name: 'Wall';                  offs_x:  0; offs_y: 0; size_x: 1; size_y: 1; overfl:  0; lnwall:  true; power:   0; values:(  4,204,404,580,620,660,700)),

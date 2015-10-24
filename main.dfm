@@ -163,12 +163,19 @@ object MainWindow: TMainWindow
           Height = 13
           Caption = 'Player'
         end
-        object LbStructureList: TLabel
+        object LbBuildingList: TLabel
           Left = 8
           Top = 166
-          Width = 48
+          Width = 42
           Height = 13
-          Caption = 'Structures'
+          Caption = 'Buildings'
+        end
+        object LbUnitList: TLabel
+          Left = 8
+          Top = 270
+          Width = 24
+          Height = 13
+          Caption = 'Units'
         end
         object SpecialValue: TEdit
           Left = 80
@@ -197,14 +204,23 @@ object MainWindow: TMainWindow
           TabOrder = 2
           OnChange = PlayerSelectChange
         end
-        object StructureList: TListBox
+        object BuildingList: TListBox
           Left = 8
           Top = 182
           Width = 145
-          Height = 123
+          Height = 83
           ItemHeight = 13
           TabOrder = 3
-          OnClick = StructureListClick
+          OnClick = BuildingListClick
+        end
+        object UnitList: TListBox
+          Left = 8
+          Top = 286
+          Width = 145
+          Height = 83
+          ItemHeight = 13
+          TabOrder = 4
+          OnClick = UnitListClick
         end
       end
       object PageTerrain: TTabSheet
