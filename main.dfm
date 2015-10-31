@@ -346,7 +346,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
       end
@@ -456,6 +456,12 @@ object MainWindow: TMainWindow
         AutoCheck = True
         Caption = 'Show Grid'
         ShortCut = 16455
+        OnClick = SettingChange
+      end
+      object Drawconcrete1: TMenuItem
+        AutoCheck = True
+        Caption = 'Draw concrete'
+        ShortCut = 16456
         OnClick = SettingChange
       end
       object Marktiles1: TMenuItem

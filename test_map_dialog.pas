@@ -42,14 +42,16 @@ var
 implementation
 
 uses
-  main, _settings;
+  main, _mission, _settings;
 
 {$R *.dfm}
 
 procedure TTestMapDialog.FormCreate(Sender: TObject);
+var
+  i: integer;
 begin
-  eMySideID.Items := MainWindow.PlayerSelect.Items;
-  eMySideID.Items.Add('7 - Sandworm');
+  for i := 0 to cnt_mis_players - 1 do
+    eMySideID.Items.Add(inttostr(i) + ' - ' + player_names[i]);
   eMySideID.ItemIndex := 0;
 end;
 

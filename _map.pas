@@ -22,7 +22,7 @@ type
 
 type
   TMapStats = record
-    players: array[0..cnt_map_players-1] of TPlayerStats;
+    players: array[0..cnt_players-1] of TPlayerStats;
     objects: array[0..3] of integer;
   end;
 
@@ -49,7 +49,7 @@ uses Windows, Forms, SysUtils, _mission, main;
 
 procedure calculate_power_and_statistics;
 var
-  output, need: array[0..cnt_map_players-1] of integer;
+  output, need: array[0..cnt_players-1] of integer;
   i, x, y: integer;
   player, index: word;
   is_misc: boolean;
@@ -58,7 +58,7 @@ var
 begin
   for i := 1 to Length(map_stats.objects) do
     map_stats.objects[i] := 0;
-  for x := 0 to cnt_map_players - 1 do
+  for x := 0 to cnt_players - 1 do
   begin
     output[x] := 0;
     need[x] := 0;
@@ -67,16 +67,16 @@ begin
   for y := 0 to map_height - 1 do
     for x := 0 to map_width -1 do
     begin
-      if special_value_to_params(map_data[x,y].special,player,index,is_misc) then
+      if Structures.special_value_to_params(map_data[x,y].special,player,index,is_misc) then
       begin
         if is_misc then
         begin
-          stats_group := ord(misc_object_info[index].stats_group);
+          stats_group := Structures.misc_object_info[index].stats_group;
           if stats_group > 0 then
             inc(map_stats.objects[stats_group]);
         end else
         begin
-          tmp_power := structure_info[index].power;
+          tmp_power := Structures.structure_info[index].power;
           if tmp_power > 0 then
             need[player] := need[player] + tmp_power
           else if tmp_power < 0 then
@@ -85,7 +85,7 @@ begin
       end;
     end;
   // Calculate power value from output/need for each player
-  for x := 0 to cnt_map_players - 1 do
+  for x := 0 to cnt_players - 1 do
   begin
     if (output[x] > 0) and (need[x] = 0) then
       map_stats.players[x].power_percent := output[x] div 2 + 100

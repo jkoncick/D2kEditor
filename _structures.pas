@@ -2,21 +2,33 @@ unit _structures;
 
 interface
 
-uses Graphics;
+uses Graphics, SysUtils, Math, Types;
 
-const cnt_map_players = 7;
+const cnt_players = 8;
+const cnt_tiledata_entries = 1000;
+
+type StructureType = (stNothing, stMiscObject, stBuilding, stUnit);
+
+type
+  TTileDataEntry = record
+    index: word;
+    player: byte;
+    stype: byte;
+  end;
 
 type
   TStructureInfo = record
     name: String;
-    offs_x: word; // X-offset in image
-    offs_y: word; // Y-offset in image
+    tiledataindex: word; // Index of structure in TILEDATA.BIN file
+    pos_x: word; // X-position in structures image
+    pos_y: word; // Y-position in structures image
     size_x: word; // Structure width
     size_y: word; // Structure height
-    overfl: word; // Sprite overflow (1 = up (for buildings), 2 = infantry, 3 = wide (harvester, MCV))
-    lnwall: boolean;  // Structure links with wall
+    size_adjust: TRect;
+    bottom_style: word; // Style of building's bottom
+    linkwall: boolean;  // Structure links with wall
     power: SmallInt; // Power the structure gives/needs
-    values: array[0..cnt_map_players-1] of word; // Map special values
+    values: array[0..cnt_players-1] of word; // Map special values
   end;
 
 type
@@ -32,108 +44,220 @@ type
     name: String;
     value: word;
     color: TColor;
-    stats_group: TObjectStatsGroup;
+    stats_group: word;
   end;
 
-const first_unit_index = 18;
+type
+  TBottomStyleType = record
+    size_x: integer;
+    size_y: integer;
+    rock_tile_x: integer;
+    rock_tile_y: integer;
+    conc_tile_x: integer;
+    conc_tile_y: integer;
+  end;
 
-const structure_info: array[0..31] of TStructureInfo =
+const bottom_style_types: array[0..3] of TBottomStyleType =
   (
-    (name: 'Wall';                  offs_x:  0; offs_y: 0; size_x: 1; size_y: 1; overfl:  0; lnwall:  true; power:   0; values:(  4,204,404,580,620,660,700)),
-    (name: 'Wind Trap';             offs_x:  1; offs_y: 0; size_x: 2; size_y: 3; overfl:  1; lnwall: false; power:-200; values:(  5,205,405,581,621,661,701)),
-    (name: 'Construction Yard';     offs_x:  3; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: -20; values:(  8,208,408,582,622,662,702)),
-    (name: 'Barracks';              offs_x:  6; offs_y: 0; size_x: 2; size_y: 3; overfl:  1; lnwall: false; power:  30; values:( 11,211,411,583,623,663,703)),
-    (name: 'Refinery';              offs_x:  8; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power:  75; values:( 14,214,414,584,624,664,704)),
-    (name: 'Outpost';               offs_x: 11; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 125; values:( 17,217,417,585,625,665,705)),
-    (name: 'Light Factory';         offs_x: 14; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 125; values:( 63,263,463,587,627,667,707)),
-    (name: 'Silo';                  offs_x: 17; offs_y: 0; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:  15; values:( 69,269,469,589,629,668,708)),
-    (name: 'Heavy Factory';         offs_x: 18; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power: 150; values:( 72,272,472,590,630,669,709)),
-    (name: 'Repair Pad';            offs_x: 21; offs_y: 0; size_x: 3; size_y: 3; overfl:  0; lnwall: false; power:  50; values:( 75,275,475,591,631,670,710)),
-    (name: 'Gun Turret';            offs_x: 24; offs_y: 0; size_x: 1; size_y: 1; overfl:  1; lnwall:  true; power:  50; values:( 78,278,478,592,632,671,711)),
-    (name: 'High Tech Factory';     offs_x: 25; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power:  75; values:(120,320,520,593,633,672,712)),
-    (name: 'Rocket Turret';         offs_x: 28; offs_y: 0; size_x: 1; size_y: 1; overfl:  1; lnwall:  true; power:  60; values:(123,323,523,594,634,673,713)),
-    (name: 'IX Research Centre';    offs_x: 29; offs_y: 0; size_x: 3; size_y: 4; overfl:  0; lnwall: false; power: 175; values:(126,326,526,595,635,674,714)),
-    (name: 'Starport';              offs_x: 32; offs_y: 0; size_x: 3; size_y: 3; overfl:  0; lnwall: false; power: 150; values:(129,329,529,596,636,675,715)),
-    (name: 'Palace';                offs_x: 35; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 200; values:(132,332,532,588,628,676,716)),
-    (name: 'Sietch';                offs_x: 38; offs_y: 0; size_x: 2; size_y: 2; overfl:  0; lnwall: false; power:  50; values:(  0,  0,  0,597,637,  0,  0)),
-    (name: 'Modified Outpost';      offs_x: 40; offs_y: 0; size_x: 3; size_y: 3; overfl:  1; lnwall: false; power: 100; values:(  0,218,418,  0,  0,666,  0)),
-    (name: 'Light Infantry';        offs_x: 43; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(180,360,560,598,638,677,717)),
-    (name: 'Trooper';               offs_x: 44; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(181,361,561,599,639,678,718)),
-    (name: 'St. Fremen / Saboteur'; offs_x: 45; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(182,362,562,600,640,679,719)),
-    (name: 'Sardaukar / Fremen';    offs_x: 46; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(183,363,563,601,641,  0,  0)),
-    (name: 'Engineer';              offs_x: 47; offs_y: 0; size_x: 1; size_y: 1; overfl:  2; lnwall: false; power:   0; values:(184,364,564,602,642,680,720)),
-    (name: 'Harvester';             offs_x: 44; offs_y: 1; size_x: 1; size_y: 1; overfl:  3; lnwall: false; power:   0; values:(185,365,565,603,643,681,721)),
-    (name: 'MCV';                   offs_x: 46; offs_y: 1; size_x: 1; size_y: 1; overfl:  3; lnwall: false; power:   0; values:(186,366,566,604,644,682,722)),
-    (name: 'Trike / Raider';        offs_x: 43; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(187,367,567,605,645,683,723)),
-    (name: 'Quad';                  offs_x: 44; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(188,368,568,606,646,684,724)),
-    (name: 'Combat Tank';           offs_x: 45; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(189,369,569,607,647,685,725)),
-    (name: 'Missile Tank';          offs_x: 46; offs_y: 3; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(190,370,570,608,648,686,726)),
-    (name: 'Siege Tank';            offs_x: 47; offs_y: 3; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(191,371,571,609,649,687,727)),
-    (name: 'Carryall';              offs_x: 17; offs_y: 1; size_x: 1; size_y: 1; overfl:  0; lnwall: false; power:   0; values:(192,372,572,610,650,688,728)),
-    (name: 'House Specific Tank';   offs_x: 47; offs_y: 1; size_x: 1; size_y: 1; overfl:  1; lnwall: false; power:   0; values:(194,374,574,  0,652,  0,  0))
+    (size_x: 0; size_y: 0; rock_tile_x:  0; rock_tile_y:  0; conc_tile_x:  0; conc_tile_y:  0), // none
+    (size_x: 2; size_y: 2; rock_tile_x: 17; rock_tile_y: 30; conc_tile_x:  9; conc_tile_y: 32), // 2x2
+    (size_x: 3; size_y: 2; rock_tile_x: 11; rock_tile_y: 30; conc_tile_x:  3; conc_tile_y: 32), // 3x2
+    (size_x: 3; size_y: 3; rock_tile_x: 14; rock_tile_y: 30; conc_tile_x:  6; conc_tile_y: 32)  // 3x3
   );
 
-const map_player_info: array[0..7] of TMapPlayerInfo =
-  (
-    (name: 'Atreides';    color: $84614A),
-    (name: 'Harkonnen';   color: $3231C6),
-    (name: 'Ordos';       color: $63824A),
-    (name: 'Emperor';     color: $6B0063),
-    (name: 'Fremen';      color: $747274),
-    (name: 'Smugglers';   color: $00106B),
-    (name: 'Mercenaries'; color: $08728C),
-    (name: 'Sandworm';    color: $406088)
-  );
+const concrete_tiles: array[0..5] of word = (651, 657, 658, 659, 671, 691);
 
-const misc_object_info: array[0..7] of TMiscObjectInfo =
-  (
-    (name: 'Nothing';                 value: 0;  color: $000000; stats_group: sgNone;),
-    (name: 'Worm Spawner';            value: 20; color: $FF00FF; stats_group: sgWormSpawners;),
-    (name: 'Player Start';            value: 23; color: $FFFF00; stats_group: sgPlayerStarts;),
-    (name: 'Spice Bloom';             value: 45; color: $0000FF; stats_group: SgSpiceBlooms;),
-    (name: 'Spice Bloom (Finite 41)'; value: 41; color: $0000B0; stats_group: SgSpiceBlooms;),
-    (name: 'Spice Bloom (Finite 42)'; value: 42; color: $0000C0; stats_group: sgSpiceBlooms;),
-    (name: 'Spice Bloom (Finite 43)'; value: 43; color: $0000D0; stats_group: sgSpiceBlooms;),
-    (name: 'Spice Bloom (Finite 44)'; value: 44; color: $0000E0; stats_group: sgSpiceBlooms;)
-  );
+type
+  TStructures = class
 
-function special_value_to_params(value: word; var player: word; var index: word; var is_misc: boolean): boolean;
+  public
+    cnt_structures: integer;
+    structure_info: array of TStructureInfo;
+    first_unit_index: integer;
+
+    cnt_map_players: integer;
+    map_player_info: array of TMapPlayerInfo;
+
+    cnt_misc_objects: integer;
+    misc_object_info: array of TMiscObjectInfo;
+
+  private
+    tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
+
+  public
+    procedure init;
+    function special_value_is_valid(special: word): boolean;
+    function special_value_to_params(special: word; var player: word; var index: word; var is_misc: boolean): boolean;
+    function check_links_with_wall(special: word): boolean;
+
+  end;
+
+var
+  Structures: TStructures;
 
 implementation
 
-function special_value_to_params(value: word; var player, index: word; var is_misc: boolean): boolean;
-var i, j: integer;
+uses Classes, IniFiles, main;
+
+procedure TStructures.init;
+var
+  ini: TMemIniFile;
+  tmp_strings: TStringList;
+  decoder: TStringList;
+  tiledatafile: file of TTileDataEntry;
+  sname : string;
+  i,j,s,e: integer;
+  found: boolean;
 begin
-  if value = 0 then
+  // Read list of structures and their properties from structures.ini
+  ini := TMemIniFile.Create(current_dir + 'config/structures.ini');
+  tmp_strings := TStringList.Create;
+  decoder := TStringList.Create;
+  decoder.Delimiter := '.';
+  ini.ReadSections(tmp_strings);
+  cnt_structures := tmp_strings.Count;
+  SetLength(structure_info, cnt_structures);
+  first_unit_index := cnt_structures;
+  for i := 0 to cnt_structures - 1 do
+  begin
+    sname := tmp_strings[i];
+    if ini.ReadBool(sname, 'first_unit', false) = true then
+      first_unit_index := i;
+    with structure_info[i] do
+    begin
+      name := sname;
+      tiledataindex := ini.ReadInteger(sname, 'tiledataindex', 0);
+      pos_x := ini.ReadInteger(sname, 'pos_x', 0);
+      pos_y := ini.ReadInteger(sname, 'pos_y', 0);
+      size_x := ini.ReadInteger(sname, 'size_x', 1);
+      size_y := ini.ReadInteger(sname, 'size_y', 1);
+      decoder.DelimitedText := ini.ReadString(sname, 'size_adjust', '');
+      if decoder.Count = 4 then
+      begin
+        size_adjust.Top := strtoint(decoder[0]);
+        size_adjust.Left := strtoint(decoder[1]);
+        size_adjust.Bottom := strtoint(decoder[2]);
+        size_adjust.Right := strtoint(decoder[3]);
+      end;
+      bottom_style := ini.ReadInteger(sname, 'bottom_style', 0);
+      if (bottom_style >= Length(bottom_style_types)) then
+        bottom_style := 0;
+      linkwall := ini.ReadBool(sname, 'linkwall', false);
+      power := ini.ReadInteger(sname, 'power', 0);
+    end;
+  end;
+  ini.Destroy;
+
+  // Read TILEDATA.BIN file and retrieve special values of structures
+  AssignFile(tiledatafile, current_dir + 'config/TILEDATA.BIN');
+  Reset(tiledatafile);
+  BlockRead(tiledatafile, tiledata, cnt_tiledata_entries);
+  CloseFile(tiledatafile);
+  for i := 0 to cnt_tiledata_entries-1 do
+  begin
+    // Empty TILEDATA entry
+    if (tiledata[i].index = 65535) and (tiledata[i].player = 255) and (tiledata[i].stype = 255) then
+    begin
+      tiledata[i].index := 0;
+      tiledata[i].player := 0;
+      tiledata[i].stype := byte(stNothing);
+      continue;
+    end;
+    // Non-empty TILEDATA entry
+    if tiledata[i].stype = $80 then
+    begin
+      // Building
+      s := 0;
+      e := first_unit_index - 1;
+      tiledata[i].stype := byte(stBuilding);
+    end else
+    begin
+      // Unit
+      s := first_unit_index;
+      e := cnt_structures -1;
+      tiledata[i].stype := byte(stUnit);
+    end;
+    // Translate tiledata index to structure index and save special value
+    found := false;
+    for j := s to e do
+      if structure_info[j].tiledataindex = tiledata[i].index then
+      begin
+        tiledata[i].index := j;
+        structure_info[j].values[tiledata[i].player] := i;
+        found := true;
+        break;
+      end;
+    // Tiledata index not defined for any structure
+    if not found then
+    begin
+      tiledata[i].index := 0;
+      tiledata[i].player := 0;
+      tiledata[i].stype := byte(stNothing);
+    end;
+  end;
+
+  // Read list of map players
+  ini := TMemIniFile.Create(current_dir + 'config/map_players.ini');
+  ini.ReadSections(tmp_strings);
+  cnt_map_players := IfThen(tmp_strings.Count <= cnt_players, tmp_strings.Count, cnt_players);
+  SetLength(map_player_info, cnt_map_players);
+  for i := 0 to cnt_map_players-1 do
+  begin
+    sname := tmp_strings[i];
+    with map_player_info[i] do
+    begin
+      name := sname;
+      color := ini.ReadInteger(sname, 'color', $0);
+    end;
+  end;
+  ini.Destroy;
+
+  // Read list of miscellaneous objects
+  ini := TMemIniFile.Create(current_dir + 'config/misc_objects.ini');
+  ini.ReadSections(tmp_strings);
+  cnt_misc_objects := tmp_strings.Count;
+  SetLength(misc_object_info, cnt_misc_objects);
+  for i := 0 to cnt_misc_objects-1 do
+  begin
+    sname := tmp_strings[i];
+    with misc_object_info[i] do
+    begin
+      name := sname;
+      value := ini.ReadInteger(sname, 'value', 0);
+      color := ini.ReadInteger(sname, 'color', $0);
+      stats_group := ini.ReadInteger(sname, 'stats_group', 0);
+      tiledata[value].index := i;
+      tiledata[value].player := 0;
+      tiledata[value].stype := byte(stMiscObject);
+    end;
+  end;
+  ini.Destroy;
+  tmp_strings.Destroy;
+  decoder.Destroy;
+end;
+
+function TStructures.special_value_is_valid(special: word): boolean;
+begin
+  result := (special <> 0) and (special < cnt_tiledata_entries) and (tiledata[special].stype <> byte(stNothing));
+end;
+
+function TStructures.special_value_to_params(special: word; var player, index: word; var is_misc: boolean): boolean;
+begin
+  if not special_value_is_valid(special) then
   begin
     result := false;
     exit;
   end;
-  for i:= 0 to Length(misc_object_info) - 1 do
-  begin
-    if value = misc_object_info[i].value then
-    begin
-      index := i;
-      is_misc := true;
-      result := true;
-      exit;
-    end;
-  end;
-  for i := 0 to Length(structure_info) - 1 do
-  begin
-    for j:= 0 to cnt_map_players - 1 do
-    begin
-      if value = structure_info[i].values[j] then
-      begin
-        player := j;
-        index := i;
-        is_misc := false;
-        result := true;
-        exit;
-      end;
-    end;
-  end;
-  result := false;
+  player := tiledata[special].player;
+  index := tiledata[special].index;
+  is_misc := tiledata[special].stype = byte(stMiscObject);
+  result := true;
+end;
+
+function TStructures.check_links_with_wall(special: word): boolean;
+begin
+  result := special_value_is_valid(special) and structure_info[tiledata[special].index].linkwall;
 end;
 
 end.
+

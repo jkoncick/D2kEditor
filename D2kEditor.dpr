@@ -21,6 +21,7 @@ uses
 begin
   Application.Initialize;
   Application.Title := 'D2kEditor';
+  Structures := TStructures.Create;
   Mission := TMission.Create;
   Tileset := TTileset.Create;
   StringTable := TStringTable.Create;
