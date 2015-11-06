@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics, IniFiles;
+uses Graphics, IniFiles, Classes;
 
 // Mis file constants
 const cnt_mis_players = 8;
@@ -18,104 +18,6 @@ const deploy_action: array[0..2] of string = ('None', 'Hunt', 'Free');
 const allegiance_type: array[0..2] of string = ('Ally', 'Enemy', 'Neutral');
 const allegiance_type_color: array[0..2] of TColor = (clGreen, clRed, clOlive);
 const comparison_function: array[0..3] of string = ('>', '<', '=', '%');
-
-const unit_names: array[0..29] of string = (
-  'Light infantry',
-  'Trooper',
-  'Engineer',
-  'Thumper infantry',
-  'Sardaukar',
-  'Trike',
-  'Raider',
-  'Quad',
-  'Harvester',
-  'Combat tank (A)',
-  'Combat tank (H)',
-  'Combat tank (O)',
-  'MCV',
-  'Missile tank',
-  'Deviator',
-  'Siege tank',
-  'Sonic tank',
-  'Devastator',
-  'Carryall',
-  'Carryall (A)',
-  'Ornithropter',
-  'Stealth Fremen',
-  'Fremen',
-  'Saboteur',
-  'Death Hand Missile',
-  'Sandworm',
-  'Frigate',
-  'Grenadier',
-  'Stealth Raider',
-  'MP Sardaukar'
-  );
-
-const building_names: array[0..61] of string = (
-  'Construction Yard (A)',
-  'Construction Yard (H)',
-  'Construction Yard (O)',
-  'Construction Yard (E)',
-  'Concrete (A)',
-  'Concrete (H)',
-  'Concrete (O)',
-  'Large Concrete (A)',
-  'Large Concrete (H)',
-  'Large Concrete (O)',
-  'Wind Trap (A)',
-  'Wind Trap (H)',
-  'Wind Trap (O)',
-  'Barracks (A)',
-  'Barracks (H)',
-  'Barracks (O)',
-  'Sietch',
-  'Wall (A)',
-  'Wall (H)',
-  'Wall (O)',
-  'Refinery (A)',
-  'Refinery (H)',
-  'Refinery (O)',
-  'Gun Turret (A)',
-  'Gun Turret (H)',
-  'Gun Turret (O)',
-  'Outpost (A)',
-  'Outpost (H)',
-  'Outpost (O)',
-  'Rocket Turret (A)',
-  'Rocket Turret (H)',
-  'Rocket Turret (O)',
-  'High Tech Factory (A)',
-  'High Tech Factory (H)',
-  'High Tech Factory (O)',
-  'Light Factory (A)',
-  'Light Factory (H)',
-  'Light Factory (O)',
-  'Silo (A)',
-  'Silo (H)',
-  'Silo (O)',
-  'Heavy Factory (A)',
-  'Heavy Factory (H)',
-  'Heavy Factory (O)',
-  'Heavy Factory (M)',
-  'Heavy Factory (E)',
-  'Starport (A)',
-  'Starport (H)',
-  'Starport (O)',
-  'Starport (S)',
-  'Repair Pad (A)',
-  'Repair Pad (H)',
-  'Repair Pad (O)',
-  'IX Research Centre (A)',
-  'IX Research Centre (H)',
-  'IX Research Centre (O)',
-  'Palace (A)',
-  'Palace (H)',
-  'Palace (O)',
-  'Palace (E)',
-  'Modified Outpost (H)',
-  'Modified Outpost (O)'
-  );
 
 // Mis file type definitions
 type
@@ -224,7 +126,7 @@ const event_type_info: array[0..21] of TEventTypeInfo =
     (name: 'Leave';                     key: ord('L'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
     (name: 'Berserk';                   key: ord('B'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
     (name: 'Play Sound';                key: ord('O'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Sound';),
-    (name: 'Set Build Rate';            key: ord('G'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Set Build Rate';            key: ord('G'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Build rate';),
     (name: 'Set Attack Building Rate';  key: ord('J'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
     (name: 'Set Cash';                  key: ord('Y'); use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Cash';),
     (name: 'Set Tech';                  key: ord('T'); use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Tech level';),
@@ -277,7 +179,14 @@ type
     event_markers: array[0..127, 0..127] of TEventMarker;
     event_notes: array[0..63] of String;
     condition_notes: array[0..47] of String;
+
+    // Configuration variables
     default_ai: array[0..7607] of byte;
+    building_names: TStringList;
+    unit_names: TStringList;
+
+    // Temporary variables
+    tmp_unit_count: Array of integer;
 
   public
     procedure init;
@@ -328,6 +237,11 @@ begin
   Reset(ai_file);
   BlockRead(ai_file, default_ai[1], Length(default_ai)-1);
   CloseFile(ai_file);
+  unit_names := TStringList.Create;
+  unit_names.LoadFromFile(current_dir + 'config/mis_units.txt');
+  building_names := TStringList.Create;
+  building_names.LoadFromFile(current_dir + 'config/mis_buildings.txt');
+  SetLength(tmp_unit_count, unit_names.Count);
 end;
 
 function TMission.get_mis_filename(filename: String): String;
@@ -508,12 +422,26 @@ begin
   contents := '';
   if event_type_info[event.event_type].use_unit_list then
   begin
-    contents := deploy_action[event.deploy_action] + ' (' + inttostr(event.num_units) + ') ';
+    if event_type <> etStarportDelivery then
+      contents := deploy_action[event.deploy_action] + ' ';
+    contents := contents + '(' + inttostr(event.num_units) + '): ';
+    dummy := false;
+    for i := 0 to unit_names.Count - 1 do
+      tmp_unit_count[i] := 0;
     for i := 0 to event.num_units - 1 do
     begin
-      if i > 0 then
-        contents := contents + ', ';
-      contents := contents + unit_names[event.units[i]];
+      if event.units[i] < unit_names.Count then
+        Inc(tmp_unit_count[event.units[i]]);
+    end;
+    for i := 0 to unit_names.Count - 1 do
+    begin
+      if tmp_unit_count[i] > 0 then
+      begin
+        if dummy then
+          contents := contents + ',  ';
+        contents := contents + inttostr(tmp_unit_count[i]) + 'x ' + unit_names[i];
+        dummy := true;
+      end;
     end;
   end;
   case event_type of

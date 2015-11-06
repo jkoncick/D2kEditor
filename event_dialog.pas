@@ -303,8 +303,8 @@ begin
   for i:= 0 to Length(condition_type_info)-1 do
     cbConditionType.Items.Add(inttostr(i) + ' - ' + condition_type_info[i].name);
   // Initialize unit selection list
-  for i:= 0 to Length(unit_names)-1 do
-    UnitSelectionList.Items.Add(inttostr(i) + ' - ' + unit_names[i]);
+  for i:= 0 to Mission.unit_names.Count -1 do
+    UnitSelectionList.Items.Add(inttostr(i) + ' - ' + Mission.unit_names[i]);
   // Initialize player list
   for i:= 0 to Length(player_names)-1 do
     cbEventPlayer.Items.Add(inttostr(i) + ' - ' + player_names[i]);
@@ -318,11 +318,11 @@ begin
     cbAllegianceType.Items.Add(inttostr(i) + ' - ' + allegiance_type[i]);
   cbConditionPlayer.Items := cbEventPlayer.Items;
   // Initialize building types
-  for i:= 0 to Length(building_names)-1 do
-    cbBuildingType.Items.Add(inttostr(i) + ' - ' + building_names[i]);
+  for i:= 0 to Mission.building_names.Count -1 do
+    cbBuildingType.Items.Add(inttostr(i) + ' - ' + Mission.building_names[i]);
   // Initialize unit types
-  for i:= 0 to Length(unit_names)-1 do
-    cbUnitType.Items.Add(inttostr(i) + ' - ' + unit_names[i]);
+  for i:= 0 to Mission.unit_names.Count -1 do
+    cbUnitType.Items.Add(inttostr(i) + ' - ' + Mission.unit_names[i]);
   // Initialize comparison functions
   for i:= 0 to Length(comparison_function)-1 do
     cbTimerCompareFunc.Items.Add(comparison_function[i]);
@@ -339,7 +339,12 @@ begin
     btnCreateEventsOkClick(Sender);
   if (key = 13) and not CreateEventsPanel.Visible then
   begin
-    if (ActiveControl.Parent = ConditionPropertiesPanel) or
+    if (ActiveControl = ConditionGrid) then
+    begin
+      btnApplyConditionChangesClick(nil);
+      btnApplyEventChangesClick(nil);
+    end
+    else if (ActiveControl.Parent = ConditionPropertiesPanel) or
      ((ActiveControl.Parent.Parent <> Nil) and (ActiveControl.Parent.Parent = ConditionPropertiesPanel)) then
       btnApplyConditionChangesClick(nil)
     else
@@ -552,7 +557,7 @@ var
 begin
   if event_type_info[Mission.mis_data.events[selected_event].event_type].use_unit_list then
     for i := 0 to tmp_event.num_units - 1 do
-      EventUnitList.Items.Add(unit_names[tmp_event.units[i]]);
+      EventUnitList.Items.Add(Mission.unit_names[tmp_event.units[i]]);
 end;
 
 procedure TEventDialog.fill_event_condition_list;
@@ -883,7 +888,7 @@ begin
   end;
   tmp_event.units[tmp_event.num_units] := UnitSelectionList.ItemIndex;
   inc(tmp_event.num_units);
-  EventUnitList.Items.Add(unit_names[UnitSelectionList.ItemIndex]);
+  EventUnitList.Items.Add(Mission.unit_names[UnitSelectionList.ItemIndex]);
 end;
 
 procedure TEventDialog.btnDeleteUnitClick(Sender: TObject);

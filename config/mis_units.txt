@@ -1,0 +1,30 @@
+Light infantry
+Trooper
+Engineer
+Thumper infantry
+Sardaukar
+Trike
+Raider
+Quad
+Harvester
+Combat tank (A)
+Combat tank (H)
+Combat tank (O)
+MCV
+Missile tank
+Deviator
+Siege tank
+Sonic tank
+Devastator
+Carryall
+Carryall (A)
+Ornithropter
+Stealth Fremen
+Fremen
+Saboteur
+Death Hand Missile
+Sandworm
+Frigate
+Grenadier
+Stealth Raider
+MP Sardaukar
