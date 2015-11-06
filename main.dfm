@@ -140,6 +140,7 @@ object MainWindow: TMainWindow
       ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
+      OnChange = EditorPagesChange
       object PageStructures: TTabSheet
         Caption = 'Structures       '
         object LbStructureValue: TLabel
@@ -346,7 +347,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
       end

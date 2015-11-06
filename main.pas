@@ -199,7 +199,8 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure MiniMapMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
-    // Structure editor
+    // Structure/terrain editor
+    procedure EditorPagesChange(Sender: TObject);
     procedure BuildingListClick(Sender: TObject);
     procedure UnitListClick(Sender: TObject);
     procedure PlayerSelectChange(Sender: TObject);
@@ -486,6 +487,7 @@ begin
   if AMessage.CharCode = VK_TAB then
   begin
     EditorPages.TabIndex := (EditorPages.TabIndex + 1) and 1;
+    EditorPagesChange(nil);
     AMessage.Result := 1;
   end else
     inherited;
@@ -564,8 +566,9 @@ begin
     ord('C'): begin EditorPages.TabIndex := 1; RbSelectMode.Checked := true; end;
     ord('T'): CbSelectStructures.Checked := not CbSelectStructures.Checked;
     ord('B'): begin EditorPages.TabIndex := 1; RbBlockMode.Checked := true; end;
-    end
+    end;
   end else
+  if mode(mTerrain) then
   begin
     // Block key presets
     if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 186) or (key = 188) or (key = 190) or (key = 191) then
@@ -1263,6 +1266,19 @@ begin
     MiniMapMouseDown(Sender, mbLeft, Shift, X, Y);
 end;
 
+procedure TMainWindow.EditorPagesChange(Sender: TObject);
+begin
+  if EditorPages.ActivePageIndex = 0 then
+  begin
+    if MiscObjList.ItemIndex <> -1 then
+      MiscObjList.SetFocus;
+    if BuildingList.ItemIndex <> -1 then
+      BuildingList.SetFocus;
+    if UnitList.ItemIndex <> -1 then
+      UnitList.SetFocus;
+  end;
+end;
+
 procedure TMainWindow.BuildingListClick(Sender: TObject);
 begin
   MiscObjList.ItemIndex := -1;
@@ -1886,6 +1902,7 @@ begin
   else
     value := Structures.structure_info[UnitList.ItemIndex + Structures.first_unit_index].values[PlayerSelect.ItemIndex];
   SpecialValue.Text := inttostr(value);
+  mouse_already_clicked := false;
 end;
 
 function TMainWindow.mode(m: SelectedMode): boolean;
@@ -1893,7 +1910,7 @@ begin
   result := false;
   case m of
     mStructures:      result := EditorPages.TabIndex = 0;
-    mStructuresPaint: result := (EditorPages.TabIndex = 0) and (strtoint(SpecialValue.Text) <= 2);
+    mStructuresPaint: result := (EditorPages.TabIndex = 0) and ((strtoint(SpecialValue.Text) <= 2) or (BuildingList.ItemIndex = 0));
     mTerrain:         result := EditorPages.TabIndex = 1;
     mPaintMode:       result := (EditorPages.TabIndex = 1) and RbPaintMode.Checked;
     mBlockMode:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;
