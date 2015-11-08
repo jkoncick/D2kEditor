@@ -531,6 +531,14 @@ object MainWindow: TMainWindow
         ShortCut = 118
         OnClick = Changestructureowner1Click
       end
+      object N11: TMenuItem
+        Caption = '-'
+      end
+      object Showmapstatistics1: TMenuItem
+        Caption = 'Show map statistics'
+        ShortCut = 16471
+        OnClick = Showmapstatistics1Click
+      end
     end
     object Mission1: TMenuItem
       Caption = 'Mission'

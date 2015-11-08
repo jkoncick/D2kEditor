@@ -56,7 +56,7 @@ implementation
 
 uses
   SysUtils, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, _map, _stringtable;
+  mission_dialog, event_dialog, map_stats_dialog, _map, _stringtable;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -87,6 +87,7 @@ begin
   MainWindow.Top := ini.ReadInteger('GUI','MainWindow.Top',MainWindow.Top);
   MainWindow.Width := ini.ReadInteger('GUI','MainWindow.Width',MainWindow.Width);
   MainWindow.Height := ini.ReadInteger('GUI','MainWindow.Height',MainWindow.Height);
+  MainWindow.Drawconcrete1.Checked := ini.ReadBool('GUI','MainWindow.Drawconcrete1.Checked',MainWindow.Drawconcrete1.Checked);
 end;
 
 procedure TSettings.load_postcreate_editor_settings;
@@ -118,6 +119,10 @@ begin
   EventDialog.Width := ini.ReadInteger('GUI','EventDialog.Width',EventDialog.Width);
   EventDialog.Height := ini.ReadInteger('GUI','EventDialog.Height',EventDialog.Height);
   EventDialog.LowerPanel.Height := ini.ReadInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
+  EventDialog.EventGrid.ColWidths[4] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
+  MapStatsDialog.Left := ini.ReadInteger('GUI','MapStatsDialog.Left',MapStatsDialog.Left);
+  MapStatsDialog.Top := ini.ReadInteger('GUI','MapStatsDialog.Top',MapStatsDialog.Top);
+  MapStatsDialog.Height := ini.ReadInteger('GUI','MapStatsDialog.Height',MapStatsDialog.Height);
   ini.Destroy;
 end;
 
@@ -148,6 +153,7 @@ begin
   ini.WriteInteger('GUI','MainWindow.Top',MainWindow.Top);
   ini.WriteInteger('GUI','MainWindow.Width',MainWindow.Width);
   ini.WriteInteger('GUI','MainWindow.Height',MainWindow.Height);
+  ini.WriteBool('GUI','MainWindow.Drawconcrete1.Checked',MainWindow.Drawconcrete1.Checked);
   ini.WriteInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
   ini.WriteInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
   ini.WriteInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
@@ -166,6 +172,10 @@ begin
   ini.WriteInteger('GUI','EventDialog.Width',EventDialog.Width);
   ini.WriteInteger('GUI','EventDialog.Height',EventDialog.Height);
   ini.WriteInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
+  ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
+  ini.WriteInteger('GUI','MapStatsDialog.Left',MapStatsDialog.Left);
+  ini.WriteInteger('GUI','MapStatsDialog.Top',MapStatsDialog.Top);
+  ini.WriteInteger('GUI','MapStatsDialog.Height',MapStatsDialog.Height);
   ini.UpdateFile;
   ini.Destroy;
 end;

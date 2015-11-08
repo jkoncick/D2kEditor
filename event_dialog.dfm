@@ -47,7 +47,7 @@ object EventDialog: TEventDialog
     Font.Height = -11
     Font.Name = 'MS Sans Serif'
     Font.Style = []
-    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowSelect, goThumbTracking]
     ParentFont = False
     PopupMenu = EventGridPopupMenu
     ScrollBars = ssVertical

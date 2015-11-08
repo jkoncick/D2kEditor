@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Dialogs
-  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog,
+  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog,
   // Units
   _map, _mission, _tileset, _structures, _stringtable, _settings;
 
@@ -130,6 +130,8 @@ type
     UnitList: TListBox;
     LbUnitList: TLabel;
     Drawconcrete1: TMenuItem;
+    N11: TMenuItem;
+    Showmapstatistics1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -166,6 +168,7 @@ type
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
+    procedure Showmapstatistics1Click(Sender: TObject);
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
     procedure Assignmisfile1Click(Sender: TObject);
@@ -812,6 +815,12 @@ end;
 procedure TMainWindow.Changestructureowner1Click(Sender: TObject);
 begin
   SetDialog.select_menu(3);
+end;
+
+procedure TMainWindow.Showmapstatistics1Click(Sender: TObject);
+begin
+  MapStatsDialog.update_stats;
+  MapStatsDialog.Show;
 end;
 
 procedure TMainWindow.EventsandConditions1Click(Sender: TObject);
@@ -1821,11 +1830,13 @@ begin
   end else
     unload_mission;
   set_window_titles(ChangeFileExt(ExtractFileName(map_filename), ''));
+  calculate_power_and_statistics;
+  if MapStatsDialog.Visible then
+    MapStatsDialog.update_stats;
   // Rendering
   resize_map_canvas;
   render_minimap;
   render_map;
-  calculate_power_and_statistics;
 end;
 
 procedure TMainWindow.save_map(filename: String);
@@ -2500,8 +2511,10 @@ begin
   // Get test map settings
   Settings.get_map_test_settings;
   // Finish it
-  set_window_titles('');
+  set_window_titles('Untitled');
   calculate_power_and_statistics;
+  if MapStatsDialog.Visible then
+    MapStatsDialog.update_stats;
   resize_map_canvas;
   render_minimap;
   render_map;
