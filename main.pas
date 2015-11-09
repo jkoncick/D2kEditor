@@ -433,6 +433,14 @@ end;
 
 procedure TMainWindow.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
+  if map_loaded and Settings.AlwaysAskOnQuit then
+  begin
+    if Application.MessageBox('Do you really want to quit?','D2kEditor', MB_YESNO or MB_ICONQUESTION) = IDNO then
+    begin
+      Action := caNone;
+      exit;
+    end;
+  end;
   Settings.save_editor_settings;
 end;
 
@@ -634,7 +642,8 @@ begin
   if map_filename = '' then
     Savemapas1Click(Sender)
   else begin
-    check_map_errors;
+    if Settings.CheckMapErrorsOnSave then
+      check_map_errors;
     save_map(map_filename);
   end;
 end;
@@ -643,7 +652,8 @@ procedure TMainWindow.Savemapas1Click(Sender: TObject);
 begin
   if not map_loaded then
     exit;
-  check_map_errors;
+  if Settings.CheckMapErrorsOnSave then
+    check_map_errors;
   if MapSaveDialog.Execute then
   begin
     if map_filename <> MapSaveDialog.FileName then
@@ -1890,7 +1900,10 @@ begin
     Application.MessageBox(PChar('Cannot find game executable (' + Settings.GameExecutable + ')'), 'Cannot test map', MB_ICONERROR);
     result := false;
   end else
-    result := check_map_errors;
+  if Settings.CheckMapErrorsOnTest then
+    result := check_map_errors
+  else
+    result := true;
 end;
 
 procedure TMainWindow.launch_game;
@@ -2496,6 +2509,8 @@ begin
       map_data[x,y].tile := Tileset.get_random_paint_tile(0);
       map_data[x,y].special := 0;
     end;
+  if Settings.PreplaceWormSpawner then
+    map_data[0,0].special := Structures.misc_object_info[1].value;
   StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
   StatusBar.Panels[3].Text := 'Map not saved';
   map_filename := '';

@@ -10,11 +10,13 @@ type
 
   public
     // Preferences
-    AssignMisFileToNewMap: boolean;
     PreserveGUISettings: boolean;
     RestrictSpiceToSand: boolean;
     EnableEventNotes: boolean;
     HidePresetWindow: boolean;
+    CheckMapErrorsOnSave: boolean;
+    CheckMapErrorsOnTest: boolean;
+    AlwaysAskOnQuit: boolean;
 
     // Default values
     DefaultMapWidth: integer;
@@ -22,6 +24,8 @@ type
     DefaultMisTechLevel: integer;
     DefaultMisStartingMoney: integer;
     DefaultTileset: integer;
+    AssignMisFileToNewMap: boolean;
+    PreplaceWormSpawner: boolean;
 
     // File paths
     GameExecutable: String;
@@ -65,17 +69,21 @@ begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   tmp_ini := ini;
   // Load preferences
-  AssignMisFileToNewMap := ini.ReadBool('Preferences', 'AssignMisFileToNewMap', true);
   PreserveGUISettings := ini.ReadBool('Preferences', 'PreserveGUISettings', true);
   RestrictSpiceToSand := ini.ReadBool('Preferences', 'RestrictSpiceToSand', true);
   EnableEventNotes := ini.ReadBool('Preferences', 'EnableEventNotes', true);
   HidePresetWindow := ini.ReadBool('Preferences', 'HidePresetWindow', true);
+  CheckMapErrorsOnSave := ini.ReadBool('Preferences', 'CheckMapErrorsOnSave', true);
+  CheckMapErrorsOnTest := ini.ReadBool('Preferences', 'CheckMapErrorsOnTest', true);
+  AlwaysAskOnQuit := ini.ReadBool('Preferences', 'AlwaysAskOnQuit', true);
   // Load default values
   DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
   DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 64);
   DefaultMisTechLevel := ini.ReadInteger('Defaults', 'DefaultMisTechLevel', 1);
   DefaultMisStartingMoney := ini.ReadInteger('Defaults', 'DefaultMisStartingMoney', 3000);
   DefaultTileset := ini.ReadInteger('Defaults', 'DefaultTileset', 2);
+  AssignMisFileToNewMap := ini.ReadBool('Defaults', 'AssignMisFileToNewMap', true);
+  PreplaceWormSpawner := ini.ReadBool('Defaults', 'PreplaceWormSpawner', false);
   // Load file paths
   GamePath := ini.ReadString('Paths','GamePath', current_dir + '..\');
   GameExecutable := ini.ReadString('Paths','GameExecutable', GamePath + 'dune2000.exe');
@@ -120,6 +128,7 @@ begin
   EventDialog.Height := ini.ReadInteger('GUI','EventDialog.Height',EventDialog.Height);
   EventDialog.LowerPanel.Height := ini.ReadInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
   EventDialog.EventGrid.ColWidths[4] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
+  EventDialog.EventGrid.ColWidths[5] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   MapStatsDialog.Left := ini.ReadInteger('GUI','MapStatsDialog.Left',MapStatsDialog.Left);
   MapStatsDialog.Top := ini.ReadInteger('GUI','MapStatsDialog.Top',MapStatsDialog.Top);
   MapStatsDialog.Height := ini.ReadInteger('GUI','MapStatsDialog.Height',MapStatsDialog.Height);
@@ -133,17 +142,21 @@ var
 begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   // Save preferences
-  ini.WriteBool('Preferences', 'AssignMisFileToNewMap', AssignMisFileToNewMap);
   ini.WriteBool('Preferences', 'PreserveGUISettings', PreserveGUISettings);
   ini.WriteBool('Preferences', 'RestrictSpiceToSand', RestrictSpiceToSand);
   ini.WriteBool('Preferences', 'EnableEventNotes', EnableEventNotes);
   ini.WriteBool('Preferences', 'HidePresetWindow', HidePresetWindow);
+  ini.WriteBool('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);
+  ini.WriteBool('Preferences', 'CheckMapErrorsOnTest', CheckMapErrorsOnTest);
+  ini.WriteBool('Preferences', 'AlwaysAskOnQuit', AlwaysAskOnQuit);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);
   ini.WriteInteger('Defaults', 'DefaultMapHeight', DefaultMapHeight);
   ini.WriteInteger('Defaults', 'DefaultMisTechLevel', DefaultMisTechLevel);
   ini.WriteInteger('Defaults', 'DefaultMisStartingMoney', DefaultMisStartingMoney);
   ini.WriteInteger('Defaults', 'DefaultTileset', DefaultTileset);
+  ini.WriteBool('Defaults', 'AssignMisFileToNewMap', AssignMisFileToNewMap);
+  ini.WriteBool('Defaults', 'PreplaceWormSpawner', PreplaceWormSpawner);
   // Save file paths
   ini.WriteString('Paths','GamePath',GamePath);
   ini.WriteString('Paths','GameExecutable',GameExecutable);
@@ -173,6 +186,7 @@ begin
   ini.WriteInteger('GUI','EventDialog.Height',EventDialog.Height);
   ini.WriteInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
   ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
+  ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   ini.WriteInteger('GUI','MapStatsDialog.Left',MapStatsDialog.Left);
   ini.WriteInteger('GUI','MapStatsDialog.Top',MapStatsDialog.Top);
   ini.WriteInteger('GUI','MapStatsDialog.Height',MapStatsDialog.Height);

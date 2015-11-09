@@ -39,7 +39,7 @@ object EventDialog: TEventDialog
     Width = 1272
     Height = 426
     Align = alClient
-    ColCount = 6
+    ColCount = 7
     DefaultRowHeight = 18
     RowCount = 65
     Font.Charset = EASTEUROPE_CHARSET

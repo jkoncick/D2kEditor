@@ -270,15 +270,17 @@ begin
   EventGrid.Cells[0,0] := '#';
   EventGrid.ColWidths[0] := 20;
   EventGrid.Cells[1,0] := 'Event type';
-  EventGrid.ColWidths[1] := 100;
+  EventGrid.ColWidths[1] := 90;
   EventGrid.Cells[2,0] := 'Position';
   EventGrid.ColWidths[2] := 50;
   EventGrid.Cells[3,0] := 'Player';
   EventGrid.ColWidths[3] := 64;
   EventGrid.Cells[4,0] := 'Contents';
-  EventGrid.ColWidths[4] := 500;
+  EventGrid.ColWidths[4] := 400;
   EventGrid.Cells[5,0] := 'Conditions';
-  EventGrid.ColWidths[5] := 1140;
+  EventGrid.ColWidths[5] := 400;
+  EventGrid.Cells[6,0] := 'Note';
+  EventGrid.ColWidths[6] := 1140;
   for i:= 1 to 64 do
   begin
     EventGrid.Cells[0,i] := inttostr(i-1);
@@ -406,6 +408,8 @@ begin
     EventGrid.Cells[4,i] := Mission.get_event_contents(i-1);
     // Conditions
     EventGrid.Cells[5,i] := Mission.get_event_conditions(i-1);
+    // Note
+    EventGrid.Cells[6,i] := Mission.event_notes[i-1];
   end;
   // Clear unused event rows
   for i := Mission.mis_data.num_events + 1 to 64 do
