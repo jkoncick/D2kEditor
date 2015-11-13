@@ -260,7 +260,7 @@ begin
   edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
   fill_ai_values;
   cbUseINI.Tag := 1;
-  if FileExists(get_ini_filename(map_filename)) then
+  if FileExists(get_ini_filename(Map.filename)) then
   begin
     load_ini_fields;
     cbUseINI.Checked := true;
@@ -336,7 +336,7 @@ var
   tmp_strings: TStringList;
   ini: TMemIniFile;
 begin
-  ini := TMemIniFile.Create(get_ini_filename(map_filename));
+  ini := TMemIniFile.Create(get_ini_filename(Map.filename));
   btnResetToDefaults.Enabled := true;
   btnRefreshStrings.Enabled := true;
   // Load basic map settings
@@ -582,7 +582,7 @@ begin
     load_ini_fields;
   end else
   begin
-    ini_filename := get_ini_filename(map_filename);
+    ini_filename := get_ini_filename(Map.filename);
     if FileExists(ini_filename) and (Application.MessageBox('Do you want to delete ini file on disk?', 'Do not use ini file', MB_YESNO or MB_ICONQUESTION) = IDYES) then
       DeleteFile(ini_filename);
     empty_ini_fields;

@@ -23,6 +23,7 @@ begin
   Application.Initialize;
   Application.Title := 'D2kEditor';
   Structures := TStructures.Create;
+  Map := TMap.Create;
   Mission := TMission.Create;
   Tileset := TTileset.Create;
   StringTable := TStringTable.Create;

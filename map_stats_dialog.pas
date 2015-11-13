@@ -62,7 +62,7 @@ var
   is_misc: boolean;
   player, index: word;
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
   // Reset statistics
   for i := 0 to cnt_fixed_rows + Structures.cnt_structures - 1 do
@@ -71,15 +71,15 @@ begin
   // Copy already computed power statistics
   for j := 0 to cnt_players - 1 do
   begin
-    tmp_stats[Byte(osPowerOutput),j] := map_stats.players[j].power_output;
-    tmp_stats[Byte(osPowerNeed),j] := map_stats.players[j].power_need;
-    tmp_stats[Byte(osPowerPercent),j] := map_stats.players[j].power_percent;
+    tmp_stats[Byte(osPowerOutput),j] := Map.stats.players[j].power_output;
+    tmp_stats[Byte(osPowerNeed),j] := Map.stats.players[j].power_need;
+    tmp_stats[Byte(osPowerPercent),j] := Map.stats.players[j].power_percent;
   end;
   // Compute map statistics
-  for i := 0 to map_width-1 do
-    for j := 0 to map_height-1 do
+  for i := 0 to Map.width-1 do
+    for j := 0 to Map.height-1 do
     begin
-      if not Structures.special_value_to_params(map_data[i,j].special,player,index,is_misc) then
+      if not Structures.special_value_to_params(Map.data[i,j].special,player,index,is_misc) then
         continue;
       if is_misc then
         continue;

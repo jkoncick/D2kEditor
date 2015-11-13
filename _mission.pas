@@ -226,7 +226,7 @@ var
 
 implementation
 
-uses SysUtils, main, _map, _tileset, _stringtable, _settings;
+uses SysUtils, Math, main, _map, _tileset, _stringtable, _settings;
 
 procedure TMission.init;
 var
@@ -859,16 +859,8 @@ begin
     begin
       new_pos_x := Integer(event.map_pos_x) + shift_x;
       new_pos_y := Integer(event.map_pos_y) + shift_y;
-      if new_pos_x < 0 then
-        new_pos_x := 0;
-      if new_pos_x >= map_width then
-        new_pos_x := map_width - 1;
-      if new_pos_y < 0 then
-        new_pos_y := 0;
-      if new_pos_y >= map_height then
-        new_pos_y := map_height - 1;
-      event.map_pos_x := new_pos_x;
-      event.map_pos_y := new_pos_y;
+      event.map_pos_x := min(Map.width - 1, max(0, new_pos_x));
+      event.map_pos_y := min(Map.height - 1, max(0, new_pos_y));
     end;
   end;
   for i := 0 to mis_data.num_conditions - 1 do
@@ -878,16 +870,8 @@ begin
     begin
       new_pos_x := Integer(condition.map_pos_x) + shift_x;
       new_pos_y := Integer(condition.map_pos_y) + shift_y;
-      if new_pos_x < 0 then
-        new_pos_x := 0;
-      if new_pos_x >= map_width then
-        new_pos_x := map_width - 1;
-      if new_pos_y < 0 then
-        new_pos_y := 0;
-      if new_pos_y >= map_height then
-        new_pos_y := map_height - 1;
-      condition.map_pos_x := new_pos_x;
-      condition.map_pos_y := new_pos_y;
+      condition.map_pos_x := min(Map.width - 1, max(0, new_pos_x));
+      condition.map_pos_y := min(Map.height - 1, max(0, new_pos_y));
     end;
   end;
   process_event_markers;
@@ -904,10 +888,8 @@ begin
     event := Addr(mis_data.events[i]);
     if event_type_info[event.event_type].use_map_position then
     begin
-      if event.map_pos_x >= map_width then
-        event.map_pos_x := map_width - 1;
-      if event.map_pos_y >= map_height then
-        event.map_pos_y := map_height - 1;
+      event.map_pos_x := min(Map.width - 1, event.map_pos_x);
+      event.map_pos_y := min(Map.height - 1, event.map_pos_y);
     end;
   end;
   for i := 0 to mis_data.num_conditions - 1 do
@@ -915,10 +897,8 @@ begin
     condition := Addr(mis_data.conditions[i]);
     if condition.condition_type = Byte(ctTileRevealed) then
     begin
-      if condition.map_pos_x >= map_width then
-        condition.map_pos_x := map_width - 1;
-      if condition.map_pos_y >= map_height then
-        condition.map_pos_y := map_height - 1;
+      condition.map_pos_x := min(Map.width - 1, condition.map_pos_x);
+      condition.map_pos_y := min(Map.height - 1, condition.map_pos_y);
     end;
   end;
   process_event_markers;

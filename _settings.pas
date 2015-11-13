@@ -199,7 +199,7 @@ begin
   // Get Game path and game executable from map filename
   if (GameExecutable = '') or (not FileExists(GameExecutable)) then
   begin
-    GamePath := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(map_filename)));
+    GamePath := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(Map.filename)));
     GameExecutable := GamePath + 'dune2000.exe';
   end;
   // Get TEXT.UIB filename and load it
@@ -219,9 +219,9 @@ var
 begin
   ini := TIniFile.Create(GamePath + 'spawn.ini');
   // Try to detect MissionNumber and MySideID from map file name
-  if map_filename <> '' then
+  if Map.filename <> '' then
   begin
-    map_name := ChangeFileExt(ExtractFileName(map_filename),'');
+    map_name := ChangeFileExt(ExtractFileName(Map.filename),'');
     house := map_name[Length(map_name)-3];
     mission := map_name[Length(map_name)-2];
   end else

@@ -12,25 +12,16 @@ uses
   // Units
   _map, _mission, _tileset, _structures, _stringtable, _settings;
 
-const max_undo_steps = 32767;
-
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
 type
   SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
 
 type
-  TUndoEntry = record
-    x, y: word;
-    data: TMapTile;
-    is_first: boolean;
-  end;
-
-type
   TBlockClipboard = record
     block_width: word;
     block_height: word;
-    block_data: array[0..127,0..127] of TMapTile;
+    block_data: TMapData;
   end;
 
 type
@@ -250,7 +241,7 @@ type
     // Tile block variables
     block_width: word;
     block_height: word;
-    block_data: array[0..127,0..127] of TMapTile;
+    block_data: TMapData;
     block_select_started: boolean;
     block_select_start_x: word;
     block_select_start_y: word;
@@ -261,13 +252,6 @@ type
     moving_disable: boolean;
     moving_event: integer;
     moving_condition: integer;
-
-    // Undo variables
-    undo_history: array[0..max_undo_steps] of TUndoEntry;
-    undo_start: integer;
-    undo_max: integer;
-    undo_pos: integer;
-    undo_block_start: boolean;
 
     // Clipboard variables
     clipboard_format: cardinal;
@@ -286,6 +270,7 @@ type
     procedure load_map(filename: String);
     procedure save_map(filename: String);
     procedure unload_mission;
+    function check_map_errors: boolean;    
     procedure set_window_titles(map_name: String);
 
     // Map testing procedures
@@ -295,30 +280,20 @@ type
     // Miscellaneous helper procedures
     procedure set_special_value;
     function mode(m: SelectedMode): boolean;
+    procedure apply_key_preset(key: word);
     procedure show_power_and_statistics;
     procedure start_event_position_selection(x, y: integer);
     procedure finish_event_position_selection(x, y: integer);
     procedure draw_paint_tile_select_glyph(target: integer; tile_index: integer; source_canvas: TCanvas);
 
-    // Procedures related to drawing tiles/terrain and cursor image
+    // Procedures related to selecting/placing block
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
-    procedure put_block_on_map;
-    procedure fill_area(x,y: word; area_type: integer);
-    procedure paint_tile(x,y: word);
-    procedure set_tile_value(x,y: word; tile: word; special: word; single_op: boolean);
-    procedure do_undo;
-    procedure do_redo;
-    procedure reset_undo_history;
+
+    // Procedures related to cursor image
     procedure resize_cursor_image;
     procedure set_cursor_image_visibility;
     procedure draw_cursor_image;
-    procedure apply_key_preset(key: word);
-
-    // Procedures related to auto-smoothing edges
-    function check_edge_tile(x,y: integer; exact: boolean): boolean;
-    procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
-    procedure smooth_edges(x, y: integer);
 
     // Procedures called from other dialog
     procedure set_map_size(new_width, new_height: integer);
@@ -433,7 +408,7 @@ end;
 
 procedure TMainWindow.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  if map_loaded and Settings.AlwaysAskOnQuit then
+  if Map.loaded and Settings.AlwaysAskOnQuit then
   begin
     if Application.MessageBox('Do you really want to quit?','D2kEditor', MB_YESNO or MB_ICONQUESTION) = IDNO then
     begin
@@ -458,7 +433,7 @@ begin
   UnitList.Top := LbUnitList.Top + 16;
   EditorPages.Height := EditorMenu.Height - 146;
   StatusBar.Panels[3].Width := ClientWidth - 550;
-  if map_loaded then
+  if Map.loaded then
   begin
     render_minimap_position_marker;
     render_map;
@@ -631,39 +606,39 @@ end;
 
 procedure TMainWindow.Reopenmap1Click(Sender: TObject);
 begin
-  if map_loaded and (map_filename <> '') then
-    load_map(map_filename);
+  if Map.loaded and (Map.filename <> '') then
+    load_map(Map.filename);
 end;
 
 procedure TMainWindow.Savemap1Click(Sender: TObject);
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
-  if map_filename = '' then
+  if Map.filename = '' then
     Savemapas1Click(Sender)
   else begin
     if Settings.CheckMapErrorsOnSave then
       check_map_errors;
-    save_map(map_filename);
+    save_map(Map.filename);
   end;
 end;
 
 procedure TMainWindow.Savemapas1Click(Sender: TObject);
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
   if Settings.CheckMapErrorsOnSave then
     check_map_errors;
   if MapSaveDialog.Execute then
   begin
-    if map_filename <> MapSaveDialog.FileName then
+    if Map.filename <> MapSaveDialog.FileName then
     begin
-      map_filename := MapSaveDialog.FileName;
+      Map.filename := MapSaveDialog.FileName;
       if Mission.mis_assigned then
-        Mission.mis_filename := Mission.get_mis_filename(map_filename);
+        Mission.mis_filename := Mission.get_mis_filename(Map.filename);
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
       Settings.get_file_paths_from_map_filename;
-      set_window_titles(ChangeFileExt(ExtractFileName(map_filename),''));
+      set_window_titles(ChangeFileExt(ExtractFileName(Map.filename),''));
     end;
     save_map(MapSaveDialog.FileName);
   end;
@@ -673,14 +648,14 @@ procedure TMainWindow.Savemapimage1Click(Sender: TObject);
 var
   fast_rendering: boolean;
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
   if MapImageSaveDialog.Execute then
   begin
     map_canvas_left := 0;
     map_canvas_top := 0;
-    map_canvas_width := map_width;
-    map_canvas_height := map_height;
+    map_canvas_width := Map.width;
+    map_canvas_height := Map.height;
     MapCanvas.Picture.Bitmap.Width := map_canvas_width * 32;
     MapCanvas.Picture.Bitmap.Height := map_canvas_height * 32;
     fast_rendering := Fastrendering1.Checked;
@@ -702,7 +677,7 @@ end;
 
 procedure TMainWindow.Undo1Click(Sender: TObject);
 begin
-  do_undo;
+  Map.do_undo;
   render_minimap;
   render_map;
   mouse_already_clicked := false;
@@ -710,7 +685,7 @@ end;
 
 procedure TMainWindow.Redo1Click(Sender: TObject);
 begin
-  do_redo;
+  Map.do_redo;
   render_minimap;
   render_map;
   mouse_already_clicked := false;
@@ -721,7 +696,7 @@ var
   handle: THandle;
   pointer: ^TBlockClipboard;
 begin
-  if not map_loaded or not mode(mBlockMode) then
+  if not Map.loaded or not mode(mBlockMode) then
     exit;
   OpenClipboard(Application.Handle);
   EmptyClipboard;
@@ -743,7 +718,7 @@ var
   handle: THandle;
   pointer: ^TBlockClipboard;
 begin
-  if not map_loaded or not Clipboard.HasFormat(clipboard_format) then
+  if not Map.loaded or not Clipboard.HasFormat(clipboard_format) then
     exit;
   OpenClipboard(Application.Handle);
   handle := GetClipboardData(clipboard_format);
@@ -812,8 +787,8 @@ end;
 
 procedure TMainWindow.Setmapsize1Click(Sender: TObject);
 begin
-  SetDialog.SetMapSize_Width.Value := map_width;
-  SetDialog.SetMapSize_Height.Value := map_height;
+  SetDialog.SetMapSize_Width.Value := Map.width;
+  SetDialog.SetMapSize_Height.Value := Map.height;
   SetDialog.select_menu(1);
 end;
 
@@ -855,12 +830,12 @@ end;
 
 procedure TMainWindow.Assignmisfile1Click(Sender: TObject);
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
   if not Mission.mis_assigned then
   begin
     Mission.mis_assigned := true;
-    Mission.mis_filename := Mission.get_mis_filename(map_filename);
+    Mission.mis_filename := Mission.get_mis_filename(Map.filename);
     if FileExists(Mission.mis_filename) then
       Mission.load_mis_file(Mission.mis_filename);
     StatusBar.Panels[4].Text := 'MIS';
@@ -972,12 +947,12 @@ begin
   map_y := canvas_y + map_canvas_top;
   if map_x < 0 then
     map_x := 0;
-  if map_x >= map_width then
-    map_x := map_width - 1;
+  if map_x >= Map.width then
+    map_x := Map.width - 1;
   if map_y < 0 then
     map_y := 0;
-  if map_y >= map_height then
-    map_y := map_height - 1;
+  if map_y >= Map.height then
+    map_y := Map.height - 1;
   // Write coordinates on status bar
   StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
   // Show cursor image if needed
@@ -1045,11 +1020,12 @@ end;
 procedure TMainWindow.MapCanvasMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-  xx, yy: integer;
   map_x, map_y: integer;
   index, player: word;
   is_misc: boolean;
   event_marker: ^TEventMarker;
+  cursor_left: integer;
+  cursor_top: integer;
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
@@ -1081,15 +1057,15 @@ begin
     // Editing structures
     if Button = mbLeft then
       // Put structure on map
-      set_tile_value(map_x, map_y, map_data[map_x, map_y].tile, strtoint(SpecialValue.Text), true)
+      Map.set_special_value(map_x, map_y, strtoint(SpecialValue.Text))
     else if Button = mbRight then
       // Delete structure from map
-      set_tile_value(map_x, map_y, map_data[map_x, map_y].tile, 0, true)
+      Map.set_special_value(map_x, map_y, 0)
     else if Button = mbMiddle then
     begin
       // Get structure parameters on position and set them in menu
-      SpecialValue.text := inttostr(map_data[map_x, map_y].special);
-      if Structures.special_value_to_params(map_data[map_x, map_y].special, player, index, is_misc) then
+      SpecialValue.text := inttostr(Map.data[map_x, map_y].special);
+      if Structures.special_value_to_params(Map.data[map_x, map_y].special, player, index, is_misc) then
       begin
         if is_misc then
         begin
@@ -1136,24 +1112,19 @@ begin
       else if mode(mBlockMode) then
       begin
         // Draw selected block
-        put_block_on_map;
+        cursor_left := (CursorImage.Left - MapCanvas.Left) div 32 + map_canvas_left;
+        cursor_top := (CursorImage.Top - MapCanvas.Top) div 32 + map_canvas_top;
+        Map.put_block(cursor_left, cursor_top, block_width, block_height, block_data);
       end
       else if (ssShift in Shift) and mode(mPaintMode) and (Tileset.paint_tile_groups[paint_tile_group].smooth_group > -1) then
       begin
         // Smooth rock/dunes edge
-        smooth_edges(map_x, map_y);
+        Map.smooth_edges(map_x, map_y, paint_tile_group);
       end
       else if mode(mPaintMode) then
       begin
         // Paint
-        undo_block_start := true;
-        for xx := map_x to map_x + brush_size_presets[cbBrushSize.ItemIndex,1] - 1 do
-          for yy := map_y to map_y + brush_size_presets[cbBrushSize.ItemIndex,2] - 1 do
-          begin
-            if (xx >= map_width) or (xx < 0) or (yy >= map_height) or (yy < 0) then
-              continue;
-            paint_tile(xx, yy);
-          end;
+        Map.paint_rect(map_x, map_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], paint_tile_group);
       end;
     end
     else if button = mbMiddle then
@@ -1166,14 +1137,13 @@ begin
   if not mode(mPaintMode) then
   begin
     render_minimap;
-    calculate_power_and_statistics;
+    Map.calculate_power_and_statistics;
   end;
   render_map;
 end;
 
 procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
 var
-  tmp_pos: integer;
   event_marker: ^TEventMarker;
 begin
   // Double-click on event marker
@@ -1191,19 +1161,10 @@ begin
       EventDialog.EventGrid.SetFocus;
     end;
   end else
-  // Double click for filling
+  // Double click for filling area
   if mode(mPaintMode) then
   begin
-    // Undo the action which was made by first click
-    tmp_pos := undo_pos;
-    repeat
-      tmp_pos := (tmp_pos - 1) and max_undo_steps
-    until undo_history[tmp_pos].is_first;
-    if (undo_history[tmp_pos].x = mouse_old_x) and (undo_history[tmp_pos].y = mouse_old_y) then
-      do_undo;
-    // Fill area
-    undo_block_start := true;
-    fill_area(mouse_old_x, mouse_old_y, Tileset.get_fill_area_type(map_data[mouse_old_x, mouse_old_y].tile, map_data[mouse_old_x, mouse_old_y].special));
+    Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group);
     render_minimap;
     render_map;
   end;
@@ -1213,7 +1174,6 @@ procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   min_x, max_x, min_y, max_y: word;
-  xx, yy: word;
 begin
   moving_disable := false;
   if (moving_event <> -1) or (moving_condition <> -1) then
@@ -1230,13 +1190,10 @@ begin
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true);
+    // Erase copied area
     if ssShift in Shift then
     begin
-      undo_block_start := true;
-      paint_tile_group := 0;
-      for yy := min_y to max_y do
-        for xx := min_x to max_x do
-          paint_tile(xx, yy);
+      Map.paint_rect(min_x, min_y, max_x-min_x, max_y-min_y, 0);
       render_minimap;
     end;
     render_map;
@@ -1244,7 +1201,7 @@ begin
   if mode(mPaintMode) then
   begin
     render_minimap;
-    calculate_power_and_statistics;
+    Map.calculate_power_and_statistics;
   end;
 end;
 
@@ -1270,7 +1227,7 @@ end;
 procedure TMainWindow.MiniMapMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
   if (x < mmap_border_x) or (y < mmap_border_y) or (x > 128 - mmap_border_x) or (y > 128 - mmap_border_y) then
     exit;
@@ -1390,11 +1347,11 @@ end;
 procedure TMainWindow.resize_map_canvas;
 begin
   map_canvas_width := (ClientWidth - 200) div 32;
-  if map_canvas_width > map_width then
-    map_canvas_width := map_width;
+  if map_canvas_width > Map.width then
+    map_canvas_width := Map.width;
   map_canvas_height := (ClientHeight - 50) div 32;
-  if map_canvas_height > map_height then
-    map_canvas_height := map_height;
+  if map_canvas_height > Map.height then
+    map_canvas_height := Map.height;
   MapCanvas.Picture.Bitmap.Width := map_canvas_width * 32;
   MapCanvas.Picture.Bitmap.Height := map_canvas_height * 32;
   MapCanvas.Width := map_canvas_width * 32;
@@ -1402,16 +1359,16 @@ begin
   MapScrollH.Top := map_canvas_height * 32 + 8;
   MapScrollH.Width := map_canvas_width * 32;
   MapScrollH.Visible := MapScrollH.Width > 0;
-  MapScrollH.Max := map_width - map_canvas_width;
-  if map_width = map_canvas_width then
+  MapScrollH.Max := Map.width - map_canvas_width;
+  if Map.width = map_canvas_width then
     MapScrollH.Enabled := False
   else
     MapScrollH.Enabled := True;
   MapScrollV.Left := map_canvas_width * 32 + 8;
   MapScrollV.Height := map_canvas_height * 32;
   MapScrollV.Visible := MapScrollV.Height > 0;
-  MapScrollV.Max := map_height - map_canvas_height;
-  if map_height = map_canvas_height then
+  MapScrollV.Max := Map.height - map_canvas_height;
+  if Map.height = map_canvas_height then
     MapScrollV.Enabled := False
   else
     MapScrollV.Enabled := True;
@@ -1440,7 +1397,7 @@ var
   bottom_style_type: ^TBottomStyleType;
   conc_tile, conc_tile_x, conc_tile_y: word;
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
   min_x := 0;
   min_y := 0;
@@ -1499,7 +1456,7 @@ begin
   begin
     for x:= min_x to max_x do
     begin
-      special := map_data[x + map_canvas_left, y + map_canvas_top].special;
+      special := Map.data[x + map_canvas_left, y + map_canvas_top].special;
       // Draw spice like a normal terrain tile
       if special = 1 then
         tile := Tileset.thin_spice_tile
@@ -1507,12 +1464,12 @@ begin
         tile := Tileset.thick_spice_tile
       else
         // No spice, draw terrain tile normally
-        tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
+        tile := Map.data[x + map_canvas_left, y + map_canvas_top].tile;
       MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
       // Draw tile attribute markers
       if Marktiles1.Checked or Markbuildabletiles1.Checked then
       begin
-        tile := map_data[x + map_canvas_left, y + map_canvas_top].tile;
+        tile := Map.data[x + map_canvas_left, y + map_canvas_top].tile;
         tile_attr := Tileset.get_tile_type(tile);
         if (tile_attr = ttImpassable) and Marktiles1.Checked then
           MapCanvas.Canvas.Pen.Color := clRed
@@ -1540,9 +1497,9 @@ begin
       actual_x := x + map_canvas_left;
       actual_y := y + map_canvas_top;
       // If tile is out of map
-      if (actual_x < 0) or (actual_x >= map_width) or (actual_y < 0) or (actual_y >= map_height) then
+      if (actual_x < 0) or (actual_x >= Map.width) or (actual_y < 0) or (actual_y >= Map.height) then
         continue;
-      special := map_data[actual_x, actual_y].special;
+      special := Map.data[actual_x, actual_y].special;
       // Do not draw spice tiles (already drawn during terrain rendering)
       if special <= 2 then
         continue;
@@ -1574,7 +1531,7 @@ begin
                   continue;
                 if (y + yy) > max_y then
                   continue;
-                if Tileset.get_tile_type(map_data[actual_x+xx, actual_y + yy].tile) <> ttBuildable then
+                if Tileset.get_tile_type(Map.data[actual_x+xx, actual_y + yy].tile) <> ttBuildable then
                   continue;
                 conc_tile := concrete_tiles[(actual_x + actual_y) mod Length(concrete_tiles)];
                 conc_tile_x := conc_tile mod 20;
@@ -1590,7 +1547,7 @@ begin
                 if (y + yy + bottom_offset) > max_y then
                   continue;
                 dest_rect := Rect((x + xx)*32, (y + yy + bottom_offset)*32, (x + xx)*32 + 32, (y + yy + bottom_offset)*32 + 32);
-                if Tileset.get_tile_type(map_data[actual_x+xx, actual_y + yy + bottom_offset].tile) = ttBuildable then
+                if Tileset.get_tile_type(Map.data[actual_x+xx, actual_y + yy + bottom_offset].tile) = ttBuildable then
                   src_rect := Rect((xx + bottom_style_type.conc_tile_x)*32, (yy + bottom_style_type.conc_tile_y)*32, (xx + bottom_style_type.conc_tile_x)*32+32, (yy + bottom_style_type.conc_tile_y)*32+32)
                 else
                   src_rect := Rect((xx + bottom_style_type.rock_tile_x)*32, (yy + bottom_style_type.rock_tile_y)*32, (xx + bottom_style_type.rock_tile_x)*32+32, (yy + bottom_style_type.rock_tile_y)*32+32);
@@ -1609,16 +1566,16 @@ begin
             // Structure is wall
             wall_bitmap := 0;
             // Checking left of wall
-            if ((actual_x - 1) >= 0) and Structures.check_links_with_wall(map_data[actual_x - 1, actual_y].special) then
+            if ((actual_x - 1) >= 0) and Structures.check_links_with_wall(Map.data[actual_x - 1, actual_y].special) then
               wall_bitmap := wall_bitmap + 1;
             // Checking up of wall
-            if ((actual_y - 1) >= 0) and Structures.check_links_with_wall(map_data[actual_x, actual_y - 1].special) then
+            if ((actual_y - 1) >= 0) and Structures.check_links_with_wall(Map.data[actual_x, actual_y - 1].special) then
               wall_bitmap := wall_bitmap + 2;
             // Checking right of wall
-            if ((actual_x + 1) < map_width) and Structures.check_links_with_wall(map_data[actual_x + 1, actual_y].special) then
+            if ((actual_x + 1) < Map.width) and Structures.check_links_with_wall(Map.data[actual_x + 1, actual_y].special) then
               wall_bitmap := wall_bitmap + 4;
             // Checking down of wall
-            if ((actual_y + 1) < map_height) and Structures.check_links_with_wall(map_data[actual_x, actual_y + 1].special) then
+            if ((actual_y + 1) < Map.height) and Structures.check_links_with_wall(Map.data[actual_x, actual_y + 1].special) then
               wall_bitmap := wall_bitmap + 8;
             // Wall source rect
             src_rect := rect(0,wall_bitmap*32,32,wall_bitmap*32+32);
@@ -1742,24 +1699,24 @@ var
   is_misc: boolean;
   sinfo: ^TStructureInfo;
 begin
-  if not map_loaded then
+  if not Map.loaded then
     exit;
   minimap_buffer.Canvas.Brush.Color := ClBtnFace;
   minimap_buffer.Canvas.Pen.Color := ClBtnFace;
   minimap_buffer.Canvas.Rectangle(0,0,128,128);
-  mmap_border_x := (128 - map_width) div 2;
-  mmap_border_y := (128 - map_height) div 2;
+  mmap_border_x := (128 - Map.width) div 2;
+  mmap_border_y := (128 - Map.height) div 2;
   // Rendering terrain
-  for y:= 0 to map_height - 1 do
-    for x:= 0 to map_width - 1 do
+  for y:= 0 to Map.height - 1 do
+    for x:= 0 to Map.width - 1 do
     begin
-      minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.get_tile_color(map_data[x,y].tile);
+      minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.get_tile_color(Map.data[x,y].tile);
     end;
   // Rendering structures
-  for y:= 0 to map_height - 1 do
-    for x:= 0 to map_width - 1 do
+  for y:= 0 to Map.height - 1 do
+    for x:= 0 to Map.width - 1 do
     begin
-      special := map_data[x,y].special;
+      special := Map.data[x,y].special;
       if special = 1 then
         minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.thin_spice_color;
       if special = 2 then
@@ -1816,17 +1773,16 @@ begin
     Application.MessageBox('Invalid file type', 'Load map error', MB_ICONERROR);
     exit;
   end;
-  reset_undo_history;
   // Load map file
-  load_map_file(filename);
+  Map.load_map_file(filename);
   // Set status bar
   StatusBar.Panels[3].Text := filename;
-  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
   // Initialize settings
   Settings.get_file_paths_from_map_filename;
   Settings.get_map_test_settings;
   // Load mis file
-  tmp_mis_filename := Mission.get_mis_filename(map_filename);
+  tmp_mis_filename := Mission.get_mis_filename(Map.filename);
   if FileExists(tmp_mis_filename) then
   begin
     Mission.mis_assigned := true;
@@ -1839,8 +1795,7 @@ begin
     EventDialog.update_contents;
   end else
     unload_mission;
-  set_window_titles(ChangeFileExt(ExtractFileName(map_filename), ''));
-  calculate_power_and_statistics;
+  set_window_titles(ChangeFileExt(ExtractFileName(Map.filename), ''));
   if MapStatsDialog.Visible then
     MapStatsDialog.update_stats;
   // Rendering
@@ -1851,7 +1806,7 @@ end;
 
 procedure TMainWindow.save_map(filename: String);
 begin
-  save_map_file(filename);
+  Map.save_map_file(filename);
   if Mission.mis_assigned then
   begin
     Mission.save_mis_file(Mission.get_mis_filename(filename));
@@ -1870,6 +1825,19 @@ begin
   EventDialog.Close;
 end;
 
+function TMainWindow.check_map_errors: boolean;
+var
+  errmsg: String;
+begin
+  errmsg := Map.check_errors;
+  result := true;
+  if errmsg <> '' then
+  begin
+    Application.MessageBox(PChar(errmsg), 'Map error', MB_ICONWARNING);
+    result := false;
+  end;
+end;
+
 procedure TMainWindow.set_window_titles(map_name: String);
 begin
   Caption := 'Dune 2000 Map and Mission Editor';
@@ -1885,7 +1853,7 @@ end;
 
 function TMainWindow.check_map_can_be_tested: boolean;
 begin
-  if not map_loaded then
+  if not Map.loaded then
   begin
     Application.MessageBox('No map to test.', 'Cannot test map', MB_ICONERROR);
     result := false;
@@ -1942,13 +1910,21 @@ begin
   end;
 end;
 
+procedure TMainWindow.apply_key_preset(key: word);
+var
+  preset: TBlockPreset;
+begin
+  preset := Tileset.get_block_preset(block_preset_group, key, bpNext);
+  select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
+end;
+
 procedure TMainWindow.show_power_and_statistics;
 var
   i: integer;
 begin
   i := PlayerSelect.ItemIndex;
-  StatusBar.Panels[5].Text := 'W: '+inttostr(map_stats.objects[1])+'  S: '+inttostr(map_stats.objects[2])+'  B: '+inttostr(map_stats.objects[3]);
-  StatusBar.Panels[6].Text := 'Power: '+inttostr(map_stats.players[i].power_percent)+'%   ('+inttostr(map_stats.players[i].power_output)+'/'+inttostr(map_stats.players[i].power_need)+')';
+  StatusBar.Panels[5].Text := 'W: '+inttostr(Map.stats.objects[1])+'  S: '+inttostr(Map.stats.objects[2])+'  B: '+inttostr(Map.stats.objects[3]);
+  StatusBar.Panels[6].Text := 'Power: '+inttostr(Map.stats.players[i].power_percent)+'%   ('+inttostr(Map.stats.players[i].power_output)+'/'+inttostr(Map.stats.players[i].power_need)+')';
 end;
 
 procedure TMainWindow.start_event_position_selection(x, y: integer);
@@ -2017,138 +1993,13 @@ begin
   draw_cursor_image;
 end;
 
-procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left,
-  b_top: word; structures: boolean);
-var
-  x, y: integer;
-  value: TMapTile;
+procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
 begin
   block_width := b_width;
   block_height := b_height;
-  for x := 0 to b_width - 1 do
-    for y := 0 to b_height - 1 do
-    begin
-      if (b_left + x < map_width) and (b_top + y < map_height) then
-      begin
-        value := map_data[b_left + x, b_top + y];
-        if (not CbSelectStructures.Checked) or (not structures) then
-          value.special := 0;
-      end else
-      begin
-        value.tile := 0;
-        value.special := 0;
-      end;
-      block_data[x,y] := value;
-    end;
+  Map.copy_block(b_left, b_top, b_width, b_height, block_data, CbSelectStructures.Checked and structures);
   RbBlockMode.Checked := True;
   draw_cursor_image;
-end;
-
-procedure TMainWindow.put_block_on_map;
-var
-  x, y: integer;
-  cursor_left: integer;
-  cursor_top: integer;
-begin
-  cursor_left := (CursorImage.Left - MapCanvas.Left) div 32 + map_canvas_left;
-  cursor_top := (CursorImage.Top - MapCanvas.Top) div 32 + map_canvas_top;
-  undo_block_start := true;
-  for x := 0 to block_width - 1 do
-    for y := 0 to block_height - 1 do
-      if (cursor_left + x < map_width) and (cursor_left + x >= 0) and (cursor_top + y < map_height) and (cursor_top + y >= 0) then
-        set_tile_value(cursor_left + x, cursor_top + y, block_data[x,y].tile, block_data[x,y].special, false);
-end;
-
-procedure TMainWindow.fill_area(x, y: word; area_type: integer);
-begin
-  if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
-    exit;
-  paint_tile(x, y);
-  if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) = area_type then
-    exit;
-  if x > 0 then
-    fill_area(x-1, y, area_type);
-  if x < (map_width - 1) then
-    fill_area(x+1, y, area_type);
-  if y > 0 then
-    fill_area(x, y-1, area_type);
-  if y < (map_height - 1) then
-    fill_area(x, y+1, area_type);
-end;
-
-procedure TMainWindow.paint_tile(x, y: word);
-begin
-  if paint_tile_group < 0 then
-  begin
-    // Paint spice. Check for spice-to-sand restriction.
-    if Settings.RestrictSpiceToSand and not Tileset.check_spice_can_be_placed(map_data[x, y].tile) then
-      exit;
-    set_tile_value(x, y, map_data[x,y].tile, paint_tile_group * -1, false)
-  end else
-    // Paint sand/rock/dunes
-    set_tile_value(x, y, Tileset.get_random_paint_tile(paint_tile_group), 0, false);
-end;
-
-procedure TMainWindow.set_tile_value(x, y, tile, special: word; single_op: boolean);
-begin
-  undo_history[undo_pos].x := x;
-  undo_history[undo_pos].y := y;
-  undo_history[undo_pos].data := map_data[x,y];
-  undo_history[undo_pos].is_first := single_op or undo_block_start;
-  undo_block_start := false;
-  undo_pos := (undo_pos + 1) and max_undo_steps;
-  if undo_start = undo_pos then
-    undo_start := (undo_start + 1) and max_undo_steps;
-  undo_max := undo_pos;
-  Undo1.Enabled := true;
-  Redo1.Enabled := false;
-  map_data[x,y].tile := tile;
-  map_data[x,y].special := special;
-end;
-
-procedure TMainWindow.do_undo;
-var
-  tmp_data: TMapTile;
-begin
-  if undo_pos = undo_start then
-    exit;
-  repeat
-    undo_pos := (undo_pos - 1) and max_undo_steps;
-    tmp_data := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y];
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y] := undo_history[undo_pos].data;
-    undo_history[undo_pos].data := tmp_data;
-  until undo_history[undo_pos].is_first or (undo_pos = undo_start);
-  if undo_pos = undo_start then
-    Undo1.Enabled := false;
-  Redo1.Enabled := true;
-  calculate_power_and_statistics;
-end;
-
-procedure TMainWindow.do_redo;
-var
-  tmp_data: TMapTile;
-begin
-  if undo_pos = undo_max then
-    exit;
-  repeat
-    tmp_data := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y];
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y] := undo_history[undo_pos].data;
-    undo_history[undo_pos].data := tmp_data;
-    undo_pos := (undo_pos + 1) and max_undo_steps;
-  until undo_history[undo_pos].is_first or (undo_pos = undo_max);
-  if undo_pos = undo_max then
-    Redo1.Enabled := false;
-  Undo1.Enabled := true;
-  calculate_power_and_statistics;
-end;
-
-procedure TMainWindow.reset_undo_history;
-begin
-  Undo1.Enabled := false;
-  Redo1.Enabled := false;
-  undo_start := 0;
-  undo_max := 0;
-  undo_pos := 0;
 end;
 
 procedure TMainWindow.resize_cursor_image;
@@ -2206,316 +2057,40 @@ begin
   resize_cursor_image;
 end;
 
-procedure TMainWindow.apply_key_preset(key: word);
-var
-  preset: TBlockPreset;
-begin
-  preset := Tileset.get_block_preset(block_preset_group, key, bpNext);
-  select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
-end;
-
-function TMainWindow.check_edge_tile(x, y: integer; exact: boolean): boolean;
-var
-  atr: cardinal;
-begin
-  if x < 0 then x := 0;
-  if y < 0 then y := 0;
-  if x >= map_width then x := map_width - 1;
-  if y >= map_height then y := map_height - 1;
-  atr := Tileset.attributes[map_data[x,y].tile];
-  if exact then
-    result := (atr and ($01 shl paint_tile_group)) <> 0
-  else
-    result := (atr and ($10 shl paint_tile_group)) <> 0;
-end;
-
-procedure TMainWindow.put_edge_block(var xpos, ypos: integer; moveoff_x,
-  moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
-var
-  block_preset: TBlockPreset;
-  smooth_group: integer;
-  x, y: integer;
-begin
-  smooth_group := Tileset.paint_tile_groups[paint_tile_group].smooth_group;
-  block_preset := Tileset.get_block_preset(smooth_group, ord(block_preset_key), bpRandom);
-  // Reuse already defined block-key-presets for this purpose
-  // Place edge block (it can be either 1x1 or 2x2, so we use loops)
-  for y := 0 to block_preset.height - 1 do
-    for x := 0 to block_preset.width - 1 do
-    begin
-      // We cannot place the edge block immediately physically into map,
-      // because it would interfere with checks for tiles around following tile.
-      // Instead, we exploit undo feature for this purpose: we store all changes
-      // into history and in the end we apply the changes (like doing redo)
-      undo_history[undo_max].x := x + xpos + blockoff_x;
-      undo_history[undo_max].y := y + ypos + blockoff_y;
-      undo_history[undo_max].data.tile := (block_preset.pos_y + y) * 20 + block_preset.pos_x + x;
-      undo_history[undo_max].data.special := 0;
-      undo_history[undo_max].is_first := false;
-      undo_max := (undo_max + 1) and max_undo_steps;
-    end;
-  // Finally move to next position (anticlockwise direction)
-  xpos := xpos + moveoff_x;
-  ypos := ypos + moveoff_y;
-end;
-
-procedure TMainWindow.smooth_edges(x, y: integer);
-var
-  start_x, start_y: integer;
-  sum: integer;
-  steps: integer;
-begin
-  start_x := x;
-  start_y := y;
-  undo_max := undo_pos;
-  steps := 0;
-  // Start smoothing edge from starting point (where user shift-clicked)
-  while check_edge_tile(x, y, true) do
-  begin
-    // Check for all 8 tiles around current tile to determine the direction of edge
-    sum := 0;
-    if check_edge_tile(x,   y-1, false) then sum := sum + 1;   // 16 1 32
-    if check_edge_tile(x-1, y  , false) then sum := sum + 2;   //  2 X 4
-    if check_edge_tile(x+1, y  , false) then sum := sum + 4;   // 64 8 128
-    if check_edge_tile(x  , y+1, false) then sum := sum + 8;
-    if check_edge_tile(x-1, y-1, false) then sum := sum + 16;
-    if check_edge_tile(x+1, y-1, false) then sum := sum + 32;
-    if check_edge_tile(x-1, y+1, false) then sum := sum + 64;
-    if check_edge_tile(x+1, y+1, false) then sum := sum + 128;
-    // Transform current tile into edge tile and move to following tile
-    case (sum and 15) of
-       7: begin // down
-          if (sum and 128 > 0) and not check_edge_tile(x+1,y+2, false) then
-            put_edge_block(x,y,2,1,0,0,'X')
-          else
-            put_edge_block(x,y,1,0,0,0,'C');
-        end;
-      11: begin // right
-          if (sum and 32 > 0) and not check_edge_tile(x+2,y-1, false) then
-            put_edge_block(x,y,1,-2,0,-1,'G')
-          else
-            put_edge_block(x,y,0,-1,0,0,'D');
-        end;
-      14: begin // up
-          if (sum and 16 > 0) and not check_edge_tile(x-1,y-2, false) then
-            put_edge_block(x,y,-2,-1,-1,-1,'4')
-          else
-            put_edge_block(x,y,-1,0,0,0,'3');
-        end;
-      13: begin // left
-          if (sum and 64 > 0) and not check_edge_tile(x-2,y+1, false) then
-            put_edge_block(x,y,-1,2,-1,0,'Q')
-          else
-            put_edge_block(x,y,0,1,0,0,'E');
-        end;
-       3: begin // down-right corner
-          if (sum and 32 > 0) and check_edge_tile(x+2,y-1, false) then
-            put_edge_block(x,y,2,-1,0,-1,'V')
-          else
-            put_edge_block(x,y,0,-1,0,0,'B');
-        end;
-      10: begin // up-right corner
-          if (sum and 16 > 0) and check_edge_tile(x-1,y-2, false) then
-            put_edge_block(x,y,-1,-2,-1,-1,'T')
-          else
-            put_edge_block(x,y,-1,0,0,0,'5');
-        end;
-      12: begin // up-left corner
-          if (sum and 64 > 0) and check_edge_tile(x-2,y+1, false) then
-            put_edge_block(x,y,-2,1,-1,0,'2')
-          else
-            put_edge_block(x,y,0,1,0,0,'1');
-        end;
-       5: begin // down-left corner
-          if (sum and 128 > 0) and check_edge_tile(x+1,y+2, false) then
-            put_edge_block(x,y,1,2,0,0,'A')
-          else
-            put_edge_block(x,y,1,0,0,0,'Z');
-        end;
-      15: begin // inner curves
-        case sum of
-          239: put_edge_block(x,y,-1,0,0,0,'F'); // down-right curve
-          191: put_edge_block(x,y,0,1,0,0,'R');  // up-right curve
-          127: put_edge_block(x,y,1,0,0,0,'W');  // up-left curve
-          223: put_edge_block(x,y,0,-1,0,0,'S'); // down-left curve
-          else break; // Invalid combination - end
-        end;
-        end;
-      else break; // Invalid combination - end
-    end;
-    // End if we got back into starting point
-    if (x = start_x) and (y = start_y) then
-      break;
-    // End if we got outside the map
-    if (x < 0) or (y < 0) or (x >= map_width) or (y >= map_height) then
-      break;
-    // Sometimes the algorithm may end up in infinite loop. This is to prevent it.
-    inc(steps);
-    if steps > 1000 then
-      break;
-  end;
-  undo_history[undo_pos].is_first := true;
-  // Finally put smoothed edges on map - apply all changes we stored into undo history
-  do_redo;
-end;
-
 procedure TMainWindow.set_map_size(new_width, new_height: integer);
-var
-  i, j: integer;
 begin
-  if (map_width = new_width) and (map_height = new_height) then
+  if (Map.width = new_width) and (Map.height = new_height) then
     exit;
-  // Fill additional area with clean sand
-  for i := 0 to new_height - 1 do
-    for j := 0 to new_width - 1 do
-      if (i >= map_height) or (j >= map_width) then
-      begin
-        map_data[j,i].tile := Tileset.get_random_paint_tile(0);
-        map_data[j,i].special := 0;
-      end;
-  map_width := new_width;
-  map_height := new_height;
-  Mission.adjust_event_positions_on_map_resize;
-  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
-  reset_undo_history;
-  calculate_power_and_statistics;
+  Map.set_map_size(new_width, new_height);
+  StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
   resize_map_canvas;
   render_minimap;
   render_map;
 end;
 
 procedure TMainWindow.shift_map(direction, num_tiles: integer);
-var
-  x, y: integer;
-  src_x, src_y: integer;
 begin
-  case direction of
-    1:  begin // Left
-          for y := 0 to map_height - 1 do
-            for x := 0 to map_width - 1 do
-            begin
-              src_x := x + num_tiles;
-              if (src_x < map_width) then
-                map_data[x,y] := map_data[src_x,y]
-              else
-              begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
-                map_data[x,y].special := 0;
-              end;
-            end;
-          Mission.shift_event_positions(num_tiles * -1, 0);
-        end;
-    2:  begin // Up
-          for y := 0 to map_height - 1 do
-            for x := 0 to map_width - 1 do
-            begin
-              src_y := y + num_tiles;
-              if (src_y < map_height) then
-                map_data[x,y] := map_data[x,src_y]
-              else
-              begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
-                map_data[x,y].special := 0;
-              end;
-            end;
-          Mission.shift_event_positions(0, num_tiles * -1);
-        end;
-    3:  begin // Right
-          for y := map_height - 1 downto 0 do
-            for x := map_width - 1 downto 0 do
-            begin
-              src_x := x - num_tiles;
-              if (src_x >= 0) then
-                map_data[x,y] := map_data[src_x,y]
-              else
-              begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
-                map_data[x,y].special := 0;
-              end;
-            end;
-          Mission.shift_event_positions(num_tiles, 0);
-        end;
-    4:  begin
-          for y := map_height - 1 downto 0 do
-            for x := map_width - 1 downto 0 do
-            begin
-              src_y := y - num_tiles;
-              if (src_y >= 0) then
-                map_data[x,y] := map_data[x,src_y]
-              else
-              begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
-                map_data[x,y].special := 0;
-              end;
-            end;
-          Mission.shift_event_positions(0, num_tiles);
-        end;
-  end;
-  reset_undo_history;
-  calculate_power_and_statistics;
+  Map.shift_map(direction, num_tiles);
+  EventDialog.fill_grids;
   render_minimap;
   render_map;
 end;
 
 procedure TMainWindow.change_structure_owner(player_from,
   player_to: integer; swap: boolean);
-var
-  x,y: integer;
-  player, index: word;
-  is_misc: boolean;
 begin
-  undo_block_start := true;
-  for y:= 0 to map_height - 1 do
-    for x := 0 to map_width - 1 do
-    begin
-      if Structures.special_value_to_params(map_data[x,y].special, player, index, is_misc) and (not is_misc) then
-      begin
-        // Change from -> to
-        if player = player_from then
-        begin
-          if player_to = Structures.cnt_map_players then
-            set_tile_value(x, y, map_data[x,y].tile, 0, false)
-          else
-            set_tile_value(x, y, map_data[x,y].tile, Structures.structure_info[index].values[player_to], false);
-        end;
-        // Swap is checked (change to -> from)
-        if (player = player_to) and swap then
-          set_tile_value(x, y, map_data[x,y].tile, Structures.structure_info[index].values[player_from], false);
-      end;
-    end;
-  calculate_power_and_statistics;
+  Map.change_structure_owner(player_from, player_to, swap);
   render_minimap;
   render_map;
 end;
 
 procedure TMainWindow.new_map(new_width, new_height: integer);
-var
-  x, y: integer;
 begin
-  // Reset map data
-  for x := 0 to 127 do
-    for y := 0 to 127 do
-    begin
-      map_data[x,y].tile := 0;
-      map_data[x,y].special := 0;
-    end;
-  reset_undo_history;
-  // Initialize map
-  map_width := new_width;
-  map_height := new_height;
-  for x := 0 to map_width - 1 do
-    for y := 0 to map_height - 1 do
-    begin
-      map_data[x,y].tile := Tileset.get_random_paint_tile(0);
-      map_data[x,y].special := 0;
-    end;
-  if Settings.PreplaceWormSpawner then
-    map_data[0,0].special := Structures.misc_object_info[1].value;
-  StatusBar.Panels[2].Text := inttostr(map_width)+' x '+inttostr(map_height);
+  Map.new_map(new_width, new_height);
+  StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
   StatusBar.Panels[3].Text := 'Map not saved';
-  map_filename := '';
-  map_loaded := true;
-  // Clear mission
+  set_window_titles('Untitled');
+  // Reset mission
   if Settings.AssignMisFileToNewMap then
   begin
     Mission.mis_assigned := false;
@@ -2526,8 +2101,6 @@ begin
   // Get test map settings
   Settings.get_map_test_settings;
   // Finish it
-  set_window_titles('Untitled');
-  calculate_power_and_statistics;
   if MapStatsDialog.Visible then
     MapStatsDialog.update_stats;
   resize_map_canvas;
