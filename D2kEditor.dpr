@@ -10,18 +10,20 @@ uses
   event_dialog in 'event_dialog.pas' {EventDialog},
   mission_dialog in 'mission_dialog.pas' {MissionDialog},
   map_stats_dialog in 'map_stats_dialog.pas' {MapStatsDialog},
+  _renderer in '_renderer.pas',
   _map in '_map.pas',
   _mission in '_mission.pas',
   _tileset in '_tileset.pas',
+  _structures in '_structures.pas',
   _stringtable in '_stringtable.pas',
-  _settings in '_settings.pas',
-  _structures in '_structures.pas';
+  _settings in '_settings.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.Title := 'D2kEditor';
+  Renderer := TRenderer.Create;
   Structures := TStructures.Create;
   Map := TMap.Create;
   Mission := TMission.Create;

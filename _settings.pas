@@ -96,6 +96,7 @@ begin
   MainWindow.Width := ini.ReadInteger('GUI','MainWindow.Width',MainWindow.Width);
   MainWindow.Height := ini.ReadInteger('GUI','MainWindow.Height',MainWindow.Height);
   MainWindow.Drawconcrete1.Checked := ini.ReadBool('GUI','MainWindow.Drawconcrete1.Checked',MainWindow.Drawconcrete1.Checked);
+  MainWindow.CbSelectStructures.Checked := ini.ReadBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
 end;
 
 procedure TSettings.load_postcreate_editor_settings;
@@ -167,6 +168,7 @@ begin
   ini.WriteInteger('GUI','MainWindow.Width',MainWindow.Width);
   ini.WriteInteger('GUI','MainWindow.Height',MainWindow.Height);
   ini.WriteBool('GUI','MainWindow.Drawconcrete1.Checked',MainWindow.Drawconcrete1.Checked);
+  ini.WriteBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
   ini.WriteInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
   ini.WriteInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
   ini.WriteInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);

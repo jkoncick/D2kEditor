@@ -10,7 +10,7 @@ uses
   // Dialogs
   set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog,
   // Units
-  _map, _mission, _tileset, _structures, _stringtable, _settings;
+  _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -207,19 +207,11 @@ type
 
   public
 
-    // Graphic data
-    graphics_structures: TBitmap;
-    graphics_structures_mask: TBitmap;
-    graphics_misc_objects: TBitmap;
-    minimap_buffer: TBitmap;
-
     // Map canvas variables
     map_canvas_width: word;
     map_canvas_height: word;
     map_canvas_left: word;
     map_canvas_top: word;
-    map_canvas_old_left: word;
-    map_canvas_old_top: word;
 
     // Mouse related variables
     mouse_old_x: word;
@@ -230,6 +222,7 @@ type
     // Minimap variables
     mmap_border_x: word;
     mmap_border_y: word;
+    minimap_buffer: TBitmap;
 
     // Terrain editing variables
     paint_tile_group: integer;
@@ -256,14 +249,12 @@ type
     // Clipboard variables
     clipboard_format: cardinal;
 
-    // Initialization procedures
-    procedure load_or_create_mask(graph: TBitmap; mask: TBitmap; filename: String);
-
     // Rendering procedures
     procedure resize_map_canvas;
     procedure render_map;
     procedure render_minimap;
     procedure render_minimap_position_marker;
+    procedure render_selection_marker;
     procedure render_tileset;
 
     // Map loading & saving procedures
@@ -376,12 +367,7 @@ begin
   // Load string table
   StringTable.load_from_file(Settings.TextUIBPath);
   // Load and initialize graphics
-  graphics_structures := TBitmap.Create;
-  graphics_structures_mask := TBitmap.Create;
-  graphics_misc_objects := TBitmap.Create;
-  graphics_structures.LoadFromFile(current_dir + '/graphics/structures.bmp');
-  load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + '/graphics/structures_mask.bmp');
-  graphics_misc_objects.LoadFromFile(current_dir + '/graphics/misc_objects.bmp');
+  Renderer.init;
   minimap_buffer := TBitmap.Create;
   minimap_buffer.Width := 128;
   minimap_buffer.Height := 128;
@@ -646,27 +632,20 @@ end;
 
 procedure TMainWindow.Savemapimage1Click(Sender: TObject);
 var
-  fast_rendering: boolean;
+  tmp_bitmap: TBitmap;
 begin
   if not Map.loaded then
     exit;
   if MapImageSaveDialog.Execute then
   begin
-    map_canvas_left := 0;
-    map_canvas_top := 0;
-    map_canvas_width := Map.width;
-    map_canvas_height := Map.height;
-    MapCanvas.Picture.Bitmap.Width := map_canvas_width * 32;
-    MapCanvas.Picture.Bitmap.Height := map_canvas_height * 32;
-    fast_rendering := Fastrendering1.Checked;
-    Fastrendering1.Checked := false;
-    render_map;
-    MapCanvas.Picture.Bitmap.SaveToFile(MapImageSaveDialog.FileName);
-    map_canvas_left := MapScrollH.Position;
-    map_canvas_top := MapScrollV.Position;
-    resize_map_canvas;
-    render_map;
-    Fastrendering1.Checked := fast_rendering;
+    tmp_bitmap := TBitmap.Create;
+    tmp_bitmap.Width := Map.width * 32;
+    tmp_bitmap.Height := Map.height * 32;
+    Renderer.render_map_contents(tmp_bitmap.Canvas, 0, 0, Map.width, Map.height, Addr(Map.data), Map.width, Map.height,
+      ShowGrid1.Checked, Drawconcrete1.Checked, Marktiles1.Checked, Markbuildabletiles1.Checked, Showunknownspecials1.Checked,
+      Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, false);
+    tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
+    tmp_bitmap.Destroy;
   end;
 end;
 
@@ -1011,6 +990,7 @@ begin
     block_select_end_x := map_x;
     block_select_end_y := map_y;
     render_map;
+    render_selection_marker;
   end else
   // If left button is held, paint sand/rock/dunes/spice during mouse move
   if (ssLeft in shift) and (mode(mPaintMode) or mode(mStructuresPaint)) then
@@ -1108,13 +1088,15 @@ begin
         block_select_start_y := map_y;
         block_select_end_x := map_x;
         block_select_end_y := map_y;
+        render_selection_marker;
+        exit;
       end
       else if mode(mBlockMode) then
       begin
         // Draw selected block
         cursor_left := (CursorImage.Left - MapCanvas.Left) div 32 + map_canvas_left;
         cursor_top := (CursorImage.Top - MapCanvas.Top) div 32 + map_canvas_top;
-        Map.put_block(cursor_left, cursor_top, block_width, block_height, block_data);
+        Map.put_block(cursor_left, cursor_top, block_width, block_height, Addr(block_data));
       end
       else if (ssShift in Shift) and mode(mPaintMode) and (Tileset.paint_tile_groups[paint_tile_group].smooth_group > -1) then
       begin
@@ -1322,28 +1304,6 @@ begin
   BlockPresetDialog.init_presets;
 end;
 
-procedure TMainWindow.load_or_create_mask(graph, mask: TBitmap; filename: String);
-var
-  x, y: integer;
-  black: TColor;
-begin
-  mask.PixelFormat := pf1bit;
-  if FileExists(filename) then
-    mask.LoadFromFile(filename)
-  else begin
-    mask.Width := graph.Width;
-    mask.Height := graph.Height;
-    black := graph.Canvas.Pixels[0,0];
-    for y := 0 to graph.Height - 1 do
-      for x := 0 to graph.Width - 1 do
-      begin
-        if graph.Canvas.Pixels[x,y] <> black then
-          mask.Canvas.Pixels[x,y] := clBlack;
-      end;
-    mask.SaveToFile(filename);
-  end;
-end;
-
 procedure TMainWindow.resize_map_canvas;
 begin
   map_canvas_width := (ClientWidth - 200) div 32;
@@ -1374,321 +1334,14 @@ begin
     MapScrollV.Enabled := True;
 end;
 
-
 procedure TMainWindow.render_map;
-var
-  min_x, min_y, max_x, max_y: integer;
-  max_y_plus: word;
-  shift_count: word;
-  x, y: integer;
-  xx, yy: integer;
-  actual_x, actual_y: integer;
-  tile: word;
-  special: word;
-  player, index: word;
-  is_misc: boolean;
-  bottom_offset: word;
-  wall_bitmap: word;
-  dest_rect: TRect;
-  src_rect: TRect;
-  tile_attr: TileType;
-  sinfo: ^TStructureInfo;
-  event_marker: ^TEventMarker;
-  bottom_style_type: ^TBottomStyleType;
-  conc_tile, conc_tile_x, conc_tile_y: word;
 begin
   if not Map.loaded then
     exit;
-  min_x := 0;
-  min_y := 0;
-  max_x := map_canvas_width - 1;
-  max_y := map_canvas_height - 1;
-  max_y_plus := 1;
-  // Scrolling optimization
-  if Fastrendering1.Checked then
-  begin
-    // Horizontal scroll
-    if (map_canvas_left <> map_canvas_old_left) and (abs(map_canvas_left - map_canvas_old_left) < map_canvas_width)  then
-    begin
-      shift_count := abs(map_canvas_left - map_canvas_old_left);
-      if map_canvas_left < map_canvas_old_left then
-      begin
-        // Scrolling left
-        max_x := shift_count - 1;
-        dest_rect := rect(shift_count*32,0,map_canvas_width*32,map_canvas_height*32);
-        src_rect := rect(0,0,map_canvas_width*32-shift_count*32,map_canvas_height*32);
-      end else
-      begin
-        // Scrolling right
-        min_x := max_x - shift_count + 1;
-        src_rect := rect(shift_count*32,0,map_canvas_width*32,map_canvas_height*32);
-        dest_rect := rect(0,0,map_canvas_width*32-shift_count*32,map_canvas_height*32);
-      end;
-      // Shifting part of map canvas
-      MapCanvas.Canvas.CopyRect(dest_rect,MapCanvas.Canvas,src_rect);
-    end;
-    // Vertical scroll
-    if (map_canvas_top <> map_canvas_old_top) and (abs(map_canvas_top - map_canvas_old_top) < map_canvas_height)  then
-    begin
-      shift_count := abs(map_canvas_top - map_canvas_old_top);
-      if map_canvas_top < map_canvas_old_top then
-      begin
-        // Scrolling up
-        max_y := shift_count - 1;
-        max_y_plus := 4;
-        dest_rect := rect(0,shift_count*32,map_canvas_width*32,map_canvas_height*32);
-        src_rect := rect(0,0,map_canvas_width*32,map_canvas_height*32-shift_count*32);
-      end else
-      begin
-        // Scrolling down
-        min_y := max_y - shift_count + 1;
-        src_rect := rect(0,shift_count*32,map_canvas_width*32,map_canvas_height*32);
-        dest_rect := rect(0,0,map_canvas_width*32,map_canvas_height*32-shift_count*32);
-      end;
-      // Shifting part of map canvas
-      MapCanvas.Canvas.CopyRect(dest_rect,MapCanvas.Canvas,src_rect);
-    end;
-  end;
-  map_canvas_old_left := map_canvas_left;
-  map_canvas_old_top := map_canvas_top;
-  // Draw terrain
-  for y:= min_y to max_y do
-  begin
-    for x:= min_x to max_x do
-    begin
-      special := Map.data[x + map_canvas_left, y + map_canvas_top].special;
-      // Draw spice like a normal terrain tile
-      if special = 1 then
-        tile := Tileset.thin_spice_tile
-      else if special = 2 then
-        tile := Tileset.thick_spice_tile
-      else
-        // No spice, draw terrain tile normally
-        tile := Map.data[x + map_canvas_left, y + map_canvas_top].tile;
-      MapCanvas.Canvas.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
-      // Draw tile attribute markers
-      if Marktiles1.Checked or Markbuildabletiles1.Checked then
-      begin
-        tile := Map.data[x + map_canvas_left, y + map_canvas_top].tile;
-        tile_attr := Tileset.get_tile_type(tile);
-        if (tile_attr = ttImpassable) and Marktiles1.Checked then
-          MapCanvas.Canvas.Pen.Color := clRed
-        else if (tile_attr = ttInfantryOnly) and Marktiles1.Checked then
-          MapCanvas.Canvas.Pen.Color := $4080FF
-        else if (tile_attr = ttBuildable) and Markbuildabletiles1.Checked then
-          MapCanvas.Canvas.Pen.Color := $40FF80
-        else
-          continue;
-        MapCanvas.Canvas.Pen.Width := 2;
-        MapCanvas.Canvas.MoveTo(x*32, y*32);
-        MapCanvas.Canvas.LineTo(x*32+31, y*32+31);
-        MapCanvas.Canvas.MoveTo(x*32+31, y*32);
-        MapCanvas.Canvas.LineTo(x*32, y*32+31);
-      end;
-    end;
-  end;
-  MapCanvas.Canvas.Pen.Width := 1;
-  MapCanvas.Canvas.Brush.Style := bsClear;
-  // Draw structures
-  for y:= min_y -3 to max_y + max_y_plus do
-  begin
-    for x:= min_x -2 to max_x do
-    begin
-      actual_x := x + map_canvas_left;
-      actual_y := y + map_canvas_top;
-      // If tile is out of map
-      if (actual_x < 0) or (actual_x >= Map.width) or (actual_y < 0) or (actual_y >= Map.height) then
-        continue;
-      special := Map.data[actual_x, actual_y].special;
-      // Do not draw spice tiles (already drawn during terrain rendering)
-      if special <= 2 then
-        continue;
-      // Getting structure parameters
-      if Structures.special_value_to_params(special,player,index,is_misc) then
-      begin
-        // Structure is not empty
-        if is_misc then
-        begin
-          // Value is misc
-          src_rect := rect((index-1)*32,0,(index-1)*32+32,32);
-          dest_rect := rect(x*32,y*32,x*32+32,y*32+32);
-          MapCanvas.Canvas.CopyMode:=cmSrcCopy;
-          MapCanvas.Canvas.CopyRect(dest_rect,graphics_misc_objects.Canvas,src_rect);
-        end else
-        begin
-          // Value is structure
-          sinfo := Addr(Structures.structure_info[index]);
-          // Draw concrete and building's bottom first
-          if (Drawconcrete1.Checked) and (index < Structures.first_unit_index) then
-          begin
-            MapCanvas.Canvas.CopyMode:=cmSrcCopy;
-            bottom_style_type := Addr(bottom_style_types[sinfo.bottom_style]);
-            for xx := 0 to sinfo.size_x - 1 do
-              for yy := 0 to sinfo.size_y - 1 - bottom_style_type.size_y do
-              begin
-                // Do not draw concrete on all top tiles for 3x4 buildings
-                if (yy = 0) and (sinfo.size_y = 4) and ((xx = 0) or (xx = 2)) then
-                  continue;
-                if (y + yy) > max_y then
-                  continue;
-                if Tileset.get_tile_type(Map.data[actual_x+xx, actual_y + yy].tile) <> ttBuildable then
-                  continue;
-                conc_tile := concrete_tiles[(actual_x + actual_y) mod Length(concrete_tiles)];
-                conc_tile_x := conc_tile mod 20;
-                conc_tile_y := conc_tile div 20;
-                dest_rect := Rect((x + xx)*32, (y + yy)*32, (x + xx)*32 + 32, (y + yy)*32 + 32);
-                src_rect := Rect(conc_tile_x*32, conc_tile_y*32, conc_tile_x*32+32, conc_tile_y*32+32);
-                MapCanvas.Canvas.CopyRect(dest_rect, Tileset.tileimage.Canvas, src_rect);
-              end;
-            for xx := 0 to bottom_style_type.size_x - 1 do
-              for yy := 0 to bottom_style_type.size_y - 1 do
-              begin
-                bottom_offset := sinfo.size_y - bottom_style_type.size_y;
-                if (y + yy + bottom_offset) > max_y then
-                  continue;
-                dest_rect := Rect((x + xx)*32, (y + yy + bottom_offset)*32, (x + xx)*32 + 32, (y + yy + bottom_offset)*32 + 32);
-                if Tileset.get_tile_type(Map.data[actual_x+xx, actual_y + yy + bottom_offset].tile) = ttBuildable then
-                  src_rect := Rect((xx + bottom_style_type.conc_tile_x)*32, (yy + bottom_style_type.conc_tile_y)*32, (xx + bottom_style_type.conc_tile_x)*32+32, (yy + bottom_style_type.conc_tile_y)*32+32)
-                else
-                  src_rect := Rect((xx + bottom_style_type.rock_tile_x)*32, (yy + bottom_style_type.rock_tile_y)*32, (xx + bottom_style_type.rock_tile_x)*32+32, (yy + bottom_style_type.rock_tile_y)*32+32);
-                MapCanvas.Canvas.CopyRect(dest_rect, Tileset.tileimage.Canvas, src_rect);
-              end;
-          end;
-          // Draw actual structure
-          dest_rect := rect(x*32,y*32,x*32+sinfo.size_x*32,y*32+sinfo.size_y*32);
-          // Translate player number according to allocation index
-          if Useallocationindexes1.Checked then
-            player := Mission.mis_data.allocation_index[player];
-          if player >= Structures.cnt_map_players then
-            player := 0;
-          if index = 0 then
-          begin
-            // Structure is wall
-            wall_bitmap := 0;
-            // Checking left of wall
-            if ((actual_x - 1) >= 0) and Structures.check_links_with_wall(Map.data[actual_x - 1, actual_y].special) then
-              wall_bitmap := wall_bitmap + 1;
-            // Checking up of wall
-            if ((actual_y - 1) >= 0) and Structures.check_links_with_wall(Map.data[actual_x, actual_y - 1].special) then
-              wall_bitmap := wall_bitmap + 2;
-            // Checking right of wall
-            if ((actual_x + 1) < Map.width) and Structures.check_links_with_wall(Map.data[actual_x + 1, actual_y].special) then
-              wall_bitmap := wall_bitmap + 4;
-            // Checking down of wall
-            if ((actual_y + 1) < Map.height) and Structures.check_links_with_wall(Map.data[actual_x, actual_y + 1].special) then
-              wall_bitmap := wall_bitmap + 8;
-            // Wall source rect
-            src_rect := rect(0,wall_bitmap*32,32,wall_bitmap*32+32);
-            index := 0;
-          end else
-            // Structure is not wall
-            src_rect := rect(sinfo.pos_x*32,player*128+sinfo.pos_y*32,sinfo.pos_x*32+sinfo.size_x*32,player*128+sinfo.pos_y*32+sinfo.size_y*32);
-          // Adjust render size
-          src_rect.Top  := src_rect.Top  - sinfo.size_adjust.Top;
-          dest_rect.Top := dest_rect.Top - sinfo.size_adjust.Top;
-          src_rect.Left  := src_rect.Left  - sinfo.size_adjust.Left;
-          dest_rect.Left := dest_rect.Left - sinfo.size_adjust.Left;
-          src_rect.Bottom  := src_rect.Bottom  + sinfo.size_adjust.Bottom;
-          dest_rect.Bottom := dest_rect.Bottom + sinfo.size_adjust.Bottom;
-          src_rect.Right  := src_rect.Right  + sinfo.size_adjust.Right;
-          dest_rect.Right := dest_rect.Right + sinfo.size_adjust.Right;
-          // Drawing only overflow up when under map canvas
-          if (y > max_y) then
-          begin
-            if sinfo.size_adjust.Top <= 0 then
-              continue;
-            src_rect.Bottom := player*128+sinfo.pos_y*32;
-            dest_rect.Bottom := y*32;
-          end;
-          // Drawing structure
-          MapCanvas.Canvas.CopyMode := cmSrcAnd;
-          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures_mask.Canvas,src_rect);
-          MapCanvas.Canvas.CopyMode := cmSrcPaint;
-          MapCanvas.Canvas.CopyRect(dest_rect,graphics_structures.Canvas,src_rect);
-        end;
-      end
-      else if (special <> 0) and Showunknownspecials1.Checked then
-        MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 2, inttostr(special));
-    end;
-  end;
-  // Draw event markers
-  if Showeventmarkers1.Checked then
-  begin
-    for y:= 0 to map_canvas_height - 1 do
-      for x:= 0 to map_canvas_width - 1 do
-      begin
-        event_marker := addr(Mission.event_markers[x + map_canvas_left, y + map_canvas_top]);
-        if event_marker.emtype = emNone then
-          continue;
-        if event_marker_type_info[ord(event_marker.emtype)].player_related then
-        begin
-          player := event_marker.side;
-          if player >= cnt_mis_players then
-            player := 0;
-          MapCanvas.Canvas.Pen.Color := Structures.map_player_info[player].color;
-          MapCanvas.Canvas.Brush.Color := Structures.map_player_info[player].color;
-        end else
-        begin
-          MapCanvas.Canvas.Pen.Color := clGray;
-          MapCanvas.Canvas.Brush.Color := clGray;
-        end;
-        MapCanvas.Canvas.Rectangle(x*32, y*32, x*32+32, y*32+32);
-        MapCanvas.Canvas.Pen.Color := clBlack;
-        MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 3, event_marker_type_info[ord(event_marker.emtype)].letter);
-        MapCanvas.Canvas.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
-        if event_marker.moved then
-          MapCanvas.Canvas.TextOut(x * 32 + 2, y * 32 + 10, '<');
-      end;
-  end;
-  // Draw defence area markers
-  if Markdefenceareas1.Checked then
-  begin
-    MapCanvas.Canvas.Brush.Style := bsClear;
-    MapCanvas.Canvas.pen.Width := 2;
-    for x := 0 to cnt_mis_players - 1 do
-      for y := 0 to Mission.mis_data.ai_segments[x,7505] - 1 do
-      begin
-        MapCanvas.Canvas.Pen.Color := Structures.map_player_info[x].color;
-        MapCanvas.Canvas.Rectangle(
-          (Mission.mis_data.ai_segments[x,7508+y*20] - map_canvas_left) * 32,
-          (Mission.mis_data.ai_segments[x,7510+y*20] - map_canvas_top) * 32,
-          (Mission.mis_data.ai_segments[x,7509+y*20] - map_canvas_left) * 32 + 32,
-          (Mission.mis_data.ai_segments[x,7511+y*20] - map_canvas_top) * 32 + 32);
-        MapCanvas.Canvas.TextOut(
-          (Mission.mis_data.ai_segments[x,7508+y*20] - map_canvas_left) * 32 + 3,
-          (Mission.mis_data.ai_segments[x,7510+y*20] - map_canvas_top) * 32 + 3,
-          'Area' + inttostr(y+1));
-      end;
-  end;
-  // Draw grid
-  MapCanvas.Canvas.CopyMode:=cmSrcCopy;
-  MapCanvas.Canvas.Pen.Color := clBlack;
-  MapCanvas.Canvas.Pen.Width := 1;
-  if ShowGrid1.Checked then
-  begin
-    for x:= 0 to map_canvas_width do
-    begin
-      MapCanvas.Canvas.MoveTo(x*32,0);
-      MapCanvas.Canvas.LineTo(x*32,map_canvas_height*32);
-    end;
-    for y:= 0 to map_canvas_height do
-    begin
-      MapCanvas.Canvas.MoveTo(0,y*32);
-      MapCanvas.Canvas.LineTo(map_canvas_width*32,y*32);
-    end;
-  end;
-  // Draw border around selected block on map
-  if block_select_started then
-  begin
-    min_x := (min(block_select_start_x, block_select_end_x) - map_canvas_left) * 32;
-    max_x := (max(block_select_start_x, block_select_end_x) - map_canvas_left) * 32 + 33;
-    min_y := (min(block_select_start_y, block_select_end_y) - map_canvas_top) * 32;
-    max_y := (max(block_select_start_y, block_select_end_y) - map_canvas_top) * 32 + 33;
-    MapCanvas.Canvas.Brush.Style := bsClear;
-    MapCanvas.Canvas.Pen.Color := clRed;
-    MapCanvas.Canvas.Rectangle(min_x, min_y, max_x, max_y);
-    MapCanvas.Canvas.Brush.Style := bsSolid;
-  end;
+  Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
+    ShowGrid1.Checked, Drawconcrete1.Checked, Marktiles1.Checked, Markbuildabletiles1.Checked, Showunknownspecials1.Checked,
+    Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked,
+    Fastrendering1.Checked);
 end;
 
 procedure TMainWindow.render_minimap;
@@ -1751,6 +1404,24 @@ begin
   MiniMap.Canvas.Brush.Style := bsClear;
   MiniMap.Canvas.Rectangle(mmap_border_x + map_canvas_left,mmap_border_y + map_canvas_top,mmap_border_x + map_canvas_left + map_canvas_width,mmap_border_y + map_canvas_top + map_canvas_height);
   MiniMap.Canvas.Brush.Style := bsSolid;
+end;
+
+procedure TMainWindow.render_selection_marker;
+var
+  min_x, min_y, max_x, max_y: integer;
+begin
+  // Draw border around selected block on map
+  if block_select_started then
+  begin
+    min_x := (min(block_select_start_x, block_select_end_x) - map_canvas_left) * 32;
+    max_x := (max(block_select_start_x, block_select_end_x) - map_canvas_left) * 32 + 33;
+    min_y := (min(block_select_start_y, block_select_end_y) - map_canvas_top) * 32;
+    max_y := (max(block_select_start_y, block_select_end_y) - map_canvas_top) * 32 + 33;
+    MapCanvas.Canvas.Brush.Style := bsClear;
+    MapCanvas.Canvas.Pen.Color := clRed;
+    MapCanvas.Canvas.Rectangle(min_x, min_y, max_x, max_y);
+    MapCanvas.Canvas.Brush.Style := bsSolid;
+  end;
 end;
 
 procedure TMainWindow.render_tileset;
@@ -1997,7 +1668,7 @@ procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word
 begin
   block_width := b_width;
   block_height := b_height;
-  Map.copy_block(b_left, b_top, b_width, b_height, block_data, CbSelectStructures.Checked and structures);
+  Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.Checked and structures);
   RbBlockMode.Checked := True;
   draw_cursor_image;
 end;
@@ -2049,8 +1720,10 @@ begin
       tile_x := block_data[x,y].tile mod 20;
       tile_y := block_data[x,y].tile div 20;
       BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
-      CursorImage.Canvas.CopyRect(rect(x*32,y*32, x*32+32, y*32+32), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
     end;
+  Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
+    false, Drawconcrete1.Checked, false, false, Showunknownspecials1.Checked,
+    Useallocationindexes1.Checked, false, false, false);
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;
   CursorImage.Canvas.Rectangle(0, 0, block_width * 32 + 1, block_height * 32 + 1);

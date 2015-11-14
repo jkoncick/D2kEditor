@@ -14,6 +14,7 @@ type
 
 type
   TMapData = array[0..127, 0..127] of TMapTile;
+  TMapDataPtr = ^TMapData;
 
 type
   TUndoEntry = record
@@ -74,8 +75,8 @@ type
   public
     procedure set_special_value(x,y: word; special: word);
     procedure paint_rect(x,y, width, height: word; paint_tile_group: integer);
-    procedure copy_block(x,y, width, height: word; var block: TMapData; structures: boolean);
-    procedure put_block(x,y, width, height: word; var block: TMapData);
+    procedure copy_block(x,y, width, height: word; block: TMapDataPtr; structures: boolean);
+    procedure put_block(x,y, width, height: word; block: TMapDataPtr);
 
     // Fill area procedures
   public
@@ -176,7 +177,7 @@ begin
     end;
 end;
 
-procedure TMap.copy_block(x, y, width, height: word; var block: TMapData; structures: boolean);
+procedure TMap.copy_block(x, y, width, height: word; block: TMapDataPtr; structures: boolean);
 var
   xx, yy: integer;
   value: TMapTile;
@@ -198,7 +199,7 @@ begin
     end;
 end;
 
-procedure TMap.put_block(x, y, width, height: word; var block: TMapData);
+procedure TMap.put_block(x, y, width, height: word; block: TMapDataPtr);
 var
   xx, yy: integer;
 begin
