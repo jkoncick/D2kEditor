@@ -1118,9 +1118,9 @@ begin
   end;
   if not mode(mPaintMode) then
   begin
-    render_minimap;
     Map.calculate_power_and_statistics;
   end;
+  render_minimap;
   render_map;
 end;
 
@@ -1182,7 +1182,6 @@ begin
   end;
   if mode(mPaintMode) then
   begin
-    render_minimap;
     Map.calculate_power_and_statistics;
   end;
 end;
@@ -1332,6 +1331,8 @@ begin
     MapScrollV.Enabled := False
   else
     MapScrollV.Enabled := True;
+  mmap_border_x := (128 - Map.width) div 2;
+  mmap_border_y := (128 - Map.height) div 2;
 end;
 
 procedure TMainWindow.render_map;
@@ -1345,55 +1346,10 @@ begin
 end;
 
 procedure TMainWindow.render_minimap;
-var
-  x, y: integer;
-  special: word;
-  player, index: word;
-  is_misc: boolean;
-  sinfo: ^TStructureInfo;
 begin
   if not Map.loaded then
     exit;
-  minimap_buffer.Canvas.Brush.Color := ClBtnFace;
-  minimap_buffer.Canvas.Pen.Color := ClBtnFace;
-  minimap_buffer.Canvas.Rectangle(0,0,128,128);
-  mmap_border_x := (128 - Map.width) div 2;
-  mmap_border_y := (128 - Map.height) div 2;
-  // Rendering terrain
-  for y:= 0 to Map.height - 1 do
-    for x:= 0 to Map.width - 1 do
-    begin
-      minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.get_tile_color(Map.data[x,y].tile);
-    end;
-  // Rendering structures
-  for y:= 0 to Map.height - 1 do
-    for x:= 0 to Map.width - 1 do
-    begin
-      special := Map.data[x,y].special;
-      if special = 1 then
-        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.thin_spice_color;
-      if special = 2 then
-        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Tileset.thick_spice_color;
-      if not Structures.special_value_to_params(special,player,index,is_misc) then
-        continue
-      else if is_misc then
-      begin
-        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Structures.misc_object_info[index].color;
-      end else
-      begin
-        sinfo := Addr(Structures.structure_info[index]);
-        // Translate player number according to allocation index
-        if Useallocationindexes1.Checked then
-          player := Mission.mis_data.allocation_index[player];
-        if player >= cnt_mis_players then
-          player := 0;
-        // Render structure on map
-        minimap_buffer.Canvas.Pen.Color := Structures.map_player_info[player].color;
-        minimap_buffer.Canvas.Brush.Color := Structures.map_player_info[player].color;
-        minimap_buffer.Canvas.Pixels[x+mmap_border_x,y+mmap_border_y] := Structures.map_player_info[player].color;
-        minimap_buffer.Canvas.Rectangle(x+mmap_border_x,y+mmap_border_y,x+mmap_border_x+sinfo.size_x,y+mmap_border_y+sinfo.size_y);
-      end;
-    end;
+  Renderer.render_minimap_contents(minimap_buffer.Canvas, Addr(Map.data), Map.width, Map.height, Useallocationindexes1.Checked);
   render_minimap_position_marker;
 end;
 

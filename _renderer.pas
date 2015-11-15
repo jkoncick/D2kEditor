@@ -2,7 +2,7 @@ unit _renderer;
 
 interface
 
-uses Graphics, _map;
+uses Graphics, Types, _map;
 
 type
   TRenderer = class
@@ -14,20 +14,31 @@ type
     graphics_misc_objects: TBitmap;
     graphics_misc_objects_mask: TBitmap;
 
-    // Misc variables
-    fastrender_old_left: word;
-    fastrender_old_top: word;
+    // Differential rendering variables
+    diffrender_old_left: word;
+    diffrender_old_top: word;
+
+    // Invalidation variables
+    invalidated: boolean;
+    inv_nothing: boolean;
+    inv_rect: TRect;
 
   public
     procedure init;
 
     procedure load_or_create_mask(graph: TBitmap; mask: TBitmap; filename: String);
 
+    procedure invalidate_init;
+    procedure invalidate_map_tile(x, y: word);
+
     procedure render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
       data: TMapDataPtr; data_width, data_height: word;
       o_show_grid, o_draw_concrete, o_mark_impassable, o_mark_buildable, o_show_unknown_specials,
       o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas,
-      o_fast_rendering: boolean);
+      o_rendering_optimization: boolean);
+    procedure render_minimap_contents(cnv_target: TCanvas; data: TMapDataPtr; data_width, data_height: word;
+      o_use_alloc_indexes: boolean);
+
   end;
 
 var
@@ -35,7 +46,7 @@ var
 
 implementation
 
-uses SysUtils, Types, Math, main, _mission, _tileset, _structures;
+uses SysUtils, Math, main, _mission, _tileset, _structures;
 
 procedure TRenderer.init;
 begin
@@ -72,11 +83,33 @@ begin
   end;
 end;
 
+procedure TRenderer.invalidate_init;
+begin
+  if not invalidated then
+    inv_nothing := true;
+end;
+
+procedure TRenderer.invalidate_map_tile(x, y: word);
+begin
+  if not invalidated then
+  begin
+    invalidated := true;
+    inv_rect := Rect(x, y, x, y);
+  end else
+  begin
+    inv_rect.Left := Min(inv_rect.Left, x);
+    inv_rect.Top := Min(inv_rect.Top, y);
+    inv_rect.Right := Max(inv_rect.Right, x);
+    inv_rect.Bottom := Max(inv_rect.Bottom, y);
+  end;
+  inv_nothing := false;
+end;
+
 procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
   data: TMapDataPtr; data_width, data_height: word;
   o_show_grid, o_draw_concrete, o_mark_impassable, o_mark_buildable, o_show_unknown_specials,
   o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas,
-  o_fast_rendering: boolean);
+  o_rendering_optimization: boolean);
 var
   min_x, min_y, max_x, max_y: integer;
   shift_count: word;
@@ -106,13 +139,13 @@ begin
   cnv_target.Brush.Color := clBlack;
   //cnv_target.Rectangle(0,0,max_x*32+32, max_y*32+32);
   // Scrolling optimization
-  if o_fast_rendering then
+  if o_rendering_optimization then
   begin
     // Horizontal scroll
-    if (cnv_left <> fastrender_old_left) and (abs(cnv_left - fastrender_old_left) < cnv_width)  then
+    if (cnv_left <> diffrender_old_left) and (abs(cnv_left - diffrender_old_left) < cnv_width)  then
     begin
-      shift_count := abs(cnv_left - fastrender_old_left);
-      if cnv_left < fastrender_old_left then
+      shift_count := abs(cnv_left - diffrender_old_left);
+      if cnv_left < diffrender_old_left then
       begin
         // Scrolling left
         max_x := shift_count - 1;
@@ -127,12 +160,12 @@ begin
       end;
       // Shifting part of map canvas
       cnv_target.CopyRect(dest_rect,cnv_target,src_rect);
-    end;
+    end else
     // Vertical scroll
-    if (cnv_top <> fastrender_old_top) and (abs(cnv_top - fastrender_old_top) < cnv_height)  then
+    if (cnv_top <> diffrender_old_top) and (abs(cnv_top - diffrender_old_top) < cnv_height)  then
     begin
-      shift_count := abs(cnv_top - fastrender_old_top);
-      if cnv_top < fastrender_old_top then
+      shift_count := abs(cnv_top - diffrender_old_top);
+      if cnv_top < diffrender_old_top then
       begin
         // Scrolling up
         max_y := shift_count - 1;
@@ -147,9 +180,31 @@ begin
       end;
       // Shifting part of map canvas
       cnv_target.CopyRect(dest_rect,cnv_target,src_rect);
+    end else
+    // Invalidated area
+    if invalidated then
+    begin
+      min_x := Min(Max(inv_rect.Left - 1 - cnv_left, 0), cnv_width);
+      max_x := Min(Max(inv_rect.Right + (max_building_width - 1) - cnv_left, -1), cnv_width - 1);
+      min_y := Min(Max(inv_rect.Top - 1 - cnv_top, 0), cnv_height);
+      max_y := Min(Max(inv_rect.Bottom + (max_building_height - 1) - cnv_top, -1), cnv_height - 1);
+      // Nothing to render
+      if (min_x > max_x) or (min_y > max_y) then
+      begin
+        invalidated := false;
+        exit;
+      end;
+    end else
+    if inv_nothing then
+    begin
+      // Nothing to render
+      inv_nothing := false;
+      exit;
     end;
-    fastrender_old_left := cnv_left;
-    fastrender_old_top := cnv_top;
+    diffrender_old_left := cnv_left;
+    diffrender_old_top := cnv_top;
+    invalidated := false;
+    inv_nothing := false;
   end;
   // Draw terrain
   for y:= min_y to max_y do
@@ -190,9 +245,9 @@ begin
   cnv_target.Pen.Width := 1;
   cnv_target.Brush.Style := bsClear;
   // Draw structures
-  for y:= min_y -3 to max_y + 1 do
+  for y:= min_y - (max_building_height - 1) to max_y + 1 do
   begin
-    for x:= min_x -2 to max_x + 1 do
+    for x:= min_x - (max_building_width - 1) to max_x + 1 do
     begin
       actual_x := x + cnv_left;
       actual_y := y + cnv_top;
@@ -405,6 +460,79 @@ begin
       cnv_target.LineTo(cnv_width*32,y*32);
     end;
   end;
+end;
+
+procedure TRenderer.render_minimap_contents(cnv_target: TCanvas; data: TMapDataPtr; data_width, data_height: word;
+  o_use_alloc_indexes: boolean);
+var
+  min_x, min_y, max_x, max_y: integer;
+  x, y: integer;
+  border_x, border_y: integer;
+  special: word;
+  player, index: word;
+  is_misc: boolean;
+  sinfo: ^TStructureInfo;
+begin
+  min_x := 0;
+  min_y := 0;
+  max_x := data_width - 1;
+  max_y := data_height - 1;
+  if inv_nothing then
+  begin
+    // Nothing to render
+    exit;
+  end else
+  if invalidated then
+  begin
+    // Render only invalidated area
+    min_x := inv_rect.Left;
+    max_x := Min(inv_rect.Right + (max_building_width - 1), data_width - 1);
+    min_y := inv_rect.Top;
+    max_y := Min(inv_rect.Bottom + (max_building_height - 1), data_height - 1);
+  end else
+  begin
+    // Render whole minimap
+    cnv_target.Brush.Color := ClBtnFace;
+    cnv_target.Pen.Color := ClBtnFace;
+    cnv_target.Rectangle(0,0,128,128);
+  end;
+  border_x := (128 - data_width) div 2;
+  border_y := (128 - data_height) div 2;
+  // Rendering terrain
+  for y:= min_y to max_y do
+    for x:= min_x to max_x do
+    begin
+      cnv_target.Pixels[x+border_x,y+border_y] := Tileset.get_tile_color(data[x,y].tile);
+    end;
+  // Rendering structures
+  for y:= Max(min_y - (max_building_height - 1), 0) to max_y do
+    for x:= Max(min_x - (max_building_width - 1), 0) to max_x do
+    begin
+      special := data[x,y].special;
+      if special = 1 then
+        cnv_target.Pixels[x+border_x,y+border_y] := Tileset.thin_spice_color;
+      if special = 2 then
+        cnv_target.Pixels[x+border_x,y+border_y] := Tileset.thick_spice_color;
+      if not Structures.special_value_to_params(special,player,index,is_misc) then
+        continue
+      else if is_misc then
+      begin
+        cnv_target.Pixels[x+border_x,y+border_y] := Structures.misc_object_info[index].color;
+      end else
+      begin
+        sinfo := Addr(Structures.structure_info[index]);
+        // Translate player number according to allocation index
+        if o_use_alloc_indexes then
+          player := Mission.mis_data.allocation_index[player];
+        if player >= cnt_mis_players then
+          player := 0;
+        // Render structure on map
+        cnv_target.Pen.Color := Structures.map_player_info[player].color;
+        cnv_target.Brush.Color := Structures.map_player_info[player].color;
+        cnv_target.Pixels[x+border_x,y+border_y] := Structures.map_player_info[player].color;
+        cnv_target.Rectangle(x+border_x, y+border_y, Min(x+border_x+sinfo.size_x, data_width+border_x), Min(y+border_y+sinfo.size_y, data_height+border_y));
+      end;
+    end;
 end;
 
 end.

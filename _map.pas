@@ -120,7 +120,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, _tileset, _mission, _settings, main;
+uses Windows, Forms, SysUtils, _renderer, _tileset, _mission, _settings, main;
 
 
 // Modify map tile and save old values into undo history.
@@ -140,6 +140,7 @@ begin
   MainWindow.Redo1.Enabled := false;
   map_data[x,y].tile := tile;
   map_data[x,y].special := special;
+  Renderer.invalidate_map_tile(x, y);
 end;
 
 // Apply "paint" operation to a single tile
@@ -168,6 +169,7 @@ var
   xx, yy: integer;
 begin
   undo_block_start := true;
+  Renderer.invalidate_init;
   for xx := x to x + width - 1 do
     for yy := y to y + height - 1 do
     begin
@@ -224,6 +226,7 @@ begin
     do_undo;
   // Fill area
   undo_block_start := true;
+  Renderer.invalidate_init;
   tmp_paint_tile_group := paint_tile_group;
   fill_area_step(x, y, Tileset.get_fill_area_type(map_data[x, y].tile, map_data[x, y].special));
 end;
@@ -249,14 +252,18 @@ end;
 procedure TMap.do_undo;
 var
   tmp_data: TMapTile;
+  x, y: word;
 begin
   if undo_pos = undo_start then
     exit;
   repeat
     undo_pos := (undo_pos - 1) and max_undo_steps;
-    tmp_data := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y];
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y] := undo_history[undo_pos].data;
+    x := undo_history[undo_pos].x;
+    y := undo_history[undo_pos].y;
+    tmp_data := map_data[x, y];
+    map_data[x, y] := undo_history[undo_pos].data;
     undo_history[undo_pos].data := tmp_data;
+    Renderer.invalidate_map_tile(x, y);
   until undo_history[undo_pos].is_first or (undo_pos = undo_start);
   if undo_pos = undo_start then
     MainWindow.Undo1.Enabled := false;
@@ -267,13 +274,17 @@ end;
 procedure TMap.do_redo;
 var
   tmp_data: TMapTile;
+  x, y: word;
 begin
   if undo_pos = undo_max then
     exit;
   repeat
-    tmp_data := map_data[undo_history[undo_pos].x, undo_history[undo_pos].y];
-    map_data[undo_history[undo_pos].x, undo_history[undo_pos].y] := undo_history[undo_pos].data;
+    x := undo_history[undo_pos].x;
+    y := undo_history[undo_pos].y;
+    tmp_data := map_data[x, y];
+    map_data[x, y] := undo_history[undo_pos].data;
     undo_history[undo_pos].data := tmp_data;
+    Renderer.invalidate_map_tile(x, y);
     undo_pos := (undo_pos + 1) and max_undo_steps;
   until undo_history[undo_pos].is_first or (undo_pos = undo_max);
   if undo_pos = undo_max then
@@ -345,6 +356,7 @@ var
 begin
   start_x := x;
   start_y := y;
+  Renderer.invalidate_init;
   tmp_paint_tile_group := paint_tile_group;
   undo_max := undo_pos;
   steps := 0;
@@ -663,6 +675,7 @@ var
   is_misc: boolean;
 begin
   undo_block_start := true;
+  Renderer.invalidate_init;
   for y:= 0 to map_height - 1 do
     for x := 0 to map_width - 1 do
     begin

@@ -7,6 +7,9 @@ uses Graphics, SysUtils, Math, Types;
 const cnt_players = 8;
 const cnt_tiledata_entries = 1000;
 
+const max_building_width = 3;
+const max_building_height = 4;
+
 type StructureType = (stNothing, stMiscObject, stBuilding, stUnit);
 
 type
