@@ -56,7 +56,6 @@ type
     Setmapsize1: TMenuItem;
     Shiftmap1: TMenuItem;
     Changestructureowner1: TMenuItem;
-    Fastrendering1: TMenuItem;
     EditorPages: TPageControl;
     PageStructures: TTabSheet;
     PageTerrain: TTabSheet;
@@ -83,7 +82,6 @@ type
     MiniMapFrame: TBevel;
     Marktiles1: TMenuItem;
     Useallocationindexes1: TMenuItem;
-    N6: TMenuItem;
     N7: TMenuItem;
     Showeventmarkers1: TMenuItem;
     Savemapimage1: TMenuItem;
@@ -246,6 +244,9 @@ type
     moving_event: integer;
     moving_condition: integer;
 
+    // Rendering variables
+    editing_marker_enabled: boolean;
+
     // Clipboard variables
     clipboard_format: cardinal;
 
@@ -254,7 +255,7 @@ type
     procedure render_map;
     procedure render_minimap;
     procedure render_minimap_position_marker;
-    procedure render_selection_marker;
+    procedure render_editing_marker;
     procedure render_tileset;
 
     // Map loading & saving procedures
@@ -488,11 +489,19 @@ begin
       key := 0;
       exit;
     end;
-    // Paint sand/rock/dunes
+    // The key under Esc:
     192: begin
-      cbBrushSize.ItemIndex := 0;
-      paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group].Down := true;
-      PaintTileSelectClick(paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group]);
+      if mode(mStructures) then
+      begin
+        MiscObjList.ItemIndex := 0;
+        MiscObjListClick(nil);
+        MiscObjList.SetFocus;
+      end else
+      begin
+        cbBrushSize.ItemIndex := 0;
+        paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group].Down := true;
+        PaintTileSelectClick(paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group]);
+      end;
     end;
   end;
   if mode(mBlockMode) then
@@ -525,7 +534,10 @@ begin
   begin
     // Brush size preset selection
     if (key >= ord('1')) and (key <= ord('8')) then
+    begin
       cbBrushSize.ItemIndex := key - ord('1');
+      render_editing_marker;
+    end;
     case key of
     // Structures editing mode selection
     ord('E'): begin MiscObjList.ItemIndex := 3; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
@@ -932,14 +944,15 @@ begin
     map_y := 0;
   if map_y >= Map.height then
     map_y := Map.height - 1;
-  // Write coordinates on status bar
-  StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
   // Show cursor image if needed
   set_cursor_image_visibility;
+  editing_marker_enabled := true;
   // If mouse is still inside same tile, exit (for optimization)
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
   mouse_already_clicked := false;
+  // Write coordinates on status bar
+  StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
   // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
   if mode(mStructures) and Showeventmarkers1.Checked and ((Mission.event_markers[map_x,map_y].emtype = emReinforcement) or (Mission.event_markers[map_x,map_y].emtype = emUnitSpawn)) then
   begin
@@ -989,9 +1002,9 @@ begin
   begin
     block_select_end_x := map_x;
     block_select_end_y := map_y;
-    render_map;
-    render_selection_marker;
-  end else
+  end;
+  // Redraw editing marker
+  render_editing_marker;
   // If left button is held, paint sand/rock/dunes/spice during mouse move
   if (ssLeft in shift) and (mode(mPaintMode) or mode(mStructuresPaint)) then
     MapCanvasMouseDown(sender,mbLeft,Shift,x,y);
@@ -1036,12 +1049,19 @@ begin
     begin
     // Editing structures
     if Button = mbLeft then
+    begin
       // Put structure on map
-      Map.set_special_value(map_x, map_y, strtoint(SpecialValue.Text))
-    else if Button = mbRight then
+      Map.set_special_value(map_x, map_y, strtoint(SpecialValue.Text));
+      // After placing building do not draw building marker
+      if BuildingList.ItemIndex <> -1 then
+        editing_marker_enabled := false;
+    end else
+    if Button = mbRight then
+    begin
       // Delete structure from map
-      Map.set_special_value(map_x, map_y, 0)
-    else if Button = mbMiddle then
+      Map.set_special_value(map_x, map_y, 0);
+    end else
+    if Button = mbMiddle then
     begin
       // Get structure parameters on position and set them in menu
       SpecialValue.text := inttostr(Map.data[map_x, map_y].special);
@@ -1073,6 +1093,7 @@ begin
         BuildingList.ItemIndex := -1;
         UnitList.ItemIndex := -1;
       end;
+      render_editing_marker;
       exit;
     end;
   end else
@@ -1088,7 +1109,7 @@ begin
         block_select_start_y := map_y;
         block_select_end_x := map_x;
         block_select_end_y := map_y;
-        render_selection_marker;
+        render_editing_marker;
         exit;
       end
       else if mode(mBlockMode) then
@@ -1175,10 +1196,10 @@ begin
     // Erase copied area
     if ssShift in Shift then
     begin
-      Map.paint_rect(min_x, min_y, max_x-min_x, max_y-min_y, 0);
+      Map.paint_rect(min_x, min_y, max_x-min_x+1, max_y-min_y+1, 0);
       render_minimap;
+      render_map;
     end;
-    render_map;
   end;
   if mode(mPaintMode) then
   begin
@@ -1202,6 +1223,8 @@ procedure TMainWindow.FormMouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 begin
   StatusBar.Panels[0].Text := '';
+  Renderer.remove_editing_marker(MapCanvas.Canvas);
+  editing_marker_enabled := false;
   CursorImage.Visible := false;
 end;
 
@@ -1234,6 +1257,7 @@ begin
     if UnitList.ItemIndex <> -1 then
       UnitList.SetFocus;
   end;
+  render_editing_marker;
 end;
 
 procedure TMainWindow.BuildingListClick(Sender: TObject);
@@ -1282,6 +1306,7 @@ begin
     paint_tile_select[paint_tile_group].Down := false;
     LbPaintTileGroupName.Caption := '';
   end;
+  render_editing_marker;
   set_cursor_image_visibility;
 end;
 
@@ -1341,8 +1366,8 @@ begin
     exit;
   Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
     ShowGrid1.Checked, Drawconcrete1.Checked, Marktiles1.Checked, Markbuildabletiles1.Checked, Showunknownspecials1.Checked,
-    Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked,
-    Fastrendering1.Checked);
+    Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, true);
+  render_editing_marker;
 end;
 
 procedure TMainWindow.render_minimap;
@@ -1362,21 +1387,44 @@ begin
   MiniMap.Canvas.Brush.Style := bsSolid;
 end;
 
-procedure TMainWindow.render_selection_marker;
+procedure TMainWindow.render_editing_marker;
 var
+  struct_info: ^TStructureInfo;
   min_x, min_y, max_x, max_y: integer;
 begin
-  // Draw border around selected block on map
+  if not editing_marker_enabled then
+    exit;
+  if Settings.DrawBuildingMarker and mode(mStructures) and (BuildingList.ItemIndex <> -1) then
+  begin
+    // Draw building placement marker
+    struct_info := Addr(Structures.structure_info[BuildingList.ItemIndex]);
+    Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
+      Addr(Map.data), mouse_old_x, mouse_old_y, struct_info.size_x, struct_info.size_y, emBuilding);
+  end else
+  if Settings.DrawObjectBrush and mode(mStructures) and ((UnitList.ItemIndex <> -1) or (MiscObjList.ItemIndex > 0)) then
+  begin
+    // Draw unit / misc object marker
+    Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
+      Addr(Map.data), mouse_old_x, mouse_old_y, 1, 1, emSingleObject);
+  end else
   if block_select_started then
   begin
-    min_x := (min(block_select_start_x, block_select_end_x) - map_canvas_left) * 32;
-    max_x := (max(block_select_start_x, block_select_end_x) - map_canvas_left) * 32 + 33;
-    min_y := (min(block_select_start_y, block_select_end_y) - map_canvas_top) * 32;
-    max_y := (max(block_select_start_y, block_select_end_y) - map_canvas_top) * 32 + 33;
-    MapCanvas.Canvas.Brush.Style := bsClear;
-    MapCanvas.Canvas.Pen.Color := clRed;
-    MapCanvas.Canvas.Rectangle(min_x, min_y, max_x, max_y);
-    MapCanvas.Canvas.Brush.Style := bsSolid;
+    // Draw border around selected block on map
+    min_x := min(block_select_start_x, block_select_end_x);
+    max_x := max(block_select_start_x, block_select_end_x);
+    min_y := min(block_select_start_y, block_select_end_y);
+    max_y := max(block_select_start_y, block_select_end_y);
+    Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
+      Addr(Map.data), min_x, min_y, max_x-min_x+1, max_y-min_y+1, emSelectionArea);
+  end else
+  if Settings.DrawPaintBrush and mode(mPaintMode) then
+  begin
+    // Draw paint brush marker
+    Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
+      Addr(Map.data), mouse_old_x, mouse_old_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], emPaintArea);
+  end else
+  begin
+    Renderer.remove_editing_marker(MapCanvas.Canvas);
   end;
 end;
 
@@ -1521,6 +1569,7 @@ begin
   else
     value := Structures.structure_info[UnitList.ItemIndex + Structures.first_unit_index].values[PlayerSelect.ItemIndex];
   SpecialValue.Text := inttostr(value);
+  render_editing_marker;
   mouse_already_clicked := false;
 end;
 
@@ -1639,8 +1688,8 @@ begin
   block_width := b_width;
   block_height := b_height;
   Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.Checked and structures);
-  RbBlockMode.Checked := True;
   draw_cursor_image;
+  RbBlockMode.Checked := True;  
 end;
 
 procedure TMainWindow.resize_cursor_image;

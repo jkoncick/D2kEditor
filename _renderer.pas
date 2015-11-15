@@ -4,6 +4,8 @@ interface
 
 uses Graphics, Types, _map;
 
+type EditingMarkerType = (emBuilding, emSingleObject, emSelectionArea, emPaintArea);
+
 type
   TRenderer = class
 
@@ -23,6 +25,11 @@ type
     inv_nothing: boolean;
     inv_rect: TRect;
 
+    // Editing markers rendering variables
+    bkup_bitmap: TBitmap;
+    bkup_rect: TRect;
+    bkup_valid: boolean;
+
   public
     procedure init;
 
@@ -38,6 +45,10 @@ type
       o_rendering_optimization: boolean);
     procedure render_minimap_contents(cnv_target: TCanvas; data: TMapDataPtr; data_width, data_height: word;
       o_use_alloc_indexes: boolean);
+
+    procedure remove_editing_marker(cnv_target: TCanvas);
+    procedure draw_editing_marker(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
+      data: TMapDataPtr; mark_x, mark_y, mark_width, mark_height: word; marker_type: EditingMarkerType);
 
   end;
 
@@ -59,6 +70,9 @@ begin
   load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + 'graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile(current_dir + 'graphics/misc_objects.bmp');
   load_or_create_mask(graphics_misc_objects, graphics_misc_objects_mask, current_dir + 'graphics/misc_objects_mask.bmp');
+  bkup_bitmap := TBitmap.Create;
+  bkup_bitmap.Width := max_building_width * 32;
+  bkup_bitmap.Height := max_building_height * 32;
 end;
 
 procedure TRenderer.load_or_create_mask(graph, mask: TBitmap; filename: String);
@@ -130,17 +144,16 @@ var
   bottom_style_type: ^TBottomStyleType;
   conc_tile, conc_tile_x, conc_tile_y: word;
 begin
+  if not Map.loaded then
+    exit;
   min_x := 0;
   min_y := 0;
   max_x := cnv_width - 1;
   max_y := cnv_height - 1;
-
-  cnv_target.Pen.Color := clBlack;
-  cnv_target.Brush.Color := clBlack;
-  //cnv_target.Rectangle(0,0,max_x*32+32, max_y*32+32);
-  // Scrolling optimization
+  // Rendering optimization
   if o_rendering_optimization then
   begin
+    remove_editing_marker(cnv_target);
     // Horizontal scroll
     if (cnv_left <> diffrender_old_left) and (abs(cnv_left - diffrender_old_left) < cnv_width)  then
     begin
@@ -533,6 +546,77 @@ begin
         cnv_target.Rectangle(x+border_x, y+border_y, Min(x+border_x+sinfo.size_x, data_width+border_x), Min(y+border_y+sinfo.size_y, data_height+border_y));
       end;
     end;
+end;
+
+procedure TRenderer.remove_editing_marker(cnv_target: TCanvas);
+var
+  src_rect: TRect;
+begin
+  if not bkup_valid then
+    exit;
+  src_rect := Rect(0, 0, bkup_rect.Right - bkup_rect.Left, bkup_rect.Bottom - bkup_rect.Top);
+  cnv_target.CopyRect(bkup_rect, bkup_bitmap.Canvas, src_rect);
+  bkup_valid := false;
+end;
+
+procedure TRenderer.draw_editing_marker(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
+  data: TMapDataPtr; mark_x, mark_y, mark_width, mark_height: word; marker_type: EditingMarkerType);
+var
+  dest_rect: TRect;
+  bkup_width, bkup_height: integer;
+  x, y: integer;
+begin
+  // Restore old backup
+  remove_editing_marker(cnv_target);
+  // Make new backup
+  bkup_rect := Rect(Max(mark_x * 32 - cnv_left * 32, 0), Max(mark_y * 32 - cnv_top * 32, 0), Min((mark_x + mark_width - cnv_left) * 32 + 1, cnv_width * 32), Min((mark_y + mark_height - cnv_top) * 32 + 1, cnv_height * 32));
+  bkup_width := bkup_rect.Right - bkup_rect.Left;
+  bkup_height := bkup_rect.Bottom - bkup_rect.Top;
+  dest_rect := Rect(0, 0, bkup_width, bkup_height);
+  bkup_bitmap.Width := Max(bkup_bitmap.Width, bkup_width);
+  bkup_bitmap.Height := Max(bkup_bitmap.Height, bkup_height);
+  bkup_bitmap.Canvas.CopyRect(dest_rect, cnv_target, bkup_rect);
+  bkup_valid := true;
+  // Draw actual_marker
+  if marker_type = emBuilding then
+  begin
+    cnv_target.Brush.Style := bsBDiagonal;
+    cnv_target.Pen.Style := psClear;
+    for y := mark_y to mark_y + mark_height - 1 do
+      for x := mark_x to mark_x + mark_width - 1 do
+      begin
+        if (mark_height = 4) and (y = mark_y) and ((x = mark_x) or (x = mark_x + 2)) then
+          continue;
+        if Tileset.get_tile_type(data[x, y].tile) = ttBuildable then
+          cnv_target.Brush.Color := $E0E0E0
+        else
+          cnv_target.Brush.Color := $0000E0;
+        cnv_target.Rectangle((x - cnv_left)*32, (y - cnv_top)*32, (x - cnv_left)*32+33, (y - cnv_top)*32+33);
+      end;
+    cnv_target.Pen.Style := psSolid;
+    cnv_target.Brush.Style := bsSolid;
+  end else
+  begin
+    cnv_target.Brush.Style := bsClear;
+    cnv_target.Pen.Width := 1;
+    dest_rect := Rect((mark_x - cnv_left)*32, (mark_y - cnv_top)*32, (mark_x + mark_width - cnv_left)*32+1, (mark_y + mark_height - cnv_top)*32+1);
+    if marker_type = emSingleObject then
+    begin
+      cnv_target.Pen.Color := clGreen;
+      cnv_target.Pen.Style := psDot;
+    end else
+    if marker_type = emSelectionArea then
+    begin
+      cnv_target.Pen.Color := clRed;
+    end else
+    if marker_type = emPaintArea then
+    begin
+      cnv_target.Pen.Color := clBlue;
+      cnv_target.Pen.Style := psDot;
+    end;
+    cnv_target.Rectangle(dest_rect);
+    cnv_target.Pen.Style := psSolid;
+  end;
 end;
 
 end.

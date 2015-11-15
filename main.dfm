@@ -347,7 +347,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
       end
@@ -504,14 +504,6 @@ object MainWindow: TMainWindow
         Checked = True
         ShortCut = 16452
         OnClick = SettingChange
-      end
-      object N6: TMenuItem
-        Caption = '-'
-      end
-      object Fastrendering1: TMenuItem
-        AutoCheck = True
-        Caption = 'Fast rendering'
-        Checked = True
       end
     end
     object Map1: TMenuItem

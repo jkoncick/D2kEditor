@@ -17,6 +17,9 @@ type
     CheckMapErrorsOnSave: boolean;
     CheckMapErrorsOnTest: boolean;
     AlwaysAskOnQuit: boolean;
+    DrawBuildingMarker: boolean;
+    DrawObjectBrush: boolean;
+    DrawPaintBrush: boolean;
 
     // Default values
     DefaultMapWidth: integer;
@@ -76,6 +79,9 @@ begin
   CheckMapErrorsOnSave := ini.ReadBool('Preferences', 'CheckMapErrorsOnSave', true);
   CheckMapErrorsOnTest := ini.ReadBool('Preferences', 'CheckMapErrorsOnTest', true);
   AlwaysAskOnQuit := ini.ReadBool('Preferences', 'AlwaysAskOnQuit', true);
+  DrawBuildingMarker := ini.ReadBool('Preferences', 'DrawBuildingMarker', true);
+  DrawObjectBrush := ini.ReadBool('Preferences', 'DrawObjectBrush', true);
+  DrawPaintBrush := ini.ReadBool('Preferences', 'DrawPaintBrush', true);
   // Load default values
   DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
   DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 64);
@@ -150,6 +156,9 @@ begin
   ini.WriteBool('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);
   ini.WriteBool('Preferences', 'CheckMapErrorsOnTest', CheckMapErrorsOnTest);
   ini.WriteBool('Preferences', 'AlwaysAskOnQuit', AlwaysAskOnQuit);
+  ini.WriteBool('Preferences', 'DrawBuildingMarker', DrawBuildingMarker);
+  ini.WriteBool('Preferences', 'DrawObjectBrush', DrawObjectBrush);
+  ini.WriteBool('Preferences', 'DrawPaintBrush', DrawPaintBrush);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);
   ini.WriteInteger('Defaults', 'DefaultMapHeight', DefaultMapHeight);
