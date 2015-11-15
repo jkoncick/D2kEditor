@@ -182,7 +182,7 @@ var
 begin
   key := ord(block_preset_keys[row, col]);
   preset := tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row, col]);
-  MainWindow.select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
+  MainWindow.select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y, preset.custom_block_index);
   if settings.HidePresetWindow then
     Hide;
 end;
@@ -200,9 +200,14 @@ procedure TBlockPresetDialog.draw_block_preset(row, col: integer);
 var
   key: word;
   preset: TBlockPreset;
+  custom_block: ^TCustomBlock;
   size_x, size_y: integer;
   src_x, src_y: integer;
   off_x, off_y: integer;
+  min_x, min_y: integer;
+  src_rect, dest_rect: TRect;
+  x, y: integer;
+  tile_x, tile_y: integer;
 begin
   key := ord(block_preset_keys[row, col]);
   preset := tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row,col]);
@@ -210,23 +215,58 @@ begin
   BlockPresetImage.Canvas.Brush.Color := clBtnFace;
   BlockPresetImage.Canvas.Rectangle(col*96, row*96, col*96+96, row*96+96);
 
-  size_x := preset.width*32;
-  size_y := preset.height*32;
-  src_x := preset.pos_x*32;
-  src_y := preset.pos_y*32;
-  if size_x > 96 then
+  if preset.custom_block_index = -1 then
   begin
-    src_x := src_x + (size_x - 96) div 2;
-    size_x := 96;
-  end;
-  if size_y > 96 then
+    // Normal block
+    size_x := preset.width*32;
+    size_y := preset.height*32;
+    src_x := preset.pos_x*32;
+    src_y := preset.pos_y*32;
+    if size_x > 96 then
+    begin
+      src_x := src_x + (size_x - 96) div 2;
+      size_x := 96;
+    end;
+    if size_y > 96 then
+    begin
+      src_y := src_y + (size_y - 96) div 2;
+      size_y := 96;
+    end;
+    off_x := ((96 - size_x) div 2) + col * 96;
+    off_y := ((96 - size_y) div 2) + row * 96;
+    src_rect := Rect(src_x, src_y, src_x+size_x, src_y+size_y);
+    dest_rect := Rect(off_x, off_y, off_x+size_x, off_y+size_y);
+    BlockPresetImage.Canvas.CopyRect(dest_rect, Tileset.tileimage.Canvas, src_rect);
+  end else
   begin
-    src_y := src_y + (size_y - 96) div 2;
-    size_y := 96;
+    // Custom block
+    custom_block := Addr(Tileset.custom_blocks[preset.custom_block_index]);
+    min_x := col * 96;
+    min_y := row * 96;
+    size_x := custom_block.width*32;
+    size_y := custom_block.height*32;
+    off_x := ((96 - size_x) div 2) + col * 96;
+    off_y := ((96 - size_y) div 2) + row * 96;
+    for x := 0 to custom_block.width - 1 do
+      for y := 0 to custom_block.height - 1 do
+      begin
+        tile_x := custom_block.tiles[x,y] mod 20;
+        tile_y := custom_block.tiles[x,y] div 20;
+        src_rect := Rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32);
+        dest_rect := Rect(off_x + x*32, off_y + y*32, off_x + x*32 + 32, off_y + y*32 + 32);
+        if dest_rect.Left < min_x then
+        begin
+          src_rect.Left := src_rect.Left + (min_x - dest_rect.Left);
+          dest_rect.Left := min_x;
+        end;
+        if dest_rect.Top < min_y then
+        begin
+          src_rect.Top := src_rect.Top + (min_y - dest_rect.Top);
+          dest_rect.Top := min_y;
+        end;
+        BlockPresetImage.Canvas.CopyRect(dest_rect, Tileset.tileimage.Canvas, src_rect);
+      end;
   end;
-  off_x := ((96 - size_x) div 2) + col * 96;
-  off_y := ((96 - size_y) div 2) + row * 96;
-  BlockPresetImage.Canvas.CopyRect(Rect(off_x, off_y, off_x+size_x, off_y+size_y), Tileset.tileimage.Canvas, Rect(src_x, src_y, src_x+size_x, src_y+size_y));
 
   if variants_cnt[row,col] > 1 then
     BlockPresetImage.Canvas.TextOut(col*96+64, row*96+81, inttostr(variants_current[row,col]+1) + ' of ' + inttostr(variants_cnt[row,col]));

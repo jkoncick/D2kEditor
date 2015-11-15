@@ -278,7 +278,7 @@ type
     procedure draw_paint_tile_select_glyph(target: integer; tile_index: integer; source_canvas: TCanvas);
 
     // Procedures related to selecting/placing block
-    procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
+    procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word; custom_block_index: integer);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
 
     // Procedures related to cursor image
@@ -1586,7 +1586,7 @@ var
   preset: TBlockPreset;
 begin
   preset := Tileset.get_block_preset(block_preset_group, key, bpNext);
-  select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y);
+  select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y, preset.custom_block_index);
 end;
 
 procedure TMainWindow.show_power_and_statistics;
@@ -1643,8 +1643,7 @@ begin
   paint_tile_select[target].Glyph.Canvas.Pixels[0,27] := $0;
 end;
 
-procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left,
-  b_top: word);
+procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top: word; custom_block_index: integer);
 var
   x, y: integer;
 begin
@@ -1652,14 +1651,29 @@ begin
   TilesetDialog.block_height := b_height;
   TilesetDialog.block_left := b_left;
   TilesetDialog.block_top := b_top;
-  block_width := b_width;
-  block_height := b_height;
-  for x:= 0 to b_width - 1 do
-    for y := 0 to b_height - 1 do
-    begin
-      block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
-      block_data[x,y].special := 0;
-    end;
+  if custom_block_index = -1 then
+  begin
+    // Normal block
+    block_width := b_width;
+    block_height := b_height;
+    for x:= 0 to block_width - 1 do
+      for y := 0 to block_height - 1 do
+      begin
+        block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
+        block_data[x,y].special := 0;
+      end;
+  end else
+  begin
+    // Custom block
+    block_width := Tileset.custom_blocks[custom_block_index].width;
+    block_height := Tileset.custom_blocks[custom_block_index].height;
+    for x:= 0 to block_width - 1 do
+      for y := 0 to block_height - 1 do
+      begin
+        block_data[x,y].tile := Tileset.custom_blocks[custom_block_index].tiles[x,y];
+        block_data[x,y].special := 0;
+      end;
+  end;
   RbBlockMode.Checked := true;
   draw_cursor_image;
 end;

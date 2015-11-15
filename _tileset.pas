@@ -13,6 +13,8 @@ const max_tile_color_rules = 10;
 const max_fill_area_rules = 10;
 const max_paint_tiles = 80;
 const max_block_presets = 64;
+const max_custom_block_size = 8;
+const max_custom_blocks = 40;
 
 // Constants for get_block_preset function
 const bpNext = -1;
@@ -70,6 +72,14 @@ type
     height: word;
     pos_x: word;
     pos_y: word;
+    custom_block_index: integer;
+  end;
+
+type
+  TCustomBlock = record
+    width: word;
+    height: word;
+    tiles: array[0..max_custom_block_size-1, 0..max_custom_block_size-1] of word;
   end;
 
 type
@@ -79,7 +89,7 @@ type
     tileatr_name: String;
   end;
 
-const empty_block_preset: TBlockPreset = (width: 0; height: 0; pos_x: 0; pos_y: 0);
+const empty_block_preset: TBlockPreset = (width: 0; height: 0; pos_x: 0; pos_y: 0; custom_block_index: -1);
 
 // Tileset class
 type
@@ -120,6 +130,8 @@ type
     block_preset_groups: array[0..cnt_block_preset_groups-1] of TBlockPresetGroup;
     block_preset_key_variants: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of TBlockPresetVariantList;
     block_presets: array[0..cnt_block_preset_groups-1, 0..max_block_presets-1] of TBlockPreset;
+
+    custom_blocks: array[0..max_custom_blocks-1] of TCustomBlock;
 
   public
     procedure init;
@@ -283,6 +295,7 @@ var
   i, j, k: integer;
   key: char;
   preset_index: integer;
+  index, width, height: integer;
 begin
   if not FileExists(filename) then
     exit;
@@ -351,7 +364,7 @@ begin
     MainWindow.block_preset_select[i].Enabled := block_preset_groups[i].name <> '';
     MainWindow.block_preset_select[i].Caption := block_preset_groups[i].name;
   end;
-  // Load block preset
+  // Load block presets
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
     preset_index := 0;
@@ -376,15 +389,52 @@ begin
       for k := 0 to decoder.Count - 1 do
       begin
         decoder2.DelimitedText := decoder[k];
-        if (preset_index >= max_block_presets) or (decoder2.Count <> 4) then
+        if (preset_index >= max_block_presets) then
           break;
-        block_presets[i, preset_index].width := strtoint(decoder2[0]);
-        block_presets[i, preset_index].height := strtoint(decoder2[1]);
-        block_presets[i, preset_index].pos_x := strtoint(decoder2[2]);
-        block_presets[i, preset_index].pos_y := strtoint(decoder2[3]);
+        if decoder2.Count = 4 then
+        begin
+          // Normal block preset
+          block_presets[i, preset_index].width := strtoint(decoder2[0]);
+          block_presets[i, preset_index].height := strtoint(decoder2[1]);
+          block_presets[i, preset_index].pos_x := strtoint(decoder2[2]);
+          block_presets[i, preset_index].pos_y := strtoint(decoder2[3]);
+          block_presets[i, preset_index].custom_block_index := -1;
+        end else
+        if decoder2.Count = 1 then
+        begin
+          // Custom block
+          block_presets[i, preset_index].width := 0;
+          block_presets[i, preset_index].height := 0;
+          block_presets[i, preset_index].pos_x := 0;
+          block_presets[i, preset_index].pos_y := 0;
+          index := strtoint(decoder2[0]) - 1;
+          if (index < max_custom_blocks) and (index >= 0)then
+            block_presets[i, preset_index].custom_block_index := index
+          else
+            block_presets[i, preset_index].custom_block_index := -1;
+        end;
         inc(preset_index);
       end;
     end;
+  end;
+  // Load custom blocks
+  ini.ReadSection('Custom_Blocks', tmp_strings);
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    index := strtoint(tmp_strings[i]) - 1;
+    if (index >= max_custom_blocks) or (index < 0) then
+      continue;
+    decoder2.DelimitedText := ini.ReadString('Custom_Blocks', tmp_strings[i], '');
+    if decoder2.Count < 2 then
+      continue;
+    width := strtoint(decoder2[0]);
+    height := strtoint(decoder2[1]);
+    if (width > max_custom_block_size) or (height > max_custom_block_size) then
+      continue;
+    custom_blocks[index].width := width;
+    custom_blocks[index].height := height;
+    for j := 2 to decoder2.Count - 1 do
+      custom_blocks[index].tiles[(j - 2) mod width, (j - 2) div width] := strtoint(decoder2[j]);
   end;
 
   ini.Destroy;
