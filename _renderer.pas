@@ -70,9 +70,10 @@ begin
   load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + 'graphics/structures_mask.bmp');
   graphics_misc_objects.LoadFromFile(current_dir + 'graphics/misc_objects.bmp');
   load_or_create_mask(graphics_misc_objects, graphics_misc_objects_mask, current_dir + 'graphics/misc_objects_mask.bmp');
+  // Init backup image
   bkup_bitmap := TBitmap.Create;
-  bkup_bitmap.Width := max_building_width * 32;
-  bkup_bitmap.Height := max_building_height * 32;
+  bkup_bitmap.Width := 128;
+  bkup_bitmap.Height := 128;
 end;
 
 procedure TRenderer.load_or_create_mask(graph, mask: TBitmap; filename: String);

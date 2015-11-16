@@ -26,8 +26,6 @@ type
     procedure CMDialogKey(var AMessage: TCMDialogKey); message CM_DIALOGKEY;
     procedure BlockPresetImageMouseDown(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure BlockPresetImageMouseMove(Sender: TObject;
-      Shift: TShiftState; X, Y: Integer);
   private
     variants_cnt: array[0..num_rows-1, 0..num_cols-1] of integer;
     variants_current: array[0..num_rows-1, 0..num_cols-1] of integer;
@@ -130,12 +128,6 @@ begin
     render_letters := not render_letters;
     draw_all;
   end;
-end;
-
-procedure TBlockPresetDialog.BlockPresetImageMouseMove(Sender: TObject;
-  Shift: TShiftState; X, Y: Integer);
-begin
-  MainWindow.CursorImage.Visible := false;
 end;
 
 procedure TBlockPresetDialog.init_presets;

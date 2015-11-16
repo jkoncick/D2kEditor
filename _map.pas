@@ -70,19 +70,19 @@ type
 
     // Basic map manipulation procedures
   private
-    procedure modify_map_tile(x,y: word; tile: word; special: word);
-    procedure paint_tile(x,y: word; paint_tile_group: integer);
+    procedure modify_map_tile(x,y: integer; tile: word; special: word);
+    procedure paint_tile(x,y: integer; paint_tile_group: integer);
   public
-    procedure set_special_value(x,y: word; special: word);
-    procedure paint_rect(x,y, width, height: word; paint_tile_group: integer);
-    procedure copy_block(x,y, width, height: word; block: TMapDataPtr; structures: boolean);
-    procedure put_block(x,y, width, height: word; block: TMapDataPtr);
+    procedure set_special_value(x,y: integer; special: word);
+    procedure paint_rect(x,y, width, height: integer; paint_tile_group: integer);
+    procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; structures: boolean);
+    procedure put_block(x,y, width, height: integer; block: TMapDataPtr);
 
     // Fill area procedures
   public
-    procedure fill_area_start(x,y: word; paint_tile_group: integer);
+    procedure fill_area_start(x,y: integer; paint_tile_group: integer);
   private
-    procedure fill_area_step(x,y: word; area_type: integer);
+    procedure fill_area_step(x,y: integer; area_type: integer);
 
     // Undo & Redo procedures
   public
@@ -125,7 +125,7 @@ uses Windows, Forms, SysUtils, _renderer, _tileset, _mission, _settings, main;
 
 // Modify map tile and save old values into undo history.
 // Map data should not be modified outside this or undo/redo methods.
-procedure TMap.modify_map_tile(x, y, tile, special: word);
+procedure TMap.modify_map_tile(x, y: integer; tile, special: word);
 begin
   undo_history[undo_pos].x := x;
   undo_history[undo_pos].y := y;
@@ -144,7 +144,7 @@ begin
 end;
 
 // Apply "paint" operation to a single tile
-procedure TMap.paint_tile(x, y: word; paint_tile_group: integer);
+procedure TMap.paint_tile(x, y: integer; paint_tile_group: integer);
 begin
   if paint_tile_group < 0 then
   begin
@@ -158,13 +158,13 @@ begin
 end;
 
 // Set special value of a tile (single undo-operation)
-procedure TMap.set_special_value(x, y, special: word);
+procedure TMap.set_special_value(x, y: integer; special: word);
 begin
   undo_block_start := true;
   modify_map_tile(x, y, map_data[x,y].tile, special);
 end;
 
-procedure TMap.paint_rect(x, y, width, height: word; paint_tile_group: integer);
+procedure TMap.paint_rect(x, y, width, height: integer; paint_tile_group: integer);
 var
   xx, yy: integer;
 begin
@@ -179,7 +179,7 @@ begin
     end;
 end;
 
-procedure TMap.copy_block(x, y, width, height: word; block: TMapDataPtr; structures: boolean);
+procedure TMap.copy_block(x, y, width, height: integer; block: TMapDataPtr; structures: boolean);
 var
   xx, yy: integer;
   value: TMapTile;
@@ -201,7 +201,7 @@ begin
     end;
 end;
 
-procedure TMap.put_block(x, y, width, height: word; block: TMapDataPtr);
+procedure TMap.put_block(x, y, width, height: integer; block: TMapDataPtr);
 var
   xx, yy: integer;
 begin
@@ -213,7 +213,7 @@ begin
 end;
 
 
-procedure TMap.fill_area_start(x, y: word; paint_tile_group: integer);
+procedure TMap.fill_area_start(x, y: integer; paint_tile_group: integer);
 var
   tmp_pos: integer;
 begin
@@ -231,7 +231,7 @@ begin
   fill_area_step(x, y, Tileset.get_fill_area_type(map_data[x, y].tile, map_data[x, y].special));
 end;
 
-procedure TMap.fill_area_step(x, y: word; area_type: integer);
+procedure TMap.fill_area_step(x, y: integer; area_type: integer);
 begin
   if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
     exit;

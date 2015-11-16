@@ -15,6 +15,12 @@ uses
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
 type
+  TImage = class(ExtCtrls.TImage)
+    protected
+      procedure CMMouseLeave(var Message: TMessage); message CM_MOUSELEAVE;
+  end;
+
+type
   SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
 
 type
@@ -167,8 +173,7 @@ type
     procedure Mouseactions1Click(Sender: TObject);
     procedure About1Click(Sender: TObject);
     // Main form components events
-    procedure MapScrollHChange(Sender: TObject);
-    procedure MapScrollVChange(Sender: TObject);
+    procedure MapScrollChange(Sender: TObject);
     procedure MapScrollHKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure MapScrollVKeyDown(Sender: TObject; var Key: Word;
@@ -184,8 +189,7 @@ type
     procedure MapCanvasDblClick(Sender: TObject);
     procedure MapCanvasMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X,
-      Y: Integer);
+    procedure ImageMouseLeave(Sender: TObject);
     // Editor menu components events
     procedure MiniMapMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -244,9 +248,6 @@ type
     moving_event: integer;
     moving_condition: integer;
 
-    // Rendering variables
-    editing_marker_enabled: boolean;
-
     // Clipboard variables
     clipboard_format: cardinal;
 
@@ -272,6 +273,7 @@ type
     // Miscellaneous helper procedures
     procedure set_special_value;
     function mode(m: SelectedMode): boolean;
+    function mouse_over_map_canvas: boolean;
     procedure apply_key_preset(key: word);
     procedure show_power_and_statistics;
     procedure start_event_position_selection(x, y: integer);
@@ -284,7 +286,6 @@ type
 
     // Procedures related to cursor image
     procedure resize_cursor_image;
-    procedure set_cursor_image_visibility;
     procedure draw_cursor_image;
 
     // Procedures called from other dialog
@@ -301,6 +302,11 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TImage.CMMouseLeave(var Message: TMessage);
+begin
+  MainWindow.ImageMouseLeave(self);
+end;
 
 procedure TMainWindow.FormCreate(Sender: TObject);
 var
@@ -372,7 +378,6 @@ begin
   minimap_buffer := TBitmap.Create;
   minimap_buffer.Width := 128;
   minimap_buffer.Height := 128;
-  draw_cursor_image;
   // Initialize tilesets
   Tileset.init;
   // Initialize Structures
@@ -875,18 +880,20 @@ begin
               'Special thanks to:'#13'mvi - for making the original Mission editor'#13'FunkyFr3sh - for patching Dune 2000'#13'FED2k community - for their support');
 end;
 
-procedure TMainWindow.MapScrollHChange(Sender: TObject);
+procedure TMainWindow.MapScrollChange(Sender: TObject);
+var
+  pos: TPoint;
 begin
   map_canvas_left := MapScrollH.Position;
-  render_map;
-  render_minimap_position_marker;
-end;
-
-procedure TMainWindow.MapScrollVChange(Sender: TObject);
-begin
   map_canvas_top := MapScrollV.Position;
   render_map;
   render_minimap_position_marker;
+  // Simulate MouseMove event so that editing marker and coordinates are updated
+  if mouse_over_map_canvas then
+  begin
+    pos := MapCanvas.ScreenToClient(Mouse.CursorPos);
+    MapCanvasMouseMove(nil, [], pos.X, pos.Y);
+  end
 end;
 
 procedure TMainWindow.MapScrollHKeyDown(Sender: TObject; var Key: Word;
@@ -944,9 +951,6 @@ begin
     map_y := 0;
   if map_y >= Map.height then
     map_y := Map.height - 1;
-  // Show cursor image if needed
-  set_cursor_image_visibility;
-  editing_marker_enabled := true;
   // If mouse is still inside same tile, exit (for optimization)
   if (mouse_old_x = map_x) and (mouse_old_y = map_y) then
     exit;
@@ -1019,13 +1023,16 @@ var
   event_marker: ^TEventMarker;
   cursor_left: integer;
   cursor_top: integer;
+  editing_marker_disabled: boolean;
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
+  // Disable multiple clicks in the same tile
   if mouse_already_clicked and (mouse_last_button = Button) then
     exit;
   mouse_already_clicked := true;
   mouse_last_button := Button;
+  editing_marker_disabled := false;
   // Event position selection mode
   if (not EditorPages.Visible) and (Button = mbLeft) then
   begin
@@ -1054,7 +1061,7 @@ begin
       Map.set_special_value(map_x, map_y, strtoint(SpecialValue.Text));
       // After placing building do not draw building marker
       if BuildingList.ItemIndex <> -1 then
-        editing_marker_enabled := false;
+        editing_marker_disabled := true;
     end else
     if Button = mbRight then
     begin
@@ -1117,6 +1124,9 @@ begin
         // Draw selected block
         cursor_left := (CursorImage.Left - MapCanvas.Left) div 32 + map_canvas_left;
         cursor_top := (CursorImage.Top - MapCanvas.Top) div 32 + map_canvas_top;
+        if (cursor_left <> map_x) or (cursor_top <> map_y) then
+          // Enable additional clicks if cursor image was moved from mouse cursor position
+          mouse_already_clicked := false;
         Map.put_block(cursor_left, cursor_top, block_width, block_height, Addr(block_data));
       end
       else if (ssShift in Shift) and mode(mPaintMode) and (Tileset.paint_tile_groups[paint_tile_group].smooth_group > -1) then
@@ -1137,12 +1147,15 @@ begin
       exit;
     end;
   end;
+  // Do not update power and statistics while painting but at end of painting
   if not mode(mPaintMode) then
   begin
     Map.calculate_power_and_statistics;
   end;
   render_minimap;
   render_map;
+  if editing_marker_disabled then
+    Renderer.remove_editing_marker(MapCanvas.Canvas);
 end;
 
 procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
@@ -1219,13 +1232,18 @@ begin
   MapCanvasMousedown(Sender, Button, Shift, X + CursorImage.Left - MapCanvas.Left, Y + CursorImage.Top - MapCanvas.Top);
 end;
 
-procedure TMainWindow.FormMouseMove(Sender: TObject; Shift: TShiftState; X,
-  Y: Integer);
+procedure TMainWindow.ImageMouseLeave(Sender: TObject);
 begin
+  if (Sender <> MapCanvas) and (Sender <> CursorImage) then
+    exit;
+  if mouse_over_map_canvas then
+    exit;
   StatusBar.Panels[0].Text := '';
-  Renderer.remove_editing_marker(MapCanvas.Canvas);
-  editing_marker_enabled := false;
-  CursorImage.Visible := false;
+  // Reset mouse position
+  mouse_old_x := 65535;
+  mouse_old_y := 65535;
+  // Remove editing markers
+  render_editing_marker;
 end;
 
 procedure TMainWindow.MiniMapMouseDown(Sender: TObject;
@@ -1307,7 +1325,6 @@ begin
     LbPaintTileGroupName.Caption := '';
   end;
   render_editing_marker;
-  set_cursor_image_visibility;
 end;
 
 procedure TMainWindow.PaintTileSelectClick(Sender: TObject);
@@ -1392,8 +1409,12 @@ var
   struct_info: ^TStructureInfo;
   min_x, min_y, max_x, max_y: integer;
 begin
-  if not editing_marker_enabled then
+  if not mouse_over_map_canvas then
+  begin
+    Renderer.remove_editing_marker(MapCanvas.Canvas);
+    CursorImage.Visible := false;
     exit;
+  end;
   if Settings.DrawBuildingMarker and mode(mStructures) and (BuildingList.ItemIndex <> -1) then
   begin
     // Draw building placement marker
@@ -1426,6 +1447,8 @@ begin
   begin
     Renderer.remove_editing_marker(MapCanvas.Canvas);
   end;
+  // Set cursor image visibility
+  CursorImage.Visible := mode(mBlockMode) and (block_width > 0) and (block_height > 0);
 end;
 
 procedure TMainWindow.render_tileset;
@@ -1586,6 +1609,20 @@ begin
   end;
 end;
 
+function TMainWindow.mouse_over_map_canvas: boolean;
+var
+  pos: TPoint;
+begin
+  pos := MainWindow.ScreenToClient(Mouse.CursorPos);
+  result := PtInRect(MapCanvas.BoundsRect, pos);
+  result := result and not (BlockPresetDialog.Visible and PtInRect(BlockPresetDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not (TilesetDialog.Visible and PtInRect(TilesetDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not (MapStatsDialog.Visible and PtInRect(MapStatsDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not (MissionDialog.Visible and PtInRect(MissionDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not (EventDialog.Visible and PtInRect(EventDialog.BoundsRect, Mouse.CursorPos));
+  result := result or block_select_started;
+end;
+
 procedure TMainWindow.apply_key_preset(key: word);
 var
   preset: TBlockPreset;
@@ -1680,6 +1717,7 @@ begin
       end;
   end;
   RbBlockMode.Checked := true;
+  mouse_already_clicked := false;
   draw_cursor_image;
 end;
 
@@ -1689,7 +1727,7 @@ begin
   block_height := b_height;
   Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.Checked and structures);
   draw_cursor_image;
-  RbBlockMode.Checked := True;  
+  RbBlockMode.Checked := True;
 end;
 
 procedure TMainWindow.resize_cursor_image;
@@ -1707,15 +1745,6 @@ begin
     CursorImage.Height := (map_canvas_height - cursor_image_top) * 32
   else
     CursorImage.Height := block_height * 32 + 1;
-end;
-
-procedure TMainWindow.set_cursor_image_visibility;
-begin
-  if mode(mBlockMode) and (Mouse.CursorPos.X - Left < EditorMenu.Left) then
-  begin
-    CursorImage.Visible := true;
-  end else
-    CursorImage.Visible := false;
 end;
 
 procedure TMainWindow.draw_cursor_image;
@@ -1747,6 +1776,7 @@ begin
   CursorImage.Canvas.Brush.Style := bsClear;
   CursorImage.Canvas.Rectangle(0, 0, block_width * 32 + 1, block_height * 32 + 1);
   resize_cursor_image;
+  render_editing_marker;
 end;
 
 procedure TMainWindow.set_map_size(new_width, new_height: integer);

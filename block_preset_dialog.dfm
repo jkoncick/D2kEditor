@@ -24,6 +24,5 @@ object BlockPresetDialog: TBlockPresetDialog
     Width = 960
     Height = 384
     OnMouseDown = BlockPresetImageMouseDown
-    OnMouseMove = BlockPresetImageMouseMove
   end
 end

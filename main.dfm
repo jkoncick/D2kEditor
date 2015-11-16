@@ -24,7 +24,6 @@ object MainWindow: TMainWindow
   OnDestroy = FormDestroy
   OnDeactivate = FormDeactivate
   OnKeyDown = FormKeyDown
-  OnMouseMove = FormMouseMove
   OnMouseWheelDown = FormMouseWheelDown
   OnMouseWheelUp = FormMouseWheelUp
   OnResize = FormResize
@@ -58,7 +57,7 @@ object MainWindow: TMainWindow
     LargeChange = 4
     PageSize = 0
     TabOrder = 0
-    OnChange = MapScrollHChange
+    OnChange = MapScrollChange
     OnKeyDown = MapScrollHKeyDown
   end
   object MapScrollV: TScrollBar
@@ -70,7 +69,7 @@ object MainWindow: TMainWindow
     LargeChange = 4
     PageSize = 0
     TabOrder = 1
-    OnChange = MapScrollVChange
+    OnChange = MapScrollChange
     OnKeyDown = MapScrollVKeyDown
   end
   object StatusBar: TStatusBar
@@ -115,7 +114,6 @@ object MainWindow: TMainWindow
     Width = 168
     Height = 575
     TabOrder = 3
-    OnMouseMove = FormMouseMove
     object MiniMapFrame: TBevel
       Left = 18
       Top = 6
