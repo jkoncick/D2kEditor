@@ -77,6 +77,7 @@ type
     procedure paint_rect(x,y, width, height: integer; paint_tile_group: integer);
     procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; structures: boolean);
     procedure put_block(x,y, width, height: integer; block: TMapDataPtr);
+    function check_structure_can_be_placed(x,y: integer; special: word): boolean;
 
     // Fill area procedures
   public
@@ -210,6 +211,22 @@ begin
     for yy := 0 to height - 1 do
       if (x + xx < map_width) and (x + xx >= 0) and (y + yy < map_height) and (y + yy >= 0) then
         modify_map_tile(x + xx, y + yy, block[xx,yy].tile, block[xx,yy].special);
+end;
+
+function TMap.check_structure_can_be_placed(x, y: integer; special: word): boolean;
+var
+  index, player: word; is_misc: boolean;
+begin
+  result := true;
+  // Check if building exceeds the map bounds
+  if Structures.special_value_to_params(special, player, index, is_misc) then
+  begin
+    if (not is_misc) and ((x + Structures.structure_info[index].size_x > map_width) or (y + Structures.structure_info[index].size_y > map_height)) then
+    begin
+      result := false;
+      exit;
+    end;
+  end;
 end;
 
 
@@ -505,6 +522,9 @@ end;
 
 function TMap.check_errors: String;
 var
+  x, y: integer;
+  index, player: word;
+  is_misc: boolean;
   player_starts: integer;
 begin
   // Check for number of worm spawners
@@ -520,6 +540,21 @@ begin
     result := 'Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).';
     exit;
   end;
+  // Check for buildings exceeding map bounds
+  for x := 0 to map_width - 1 do
+    for y := 0 to map_height - 1 do
+    begin
+      if (x < map_width - max_building_width) and (y < map_height - max_building_height) then
+        continue;
+      if Structures.special_value_to_params(map_data[x, y].special, player, index, is_misc) then
+      begin
+        if (not is_misc) and ((x + Structures.structure_info[index].size_x > map_width) or (y + Structures.structure_info[index].size_y > map_height)) then
+        begin
+          result := 'Building at '+inttostr(x)+','+inttostr(y)+' ('+Structures.structure_info[index].name+') exceeds the map bounds.';
+          exit;
+        end;
+      end;
+    end;
   result := '';
 end;
 

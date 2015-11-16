@@ -30,6 +30,7 @@ type
     size_adjust: TRect;
     bottom_style: word; // Style of building's bottom
     linkwall: boolean;  // Structure links with wall
+    not_on_buildable: boolean; // Building does not need to be placed on buildable tiles
     power: SmallInt; // Power the structure gives/needs
     values: array[0..cnt_players-1] of word; // Map special values
   end;
@@ -146,6 +147,7 @@ begin
       if (bottom_style >= Length(bottom_style_types)) then
         bottom_style := 0;
       linkwall := ini.ReadBool(sname, 'linkwall', false);
+      not_on_buildable := ini.ReadBool(sname, 'not_on_buildable', false);
       power := ini.ReadInteger(sname, 'power', 0);
     end;
   end;

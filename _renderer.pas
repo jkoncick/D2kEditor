@@ -4,7 +4,7 @@ interface
 
 uses Graphics, Types, _map;
 
-type EditingMarkerType = (emBuilding, emSingleObject, emSelectionArea, emPaintArea);
+type EditingMarkerType = (emBuilding, emBuildingNotOnBuildable, emSingleObject, emSelectionArea, emPaintArea);
 
 type
   TRenderer = class
@@ -293,7 +293,7 @@ begin
           // Value is structure
           sinfo := Addr(Structures.structure_info[index]);
           // Draw concrete and building's bottom first
-          if (o_draw_concrete) and (index < Structures.first_unit_index) then
+          if (o_draw_concrete) and (index < Structures.first_unit_index) and (not sinfo.not_on_buildable) then
           begin
             bottom_style_type := Addr(bottom_style_types[sinfo.bottom_style]);
             // Draw concrete under building
@@ -566,6 +566,7 @@ var
   dest_rect: TRect;
   bkup_width, bkup_height: integer;
   x, y: integer;
+  tile_type: TileType;
 begin
   // Restore old backup
   remove_editing_marker(cnv_target);
@@ -579,7 +580,7 @@ begin
   bkup_bitmap.Canvas.CopyRect(dest_rect, cnv_target, bkup_rect);
   bkup_valid := true;
   // Draw actual_marker
-  if marker_type = emBuilding then
+  if (marker_type = emBuilding) or (marker_type = emBuildingNotOnBuildable) then
   begin
     cnv_target.Brush.Style := bsBDiagonal;
     cnv_target.Pen.Style := psClear;
@@ -588,7 +589,8 @@ begin
       begin
         if (mark_height = 4) and (y = mark_y) and ((x = mark_x) or (x = mark_x + 2)) then
           continue;
-        if Tileset.get_tile_type(data[x, y].tile) = ttBuildable then
+        tile_type := Tileset.get_tile_type(data[x, y].tile);
+        if ((marker_type = emBuilding) and (tile_type = ttBuildable)) or ((marker_type = emBuildingNotOnBuildable) and (tile_type = ttImpassable)) then
           cnv_target.Brush.Color := $E0E0E0
         else
           cnv_target.Brush.Color := $0000E0;

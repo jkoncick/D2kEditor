@@ -409,6 +409,7 @@ begin
     end;
   end;
   Settings.save_editor_settings;
+  MainWindow.OnResize := nil;
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
@@ -668,6 +669,7 @@ end;
 
 procedure TMainWindow.Exit1Click(Sender: TObject);
 begin
+  MainWindow.OnResize := nil;
   application.Terminate;
 end;
 
@@ -869,7 +871,7 @@ begin
   ShowMessage('Mouse actions'#13#13+
               'In Structures mode:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13+
               'Event marker in Struct. mode:'#13'Double click = Go to event'#13'Left+drag = Move event'#13#13+
-              'In Terrain mode:'#13'Left = Paint / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right+drag = Scroll map');
+              'In Terrain mode:'#13'Left = Paint / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right+drag = Scroll map'#13'Shift+select = Erase selection');
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
@@ -1020,6 +1022,7 @@ var
   map_x, map_y: integer;
   index, player: word;
   is_misc: boolean;
+  special: word;
   event_marker: ^TEventMarker;
   cursor_left: integer;
   cursor_top: integer;
@@ -1058,10 +1061,14 @@ begin
     if Button = mbLeft then
     begin
       // Put structure on map
-      Map.set_special_value(map_x, map_y, strtoint(SpecialValue.Text));
-      // After placing building do not draw building marker
-      if BuildingList.ItemIndex <> -1 then
-        editing_marker_disabled := true;
+      special := strtoint(SpecialValue.Text);
+      if Map.check_structure_can_be_placed(map_x, map_y, special) then
+      begin
+        Map.set_special_value(map_x, map_y, special);
+        // After placing building do not draw building marker
+        if BuildingList.ItemIndex <> -1 then
+          editing_marker_disabled := true;
+      end;
     end else
     if Button = mbRight then
     begin
@@ -1407,6 +1414,7 @@ end;
 procedure TMainWindow.render_editing_marker;
 var
   struct_info: ^TStructureInfo;
+  marker_type: EditingMarkerType;
   min_x, min_y, max_x, max_y: integer;
 begin
   if not mouse_over_map_canvas then
@@ -1419,8 +1427,11 @@ begin
   begin
     // Draw building placement marker
     struct_info := Addr(Structures.structure_info[BuildingList.ItemIndex]);
+    marker_type := emBuilding;
+    if struct_info.not_on_buildable then
+      marker_type := emBuildingNotOnBuildable;
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
-      Addr(Map.data), mouse_old_x, mouse_old_y, struct_info.size_x, struct_info.size_y, emBuilding);
+      Addr(Map.data), mouse_old_x, mouse_old_y, struct_info.size_x, struct_info.size_y, marker_type);
   end else
   if Settings.DrawObjectBrush and mode(mStructures) and ((UnitList.ItemIndex <> -1) or (MiscObjList.ItemIndex > 0)) then
   begin
