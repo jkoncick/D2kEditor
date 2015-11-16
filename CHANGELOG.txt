@@ -1,5 +1,29 @@
 D2kEditor changelog
 
+Version 1.2 (released 2015-11-16)
+---------------------------------
+Fixed: "Cannot focus a disabled or invisible window" error
+Fixed: Tile with index 0 (left-top-most sand tile) is no longer used for painting a sand
+Added: You can "cut" (erase) the selected area if you hold shift while selecting the area.
+Added: "Mark buildable tiles" option
+Changed: Structure list was divided into separate building and unit lists
+Added: You can now place any building or unit for any side. In order to use this feature
+       in game, you must copy the file config/TILEDATA.BIN into your Dune2000/Data/bin folder. 
+Added: Structures and Misc. objects are now externally configured (structures.ini, misc_objects.ini).
+Added: You can now place continuous wall by moving the mouse while holding left button
+Changed: Units are now grouped by unit type in the event table in "Contents" column
+Added: Event notes are shown in the event table. Event table Columns are now resizable.
+Added: Map statistics
+Added: Support for "Custom blocks" - blocks which are not stored continuously in the tileset.
+       Adjusted tileset configurations accordingly.
+Added: Confirmation dialog when closing the editor. It can be turned off in D2kEditor.ini.
+
+Improved the rendering engine and the editing interface:
+- Optimized map rendering: it should be faster and consume less CPU
+- Concrete is properly drawn under buildings, added "Draw concrete" option
+- Added Building marker and brush marker
+
+
 Version 1.1 (released 2015-10-16)
 ---------------------------------
 Fixed: Auto-smooth rock/dunes edge feature did not work properly on non-square maps

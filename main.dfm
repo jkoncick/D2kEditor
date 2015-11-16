@@ -104,7 +104,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v1.1'
+        Text = 'v1.2'
         Width = 0
       end>
   end
@@ -460,6 +460,7 @@ object MainWindow: TMainWindow
       object Drawconcrete1: TMenuItem
         AutoCheck = True
         Caption = 'Draw concrete'
+        Checked = True
         ShortCut = 16456
         OnClick = SettingChange
       end
