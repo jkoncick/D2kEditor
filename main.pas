@@ -1752,6 +1752,7 @@ var
   x, y: integer;
   tile_x, tile_y: word;
   border_x, border_y: integer;
+  str: String;
 begin
   border_x := (128 - block_width * 32) div 2;
   border_y := (128 - block_height * 32) div 2;
@@ -1762,13 +1763,25 @@ begin
   CursorImage.Height := block_height * 32 + 1;
   CursorImage.Picture.Bitmap.Width := block_width * 32 + 1;
   CursorImage.Picture.Bitmap.Height := block_height * 32 + 1;
-  for x:= 0 to block_width-1 do
-    for y := 0 to block_height-1 do
-    begin
-      tile_x := block_data[x,y].tile mod 20;
-      tile_y := block_data[x,y].tile div 20;
-      BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
-    end;
+  // Render block image
+  if (block_width = 0) or (block_width > 8) or (block_height = 0) or (block_height > 8) then
+  begin
+    // If block size is zero or too big, render dummy text there
+    str := 'Click here to';
+    BlockImage.Canvas.TextOut((128 - BlockImage.Canvas.TextWidth(str)) div 2, 52, str);
+    str := 'select a block';
+    BlockImage.Canvas.TextOut((128 - BlockImage.Canvas.TextWidth(str)) div 2, 66, str);
+  end else
+  begin
+    for x:= 0 to block_width-1 do
+      for y := 0 to block_height-1 do
+      begin
+        tile_x := block_data[x,y].tile mod 20;
+        tile_y := block_data[x,y].tile div 20;
+        BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+      end;
+  end;
+  // Render cursor image
   Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
     false, Drawconcrete1.Checked, false, false, Showunknownspecials1.Checked,
     Useallocationindexes1.Checked, false, false, false);
