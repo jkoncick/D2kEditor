@@ -584,8 +584,8 @@ begin
   begin
     cnv_target.Brush.Style := bsBDiagonal;
     cnv_target.Pen.Style := psClear;
-    for y := mark_y to mark_y + mark_height - 1 do
-      for x := mark_x to mark_x + mark_width - 1 do
+    for y := mark_y to Min(mark_y + mark_height - 1, 127) do
+      for x := mark_x to Min(mark_x + mark_width - 1, 127) do
       begin
         if (mark_height = 4) and (y = mark_y) and ((x = mark_x) or (x = mark_x + 2)) then
           continue;

@@ -1247,8 +1247,8 @@ begin
     exit;
   StatusBar.Panels[0].Text := '';
   // Reset mouse position
-  mouse_old_x := 65535;
-  mouse_old_y := 65535;
+  mouse_old_x := 128;
+  mouse_old_y := 128;
   // Remove editing markers
   render_editing_marker;
 end;
