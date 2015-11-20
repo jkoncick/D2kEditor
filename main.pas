@@ -376,8 +376,8 @@ begin
   // Load and initialize graphics
   Renderer.init;
   minimap_buffer := TBitmap.Create;
-  minimap_buffer.Width := 128;
-  minimap_buffer.Height := 128;
+  minimap_buffer.Width := MiniMap.Width;
+  minimap_buffer.Height := MiniMap.Height;
   // Initialize tilesets
   Tileset.init;
   // Initialize Structures
@@ -1246,9 +1246,9 @@ begin
   if mouse_over_map_canvas then
     exit;
   StatusBar.Panels[0].Text := '';
-  // Reset mouse position
-  mouse_old_x := 128;
-  mouse_old_y := 128;
+  // Reset mouse position to a value outside of map range
+  mouse_old_x := max_map_width;
+  mouse_old_y := max_map_height;
   // Remove editing markers
   render_editing_marker;
 end;
@@ -1258,7 +1258,7 @@ procedure TMainWindow.MiniMapMouseDown(Sender: TObject;
 begin
   if not Map.loaded then
     exit;
-  if (x < mmap_border_x) or (y < mmap_border_y) or (x > 128 - mmap_border_x) or (y > 128 - mmap_border_y) then
+  if (x < mmap_border_x) or (y < mmap_border_y) or (x > MiniMap.Width - mmap_border_x) or (y > MiniMap.Height - mmap_border_y) then
     exit;
   MapScrollH.Position := x - mmap_border_x - (map_canvas_width div 2);
   MapScrollV.Position := y - mmap_border_y - (map_canvas_height div 2);
@@ -1380,8 +1380,8 @@ begin
     MapScrollV.Enabled := False
   else
     MapScrollV.Enabled := True;
-  mmap_border_x := (128 - Map.width) div 2;
-  mmap_border_y := (128 - Map.height) div 2;
+  mmap_border_x := (max_map_width - Map.width) div 2;
+  mmap_border_y := (max_map_height - Map.height) div 2;
 end;
 
 procedure TMainWindow.render_map;
@@ -1404,7 +1404,7 @@ end;
 
 procedure TMainWindow.render_minimap_position_marker;
 begin
-  MiniMap.Canvas.CopyRect(rect(0,0,128,128),minimap_buffer.Canvas,rect(0,0,128,128));
+  MiniMap.Canvas.CopyRect(rect(0,0,MiniMap.Width,MiniMap.Height),minimap_buffer.Canvas,rect(0,0,MiniMap.Width,MiniMap.Height));
   MiniMap.Canvas.Pen.Color:= $00FF00;
   MiniMap.Canvas.Brush.Style := bsClear;
   MiniMap.Canvas.Rectangle(mmap_border_x + map_canvas_left,mmap_border_y + map_canvas_top,mmap_border_x + map_canvas_left + map_canvas_width,mmap_border_y + map_canvas_top + map_canvas_height);
@@ -1765,11 +1765,11 @@ var
   border_x, border_y: integer;
   str: String;
 begin
-  border_x := (128 - block_width * 32) div 2;
-  border_y := (128 - block_height * 32) div 2;
+  border_x := (BlockImage.Width - block_width * 32) div 2;
+  border_y := (BlockImage.Height - block_height * 32) div 2;
   BlockImage.Canvas.Brush.Color := clBtnFace;
   BlockImage.Canvas.Pen.Color := clBtnFace;
-  BlockImage.Canvas.Rectangle(0,0,128,128);
+  BlockImage.Canvas.Rectangle(0,0,BlockImage.Width,BlockImage.Height);
   CursorImage.Width := block_width * 32 + 1;
   CursorImage.Height := block_height * 32 + 1;
   CursorImage.Picture.Bitmap.Width := block_width * 32 + 1;
@@ -1779,9 +1779,9 @@ begin
   begin
     // If block size is zero or too big, render dummy text there
     str := 'Click here to';
-    BlockImage.Canvas.TextOut((128 - BlockImage.Canvas.TextWidth(str)) div 2, 52, str);
+    BlockImage.Canvas.TextOut((BlockImage.Width - BlockImage.Canvas.TextWidth(str)) div 2, 52, str);
     str := 'select a block';
-    BlockImage.Canvas.TextOut((128 - BlockImage.Canvas.TextWidth(str)) div 2, 66, str);
+    BlockImage.Canvas.TextOut((BlockImage.Width - BlockImage.Canvas.TextWidth(str)) div 2, 66, str);
   end else
   begin
     for x:= 0 to block_width-1 do

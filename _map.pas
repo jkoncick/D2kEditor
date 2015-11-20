@@ -4,6 +4,8 @@ interface
 
 uses _structures;
 
+const max_map_width = 128;
+const max_map_height = 128;
 const max_undo_steps = 32767;
 
 type
@@ -13,7 +15,7 @@ type
   end;
 
 type
-  TMapData = array[0..127, 0..127] of TMapTile;
+  TMapData = array[0..max_map_width-1, 0..max_map_height-1] of TMapTile;
   TMapDataPtr = ^TMapData;
 
 type
@@ -565,8 +567,8 @@ var
   x, y: integer;
 begin
   // Reset map data
-  for x := 0 to 127 do
-    for y := 0 to 127 do
+  for x := 0 to max_map_width-1 do
+    for y := 0 to max_map_height-1 do
     begin
       map_data[x,y].tile := 0;
       map_data[x,y].special := 0;
@@ -737,8 +739,8 @@ var
   x, y: integer;
 begin
   // Reset map data
-  for x := 0 to 127 do
-    for y := 0 to 127 do
+  for x := 0 to max_map_width-1 do
+    for y := 0 to max_map_height-1 do
     begin
       map_data[x,y].tile := 0;
       map_data[x,y].special := 0;

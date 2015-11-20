@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics, IniFiles, Classes;
+uses Graphics, IniFiles, Classes, _map;
 
 // Mis file constants
 const cnt_mis_players = 8;
@@ -176,7 +176,7 @@ type
     mis_filename: String;
     mis_assigned: boolean;
     mis_data: TMisFile;
-    event_markers: array[0..127, 0..127] of TEventMarker;
+    event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
     event_notes: array[0..63] of String;
     condition_notes: array[0..47] of String;
 
@@ -226,7 +226,7 @@ var
 
 implementation
 
-uses SysUtils, Math, main, _map, _tileset, _stringtable, _settings;
+uses SysUtils, Math, main, _tileset, _stringtable, _settings;
 
 procedure TMission.init;
 var
@@ -289,8 +289,8 @@ var
   i: integer;
   moved: boolean;
 begin
-  for x := 0 to 127 do
-    for y := 0 to 127 do
+  for x := 0 to max_map_width - 1 do
+    for y := 0 to max_map_height - 1 do
       event_markers[x,y].emtype := emNone;
   for i:= 0 to mis_data.num_events - 1 do
   begin
@@ -305,7 +305,7 @@ begin
       moved := false;
       while event_markers[x][y].emtype <> emNone do
       begin
-        x := (x + 1) mod 127;
+        x := (x + 1) mod (max_map_width);
         moved := true;
       end;
       if event_type = etUnitSpawn then
@@ -365,8 +365,8 @@ begin
   // Time limit
   mis_data.time_limit := -1;
   // Clear event markers
-  for x := 0 to 127 do
-    for y := 0 to 127 do
+  for x := 0 to max_map_width - 1 do
+    for y := 0 to max_map_height - 1 do
       Mission.event_markers[x,y].emtype := emNone;
   // Clear notes
   clear_notes;
