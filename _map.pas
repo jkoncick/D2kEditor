@@ -552,7 +552,7 @@ begin
       begin
         if (not is_misc) and ((x + Structures.structure_info[index].size_x > map_width) or (y + Structures.structure_info[index].size_y > map_height)) then
         begin
-          result := 'Building at '+inttostr(x)+','+inttostr(y)+' ('+Structures.structure_info[index].name+') exceeds the map bounds.';
+          result := format('Building at %d,%d (%s) exceeds the map bounds.', [x, y, Structures.structure_info[index].name]);
           exit;
         end;
       end;
