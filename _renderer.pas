@@ -508,10 +508,10 @@ begin
     // Render whole minimap
     cnv_target.Brush.Color := ClBtnFace;
     cnv_target.Pen.Color := ClBtnFace;
-    cnv_target.Rectangle(0,0,128,128);
+    cnv_target.Rectangle(0,0,max_map_width,max_map_height);
   end;
-  border_x := (128 - data_width) div 2;
-  border_y := (128 - data_height) div 2;
+  border_x := (max_map_width - data_width) div 2;
+  border_y := (max_map_height - data_height) div 2;
   // Rendering terrain
   for y:= min_y to max_y do
     for x:= min_x to max_x do
@@ -584,9 +584,10 @@ begin
   begin
     cnv_target.Brush.Style := bsBDiagonal;
     cnv_target.Pen.Style := psClear;
-    for y := mark_y to Min(mark_y + mark_height - 1, 127) do
-      for x := mark_x to Min(mark_x + mark_width - 1, 127) do
+    for y := mark_y to Min(mark_y + mark_height - 1, max_map_height - 1) do
+      for x := mark_x to Min(mark_x + mark_width - 1, max_map_width - 1) do
       begin
+        // Specific shape for 3*4 buildings (heavy factory etc.)
         if (mark_height = 4) and (y = mark_y) and ((x = mark_x) or (x = mark_x + 2)) then
           continue;
         tile_type := Tileset.get_tile_type(data[x, y].tile);

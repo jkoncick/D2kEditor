@@ -50,7 +50,7 @@ var
 implementation
 
 uses
-  main, _settings;
+  main, _settings, _map;
 
 {$R *.dfm}
 
@@ -63,7 +63,9 @@ begin
   ChStrOwn_PlayerTo.Items := MainWindow.PlayerSelect.Items;
   ChStrOwn_PlayerTo.Items.Add('None (delete)');
   ChStrOwn_PlayerTo.ItemIndex := 0;
+  SetMapSize_Width.MaxValue := max_map_width;
   SetMapSize_Width.Value := Settings.DefaultMapWidth;
+  SetMapSize_Height.MaxValue := max_map_height;
   SetMapSize_Height.Value := Settings.DefaultMapHeight;
 end;
 

@@ -285,9 +285,10 @@ var
   event: ^TEvent;
   condition: ^TCondition;
   event_type: EventType;
-  x, y: byte;
+  x, y: integer;
   i: integer;
   moved: boolean;
+  attempts: integer;
 begin
   for x := 0 to max_map_width - 1 do
     for y := 0 to max_map_height - 1 do
@@ -303,11 +304,16 @@ begin
       y := event.map_pos_y;
       // Move event marker one tile to right if this tile has already an event
       moved := false;
-      while event_markers[x][y].emtype <> emNone do
+      attempts := 0;
+      while (event_markers[x][y].emtype <> emNone) and (attempts < Map.width) do
       begin
-        x := (x + 1) mod (max_map_width);
+        x := (x + 1) mod (Map.width);
         moved := true;
+        // Prevent infinite loop
+        Inc(attempts);
       end;
+      if attempts = Map.width then
+        break;
       if event_type = etUnitSpawn then
         event_markers[x][y].emtype := emUnitSpawn
       else if event_type = etRevealMap then

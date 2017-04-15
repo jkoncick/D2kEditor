@@ -251,11 +251,11 @@ end;
 
 procedure TTilesetDialog.SetBlockSize(Sender: TObject);
 var
-  tag: integer;
+  preset_num: integer;
 begin
-  tag := (Sender as TSpeedButton).Tag;
-  preset_width := brush_size_presets[tag][1];
-  preset_height := brush_size_presets[tag][2];
+  preset_num := (Sender as TSpeedButton).Tag - 1;
+  preset_width := brush_size_presets[preset_num][1];
+  preset_height := brush_size_presets[preset_num][2];
 end;
 
 end.
