@@ -101,7 +101,6 @@ begin
   MainWindow.Top := ini.ReadInteger('GUI','MainWindow.Top',MainWindow.Top);
   MainWindow.Width := ini.ReadInteger('GUI','MainWindow.Width',MainWindow.Width);
   MainWindow.Height := ini.ReadInteger('GUI','MainWindow.Height',MainWindow.Height);
-  MainWindow.Drawconcrete1.Checked := ini.ReadBool('GUI','MainWindow.Drawconcrete1.Checked',MainWindow.Drawconcrete1.Checked);
   MainWindow.CbSelectStructures.Checked := ini.ReadBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
 end;
 
@@ -176,7 +175,6 @@ begin
   ini.WriteInteger('GUI','MainWindow.Top',MainWindow.Top);
   ini.WriteInteger('GUI','MainWindow.Width',MainWindow.Width);
   ini.WriteInteger('GUI','MainWindow.Height',MainWindow.Height);
-  ini.WriteBool('GUI','MainWindow.Drawconcrete1.Checked',MainWindow.Drawconcrete1.Checked);
   ini.WriteBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
   ini.WriteInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
   ini.WriteInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);

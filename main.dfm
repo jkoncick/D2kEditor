@@ -130,11 +130,63 @@ object MainWindow: TMainWindow
       OnMouseDown = MiniMapMouseDown
       OnMouseMove = MiniMapMouseMove
     end
+    object sbShowGrid: TSpeedButton
+      Left = 8
+      Top = 144
+      Width = 38
+      Height = 22
+      Hint = 'Show Grid (Ctrl+G)'
+      AllowAllUp = True
+      GroupIndex = 1
+      Caption = 'Grid'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbMarkImpassableTiles: TSpeedButton
+      Left = 46
+      Top = 144
+      Width = 38
+      Height = 22
+      Hint = 'Mark impassable tiles (Ctrl+M)'
+      AllowAllUp = True
+      GroupIndex = 2
+      Caption = 'Impas'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbMarkBuildableTiles: TSpeedButton
+      Left = 84
+      Top = 144
+      Width = 38
+      Height = 22
+      Hint = 'Mark buildable tiles (Ctrl+B)'
+      AllowAllUp = True
+      GroupIndex = 3
+      Caption = 'Build'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbShowUnknownSpecials: TSpeedButton
+      Left = 122
+      Top = 144
+      Width = 38
+      Height = 22
+      Hint = 'Show unknown specials (Ctrl+U)'
+      AllowAllUp = True
+      GroupIndex = 4
+      Caption = 'Unkn'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
     object EditorPages: TPageControl
       Left = 1
-      Top = 141
+      Top = 170
       Width = 166
-      Height = 433
+      Height = 404
       ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
@@ -463,40 +515,6 @@ object MainWindow: TMainWindow
     end
     object Settings1: TMenuItem
       Caption = 'Settings'
-      object ShowGrid1: TMenuItem
-        AutoCheck = True
-        Caption = 'Show Grid'
-        ShortCut = 16455
-        OnClick = SettingChange
-      end
-      object Drawconcrete1: TMenuItem
-        AutoCheck = True
-        Caption = 'Draw concrete'
-        Checked = True
-        ShortCut = 16456
-        OnClick = SettingChange
-      end
-      object Marktiles1: TMenuItem
-        AutoCheck = True
-        Caption = 'Mark impassable tiles'
-        ShortCut = 16461
-        OnClick = SettingChange
-      end
-      object Markbuildabletiles1: TMenuItem
-        AutoCheck = True
-        Caption = 'Mark buildable tiles'
-        ShortCut = 16450
-        OnClick = SettingChange
-      end
-      object Showunknownspecials1: TMenuItem
-        AutoCheck = True
-        Caption = 'Show unknown specials'
-        ShortCut = 16469
-        OnClick = SettingChange
-      end
-      object N7: TMenuItem
-        Caption = '-'
-      end
       object Useallocationindexes1: TMenuItem
         Caption = 'Use allocation indexes'
         ShortCut = 16457

@@ -49,7 +49,6 @@ type
     Selecttileset1: TMenuItem;
     MiniMap: TImage;
     Settings1: TMenuItem;
-    ShowGrid1: TMenuItem;
     XPManifest1: TXPManifest;
     Reopenmap1: TMenuItem;
     N1: TMenuItem;
@@ -86,9 +85,7 @@ type
     Mouseactions1: TMenuItem;
     N5: TMenuItem;
     MiniMapFrame: TBevel;
-    Marktiles1: TMenuItem;
     Useallocationindexes1: TMenuItem;
-    N7: TMenuItem;
     Showeventmarkers1: TMenuItem;
     Savemapimage1: TMenuItem;
     N8: TMenuItem;
@@ -99,7 +96,6 @@ type
     Edit1: TMenuItem;
     Undo1: TMenuItem;
     Redo1: TMenuItem;
-    Showunknownspecials1: TMenuItem;
     Launchgame1: TMenuItem;
     Quicklaunch1: TMenuItem;
     Launchwithsettings1: TMenuItem;
@@ -121,13 +117,15 @@ type
     sbThinSpice: TSpeedButton;
     sbThickSpice: TSpeedButton;
     LbPaintTileGroupName: TLabel;
-    Markbuildabletiles1: TMenuItem;
     UnitList: TListBox;
     LbUnitList: TLabel;
-    Drawconcrete1: TMenuItem;
     N11: TMenuItem;
     Showmapstatistics1: TMenuItem;
     btnFindSelectedObject: TButton;
+    sbShowGrid: TSpeedButton;
+    sbMarkImpassableTiles: TSpeedButton;
+    sbMarkBuildableTiles: TSpeedButton;
+    sbShowUnknownSpecials: TSpeedButton;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -426,7 +424,7 @@ begin
   UnitList.Height := tmp_height div 2;
   LbUnitList.Top := BuildingList.Top + BuildingList.Height + 3;
   UnitList.Top := LbUnitList.Top + 16;
-  EditorPages.Height := EditorMenu.Height - 146;
+  EditorPages.Height := EditorMenu.Height - 174;
   StatusBar.Panels[3].Width := ClientWidth - 550;
   if Map.loaded then
   begin
@@ -571,6 +569,10 @@ begin
   begin
     case key of
     ord('F'): btnFindSelectedObjectClick(nil);
+    ord('G'): begin sbShowGrid.Down := not sbShowGrid.Down; SettingChange(nil); end;
+    ord('M'): begin sbMarkImpassableTiles.Down := not sbMarkImpassableTiles.Down; SettingChange(nil); end;
+    ord('B'): begin sbMarkBuildableTiles.Down := not sbMarkBuildableTiles.Down; SettingChange(nil); end;
+    ord('U'): begin sbShowUnknownSpecials.Down := not sbShowUnknownSpecials.Down; SettingChange(nil); end;
     end;
   end;
 end;
@@ -669,7 +671,7 @@ begin
     tmp_bitmap.Width := Map.width * 32;
     tmp_bitmap.Height := Map.height * 32;
     Renderer.render_map_contents(tmp_bitmap.Canvas, 0, 0, Map.width, Map.height, Addr(Map.data), Map.width, Map.height,
-      ShowGrid1.Checked, Drawconcrete1.Checked, Marktiles1.Checked, Markbuildabletiles1.Checked, Showunknownspecials1.Checked,
+      sbShowGrid.Down, true, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbShowUnknownSpecials.Down,
       Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, false);
     tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
     tmp_bitmap.Destroy;
@@ -1409,7 +1411,7 @@ begin
   if not Map.loaded then
     exit;
   Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
-    ShowGrid1.Checked, Drawconcrete1.Checked, Marktiles1.Checked, Markbuildabletiles1.Checked, Showunknownspecials1.Checked,
+    sbShowGrid.Down, true, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbShowUnknownSpecials.Down,
     Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, true);
   render_editing_marker;
 end;
@@ -1814,7 +1816,7 @@ begin
   end;
   // Render cursor image
   Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
-    false, Drawconcrete1.Checked, false, false, Showunknownspecials1.Checked,
+    false, true, false, false, sbShowUnknownSpecials.Down,
     Useallocationindexes1.Checked, false, false, false);
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;
