@@ -59,6 +59,10 @@ type
     undo_pos: integer;
     undo_block_start: boolean;
 
+    // Search variables
+    search_last_special: word;
+    search_last_x, search_last_y: integer;
+
     // Temporary variables
     tmp_paint_tile_group: integer;
 
@@ -104,6 +108,7 @@ type
     // Miscellaneous procedures
     procedure calculate_power_and_statistics;
     function check_errors: String;
+    function search_special(special: word; var result_x, result_y: integer): boolean;
 
     // Load & Save procedures
     procedure load_map_file(filename: String);
@@ -558,6 +563,42 @@ begin
       end;
     end;
   result := '';
+end;
+
+function TMap.search_special(special: word; var result_x, result_y: integer): boolean;
+var
+  x, y: integer;
+begin
+  // Searching for a different special - reset starting position
+  if special <> search_last_special then
+  begin
+    search_last_special := special;
+    search_last_x := map_width - 1;
+    search_last_y := map_height - 1;
+  end;
+  x := search_last_x;
+  y := search_last_y;
+  repeat
+    Inc(x);
+    if x = map_width then
+    begin
+      x := 0;
+      Inc(y);
+      if y = map_height then
+        y := 0;
+    end;
+    // Found
+    if map_data[x, y].special = special then
+    begin
+      result_x := x;
+      result_y := y;
+      search_last_x := x;
+      search_last_y := y;
+      result := true;
+      exit;
+    end;
+  until (x = search_last_x) and (y = search_last_y);
+  result := false;
 end;
 
 

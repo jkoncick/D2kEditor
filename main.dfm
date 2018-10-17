@@ -179,7 +179,7 @@ object MainWindow: TMainWindow
         object SpecialValue: TEdit
           Left = 80
           Top = 2
-          Width = 73
+          Width = 49
           Height = 21
           TabOrder = 0
           Text = '0'
@@ -220,6 +220,18 @@ object MainWindow: TMainWindow
           ItemHeight = 13
           TabOrder = 4
           OnClick = UnitListClick
+        end
+        object btnFindSelectedObject: TButton
+          Left = 133
+          Top = 0
+          Width = 20
+          Height = 25
+          Hint = 'Find selected object (Ctrl+F)'
+          Caption = 'F'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 5
+          OnClick = btnFindSelectedObjectClick
         end
       end
       object PageTerrain: TTabSheet

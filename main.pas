@@ -127,6 +127,7 @@ type
     Drawconcrete1: TMenuItem;
     N11: TMenuItem;
     Showmapstatistics1: TMenuItem;
+    btnFindSelectedObject: TButton;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -163,7 +164,7 @@ type
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
-    procedure Showmapstatistics1Click(Sender: TObject);
+    procedure Showmapstatistics1Click(Sender: TObject);    
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
     procedure Assignmisfile1Click(Sender: TObject);
@@ -197,6 +198,7 @@ type
       Y: Integer);
     // Structure/terrain editor
     procedure EditorPagesChange(Sender: TObject);
+    procedure btnFindSelectedObjectClick(Sender: TObject);
     procedure BuildingListClick(Sender: TObject);
     procedure UnitListClick(Sender: TObject);
     procedure PlayerSelectChange(Sender: TObject);
@@ -316,7 +318,7 @@ begin
   // Miscellaneous initializations
   randomize;
   current_dir := ExtractFilePath(Application.ExeName);
-  Application.HintPause := 100;
+  Application.HintPause := 500;
   Application.HintHidePause:= 100000;
   DragAcceptFiles(Handle, True);
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
@@ -563,6 +565,13 @@ begin
     // Block key presets
     if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 186) or (key = 188) or (key = 190) or (key = 191) then
       apply_key_preset(key);
+  end;
+  // Ctrl+key
+  if ssCtrl in Shift then
+  begin
+    case key of
+    ord('F'): btnFindSelectedObjectClick(nil);
+    end;
   end;
 end;
 
@@ -1283,6 +1292,17 @@ begin
       UnitList.SetFocus;
   end;
   render_editing_marker;
+end;
+
+procedure TMainWindow.btnFindSelectedObjectClick(Sender: TObject);
+var
+  pos_x, pos_y: integer;
+begin
+  if Map.search_special(strtoint(SpecialValue.Text), pos_x, pos_y) then
+  begin
+    MapScrollH.Position := pos_x - (map_canvas_width div 2);
+    MapScrollV.Position := pos_y - (map_canvas_height div 2);
+  end;
 end;
 
 procedure TMainWindow.BuildingListClick(Sender: TObject);
