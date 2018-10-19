@@ -35,6 +35,7 @@ type
 
 var
   StringTable: TStringTable;
+  SoundStringTable: TStringTable;
 
 implementation
 
@@ -88,7 +89,7 @@ var
   row: integer;
 begin
   is_custom := false;
-  if custom_text_value_list.FindRow(inttostr(index), row) then
+  if (custom_text_value_list <> nil) and custom_text_value_list.FindRow(inttostr(index), row) then
   begin
     result := custom_text_value_list.Cells[1,row];
     is_custom := true;

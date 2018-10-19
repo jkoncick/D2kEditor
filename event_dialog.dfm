@@ -561,12 +561,36 @@ object EventDialog: TEventDialog
           Height = 13
           Caption = 'Music:'
         end
-        object edMusic: TEdit
+        object cbMusicName: TComboBox
           Left = 64
           Top = 4
-          Width = 169
+          Width = 145
           Height = 21
-          MaxLength = 24
+          ItemHeight = 13
+          TabOrder = 0
+        end
+      end
+      object epSound: TPanel
+        Left = 0
+        Top = 188
+        Width = 240
+        Height = 30
+        BevelOuter = bvNone
+        TabOrder = 12
+        object lblSound: TLabel
+          Left = 4
+          Top = 8
+          Width = 34
+          Height = 13
+          Caption = 'Sound:'
+        end
+        object cbSoundName: TComboBox
+          Left = 64
+          Top = 4
+          Width = 145
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
           TabOrder = 0
         end
       end
@@ -1040,14 +1064,14 @@ object EventDialog: TEventDialog
         Height = 30
         BevelOuter = bvNone
         TabOrder = 8
-        object lblCasualtyFlags: TLabel
+        object lblCasualtiesRatio: TLabel
           Left = 4
           Top = 8
-          Width = 34
+          Width = 51
           Height = 13
-          Caption = 'Flags?:'
+          Caption = 'Proportion:'
         end
-        object edCasualtyFlags: TEdit
+        object edCasualtiesRatio: TEdit
           Left = 64
           Top = 4
           Width = 80

@@ -29,6 +29,7 @@ begin
   Mission := TMission.Create;
   Tileset := TTileset.Create;
   StringTable := TStringTable.Create;
+  SoundStringTable := TStringTable.Create;
   Settings := TSettings.Create;
   Application.CreateForm(TMainWindow, MainWindow);
   Application.CreateForm(TSetDialog, SetDialog);

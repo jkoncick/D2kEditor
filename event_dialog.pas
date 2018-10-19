@@ -96,8 +96,8 @@ type
     cpConditionValue: TPanel;
     lblConditionValue: TLabel;
     cpCasualties: TPanel;
-    lblCasualtyFlags: TLabel;
-    edCasualtyFlags: TEdit;
+    lblCasualtiesRatio: TLabel;
+    edCasualtiesRatio: TEdit;
     epMessage: TPanel;
     lblMessage: TLabel;
     seMessageId: TSpinEdit;
@@ -144,8 +144,11 @@ type
     btnEventConditionListPaste: TButton;
     epMusic: TPanel;
     lblMusic: TLabel;
-    edMusic: TEdit;
     BevelSizeHolder: TBevel;
+    cbMusicName: TComboBox;
+    epSound: TPanel;
+    lblSound: TLabel;
+    cbSoundName: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -260,6 +263,9 @@ uses main, _stringtable, _settings;
 procedure TEventDialog.FormCreate(Sender: TObject);
 var
   i: integer;
+  SR: TSearchRec;
+  StringList: TStrings;
+  dummy: boolean;
 begin
   // Initialize window size and position
   Left := 0;
@@ -328,6 +334,24 @@ begin
   // Initialize comparison functions
   for i:= 0 to Length(comparison_function)-1 do
     cbTimerCompareFunc.Items.Add(comparison_function[i]);
+  // Initialize sound names
+  StringList := TStringList.Create;
+  for i := 0 to SoundStringTable.get_table_size - 1 do
+  begin
+    StringList.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, dummy));
+  end;
+  cbSoundName.Items := StringList;
+  // Initialize music names
+  StringList.Clear;
+  if FindFirst(Settings.GamePath + 'Data\Music\*.AUD', 0, SR) = 0 then
+  begin
+    repeat
+      StringList.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbMusicName.Items := StringList;
+  StringList.Free;
   cbCreateEventsPlayer.Items := cbEventPlayer.Items;
   cbCreateEventsPlayer.ItemIndex := 0;
   select_event(0);
@@ -474,6 +498,7 @@ begin
   epRadius.Visible := tmp_event.event_type = Byte(etRevealMap);
   epEventValue.Visible := event_valid and (event_type_info[tmp_event.event_type].value_name <> '');
   epMessage.Visible := tmp_event.event_type = Byte(etShowMessage);
+  epSound.Visible := tmp_event.event_type = Byte(etPlaySound);
   epMusic.Visible := tmp_event.event_type = Byte(etPlayMusic);
   EventUnitList.Items.Clear;
   EventConditionList.Items.Clear;
@@ -492,6 +517,7 @@ begin
     etShowMessage:    fill_event_ui_panel(epMessage, panel_top);
     etUnitSpawn:      fill_event_ui_panel(epDeployAction, panel_top);
     etSetFlag:        fill_event_ui_panel(epSetFlag, panel_top);
+    etPlaySound:      fill_event_ui_panel(epSound, panel_top);
     etPlayMusic:      fill_event_ui_panel(epMusic, panel_top);
   end;
   if event_type_info[tmp_event.event_type].value_name <> '' then
@@ -545,10 +571,14 @@ begin
     else
       seMessageId.Value := tmp_event.message_index;
   end;
+  if panel = epSound then
+  begin
+    cbSoundName.ItemIndex := tmp_event.value;
+  end;
   if panel = epMusic then
   begin
     SetString(tmp, PChar(Addr(tmp_event.units[0])), StrLen(PChar(Addr(tmp_event.units[0]))));
-    edMusic.Text := tmp;
+    cbMusicName.Text := tmp;
   end;
   panel.Visible := true;
   panel.Top := panel_top;
@@ -636,10 +666,11 @@ begin
       else
         tmp_event.value := 0;
     end;
+    etPlaySound: tmp_event.value := cbSoundName.ItemIndex;
     etPlayMusic:
     begin
       FillChar(tmp_event.units[0], 25, 0);
-      Move(edMusic.Text[1], tmp_event.units[0], Length(edMusic.Text));
+      Move(cbMusicName.Text[1], tmp_event.units[0], Length(cbMusicName.Text));
     end;
   end;
   old_event_used_position := event_type_info[Mission.mis_data.events[selected_event].event_type].use_map_position;
@@ -744,7 +775,7 @@ begin
     edConditionValue.Text := inttostr(tmp_condition.value);
   end;
   if panel = cpCasualties then
-    edCasualtyFlags.Text := inttohex(tmp_condition.casualty_flags, 8);
+    edCasualtiesRatio.Text := floattostrf(tmp_condition.casualties_ratio, ffFixed, 8, 3);
   panel.Visible := true;
   panel.Top := panel_top;
   panel_top := panel_top + panel.Height + 2;
@@ -762,7 +793,7 @@ begin
   tmp_condition.value := 0;
   tmp_condition.map_pos_x := 0;
   tmp_condition.map_pos_y := 0;
-  tmp_condition.casualty_flags := 0;
+  tmp_condition.casualties_ratio := 1.0;
   tmp_condition.building_type := 0;
   tmp_condition.unit_type_or_comparison_function := 0;
   if (condition_type = Byte(ctInterval)) or (condition_type = Byte(ctTileRevealed)) or
@@ -796,7 +827,7 @@ begin
       tmp_condition.unit_type_or_comparison_function := cbTimerCompareFunc.ItemIndex;
     end;
     ctCasualties:
-      tmp_condition.casualty_flags := strtoint('$'+edCasualtyFlags.Text);
+      tmp_condition.casualties_ratio := StrToFloatDef(edCasualtiesRatio.Text, 1.0);
     ctTileRevealed:
     begin
       tmp_condition.map_pos_x := seConditionPositionX.Value;

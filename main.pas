@@ -373,6 +373,7 @@ begin
   Mission.init;
   // Load string table
   StringTable.load_from_file(Settings.TextUIBPath);
+  SoundStringTable.load_from_file(Settings.GamePath + 'Data\UI_DATA\samples.uib');
   // Load and initialize graphics
   Renderer.init;
   minimap_buffer := TBitmap.Create;

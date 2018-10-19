@@ -60,7 +60,7 @@ type
     value: cardinal; // Interval run count, Casualty threshold, Base/Units destroyed, tile revealed unknown, Cash amount
     map_pos_x: cardinal;
     map_pos_y: cardinal;
-    casualty_flags: cardinal;
+    casualties_ratio: single;
     player: byte;
     condition_type: byte;
     building_type: byte;
@@ -125,9 +125,9 @@ const event_type_info: array[0..21] of TEventTypeInfo =
     (name: 'Allegiance';                key: ord('A'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
     (name: 'Leave';                     key: ord('L'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
     (name: 'Berserk';                   key: ord('B'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: '';),
-    (name: 'Play Sound';                key: ord('O'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: 'Sound';),
+    (name: 'Play Sound';                key: ord('O'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
     (name: 'Set Build Rate';            key: ord('G'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Build rate';),
-    (name: 'Set Attack Building Rate';  key: ord('J'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Unknown';),
+    (name: 'Set Attack Building Rate';  key: ord('J'); use_map_position: false; use_player_index: true;  use_unit_list: false; value_name: 'Attack rate';),
     (name: 'Set Cash';                  key: ord('Y'); use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Cash';),
     (name: 'Set Tech';                  key: ord('T'); use_map_position: false; use_player_index: true ; use_unit_list: false; value_name: 'Tech level';),
     (name: 'Mission Win';               key: ord('W'); use_map_position: false; use_player_index: false; use_unit_list: false; value_name: '';),
@@ -452,7 +452,7 @@ begin
   end;
   case event_type of
     etAllegiance:   contents := player_names[event.player] + ' -> ' + player_names[event.allegiance_target] + ' (' + allegiance_type[event.allegiance_type] + ')';
-    etPlaySound:    contents := inttostr(event.value);
+    etPlaySound:    contents := inttostr(event.value) + ' - ' + SoundStringTable.get_text(event.value, dummy);
     etSetBuildRate: contents := inttostr(event.value);
     etSetAttackBuildingRate: contents := inttostr(event.value);
     etSetCash:      contents := inttostr(event.value);
@@ -516,7 +516,7 @@ begin
     ctUnitExists:     contents := contents + space + unit_names[cond.unit_type_or_comparison_function];
     ctInterval:       contents := contents + inttostr(cond.start_delay) + ' ' + inttostr(cond.time_amount) + ' ' + inttostr(cond.value);
     ctTimer:          contents := contents + comparison_function[cond.unit_type_or_comparison_function] + inttostr(cond.time_amount);
-    ctCasualties:     contents := contents + space + inttostr(cond.value) + ' ' + IntToHex(cond.casualty_flags, 8);
+    ctCasualties:     contents := contents + space + inttostr(cond.value) + '  ' + floattostrf(cond.casualties_ratio, ffFixed, 8, 3);
     ctTileRevealed:   contents := contents + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y);
     ctSpiceHarvested: contents := contents + inttostr(cond.value);
     ctFlag:           contents := contents + condition_notes[index];
