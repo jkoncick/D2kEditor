@@ -1607,9 +1607,14 @@ begin
 end;
 
 procedure TMainWindow.launch_game;
+var
+  temp_map_name: String;
 begin
   Settings.save_map_test_settings;
+  temp_map_name := Missiondialog.edMapName.Text;
+  Missiondialog.edMapName.Text := 'TESTMAP';
   save_map(Settings.GamePath + 'Missions\TESTMAP.MAP');
+  Missiondialog.edMapName.Text := temp_map_name;
   if not MissionDialog.cbUseINI.Checked then
     DeleteFile(Settings.GamePath + 'Missions\TESTMAP.INI');
   ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), PChar('-SPAWN ' + Settings.TestMapParameters), PChar(Settings.GamePath), SW_SHOWNORMAL);
