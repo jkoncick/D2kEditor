@@ -436,6 +436,9 @@ object MainWindow: TMainWindow
         ShortCut = 16466
         OnClick = Reopenmap1Click
       end
+      object Recentfiles1: TMenuItem
+        Caption = 'Recent files'
+      end
       object N1: TMenuItem
         Caption = '-'
       end

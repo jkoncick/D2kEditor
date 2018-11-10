@@ -126,6 +126,7 @@ type
     sbMarkImpassableTiles: TSpeedButton;
     sbMarkBuildableTiles: TSpeedButton;
     sbShowUnknownSpecials: TSpeedButton;
+    Recentfiles1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -145,6 +146,7 @@ type
     procedure Newmap1Click(Sender: TObject);
     procedure Openmap1Click(Sender: TObject);
     procedure Reopenmap1Click(Sender: TObject);
+    procedure OpenRecentFile(Sender: TObject);
     procedure Savemap1Click(Sender: TObject);
     procedure Savemapas1Click(Sender: TObject);
     procedure Savemapimage1Click(Sender: TObject);
@@ -251,6 +253,9 @@ type
     // Clipboard variables
     clipboard_format: cardinal;
 
+    // Recent files
+    recent_files_menuitems: array[1..cnt_recent_files] of TMenuItem;
+
     // Rendering procedures
     procedure resize_map_canvas;
     procedure render_map;
@@ -265,6 +270,7 @@ type
     procedure unload_mission;
     function check_map_errors: boolean;    
     procedure set_window_titles(map_name: String);
+    procedure refresh_recent_files_menu;
 
     // Map testing procedures
     function check_map_can_be_tested: boolean;
@@ -392,6 +398,17 @@ begin
       BuildingList.Items.Add(Structures.structure_info[i].name)
     else
       UnitList.Items.Add(Structures.structure_info[i].name);
+  // Initialize recent files
+  for i := 1 to cnt_recent_files do
+  begin
+    recent_files_menuitems[i] := TMenuItem.Create(MainWindow.Recentfiles1);
+    recent_files_menuitems[i].Caption := '';
+    recent_files_menuitems[i].Tag := i;
+    recent_files_menuitems[i].Visible := false;
+    recent_files_menuitems[i].OnClick := OpenRecentFile;
+    Recentfiles1.Add(recent_files_menuitems[i]);
+  end;
+  refresh_recent_files_menu;
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -619,11 +636,15 @@ begin
   end;
 end;
 
-
 procedure TMainWindow.Reopenmap1Click(Sender: TObject);
 begin
   if Map.loaded and (Map.filename <> '') then
     load_map(Map.filename);
+end;
+
+procedure TMainWindow.OpenRecentFile(Sender: TObject);
+begin
+  load_map(Settings.RecentFiles[(Sender as TMenuItem).Tag]);
 end;
 
 procedure TMainWindow.Savemap1Click(Sender: TObject);
@@ -1502,7 +1523,7 @@ begin
     exit;
   if UpperCase(Copy(filename, Length(filename)-2, 3)) <> 'MAP' then
   begin
-    Application.MessageBox('Invalid file type', 'Load map error', MB_ICONERROR);
+    Application.MessageBox('Invalid file type. You need to provide a file with .map extension.', 'Load map error', MB_ICONERROR);
     exit;
   end;
   // Load map file
@@ -1534,6 +1555,9 @@ begin
   resize_map_canvas;
   render_minimap;
   render_map;
+  // Update recent files list
+  Settings.update_recent_files(filename);
+  refresh_recent_files_menu;
 end;
 
 procedure TMainWindow.save_map(filename: String);
@@ -1580,6 +1604,20 @@ begin
     Caption := Caption + ' - ' + map_name;
     MissionDialog.Caption := MissionDialog.Caption + ' - ' + map_name;
     EventDialog.Caption := EventDialog.Caption + ' - ' + map_name;
+  end;
+end;
+
+procedure TMainWindow.refresh_recent_files_menu;
+var
+  i: integer;
+begin
+  for i := 1 to cnt_recent_files do
+  begin
+    if Settings.RecentFiles[i] <> '' then
+    begin
+      recent_files_menuitems[i].Caption := Settings.RecentFiles[i];
+      recent_files_menuitems[i].Visible := true;
+    end;
   end;
 end;
 

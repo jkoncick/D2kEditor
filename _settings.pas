@@ -5,6 +5,8 @@ interface
 uses
   IniFiles;
 
+const cnt_recent_files = 9;
+
 type
   TSettings = class
 
@@ -35,6 +37,9 @@ type
     GamePath: String;
     TextUIBPath: String;
 
+    // Recent files
+    RecentFiles: Array[1..cnt_recent_files] of String;
+
     // Test map settings
     MySideID: integer;
     MissionNumber: integer;
@@ -51,6 +56,7 @@ type
     procedure load_postcreate_editor_settings;
     procedure save_editor_settings;
     procedure get_file_paths_from_map_filename;
+    procedure update_recent_files(filename: String);
     procedure get_map_test_settings;
     procedure save_map_test_settings;
 
@@ -68,6 +74,7 @@ uses
 procedure TSettings.load_precreate_editor_settings;
 var
   ini: TMemIniFile;
+  i: integer;
 begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   tmp_ini := ini;
@@ -94,6 +101,11 @@ begin
   GamePath := ini.ReadString('Paths','GamePath', current_dir + '..\');
   GameExecutable := ini.ReadString('Paths','GameExecutable', GamePath + 'dune2000.exe');
   TextUIBPath := ini.ReadString('Paths','TextUIBPath', GamePath + 'Data\UI_DATA\TEXT.UIB');
+  // Load recent files
+  for i := 1 to cnt_recent_files do
+  begin
+    RecentFiles[i] := ini.ReadString('RecentFiles', 'file' + inttostr(i), '');
+  end;
   // Load MainWindow GUI setings
   if not PreserveGUISettings then
     exit;
@@ -145,6 +157,7 @@ end;
 procedure TSettings.save_editor_settings;
 var
   ini: TMemIniFile;
+  i: integer;
 begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   // Save preferences
@@ -170,6 +183,12 @@ begin
   ini.WriteString('Paths','GamePath',GamePath);
   ini.WriteString('Paths','GameExecutable',GameExecutable);
   ini.WriteString('Paths','TextUIBPath',TextUIBPath);
+  // Save recent files
+  for i := 1 to cnt_recent_files do
+  begin
+    if RecentFiles[i] <> '' then
+      ini.WriteString('RecentFiles', 'file' + inttostr(i), RecentFiles[i]);
+  end;
   // Save GUI settings
   ini.WriteInteger('GUI','MainWindow.Left',MainWindow.Left);
   ini.WriteInteger('GUI','MainWindow.Top',MainWindow.Top);
@@ -217,6 +236,31 @@ begin
     TextUIBPath := GamePath + 'Data\UI_DATA\TEXT.UIB';
     StringTable.load_from_file(TextUIBPath);
   end;
+end;
+
+procedure TSettings.update_recent_files(filename: String);
+var
+  i: integer;
+  found_pos: integer;
+begin
+  // Try to find if the file exists in the list
+  found_pos := cnt_recent_files + 1;
+  for i := 1 to cnt_recent_files do
+  begin
+    if RecentFiles[i] = filename then
+    begin
+      found_pos := i;
+      break;
+    end;
+  end;
+  // Save current file into the first position and shift other files to next position
+  for i := found_pos downto 2 do
+  begin
+    if i > cnt_recent_files then
+      continue;
+    RecentFiles[i] := RecentFiles[i-1];
+  end;
+  RecentFiles[1] := filename;
 end;
 
 procedure TSettings.get_map_test_settings;
