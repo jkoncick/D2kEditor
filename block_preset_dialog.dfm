@@ -13,6 +13,7 @@ object BlockPresetDialog: TBlockPresetDialog
   Font.Style = []
   FormStyle = fsStayOnTop
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
   OnHide = FormHide
   OnKeyDown = FormKeyDown

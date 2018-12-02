@@ -13,6 +13,7 @@ object SetDialog: TSetDialog
   Font.Style = []
   KeyPreview = True
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShow = FormShow

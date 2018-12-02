@@ -14,6 +14,7 @@ object EventDialog: TEventDialog
   Font.Style = []
   KeyPreview = True
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShortCut = FormShortCut

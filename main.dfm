@@ -17,6 +17,7 @@ object MainWindow: TMainWindow
   KeyPreview = True
   Menu = AppMenu
   OldCreateOrder = False
+  Scaled = False
   Visible = True
   OnActivate = FormActivate
   OnClose = FormClose
@@ -104,7 +105,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v1.3 pre'
+        Text = 'v1.3 pre2'
         Width = 0
       end>
   end
@@ -409,7 +410,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
       end

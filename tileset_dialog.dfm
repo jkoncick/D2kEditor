@@ -16,6 +16,7 @@ object TilesetDialog: TTilesetDialog
   Font.Style = []
   KeyPreview = True
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
   OnHide = FormHide
   OnKeyDown = FormKeyDown

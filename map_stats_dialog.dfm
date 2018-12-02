@@ -16,6 +16,7 @@ object MapStatsDialog: TMapStatsDialog
   FormStyle = fsStayOnTop
   KeyPreview = True
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   PixelsPerInch = 96

@@ -14,6 +14,7 @@ object TestMapDialog: TTestMapDialog
   Font.Style = []
   KeyPreview = True
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   PixelsPerInch = 96
