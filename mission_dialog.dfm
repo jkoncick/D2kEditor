@@ -224,13 +224,6 @@ object MissionDialog: TMissionDialog
         Height = 21
         TabOrder = 10
       end
-      object edMapMusic: TEdit
-        Left = 352
-        Top = 342
-        Width = 188
-        Height = 21
-        TabOrder = 11
-      end
       object cbMapSideId: TComboBox
         Left = 600
         Top = 294
@@ -250,6 +243,14 @@ object MissionDialog: TMissionDialog
         TabOrder = 13
         Value = 0
         OnChange = seMapMissionNumberChange
+      end
+      object cbMapMusic: TComboBox
+        Left = 352
+        Top = 344
+        Width = 185
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 11
       end
     end
     object RulesAndStringsPanel: TPanel

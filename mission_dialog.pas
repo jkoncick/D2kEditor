@@ -61,7 +61,6 @@ type
     lblMapMusic: TLabel;
     edMapName: TEdit;
     edMapAuthor: TEdit;
-    edMapMusic: TEdit;
     btnPasteAI: TButton;
     lblMapSideId: TLabel;
     lblMapMissionNumber: TLabel;
@@ -75,6 +74,7 @@ type
     ImportAIDialog: TOpenDialog;
     lblTimeLimitHelp: TLabel;
     cbDiffMode: TCheckBox;
+    cbMapMusic: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -229,6 +229,7 @@ begin
   end;
   ini.Destroy;
   tmp_strings.Destroy;
+  cbMapMusic.Items := EventDialog.cbMusicName.Items;
   // Register AI clipboard format
   ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
 end;
@@ -344,8 +345,8 @@ begin
   edMapName.Text := ini.ReadString('Basic','Name','');
   edMapAuthor.Enabled := true;
   edMapAuthor.Text := ini.ReadString('Basic','Author','');
-  edMapMusic.Enabled := true;
-  edMapMusic.Text := ini.ReadString('Basic','Music','');
+  cbMapMusic.Enabled := true;
+  cbMapMusic.Text := ini.ReadString('Basic','Music','');
   cbMapSideId.Enabled := true;
   cbMapSideId.ItemIndex := ini.ReadInteger('Basic','SideId',-1);
   seMapMissionNumber.Enabled := true;
@@ -390,8 +391,8 @@ begin
   edMapName.Clear;
   edMapAuthor.Enabled := false;
   edMapAuthor.Clear;
-  edMapMusic.Enabled := false;
-  edMapMusic.Clear;
+  cbMapMusic.Enabled := false;
+  cbMapMusic.Text := '';
   cbMapSideId.Enabled := false;
   cbMapSideId.ItemIndex := -1;
   seMapMissionNumber.Enabled := false;
@@ -403,7 +404,7 @@ begin
   MapBriefing.Enabled := false;
   MapBriefing.Lines.Clear;
   Mission.clear_notes;
-  EventDialog.enable_map_ini_features(false);  
+  EventDialog.enable_map_ini_features(false);
 end;
 
 procedure TMissionDialog.save_ini_fields(map_filename: String);
@@ -424,10 +425,10 @@ begin
     ini.DeleteKey('Basic','Author')
   else
     ini.WriteString('Basic','Author',edMapAuthor.Text);
-  if edMapMusic.Text = '' then
+  if cbMapMusic.Text = '' then
     ini.DeleteKey('Basic','Music')
   else
-    ini.WriteString('Basic','Music',edMapMusic.Text);
+    ini.WriteString('Basic','Music',cbMapMusic.Text);
   if cbMapSideId.ItemIndex = -1 then
     ini.DeleteKey('Basic','SideId')
   else
