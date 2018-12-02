@@ -35,6 +35,7 @@ type
     // File paths
     GameExecutable: String;
     GamePath: String;
+    MissionsPath: String;
     TextUIBPath: String;
 
     // Recent files
@@ -100,6 +101,7 @@ begin
   // Load file paths
   GamePath := ini.ReadString('Paths','GamePath', current_dir + '..\');
   GameExecutable := ini.ReadString('Paths','GameExecutable', GamePath + 'dune2000.exe');
+  MissionsPath := ini.ReadString('Paths','MissionsPath', GamePath + 'Missions\');
   TextUIBPath := ini.ReadString('Paths','TextUIBPath', GamePath + 'Data\UI_DATA\TEXT.UIB');
   // Load recent files
   for i := 1 to cnt_recent_files do
@@ -182,6 +184,7 @@ begin
   // Save file paths
   ini.WriteString('Paths','GamePath',GamePath);
   ini.WriteString('Paths','GameExecutable',GameExecutable);
+  ini.WriteString('Paths','MissionsPath',MissionsPath);
   ini.WriteString('Paths','TextUIBPath',TextUIBPath);
   // Save recent files
   for i := 1 to cnt_recent_files do
@@ -229,6 +232,11 @@ begin
   begin
     GamePath := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(Map.filename)));
     GameExecutable := GamePath + 'dune2000.exe';
+  end;
+  // Get Missions path
+  if (MissionsPath = '') or (not DirectoryExists(MissionsPath)) then
+  begin
+    MissionsPath := GamePath + 'Missions\';
   end;
   // Get TEXT.UIB filename and load it
   if (TextUIBPath = '') or (not FileExists(TextUIBPath)) then
