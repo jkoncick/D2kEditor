@@ -443,7 +443,7 @@ begin
   LbUnitList.Top := BuildingList.Top + BuildingList.Height + 3;
   UnitList.Top := LbUnitList.Top + 16;
   EditorPages.Height := EditorMenu.Height - 174;
-  StatusBar.Panels[3].Width := ClientWidth - 550;
+  StatusBar.Panels[3].Width := ClientWidth - 570;
   if Map.loaded then
   begin
     render_minimap_position_marker;
@@ -910,7 +910,7 @@ end;
 procedure TMainWindow.About1Click(Sender: TObject);
 begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13'Part of D2K+ Editing tools'#13#13+
-              'Made by Klofkac'#13'Version 1.2'#13'Date: 2015-11-16'#13#13+
+              'Made by Klofkac'#13'Version 1.3 pre'#13'Date: 2018-11-10'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13'mvi - for making the original Mission editor'#13'FunkyFr3sh - for patching Dune 2000'#13'FED2k community - for their support');
 end;
@@ -1689,14 +1689,16 @@ end;
 function TMainWindow.mouse_over_map_canvas: boolean;
 var
   pos: TPoint;
+  ForegroundWindow: HWND;
 begin
   pos := MainWindow.ScreenToClient(Mouse.CursorPos);
+  ForegroundWindow := GetForegroundWindow;
   result := PtInRect(MapCanvas.BoundsRect, pos);
   result := result and not (BlockPresetDialog.Visible and PtInRect(BlockPresetDialog.BoundsRect, Mouse.CursorPos));
-  result := result and not (TilesetDialog.Visible and PtInRect(TilesetDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = TilesetDialog.Handle) and PtInRect(TilesetDialog.BoundsRect, Mouse.CursorPos));
   result := result and not (MapStatsDialog.Visible and PtInRect(MapStatsDialog.BoundsRect, Mouse.CursorPos));
-  result := result and not (MissionDialog.Visible and PtInRect(MissionDialog.BoundsRect, Mouse.CursorPos));
-  result := result and not (EventDialog.Visible and PtInRect(EventDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = MissionDialog.Handle) and PtInRect(MissionDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = EventDialog.Handle) and PtInRect(EventDialog.BoundsRect, Mouse.CursorPos));
   result := result or block_select_started;
 end;
 

@@ -104,7 +104,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v1.2'
+        Text = 'v1.3 pre'
         Width = 0
       end>
   end
@@ -409,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
       end
