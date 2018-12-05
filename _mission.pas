@@ -204,6 +204,7 @@ type
     function get_event_contents(index: integer): String;
     function get_event_conditions(index: integer): String;
     function get_condition_contents(index: integer; show_player: boolean): String;
+    function check_event_has_condition(index: integer; condition_index: integer): boolean;
     // Creating/deleting events/conditions
     function add_event(position: integer): boolean;
     function add_condition: boolean;
@@ -523,6 +524,23 @@ begin
   end;
   //contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.more_uses) + ' ' + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y) + ' ' + inttostr(cond.casualty_flags) + ' ' + inttostr(cond.side) + ' ' + inttostr(cond.building_type) + ' ' + inttostr(cond.unit_type_or_comparison_function);
   result := contents;
+end;
+
+function TMission.check_event_has_condition(index, condition_index: integer): boolean;
+var
+  event: ^TEvent;
+  i: integer;
+begin
+  event := Addr(mis_data.events[index]);
+  for i := 0 to event.num_conditions - 1 do
+  begin
+    if event.condition_index[i] = condition_index then
+    begin
+      result := true;
+      exit;
+    end;
+  end;
+  result := false;
 end;
 
 function TMission.add_event(position: integer): boolean;

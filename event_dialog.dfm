@@ -53,6 +53,7 @@ object EventDialog: TEventDialog
     PopupMenu = EventGridPopupMenu
     ScrollBars = ssVertical
     TabOrder = 0
+    OnDrawCell = EventGridDrawCell
     OnKeyDown = EventGridKeyDown
     OnMouseDown = EventGridMouseDown
     OnMouseWheelDown = EventGridMouseWheelDown
@@ -227,7 +228,7 @@ object EventDialog: TEventDialog
       end
       object lblEventNote: TLabel
         Left = 4
-        Top = 184
+        Top = 176
         Width = 26
         Height = 13
         Caption = 'Note:'
@@ -543,14 +544,14 @@ object EventDialog: TEventDialog
       end
       object edEventNote: TEdit
         Left = 4
-        Top = 200
+        Top = 192
         Width = 232
         Height = 21
         TabOrder = 10
       end
       object epMusic: TPanel
         Left = 0
-        Top = 172
+        Top = 132
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -573,7 +574,7 @@ object EventDialog: TEventDialog
       end
       object epSound: TPanel
         Left = 0
-        Top = 188
+        Top = 140
         Width = 240
         Height = 30
         BevelOuter = bvNone
@@ -826,7 +827,7 @@ object EventDialog: TEventDialog
       end
       object lblConditionNote: TLabel
         Left = 4
-        Top = 184
+        Top = 176
         Width = 26
         Height = 13
         Caption = 'Note:'
@@ -1035,7 +1036,7 @@ object EventDialog: TEventDialog
       end
       object cpConditionValue: TPanel
         Left = 0
-        Top = 208
+        Top = 144
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -1060,7 +1061,7 @@ object EventDialog: TEventDialog
       end
       object cpCasualties: TPanel
         Left = 0
-        Top = 224
+        Top = 144
         Width = 200
         Height = 30
         BevelOuter = bvNone
@@ -1095,10 +1096,19 @@ object EventDialog: TEventDialog
       end
       object edConditionNote: TEdit
         Left = 4
-        Top = 200
+        Top = 192
         Width = 196
         Height = 21
         TabOrder = 10
+      end
+      object cbMarkEventsHavingCondition: TCheckBox
+        Left = 8
+        Top = 224
+        Width = 185
+        Height = 17
+        Caption = 'Mark events having this condition'
+        TabOrder = 11
+        OnClick = cbMarkEventsHavingConditionClick
       end
     end
   end

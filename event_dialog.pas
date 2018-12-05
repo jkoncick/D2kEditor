@@ -149,6 +149,7 @@ type
     epSound: TPanel;
     lblSound: TLabel;
     cbSoundName: TComboBox;
+    cbMarkEventsHavingCondition: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -178,6 +179,8 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure EventGridMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
+    procedure EventGridDrawCell(Sender: TObject; ACol, ARow: Integer;
+      Rect: TRect; State: TGridDrawState);
     procedure ConditionGridMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ConditionGridMouseWheelDown(Sender: TObject;
@@ -216,6 +219,7 @@ type
       Shift: TShiftState);
     procedure ConditionGridKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure cbMarkEventsHavingConditionClick(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -712,6 +716,8 @@ begin
     edConditionNote.Enabled := true;
   end;
   fill_condition_ui(index < Mission.mis_data.num_conditions);
+  if cbMarkEventsHavingCondition.Checked then
+    EventGrid.Invalidate;
 end;
 
 procedure TEventDialog.fill_condition_ui(condition_valid: boolean);
@@ -1077,6 +1083,21 @@ begin
   Handled := true;
 end;
 
+procedure TEventDialog.EventGridDrawCell(Sender: TObject; ACol,
+  ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+  if not cbMarkEventsHavingCondition.Checked then
+    exit;
+  if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) then
+    exit;
+  if Mission.check_event_has_condition(ARow - 1, selected_condition) then
+  begin
+    EventGrid.Canvas.Brush.Color := clYellow;
+    EventGrid.Canvas.FillRect(Rect);
+    EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
+  end;
+end;
+
 procedure TEventDialog.ConditionGridMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -1433,6 +1454,11 @@ begin
     btnConditionPositionGotoMap.SetFocus;
     btnConditionPositionGotoMapClick(nil);
   end;
+end;
+
+procedure TEventDialog.cbMarkEventsHavingConditionClick(Sender: TObject);
+begin
+  EventGrid.Invalidate;
 end;
 
 end.
