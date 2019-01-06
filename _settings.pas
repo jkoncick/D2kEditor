@@ -3,7 +3,7 @@ unit _settings;
 interface
 
 uses
-  IniFiles;
+  IniFiles, Types, Forms;
 
 const cnt_recent_files = 9;
 
@@ -57,6 +57,7 @@ type
     procedure load_postcreate_editor_settings;
     procedure save_editor_settings;
     procedure get_file_paths_from_map_filename;
+    procedure load_window_position(ini: TMemIniFile; window: TForm; window_name: String);
     procedure update_recent_files(filename: String);
     procedure get_map_test_settings;
     procedure save_map_test_settings;
@@ -111,8 +112,7 @@ begin
   // Load MainWindow GUI setings
   if not PreserveGUISettings then
     exit;
-  MainWindow.Left := ini.ReadInteger('GUI','MainWindow.Left',MainWindow.Left);
-  MainWindow.Top := ini.ReadInteger('GUI','MainWindow.Top',MainWindow.Top);
+  load_window_position(ini, MainWindow, 'MainWindow');
   MainWindow.Width := ini.ReadInteger('GUI','MainWindow.Width',MainWindow.Width);
   MainWindow.Height := ini.ReadInteger('GUI','MainWindow.Height',MainWindow.Height);
   MainWindow.CbSelectStructures.Checked := ini.ReadBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
@@ -129,28 +129,21 @@ begin
     ini.Destroy;
     exit;
   end;
-  TilesetDialog.Left := ini.ReadInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
-  TilesetDialog.Top := ini.ReadInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
+  load_window_position(ini, TilesetDialog, 'TilesetDialog');
   TilesetDialog.Height := ini.ReadInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
-  BlockPresetDialog.Left := ini.ReadInteger('GUI','BlockPresetDialog.Left',BlockPresetDialog.Left);
-  BlockPresetDialog.Top := ini.ReadInteger('GUI','BlockPresetDialog.Top',BlockPresetDialog.Top);
-  SetDialog.Left := ini.ReadInteger('GUI','SetDialog.Left',SetDialog.Left);
-  SetDialog.Top := ini.ReadInteger('GUI','SetDialog.Top',SetDialog.Top);
-  TestMapDialog.Left := ini.ReadInteger('GUI','TestMapDialog.Left',TestMapDialog.Left);
-  TestMapDialog.Top := ini.ReadInteger('GUI','TestMapDialog.Top',TestMapDialog.Top);
-  MissionDialog.Left := ini.ReadInteger('GUI','MissionDialog.Left',MissionDialog.Left);
-  MissionDialog.Top := ini.ReadInteger('GUI','MissionDialog.Top',MissionDialog.Top);
+  load_window_position(ini, BlockPresetDialog, 'BlockPresetDialog');
+  load_window_position(ini, SetDialog, 'SetDialog');
+  load_window_position(ini, TestMapDialog, 'TestMapDialog');
+  load_window_position(ini, MissionDialog, 'MissionDialog');
   MissionDialog.Height := ini.ReadInteger('GUI','MissionDialog.Height',MissionDialog.Height);
   MissionDialog.StringValueList.Height := ini.ReadInteger('GUI','MissionDialog.StringValueList.Height',MissionDialog.StringValueList.Height);
-  EventDialog.Left := ini.ReadInteger('GUI','EventDialog.Left',EventDialog.Left);
-  EventDialog.Top := ini.ReadInteger('GUI','EventDialog.Top',EventDialog.Top);
+  load_window_position(ini, EventDialog, 'EventDialog');
   EventDialog.Width := ini.ReadInteger('GUI','EventDialog.Width',EventDialog.Width);
   EventDialog.Height := ini.ReadInteger('GUI','EventDialog.Height',EventDialog.Height);
   EventDialog.LowerPanel.Height := ini.ReadInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
   EventDialog.EventGrid.ColWidths[4] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
   EventDialog.EventGrid.ColWidths[5] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
-  MapStatsDialog.Left := ini.ReadInteger('GUI','MapStatsDialog.Left',MapStatsDialog.Left);
-  MapStatsDialog.Top := ini.ReadInteger('GUI','MapStatsDialog.Top',MapStatsDialog.Top);
+  load_window_position(ini, MapStatsDialog, 'MapStatsDialog');
   MapStatsDialog.Height := ini.ReadInteger('GUI','MapStatsDialog.Height',MapStatsDialog.Height);
   ini.Destroy;
 end;
@@ -243,6 +236,29 @@ begin
   begin
     TextUIBPath := GamePath + 'Data\UI_DATA\TEXT.UIB';
     StringTable.load_from_file(TextUIBPath);
+  end;
+end;
+
+procedure TSettings.load_window_position(ini: TMemIniFile; window: TForm; window_name: String);
+var
+  i, left, top: integer;
+  windowRect, dummyRect: TRect;
+  onAnyMonitor: boolean;
+begin
+  left := ini.ReadInteger('GUI', window_name + '.Left', window.Left);
+  top := ini.ReadInteger('GUI', window_name + '.Top', window.Top);
+  // Check if the window is shown on any monitor
+  windowRect := Rect(left, top, left + window.Width, top + window.Height);
+  onAnyMonitor := false;
+  for i := 0 to Screen.MonitorCount - 1 do
+  begin
+    onAnyMonitor := onAnyMonitor or IntersectRect(dummyRect, windowRect, Screen.Monitors[i].WorkareaRect);
+  end;
+  // Set window position according to last position saved in ini file
+  if (onAnyMonitor) then
+  begin
+    window.Left := left;
+    window.Top := top;
   end;
 end;
 
