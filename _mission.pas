@@ -349,8 +349,8 @@ var
 begin
   FillChar(mis_data, sizeof(mis_data), 0);
   // Write tileset name
-  Move(Tileset.tileset_info[Tileset.current_tileset].name[1], mis_data.tileset, 8);
-  Move(Tileset.tileset_info[Tileset.current_tileset].tileatr_name[1], mis_data.tileatr, 8);
+  Move(Tileset.tileset_name[1], mis_data.tileset, 8);
+  Move(Tileset.tileatr_name[1], mis_data.tileatr, 8);
   // Player properties and AI
   for i := 0 to 7 do
   begin

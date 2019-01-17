@@ -253,8 +253,9 @@ type
     // Clipboard variables
     clipboard_format: cardinal;
 
-    // Recent files
+    // Dynamic menu items
     recent_files_menuitems: array[1..cnt_recent_files] of TMenuItem;
+    tileset_menuitems: array of TMenuItem;
 
     // Rendering procedures
     procedure resize_map_canvas;
@@ -387,6 +388,18 @@ begin
   minimap_buffer.Height := MiniMap.Height;
   // Initialize tilesets
   Tileset.init;
+  SetLength(tileset_menuitems, Tileset.cnt_tilesets);
+  for i := 0 to Tileset.cnt_tilesets -1 do
+  begin
+    tileset_menuitems[i] := TMenuItem.Create(Selecttileset1);
+    tileset_menuitems[i].Caption := Tileset.tileset_list[i];
+    tileset_menuitems[i].RadioItem := true;
+    tileset_menuitems[i].GroupIndex := 1;
+    tileset_menuitems[i].Tag := i;
+    tileset_menuitems[i].OnClick := SelectTileset;
+    MainWindow.Selecttileset1.Add(tileset_menuitems[i]);
+  end;
+  Tileset.change_tileset(Settings.DefaultTileset);
   // Initialize Structures
   for i := 0 to Structures.cnt_misc_objects - 1 do
     MiscObjList.Items.Add(Structures.misc_object_info[i].name);
