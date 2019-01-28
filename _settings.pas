@@ -56,7 +56,7 @@ type
     procedure load_precreate_editor_settings;
     procedure load_postcreate_editor_settings;
     procedure save_editor_settings;
-    procedure get_file_paths_from_map_filename;
+    procedure determine_game_paths_from_path(path: String);
     procedure load_window_position(ini: TMemIniFile; window: TForm; window_name: String);
     procedure update_recent_files(filename: String);
     procedure get_map_test_settings;
@@ -100,10 +100,11 @@ begin
   AssignMisFileToNewMap := ini.ReadBool('Defaults', 'AssignMisFileToNewMap', true);
   PreplaceWormSpawner := ini.ReadBool('Defaults', 'PreplaceWormSpawner', false);
   // Load file paths
-  GamePath := ini.ReadString('Paths','GamePath', current_dir + '..\');
-  GameExecutable := ini.ReadString('Paths','GameExecutable', GamePath + 'dune2000.exe');
-  MissionsPath := ini.ReadString('Paths','MissionsPath', GamePath + 'Missions\');
-  TextUIBPath := ini.ReadString('Paths','TextUIBPath', GamePath + 'Data\UI_DATA\TEXT.UIB');
+  GamePath := ini.ReadString('Paths','GamePath','');
+  GameExecutable := ini.ReadString('Paths','GameExecutable','');
+  MissionsPath := ini.ReadString('Paths','MissionsPath','');
+  TextUIBPath := ini.ReadString('Paths','TextUIBPath','');
+  determine_game_paths_from_path(current_dir);
   // Load recent files
   for i := 1 to cnt_recent_files do
   begin
@@ -218,23 +219,41 @@ begin
   ini.Destroy;
 end;
 
-procedure TSettings.get_file_paths_from_map_filename;
+procedure TSettings.determine_game_paths_from_path(path: String);
+var
+  temp_path: String;
 begin
   // Get Game path and game executable from map filename
   if (GameExecutable = '') or (not FileExists(GameExecutable)) then
   begin
-    GamePath := ExtractFilePath(ExcludeTrailingPathDelimiter(ExtractFilePath(Map.filename)));
-    GameExecutable := GamePath + 'dune2000.exe';
+    temp_path := path;
+    repeat
+      temp_path := ExcludeTrailingPathDelimiter(ExtractFilePath(temp_path));
+      if FileExists(temp_path + '\dune2000.exe') then
+      begin
+        GamePath := temp_path;
+        GameExecutable := temp_path + '\dune2000.exe';
+        break;
+      end;
+    until
+      Length(temp_path) <= 2;
   end;
+  // Attempt to find game path failed, end now
+  if (GameExecutable = '') or (not FileExists(GameExecutable)) then
+    exit;
   // Get Missions path
   if (MissionsPath = '') or (not DirectoryExists(MissionsPath)) then
   begin
-    MissionsPath := GamePath + 'Missions\';
+    temp_path := GamePath + '\Data\Missions';
+    if DirectoryExists(temp_path) then
+      MissionsPath := temp_path
+    else
+      MissionsPath := GamePath + '\Missions';
   end;
   // Get TEXT.UIB filename and load it
   if (TextUIBPath = '') or (not FileExists(TextUIBPath)) then
   begin
-    TextUIBPath := GamePath + 'Data\UI_DATA\TEXT.UIB';
+    TextUIBPath := GamePath + '\Data\UI_DATA\TEXT.UIB';
     StringTable.load_from_file(TextUIBPath);
   end;
 end;
@@ -294,7 +313,7 @@ var
   house, mission: char;
   house_num, mission_num: integer;
 begin
-  ini := TIniFile.Create(GamePath + 'spawn.ini');
+  ini := TIniFile.Create(GamePath + '\spawn.ini');
   // Try to detect MissionNumber and MySideID from map file name
   if Map.filename <> '' then
   begin
@@ -330,7 +349,7 @@ var
   ini: TIniFile;
 begin
   // Write settings to ini file
-  ini := TIniFile.Create(GamePath + 'spawn.ini');
+  ini := TIniFile.Create(GamePath + '\spawn.ini');
   ini.WriteString('Settings', 'Scenario', 'TESTMAP');
   ini.WriteInteger('Settings', 'MySideID', MySideID);
   ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);

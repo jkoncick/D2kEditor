@@ -57,19 +57,31 @@ var
 
 implementation
 
-uses SysUtils, Math, main, _mission, _tileset, _structures;
+uses SysUtils, Math, Dialogs, main, _mission, _tileset, _structures;
 
 procedure TRenderer.init;
+var
+  tmp_filename: String;
 begin
   // Load graphics from files
   graphics_structures := TBitmap.Create;
   graphics_structures_mask := TBitmap.Create;
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
-  graphics_structures.LoadFromFile(current_dir + 'graphics/structures.bmp');
-  load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + 'graphics/structures_mask.bmp');
-  graphics_misc_objects.LoadFromFile(current_dir + 'graphics/misc_objects.bmp');
-  load_or_create_mask(graphics_misc_objects, graphics_misc_objects_mask, current_dir + 'graphics/misc_objects_mask.bmp');
+  tmp_filename := current_dir + 'graphics/structures.bmp';
+  if FileExists(tmp_filename) then
+  begin
+    graphics_structures.LoadFromFile(tmp_filename);
+    load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + 'graphics/structures_mask.bmp');
+  end else
+    ShowMessage('Could not find graphics file ' + tmp_filename + '.');
+  tmp_filename := current_dir + 'graphics/misc_objects.bmp';
+  if FileExists(tmp_filename) then
+  begin
+    graphics_misc_objects.LoadFromFile(tmp_filename);
+    load_or_create_mask(graphics_misc_objects, graphics_misc_objects_mask, current_dir + 'graphics/misc_objects_mask.bmp');
+  end else
+    ShowMessage('Could not find graphics file ' + tmp_filename + '.');
   // Init backup image
   bkup_bitmap := TBitmap.Create;
   bkup_bitmap.Width := 128;

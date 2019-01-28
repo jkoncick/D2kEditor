@@ -83,7 +83,6 @@ object MainWindow: TMainWindow
         Width = 80
       end
       item
-        Text = 'BLOXBGBS'
         Width = 70
       end
       item
@@ -410,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
       end
@@ -515,6 +514,13 @@ object MainWindow: TMainWindow
       object Loadtilesetattributes1: TMenuItem
         Caption = 'Load attributes'
         OnClick = Loadtilesetattributes1Click
+      end
+      object N6: TMenuItem
+        Caption = '-'
+      end
+      object Showstatus1: TMenuItem
+        Caption = 'Show status'
+        OnClick = Showstatus1Click
       end
     end
     object Settings1: TMenuItem
@@ -625,7 +631,10 @@ object MainWindow: TMainWindow
   end
   object TilesetOpenDialog: TOpenDialog
     DefaultExt = 'bmp'
-    Filter = 'Dune 2000 Tileset image (*.bmp)|*.bmp'
+    Filter = 
+      'Supported formats (*.bmp,R16,R8)|*.R16;*.R8;*.bmp|Dune2000 R16 t' +
+      'ileset image (*.R16)|*.R16|Dune2000 R8 tileset image (*.R8)|*.R8' +
+      '|BMP image (*.bmp)|*.bmp'
     InitialDir = '.\tilesets'
     Title = 'Load Tileset image'
     Left = 96

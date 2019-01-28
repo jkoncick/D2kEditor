@@ -127,6 +127,8 @@ type
     sbMarkBuildableTiles: TSpeedButton;
     sbShowUnknownSpecials: TSpeedButton;
     Recentfiles1: TMenuItem;
+    N6: TMenuItem;
+    Showstatus1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -159,6 +161,7 @@ type
     procedure Selectnext1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
     procedure Loadtilesetattributes1Click(Sender: TObject);
+    procedure Showstatus1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure Useallocationindexes1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
@@ -380,7 +383,7 @@ begin
   Mission.init;
   // Load string table
   StringTable.load_from_file(Settings.TextUIBPath);
-  SoundStringTable.load_from_file(Settings.GamePath + 'Data\UI_DATA\samples.uib');
+  SoundStringTable.load_from_file(Settings.GamePath + '\Data\UI_DATA\samples.uib');
   // Load and initialize graphics
   Renderer.init;
   minimap_buffer := TBitmap.Create;
@@ -399,7 +402,6 @@ begin
     tileset_menuitems[i].OnClick := SelectTileset;
     MainWindow.Selecttileset1.Add(tileset_menuitems[i]);
   end;
-  Tileset.change_tileset(Settings.DefaultTileset);
   // Initialize Structures
   for i := 0 to Structures.cnt_misc_objects - 1 do
     MiscObjList.Items.Add(Structures.misc_object_info[i].name);
@@ -687,7 +689,7 @@ begin
       if Mission.mis_assigned then
         Mission.mis_filename := Mission.get_mis_filename(Map.filename);
       StatusBar.Panels[3].Text := MapSaveDialog.FileName;
-      Settings.get_file_paths_from_map_filename;
+      Settings.determine_game_paths_from_path(Map.filename);
       set_window_titles(ChangeFileExt(ExtractFileName(Map.filename),''));
     end;
     save_map(MapSaveDialog.FileName);
@@ -815,6 +817,11 @@ begin
     render_minimap;
     render_map;
   end;
+end;
+
+procedure TMainWindow.Showstatus1Click(Sender: TObject);
+begin
+  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename);
 end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
@@ -1520,7 +1527,14 @@ begin
 end;
 
 procedure TMainWindow.render_tileset;
+var
+  i: integer;
 begin
+  // Draw glyphs in terrain editing GUI
+  draw_paint_tile_select_glyph(-1, Tileset.thin_spice_tile, Tileset.tileimage.Canvas);
+  draw_paint_tile_select_glyph(-2, Tileset.thick_spice_tile, Tileset.tileimage.Canvas);
+  for i := 0 to cnt_paint_tile_groups-1 do
+    draw_paint_tile_select_glyph(i, Tileset.paint_tile_groups[i].tile_index, Tileset.tileimage.Canvas);
   draw_cursor_image;
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
     TilesetDialog.DrawTileset(nil);
@@ -1545,7 +1559,7 @@ begin
   StatusBar.Panels[3].Text := filename;
   StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
   // Initialize settings
-  Settings.get_file_paths_from_map_filename;
+  Settings.determine_game_paths_from_path(Map.filename);
   Settings.get_map_test_settings;
   // Load mis file
   tmp_mis_filename := Mission.get_mis_filename(Map.filename);
@@ -1560,7 +1574,12 @@ begin
     MissionDialog.fill_data;
     EventDialog.update_contents;
   end else
+  begin
     unload_mission;
+    // No tileset specified for map, if mis file not present - set to default one
+    if (Tileset.current_tileset = -1) then
+      Tileset.change_tileset(Settings.DefaultTileset);
+  end;
   set_window_titles(ChangeFileExt(ExtractFileName(Map.filename), ''));
   if MapStatsDialog.Visible then
     MapStatsDialog.update_stats;
@@ -1664,10 +1683,10 @@ begin
   Settings.save_map_test_settings;
   temp_map_name := Missiondialog.edMapName.Text;
   Missiondialog.edMapName.Text := 'TESTMAP';
-  save_map(Settings.MissionsPath + 'TESTMAP.MAP');
+  save_map(Settings.MissionsPath + '\TESTMAP.MAP');
   Missiondialog.edMapName.Text := temp_map_name;
   if not MissionDialog.cbUseINI.Checked then
-    DeleteFile(Settings.MissionsPath + 'TESTMAP.INI');
+    DeleteFile(Settings.MissionsPath + '\TESTMAP.INI');
   ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), PChar('-SPAWN ' + Settings.TestMapParameters), PChar(Settings.GamePath), SW_SHOWNORMAL);
 end;
 
@@ -1913,6 +1932,8 @@ end;
 
 procedure TMainWindow.new_map(new_width, new_height: integer);
 begin
+  if (Tileset.current_tileset = -1) then
+      Tileset.change_tileset(Settings.DefaultTileset);
   Map.new_map(new_width, new_height);
   StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
   StatusBar.Panels[3].Text := 'Map not saved';

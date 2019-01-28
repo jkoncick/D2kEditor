@@ -347,7 +347,7 @@ begin
   cbSoundName.Items := StringList;
   // Initialize music names
   StringList.Clear;
-  if FindFirst(Settings.GamePath + 'Data\Music\*.AUD', 0, SR) = 0 then
+  if FindFirst(Settings.GamePath + '\Data\Music\*.AUD', 0, SR) = 0 then
   begin
     repeat
       StringList.Add(SR.Name);
