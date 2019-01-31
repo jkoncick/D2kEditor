@@ -31,8 +31,10 @@ const r8_tile_header_size = 29;
 const r8_tile_data_size = 32 * 32;
 
 type
-  TTileR16DataBuffer = array[0..(32*32)] of word;
-  TTileR8DataBuffer = array[0..(32*32)] of byte;
+  WordArr = array[0..0] of word;
+  PWordArr = ^WordArr;
+  ByteArr = array[0..0] of byte;
+  PByteArr = ^ByteArr;
 
 // Tileset attributes (game)
 const taVehiclesPass = $2000;
@@ -118,8 +120,6 @@ type
     tileatr_filename: String;
 
     // Auxiliary variables for loading tileset image
-    r16_tileset_data_buffer: array[0..(tileimage_width * tileimage_height - 1)] of word;
-    r8_tileset_data_buffer: array[0..(tileimage_width * tileimage_height - 1)] of byte;
     palette_loaded: Boolean;
     palette: PLogPalette;
 
@@ -180,7 +180,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, main, tileset_dialog, block_preset_dialog, _mission, _settings, IniFiles, Classes, Dialogs;
+uses Forms, SysUtils, main, tileset_dialog, block_preset_dialog, _mission, _settings, IniFiles, Classes;
 
 procedure TTileset.init;
 var
@@ -236,7 +236,7 @@ begin
   else if FileExists(fn_tileatr_game) then
     load_attributes(fn_tileatr_game)
   else
-    ShowMessage('Could not find tileset attributes file ' + tileatr_name + '.');
+    Application.MessageBox(PChar('Could not find tileset attributes file ' + tileatr_name + '.BIN'), 'Error loading tileset attributes', MB_OK or MB_ICONWARNING);
   // Load tileset image
   load_tileimage;
 end;
@@ -253,7 +253,7 @@ begin
       exit;
     end;
   end;
-  ShowMessage('Mission has unknown tileset: ' + name + '.');
+  Application.MessageBox(PChar('Mission has unknown tileset: ' + name), 'Error loading tileset', MB_OK or MB_ICONWARNING);
 end;
 
 procedure TTileset.next_tileset;
@@ -308,7 +308,7 @@ begin
     tileimage.LoadFromFile(fn_bmp_editor);
     tileimage_filename := fn_bmp_editor;
   end else
-    ShowMessage('Could not find image file for tileset ' + tileset_name + '.');
+    Application.MessageBox(PChar('Could not find image file for tileset ' + tileset_name), 'Error loading tileset', MB_OK or MB_ICONWARNING);
   // Redraw terrain editing GUI and dialogs
   MainWindow.render_tileset;
 end;
@@ -317,7 +317,8 @@ procedure TTileset.load_r16_image(filename: String);
 var
   f: file of byte;
   r16_file_buffer: array of byte;
-  r16_tile_data_buffer: ^TTileR16DataBuffer;
+  r16_tile_data_buffer: PWordArr;
+  r16_tileset_data_buffer: PWordArr;
   i, x, y, offset: integer;
 begin
   // Load file into buffer
@@ -326,7 +327,7 @@ begin
   Reset(f);
   if (filesize(f) <> r16_file_size) then
   begin
-    ShowMessage('Error loading tileset from ' + filename + ':'#13'File does not have expected size (' + inttostr(r16_file_size) + ' bytes)');
+    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r16_file_size) + ' bytes)'), 'Error loading tileset', MB_OK or MB_ICONERROR);
     Close(f);
     exit;
   end;
@@ -334,6 +335,10 @@ begin
   BlockRead(f, r16_file_buffer[0], r16_file_size);
   Close(f);
   // Arrange image data into tileset image
+  tileimage.Width := tileimage_width;
+  tileimage.Height := tileimage_height;
+  tileimage.PixelFormat := pf15bit;
+  r16_tileset_data_buffer := tileimage.ScanLine[tileimage_height-1];
   for i := 0 to cnt_tileset_tiles-1 do
   begin
     offset := i * (r16_tile_header_size + r16_tile_data_size) + r16_tile_header_size;
@@ -341,18 +346,8 @@ begin
     for y := 0 to 31 do
       for x := 0 to 31 do
       begin
-        r16_tileset_data_buffer[x + ((i mod 20) * 32) + ((y + ((i div 20) * 32)) * tileimage_width)] := r16_tile_data_buffer[x + y*32];
+        r16_tileset_data_buffer[x + ((i mod 20) * 32) + ((tileimage_height - (y + ((i div 20) * 32)) - 1) * tileimage_width)] := r16_tile_data_buffer[x + y*32];
       end;
-  end;
-  // Set data to the bitmap
-  tileimage.Width := tileimage_width;
-  tileimage.Height := tileimage_height;
-  tileimage.PixelFormat := pf15bit;
-  i := SetBitmapbits(tileimage.Handle, tileimage_width * tileimage_height * 2, Addr(r16_tileset_data_buffer[0]));
-  if (i = 0) then
-  begin
-    ShowMessage('Error loading tileset from ' + filename + ':'#13'SetBitmapbits returned zero (Addr ' + inttohex(Integer(Addr(r16_tileset_data_buffer[0])),8) + ')');
-    exit;
   end;
   tileimage.PixelFormat := pf32bit;
   tileimage_filename := filename;
@@ -362,7 +357,8 @@ procedure TTileset.load_r8_image(filename: String);
 var
   f: file of byte;
   r8_file_buffer: array of byte;
-  r8_tile_data_buffer: ^TTileR8DataBuffer;
+  r8_tile_data_buffer: PByteArr;
+  r8_tileset_data_buffer: PByteArr;
   i, x, y, offset: integer;
 begin
   // Load file into buffer
@@ -371,7 +367,7 @@ begin
   Reset(f);
   if (filesize(f) <> r8_file_size) then
   begin
-    ShowMessage('Error loading tileset from ' + filename + ':'#13'File does not have expected size (' + inttostr(r8_file_size) + ' bytes)');
+    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r8_file_size) + ' bytes)'), 'Error loading tileset', MB_OK or MB_ICONERROR);
     Close(f);
     exit;
   end;
@@ -379,6 +375,13 @@ begin
   BlockRead(f, r8_file_buffer[0], r8_file_size);
   Close(f);
   // Arrange image data into tileset image
+  tileimage.Width := tileimage_width;
+  tileimage.Height := tileimage_height;
+  tileimage.PixelFormat := pf8bit;
+  load_palette;
+  if palette_loaded then
+    tileimage.Palette := CreatePalette(palette^);
+  r8_tileset_data_buffer := tileimage.ScanLine[tileimage_height-1];
   for i := 0 to cnt_tileset_tiles-1 do
   begin
     offset := i * (r8_tile_header_size + r8_tile_data_size) + r8_tile_header_size;
@@ -386,21 +389,8 @@ begin
     for y := 0 to 31 do
       for x := 0 to 31 do
       begin
-        r8_tileset_data_buffer[x + ((i mod 20) * 32) + ((y + ((i div 20) * 32)) * tileimage_width)] := r8_tile_data_buffer[x + y*32];
+        r8_tileset_data_buffer[x + ((i mod 20) * 32) + ((tileimage_height - (y + ((i div 20) * 32)) - 1) * tileimage_width)] := r8_tile_data_buffer[x + y*32];
       end;
-  end;
-  // Set data to the bitmap
-  tileimage.Width := tileimage_width;
-  tileimage.Height := tileimage_height;
-  tileimage.PixelFormat := pf8bit;
-  load_palette;
-  if palette_loaded then
-    tileimage.Palette := CreatePalette(palette^);
-  i := SetBitmapbits(tileimage.Handle, tileimage_width * tileimage_height, Addr(r8_tileset_data_buffer[0]));
-  if (i = 0) then
-  begin
-    ShowMessage('Error loading tileset from ' + filename + ':'#13'SetBitmapbits returned zero (Addr ' + inttohex(Integer(Addr(r8_tileset_data_buffer[0])),8) + ')');
-    exit;
   end;
   tileimage.PixelFormat := pf32bit;
   tileimage_filename := filename;
@@ -418,7 +408,7 @@ begin
   filename := Settings.GamePath+'/Data/bin/PALETTE.BIN';
   if not FileExists(filename) then
   begin
-    ShowMessage('Error loading palette. Could not find file ' + filename);
+    Application.MessageBox(PChar('Error loading palette. Could not find file ' + filename), 'Error loading tileset', MB_OK or MB_ICONERROR);
     exit;
   end;
   AssignFile(f, filename);

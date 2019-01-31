@@ -2,7 +2,7 @@ unit _renderer;
 
 interface
 
-uses Graphics, Types, _map;
+uses Windows, Graphics, Types, _map;
 
 type EditingMarkerType = (emBuilding, emBuildingNotOnBuildable, emSingleObject, emSelectionArea, emPaintArea);
 
@@ -57,7 +57,7 @@ var
 
 implementation
 
-uses SysUtils, Math, Dialogs, main, _mission, _tileset, _structures;
+uses SysUtils, Math, Forms, main, _mission, _tileset, _structures, Classes;
 
 procedure TRenderer.init;
 var
@@ -74,14 +74,14 @@ begin
     graphics_structures.LoadFromFile(tmp_filename);
     load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + 'graphics/structures_mask.bmp');
   end else
-    ShowMessage('Could not find graphics file ' + tmp_filename + '.');
+    Application.MessageBox(PChar('Could not find graphics file ' + tmp_filename), 'Error loading graphics', MB_OK or MB_ICONWARNING);
   tmp_filename := current_dir + 'graphics/misc_objects.bmp';
   if FileExists(tmp_filename) then
   begin
     graphics_misc_objects.LoadFromFile(tmp_filename);
     load_or_create_mask(graphics_misc_objects, graphics_misc_objects_mask, current_dir + 'graphics/misc_objects_mask.bmp');
   end else
-    ShowMessage('Could not find graphics file ' + tmp_filename + '.');
+    Application.MessageBox(PChar('Could not find graphics file ' + tmp_filename), 'Error loading graphics', MB_OK or MB_ICONWARNING);
   // Init backup image
   bkup_bitmap := TBitmap.Create;
   bkup_bitmap.Width := 128;
