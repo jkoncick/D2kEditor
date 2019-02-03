@@ -1,22 +1,30 @@
 D2kEditor changelog
 
-Version 1.3 (released 2018-12-02)
+Version 1.3 (released 2019-02-03)
 ---------------------------------
 Fixed: Size preset buttons in Tileset window were off by one position
 Added: Find object feature
 Changed: Some options (i.e. Show grid) are now toggle buttons below minimap instead of Settings menu items
 Removed: Draw concrete option (now is always on)
-Added: Play Sound event: now provides dropdown list of sound names (loaded from samples.uib)
-Added: Play Music event: now provides dropdown list of music names (list of existing .AUD files in Data\Music folder)
+Added: Play Sound event: now provides dropdown list of sound names (loaded from "samples.uib")
+Added: Play Music event: now provides dropdown list of music names (list of existing .AUD files in "Data\Music" folder)
 Fixed: Set Attack Building Rate event: value is named "Arrack rate" instead of "Unknown" 
 Fixed: Casualties condition: "Flags?" value renamed to "Proportion" and changed to floating-point number type
-Added: When temporary TESTMAP.MAP file is saved, the map name in ini file is renamed to "TESTMAP" 
+Added: When temporary "TESTMAP.MAP" file is saved, the map name in ini file is renamed to "TESTMAP" 
        in order to avoid duplicate entry in mission launcher
 Added: Open recent files feature
 Fixed: Editing marker (i.e. building marker, current block) not showing when Mission settings or Events/Conditions 
        window is open and is on background or minimized
 Added: "MissionsPath" setting in .ini file. It can be changed in case game loads maps/mission files from different location
 Fixed: The UI components now should not be messed up on systems where scaling is set to different value than 100%
+Added: Highlighting events having selected condition feature
+Fixed: Program now checks, if window would appear off-screen (i.e. previously opened on second monitor which is now
+       unplugged) and resets its position
+Changed: Program now automatically loads all all .ini files placed into "tilesets" folder, instead of loading tileset list
+         from "config\tilesets.ini". All tileset .ini files must now contain name of attributes file.
+Added: Loading tileset images directly from game's internal .R8 and .r16 files
+Removed: Editor is no longer distributed with tileset .bmp files
+Fixed: Improved auto-detection of game folder, detection of missions stored under "Data\Missions" folder
 
 
 Version 1.2 (released 2015-11-16)

@@ -104,7 +104,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v1.3 pre2'
+        Text = 'v1.3 pre3'
         Width = 0
       end>
   end
