@@ -88,8 +88,8 @@ type
 type
   TEventMarker = record
     emtype: EventMarkerType;
-    side: word;
-    index: word;
+    side: byte;
+    index: byte;
     moved: boolean;
   end;
 
@@ -233,14 +233,15 @@ procedure TMission.init;
 var
   ai_file: file of byte;
 begin
+  unit_names := TStringList.Create;
+  building_names := TStringList.Create;
   // Load default AI
   AssignFile(ai_file, current_dir + 'config/default_ai.misai');
   Reset(ai_file);
   BlockRead(ai_file, default_ai[1], Length(default_ai)-1);
   CloseFile(ai_file);
-  unit_names := TStringList.Create;
+  // Load units and building names
   unit_names.LoadFromFile(current_dir + 'config/mis_units.txt');
-  building_names := TStringList.Create;
   building_names.LoadFromFile(current_dir + 'config/mis_buildings.txt');
   SetLength(tmp_unit_count, unit_names.Count);
 end;

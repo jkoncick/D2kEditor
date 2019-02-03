@@ -20,9 +20,9 @@ type
 
 type
   TUndoEntry = record
-    x, y: word;
-    data: TMapTile;
+    x, y: byte;
     is_first: boolean;
+    data: TMapTile;
   end;
 
 type
