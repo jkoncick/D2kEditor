@@ -123,9 +123,23 @@ object MissionDialog: TMissionDialog
       object lblTimeLimitHelp: TLabel
         Left = 176
         Top = 260
-        Width = 239
+        Width = 197
         Height = 13
-        Caption = '(-1 = no limit, 25 = one second, 1500 = one minute)'
+        Caption = '(-1 = no limit, 25 = second, 1500 = minute)'
+      end
+      object lblTilesetName: TLabel
+        Left = 408
+        Top = 260
+        Width = 63
+        Height = 13
+        Caption = 'Tileset name:'
+      end
+      object lblTileatrName: TLabel
+        Left = 568
+        Top = 260
+        Width = 47
+        Height = 13
+        Caption = 'Attributes:'
       end
       object seTechLevelAll: TSpinEdit
         Left = 72
@@ -252,6 +266,24 @@ object MissionDialog: TMissionDialog
         Height = 21
         ItemHeight = 13
         TabOrder = 11
+      end
+      object edTilesetName: TEdit
+        Left = 480
+        Top = 256
+        Width = 80
+        Height = 21
+        MaxLength = 199
+        TabOrder = 14
+        OnChange = edTilesetNameChange
+      end
+      object edTileatrName: TEdit
+        Left = 624
+        Top = 256
+        Width = 80
+        Height = 21
+        MaxLength = 199
+        TabOrder = 15
+        OnChange = edTileatrNameChange
       end
     end
     object RulesAndStringsPanel: TPanel

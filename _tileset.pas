@@ -180,7 +180,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, main, tileset_dialog, block_preset_dialog, _mission, _settings, IniFiles, Classes;
+uses Forms, SysUtils, main, tileset_dialog, block_preset_dialog, _settings, IniFiles, Classes;
 
 procedure TTileset.init;
 var
@@ -225,9 +225,6 @@ begin
   MainWindow.StatusBar.Panels[1].Text := tileset_name;
   // Load tileset configuration
   load_config(current_dir+'/tilesets/'+tileset_name+'.ini');
-  // Set tileset in .mis file
-  Move(tileset_name[1], Mission.mis_data.tileset, 8);
-  Move(tileatr_name[1], Mission.mis_data.tileatr, 8);
   // Load tileset attributes
   fn_tileatr_editor := current_dir+'/tilesets/'+tileatr_name+'.BIN';
   fn_tileatr_game := Settings.GamePath+'/Data/bin/'+tileatr_name+'.BIN';
@@ -247,13 +244,17 @@ var
 begin
   for i:= 0 to cnt_tilesets-1 do
   begin
-    if name = tileset_list[i] then
+    // Case-insensitive string compare
+    if AnsiCompareText(name, tileset_list[i]) = 0 then
     begin
-      Tileset.change_tileset(i);
+      change_tileset(i);
       exit;
     end;
   end;
   Application.MessageBox(PChar('Mission has unknown tileset: ' + name), 'Error loading tileset', MB_OK or MB_ICONWARNING);
+  // Failsafe to default tileset if tileset is unknown
+  if current_tileset = -1 then
+    change_tileset(Settings.DefaultTileset);
 end;
 
 procedure TTileset.next_tileset;

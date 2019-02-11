@@ -785,6 +785,7 @@ end;
 procedure TMainWindow.SelectTileset(Sender: TObject);
 begin
   Tileset.change_tileset((sender as TMenuItem).Tag);
+  MissionDialog.tileset_changed;
   // Re-render everything
   render_minimap;
   render_map;
@@ -793,6 +794,7 @@ end;
 procedure TMainWindow.Selectnext1Click(Sender: TObject);
 begin
   Tileset.next_tileset;
+  MissionDialog.tileset_changed;
   // Re-render everything
   render_minimap;
   render_map;

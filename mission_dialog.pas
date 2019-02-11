@@ -75,6 +75,10 @@ type
     lblTimeLimitHelp: TLabel;
     cbDiffMode: TCheckBox;
     cbMapMusic: TComboBox;
+    edTilesetName: TEdit;
+    edTileatrName: TEdit;
+    lblTilesetName: TLabel;
+    lblTileatrName: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -87,6 +91,8 @@ type
     procedure alloc_index_change(Sender: TObject);
     procedure allegiance_btn_click(Sender: TObject);
     procedure time_limit_change(Sender: TObject);
+    procedure edTilesetNameChange(Sender: TObject);
+    procedure edTileatrNameChange(Sender: TObject);
     procedure AITabControlChange(Sender: TObject);
     procedure AIValueListStringsChange(Sender: TObject);
     procedure cbUseINIClick(Sender: TObject);
@@ -111,6 +117,7 @@ type
     ai_clipboard_format: cardinal;
   public
     procedure fill_data;
+    procedure tileset_changed;
 
     function get_integer_value(source: array of byte; pos, bytes: integer): integer;
     function get_float_value(source: array of byte; pos: integer): single;
@@ -128,7 +135,7 @@ var
 implementation
 
 uses
-  _stringtable, _settings, event_dialog, main;
+  _stringtable, _settings, _tileset, event_dialog, main;
 
 {$R *.dfm}
 
@@ -259,6 +266,8 @@ begin
     end;
   end;
   edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
+  edTilesetName.Text := Mission.mis_data.tileset;
+  edTileatrName.Text := Mission.mis_data.tileatr;
   fill_ai_values;
   cbUseINI.Tag := 1;
   if FileExists(get_ini_filename(Map.filename)) then
@@ -271,6 +280,12 @@ begin
     cbUseINI.Checked := false;
   end;
   cbUseINI.Tag := 0;
+end;
+
+procedure TMissionDialog.tileset_changed;
+begin
+  edTilesetName.Text := Tileset.tileset_name;
+  edTileatrName.Text := Tileset.tileatr_name;
 end;
 
 function TMissionDialog.get_integer_value(source: array of byte; pos, bytes: integer): integer;
@@ -537,6 +552,18 @@ end;
 procedure TMissionDialog.time_limit_change(Sender: TObject);
 begin
   Mission.mis_data.time_limit := StrToIntDef(edTimeLimit.Text, -1);
+end;
+
+procedure TMissionDialog.edTilesetNameChange(Sender: TObject);
+begin
+  FillChar(Mission.mis_data.tileset, Length(Mission.mis_data.tileset), 0);
+  Move(edTilesetName.Text[1], Mission.mis_data.tileset, Length(edTilesetName.Text));
+end;
+
+procedure TMissionDialog.edTileatrNameChange(Sender: TObject);
+begin
+  FillChar(Mission.mis_data.tileatr, Length(Mission.mis_data.tileatr), 0);
+  Move(edTileatrName.Text[1], Mission.mis_data.tileatr, Length(edTileatrName.Text));
 end;
 
 procedure TMissionDialog.AITabControlChange(Sender: TObject);
