@@ -150,6 +150,8 @@ type
     lblSound: TLabel;
     cbSoundName: TComboBox;
     cbMarkEventsHavingCondition: TCheckBox;
+    MoveUp2: TMenuItem;
+    MoveDown2: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -220,6 +222,8 @@ type
     procedure ConditionGridKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure cbMarkEventsHavingConditionClick(Sender: TObject);
+    procedure MoveUp2Click(Sender: TObject);
+    procedure MoveDown2Click(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -465,6 +469,9 @@ begin
     ConditionGrid.Rows[i].Clear;
     ConditionGrid.Cells[0,i] := inttostr(i-1);
   end;
+  // All event grid must be redrawn
+  if cbMarkEventsHavingCondition.Checked then
+    EventGrid.Invalidate;
 end;
 
 procedure TEventDialog.select_event(index: integer);
@@ -1272,6 +1279,24 @@ begin
     exit;
   Mission.delete_condition(Mission.mis_data.num_conditions - 1);
   update_contents;
+end;
+
+procedure TEventDialog.MoveUp2Click(Sender: TObject);
+begin
+  if selected_condition = 0 then
+    exit;
+  Mission.swap_conditions(selected_condition, selected_condition - 1);
+  fill_grids;
+  ConditionGrid.Row := selected_condition;
+end;
+
+procedure TEventDialog.MoveDown2Click(Sender: TObject);
+begin
+  if selected_condition >= Mission.mis_data.num_conditions - 1 then
+    exit;
+  Mission.swap_conditions(selected_condition, selected_condition + 1);
+  fill_grids;
+  ConditionGrid.Row := selected_condition + 2;
 end;
 
 procedure TEventDialog.seFlagNumberChange(Sender: TObject);

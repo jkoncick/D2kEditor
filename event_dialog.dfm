@@ -1195,7 +1195,7 @@ object EventDialog: TEventDialog
       OnClick = Addevent1Click
     end
     object Insertevent1: TMenuItem
-      Caption = 'Insert event'
+      Caption = 'Insert before'
       ShortCut = 16429
       OnClick = Insertevent1Click
     end
@@ -1272,6 +1272,16 @@ object EventDialog: TEventDialog
       Caption = 'Delete last condition'
       ShortCut = 16430
       OnClick = Deletelastcondition1Click
+    end
+    object MoveUp2: TMenuItem
+      Caption = 'Move Up'
+      ShortCut = 33
+      OnClick = MoveUp2Click
+    end
+    object MoveDown2: TMenuItem
+      Caption = 'Move Down'
+      ShortCut = 34
+      OnClick = MoveDown2Click
     end
   end
 end

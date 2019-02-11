@@ -211,6 +211,7 @@ type
     procedure delete_event(deleted_index: integer);
     procedure delete_condition(deleted_index: integer);
     function condition_is_used(index: integer): boolean;
+    procedure swap_conditions(c1, c2: integer);
     // Auto-creating common events
     function get_or_create_condition(condition_type: ConditionType; player: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
     procedure create_unit_spawn(player: integer; num_events: integer);
@@ -667,6 +668,50 @@ begin
         result := true;
         exit;
       end;
+  end;
+end;
+
+procedure TMission.swap_conditions(c1, c2: integer);
+var
+  condition_used_position: boolean;
+  i, j: integer;
+  tmp_condition: TCondition;
+  event: ^TEvent;
+begin
+  if (c1 >= mis_data.num_conditions) or (c2 >= mis_data.num_conditions) then
+    exit;
+  condition_used_position := (mis_data.conditions[c1].condition_type = Byte(ctTileRevealed)) or (mis_data.conditions[c2].condition_type = Byte(ctTileRevealed));
+  // Swap conditions
+  tmp_condition := mis_data.conditions[c1];
+  mis_data.conditions[c1] := mis_data.conditions[c2];
+  mis_data.conditions[c2] := tmp_condition;
+  // Go through all events
+  for i := 0 to mis_data.num_events - 1 do
+  begin
+    event := Addr(mis_data.events[i]);
+    // Go through all event's conditions
+    for j := 0 to event.num_conditions - 1 do
+    begin
+      // Decrease condition index if greater than deleted condition
+      if event.condition_index[j] = c1 then
+        event.condition_index[j] := c2
+      else if event.condition_index[j] = c2 then
+        event.condition_index[j] := c1;
+    end;
+    // Modify flag number if event is Set Flag type
+    if event.event_type = Byte(etSetFlag) then
+    begin
+      if event.player = c1 then
+        event.player := c2
+      else if event.player = c2 then
+        event.player := c1;
+    end;
+  end;
+  // Update event markers on map if condition had position
+  if condition_used_position then
+  begin
+    process_event_markers;
+    MainWindow.render_map;
   end;
 end;
 
