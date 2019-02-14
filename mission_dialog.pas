@@ -170,7 +170,7 @@ begin
     starting_money[i] := TEdit.Create(self);
     starting_money[i].Left := 136;
     starting_money[i].Top := 24 + i * 24;
-    starting_money[i].Width := 80;
+    starting_money[i].Width := 56;
     starting_money[i].Height := 22;
     starting_money[i].Text := '0';
     starting_money[i].Tag := i;
@@ -178,7 +178,7 @@ begin
     starting_money[i].OnChange := starting_money_change;
     // Initialize allocation indexes
     alloc_index[i] := TSpinEdit.Create(self);
-    alloc_index[i].Left := 224;
+    alloc_index[i].Left := 200;
     alloc_index[i].Top := 24 + i * 24;
     alloc_index[i].Width := 56;
     alloc_index[i].Height := 22;
@@ -190,7 +190,7 @@ begin
     alloc_index[i].OnChange := alloc_index_change;
     // Initialize allegiance labels
     player_label_alleg[i] := TLabel.Create(self);
-    player_label_alleg[i].Left := 290 + i * 52;
+    player_label_alleg[i].Left := 266 + i * 52;
     player_label_alleg[i].Top := 8;
     player_label_alleg[i].Caption := player_names_shorter[i];
     player_label_alleg[i].Parent := PlayerSettingsPanel;
@@ -198,7 +198,7 @@ begin
     for j := 0 to cnt_mis_players-1 do
     begin
       allegiance_btn[i,j] := TBitBtn.Create(self);
-      allegiance_btn[i,j].Left := 288 + j * 52;
+      allegiance_btn[i,j].Left := 264 + j * 52;
       allegiance_btn[i,j].Top := 24 + i * 24;
       allegiance_btn[i,j].Width := 52;
       allegiance_btn[i,j].Height := 22;

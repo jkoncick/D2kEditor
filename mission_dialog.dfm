@@ -1,13 +1,13 @@
 object MissionDialog: TMissionDialog
   Left = 192
   Top = 80
-  Width = 1064
+  Width = 1024
   Height = 640
   Caption = 'Mission settings'
   Color = clBtnFace
-  Constraints.MaxWidth = 1064
+  Constraints.MaxWidth = 1024
   Constraints.MinHeight = 560
-  Constraints.MinWidth = 1064
+  Constraints.MinWidth = 1024
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -23,7 +23,7 @@ object MissionDialog: TMissionDialog
   object SettingsPanel: TPanel
     Left = 0
     Top = 0
-    Width = 720
+    Width = 696
     Height = 606
     Align = alClient
     BevelOuter = bvNone
@@ -31,7 +31,7 @@ object MissionDialog: TMissionDialog
     object PlayerSettingsPanel: TPanel
       Left = 0
       Top = 0
-      Width = 720
+      Width = 696
       Height = 369
       Align = alTop
       BevelOuter = bvNone
@@ -46,12 +46,12 @@ object MissionDialog: TMissionDialog
       object lblStartingMoney: TLabel
         Left = 136
         Top = 8
-        Width = 71
+        Width = 32
         Height = 13
-        Caption = 'Starting Money'
+        Caption = 'Credits'
       end
       object lblAllocIndex: TLabel
-        Left = 224
+        Left = 200
         Top = 8
         Width = 54
         Height = 13
@@ -74,47 +74,47 @@ object MissionDialog: TMissionDialog
       object Bevel1: TBevel
         Left = 0
         Top = 280
-        Width = 721
+        Width = 697
         Height = 10
         Shape = bsBottomLine
       end
       object lblMapName: TLabel
-        Left = 288
+        Left = 280
         Top = 296
         Width = 53
         Height = 13
         Caption = 'Map name:'
       end
       object lblMapAuthor: TLabel
-        Left = 288
+        Left = 280
         Top = 320
         Width = 57
         Height = 13
         Caption = 'Map author:'
       end
       object lblMapMusic: TLabel
-        Left = 288
+        Left = 280
         Top = 344
         Width = 31
         Height = 13
         Caption = 'Music:'
       end
       object lblMapSideId: TLabel
-        Left = 552
+        Left = 528
         Top = 296
         Width = 37
         Height = 13
         Caption = 'Play as:'
       end
       object lblMapMissionNumber: TLabel
-        Left = 552
+        Left = 528
         Top = 320
         Width = 76
         Height = 13
         Caption = 'Mission number:'
       end
       object lblMapBriefing: TLabel
-        Left = 552
+        Left = 528
         Top = 344
         Width = 112
         Height = 13
@@ -128,14 +128,14 @@ object MissionDialog: TMissionDialog
         Caption = '(-1 = no limit, 25 = second, 1500 = minute)'
       end
       object lblTilesetName: TLabel
-        Left = 408
+        Left = 384
         Top = 260
         Width = 63
         Height = 13
         Caption = 'Tileset name:'
       end
       object lblTileatrName: TLabel
-        Left = 568
+        Left = 544
         Top = 260
         Width = 47
         Height = 13
@@ -155,14 +155,14 @@ object MissionDialog: TMissionDialog
       object edStartingMoneyAll: TEdit
         Left = 136
         Top = 224
-        Width = 80
+        Width = 57
         Height = 21
         TabOrder = 2
         Text = '0'
         OnChange = edStartingMoneyAllChange
       end
       object btnAllocIndexReset: TButton
-        Left = 224
+        Left = 200
         Top = 224
         Width = 56
         Height = 22
@@ -171,9 +171,9 @@ object MissionDialog: TMissionDialog
         OnClick = btnAllocIndexResetClick
       end
       object btnAllegianceReset: TButton
-        Left = 288
+        Left = 264
         Top = 224
-        Width = 105
+        Width = 113
         Height = 22
         Caption = 'Reset allegiance'
         TabOrder = 4
@@ -189,7 +189,7 @@ object MissionDialog: TMissionDialog
         OnChange = time_limit_change
       end
       object cbSetBothSides: TCheckBox
-        Left = 400
+        Left = 384
         Top = 228
         Width = 113
         Height = 17
@@ -226,21 +226,21 @@ object MissionDialog: TMissionDialog
         OnClick = btnResetToDefaultsClick
       end
       object edMapName: TEdit
-        Left = 352
+        Left = 344
         Top = 294
-        Width = 188
+        Width = 177
         Height = 21
         TabOrder = 9
       end
       object edMapAuthor: TEdit
-        Left = 352
+        Left = 344
         Top = 318
-        Width = 188
+        Width = 177
         Height = 21
         TabOrder = 10
       end
       object cbMapSideId: TComboBox
-        Left = 600
+        Left = 576
         Top = 294
         Width = 105
         Height = 21
@@ -249,7 +249,7 @@ object MissionDialog: TMissionDialog
         OnChange = cbMapSideIdChange
       end
       object seMapMissionNumber: TSpinEdit
-        Left = 640
+        Left = 616
         Top = 318
         Width = 65
         Height = 22
@@ -260,15 +260,15 @@ object MissionDialog: TMissionDialog
         OnChange = seMapMissionNumberChange
       end
       object cbMapMusic: TComboBox
-        Left = 352
+        Left = 344
         Top = 344
-        Width = 185
+        Width = 177
         Height = 21
         ItemHeight = 13
         TabOrder = 11
       end
       object edTilesetName: TEdit
-        Left = 480
+        Left = 456
         Top = 256
         Width = 80
         Height = 21
@@ -277,7 +277,7 @@ object MissionDialog: TMissionDialog
         OnChange = edTilesetNameChange
       end
       object edTileatrName: TEdit
-        Left = 624
+        Left = 600
         Top = 256
         Width = 80
         Height = 21
@@ -289,7 +289,7 @@ object MissionDialog: TMissionDialog
     object RulesAndStringsPanel: TPanel
       Left = 0
       Top = 369
-      Width = 720
+      Width = 696
       Height = 237
       Align = alClient
       BevelOuter = bvNone
@@ -313,7 +313,7 @@ object MissionDialog: TMissionDialog
       object StringsPanel: TPanel
         Left = 272
         Top = 0
-        Width = 448
+        Width = 424
         Height = 237
         Align = alClient
         BevelOuter = bvNone
@@ -321,7 +321,7 @@ object MissionDialog: TMissionDialog
         object StringsSplitter: TSplitter
           Left = 0
           Top = 114
-          Width = 448
+          Width = 424
           Height = 3
           Cursor = crVSplit
           Align = alBottom
@@ -329,7 +329,7 @@ object MissionDialog: TMissionDialog
         object StringValueList: TValueListEditor
           Left = 0
           Top = 117
-          Width = 448
+          Width = 424
           Height = 120
           Align = alBottom
           Constraints.MinHeight = 60
@@ -342,12 +342,12 @@ object MissionDialog: TMissionDialog
             'Text')
           ColWidths = (
             50
-            392)
+            368)
         end
         object MapBriefing: TMemo
           Left = 0
           Top = 0
-          Width = 448
+          Width = 424
           Height = 114
           Align = alClient
           ScrollBars = ssVertical
@@ -357,21 +357,21 @@ object MissionDialog: TMissionDialog
     end
   end
   object AITabControl: TTabControl
-    Left = 720
+    Left = 696
     Top = 0
-    Width = 336
+    Width = 320
     Height = 606
     Align = alRight
     TabOrder = 1
-    TabWidth = 41
+    TabWidth = 39
     OnChange = AITabControlChange
     object AIValueList: TValueListEditor
       Left = 4
       Top = 6
-      Width = 328
+      Width = 312
       Height = 572
       Align = alClient
-      DefaultColWidth = 232
+      DefaultColWidth = 224
       ScrollBars = ssVertical
       TabOrder = 0
       TitleCaptions.Strings = (
@@ -379,13 +379,13 @@ object MissionDialog: TMissionDialog
         'Value')
       OnStringsChange = AIValueListStringsChange
       ColWidths = (
-        232
-        90)
+        224
+        82)
     end
     object AIOptionsPanel: TPanel
       Left = 4
       Top = 578
-      Width = 328
+      Width = 312
       Height = 24
       Align = alBottom
       BevelOuter = bvNone
@@ -429,7 +429,7 @@ object MissionDialog: TMissionDialog
       object cbDiffMode: TCheckBox
         Left = 272
         Top = 4
-        Width = 48
+        Width = 41
         Height = 17
         Caption = 'Diff'
         TabOrder = 4

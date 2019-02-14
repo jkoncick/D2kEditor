@@ -5,7 +5,7 @@ object EventDialog: TEventDialog
   Height = 720
   Caption = 'Events and Conditions'
   Color = clBtnFace
-  Constraints.MinHeight = 720
+  Constraints.MinHeight = 600
   Constraints.MinWidth = 1280
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -22,7 +22,7 @@ object EventDialog: TEventDialog
   TextHeight = 13
   object Splitter1: TSplitter
     Left = 0
-    Top = 426
+    Top = 427
     Width = 1272
     Height = 4
     Cursor = crVSplit
@@ -38,7 +38,7 @@ object EventDialog: TEventDialog
     Left = 0
     Top = 0
     Width = 1272
-    Height = 426
+    Height = 427
     Align = alClient
     ColCount = 7
     DefaultRowHeight = 18
@@ -128,18 +128,18 @@ object EventDialog: TEventDialog
   end
   object LowerPanel: TPanel
     Left = 0
-    Top = 430
+    Top = 431
     Width = 1272
-    Height = 256
+    Height = 255
     Align = alBottom
     BevelOuter = bvNone
-    Constraints.MinHeight = 256
+    Constraints.MinHeight = 255
     TabOrder = 1
     object ConditionGrid: TStringGrid
       Left = 748
       Top = 0
       Width = 312
-      Height = 256
+      Height = 255
       Align = alLeft
       ColCount = 4
       DefaultRowHeight = 18
@@ -208,7 +208,7 @@ object EventDialog: TEventDialog
       Left = 0
       Top = 0
       Width = 240
-      Height = 256
+      Height = 255
       Align = alLeft
       BevelOuter = bvNone
       TabOrder = 1
@@ -601,7 +601,7 @@ object EventDialog: TEventDialog
       Left = 240
       Top = 0
       Width = 288
-      Height = 256
+      Height = 255
       Align = alLeft
       BevelOuter = bvNone
       TabOrder = 2
@@ -609,7 +609,7 @@ object EventDialog: TEventDialog
         Left = 0
         Top = 16
         Width = 128
-        Height = 240
+        Height = 239
         Align = alLeft
         ItemHeight = 13
         TabOrder = 0
@@ -619,7 +619,7 @@ object EventDialog: TEventDialog
         Left = 152
         Top = 16
         Width = 128
-        Height = 240
+        Height = 239
         Align = alRight
         ItemHeight = 13
         TabOrder = 1
@@ -652,7 +652,7 @@ object EventDialog: TEventDialog
         Left = 280
         Top = 16
         Width = 8
-        Height = 240
+        Height = 239
         Align = alRight
         BevelOuter = bvNone
         TabOrder = 3
@@ -698,7 +698,7 @@ object EventDialog: TEventDialog
       Left = 528
       Top = 0
       Width = 220
-      Height = 256
+      Height = 255
       Align = alLeft
       BevelOuter = bvNone
       TabOrder = 3
@@ -706,7 +706,7 @@ object EventDialog: TEventDialog
         Left = 0
         Top = 16
         Width = 196
-        Height = 216
+        Height = 215
         OnClickCheck = EventConditionListClickCheck
         Align = alLeft
         ItemHeight = 16
@@ -777,7 +777,7 @@ object EventDialog: TEventDialog
       end
       object EventConditionListButtonPanel: TPanel
         Left = 0
-        Top = 232
+        Top = 231
         Width = 220
         Height = 24
         Align = alBottom
@@ -807,7 +807,7 @@ object EventDialog: TEventDialog
       Left = 1060
       Top = 0
       Width = 200
-      Height = 256
+      Height = 255
       Align = alLeft
       BevelOuter = bvNone
       TabOrder = 4

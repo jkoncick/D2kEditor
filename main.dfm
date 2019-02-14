@@ -240,7 +240,7 @@ object MainWindow: TMainWindow
           Left = 8
           Top = 40
           Width = 145
-          Height = 82
+          Height = 83
           ItemHeight = 13
           TabOrder = 1
           OnClick = MiscObjListClick
