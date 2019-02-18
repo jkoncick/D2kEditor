@@ -141,6 +141,13 @@ object MissionDialog: TMissionDialog
         Height = 13
         Caption = 'Attributes:'
       end
+      object lblTextUib: TLabel
+        Left = 8
+        Top = 320
+        Width = 95
+        Height = 13
+        Caption = 'Custom Text.uib file:'
+      end
       object seTechLevelAll: TSpinEdit
         Left = 72
         Top = 224
@@ -284,6 +291,13 @@ object MissionDialog: TMissionDialog
         MaxLength = 199
         TabOrder = 15
         OnChange = edTileatrNameChange
+      end
+      object edTextUib: TEdit
+        Left = 112
+        Top = 318
+        Width = 161
+        Height = 21
+        TabOrder = 16
       end
     end
     object RulesAndStringsPanel: TPanel

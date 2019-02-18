@@ -79,6 +79,8 @@ type
     edTileatrName: TEdit;
     lblTilesetName: TLabel;
     lblTileatrName: TLabel;
+    lblTextUib: TLabel;
+    edTextUib: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -366,6 +368,8 @@ begin
   cbMapSideId.ItemIndex := ini.ReadInteger('Basic','SideId',-1);
   seMapMissionNumber.Enabled := true;
   seMapMissionNumber.Value := ini.ReadInteger('Basic','MissionNumber',0);
+  edTextUib.Enabled := true;
+  edTextUib.Text := ini.ReadString('Basic','TextUib','');
   cbMapSideIdChange(nil);
   seMapMissionNumberChange(nil);
   // Load rules
@@ -412,6 +416,8 @@ begin
   cbMapSideId.ItemIndex := -1;
   seMapMissionNumber.Enabled := false;
   seMapMissionNumber.Value := 0;
+  edTextUib.Enabled := false;
+  edTextUib.Clear;
   RuleValueList.Enabled := false;
   RuleValueList.Strings.Clear;
   StringValueList.Enabled := false;
@@ -452,6 +458,10 @@ begin
     ini.DeleteKey('Basic','MissionNumber')
   else
     ini.WriteInteger('Basic','MissionNumber',seMapMissionNumber.Value);
+  if edTextUib.Text = '' then
+    ini.DeleteKey('Basic','TextUib')
+  else
+    ini.WriteString('Basic','TextUib',edTextUib.Text);
   // Save rules
   for i := 0 to Length(rule_definitions) - 1 do
   begin
