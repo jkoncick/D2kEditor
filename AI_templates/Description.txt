@@ -1,0 +1,51 @@
+Campaign Generic AI
+------------------- 
+All the default numbers. But won't build non-lethal units (engineers, harversters, MCV, thumpers).
+Will upgrade, will buy from the starport, will repair units/buildings... more or less, all the stuff the AI does normally.
+The priority to attack is the default too, since that's not necesary to make the AI attack the player (and the AI usually target first the closes enemy/building).
+
+
+Practice Generic AI
+-------------------
+Practice/skirmish/online type of AI. Has set the order of building, 4 turrets, 3 refs, 15 windtraps... so is based in a tech of 7. fast unit build rate, engineer as the original game, etc...
+
+
+Agressive Generic AI
+--------------------
+This AI has short-time first attack, and then even shorter next attacks. The quantity/quality of units defending the base is low, so this AI will have quick attacks but not to many units around the base. The unit build rate is as fast as the fastests unit build rate from the original campaign (one of the missions 9).
+
+
+Defensive Generic AI
+--------------------
+This AI needs a very long time before the first attack and not so long (But still long) from every next attack. The quantity/quality of units defending the base is High, so this AI is to use in case you want one enemy being much more defensive, or in case you have a map with an ally that you want it to survive, since is not going to attack too much often. The unit build rate is also low (to avoid grouping too many units or rebuilding losses too quickly).
+
+
+Balanced Generic AI
+-------------------
+This is an balanced type of AI, something in the middle of the agresive an defensive. The first attack and the time bewteen attacks are more or less in the middle of the Agr/def cases. The units guarding the base and the unit build rate are also in the middle of those 2 AIs.
+
+
+Anti Infantry AI
+----------------
+This is another average type of AI, in fact, has the same values as the balanced version. I change this AI to build only anti infantry type of units: light infantry, Trike/raider and siege tanks.
+
+
+Raw Power AI
+------------
+Same as above, but this one builds the opposite, the units with Raw power. This includes: Trooper, Sardaukar, Quad, Combat tank, Missile tank, Sonic/Dev/Deva.
+
+
+Practice Tech 4-5 AI
+--------------------
+This is a practice/skirmish type of AI. If the Tech used to the map is 4 or 5, this AI will be a bit better than the generic: Will build at maximun of 10 windtraps (so don't need as many room as the 15 that needs the generic) and will have 8 gun-turrets, that's 4 extra more turrets around the base.
+Even if the tech is lower than 4-5, this AI still can help the CPU to control the maximum windtraps that will build.
+If tech is higher, isn't going to build rocket turrets; also the energy will be more near to the limit; so is not recommended.
+
+
+Practice High Production AI
+---------------------------
+This type of AI has in general the same values as the generic one, but this one will make the AI to deploy more buildings: 3 barracks, 3 light fac, 3 heavy fac, 1 more ref (4), 2 more gun/rocket turrets (6 and 6) and 3 extra windtraps (18).
+Other values remains the same as the generic version.
+
+
+The Agresivve/defensive/Balanced trio should be the ones recommended to use. The anty-infantry/raw could be treated as advance type of AI just to show that is possible to make the AI building what you want. 
