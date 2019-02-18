@@ -129,6 +129,12 @@ type
     Recentfiles1: TMenuItem;
     N6: TMenuItem;
     Showstatus1: TMenuItem;
+    GridColorDialog: TColorDialog;
+    N7: TMenuItem;
+    Gridcolor1: TMenuItem;
+    Alwaysaskonquit1: TMenuItem;
+    Hidepresetwindow1: TMenuItem;
+    More1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -163,7 +169,7 @@ type
     procedure Loadtilesetattributes1Click(Sender: TObject);
     procedure Showstatus1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
-    procedure Useallocationindexes1Click(Sender: TObject);
+    procedure More1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
@@ -424,6 +430,12 @@ begin
     Recentfiles1.Add(recent_files_menuitems[i]);
   end;
   refresh_recent_files_menu;
+  Useallocationindexes1.Checked := Settings.UseAllocationIndexes;
+  Showeventmarkers1.Checked := Settings.ShowEventMarkers;
+  Markdefenceareas1.Checked := Settings.MarkDefenceAreas;
+  GridColorDialog.Color := Settings.GridColor;
+  Alwaysaskonquit1.Checked := Settings.AlwaysAskOnQuit;
+  Hidepresetwindow1.Checked := Settings.HidePresetWindow;
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -602,10 +614,10 @@ begin
   begin
     case key of
     ord('F'): btnFindSelectedObjectClick(nil);
-    ord('G'): begin sbShowGrid.Down := not sbShowGrid.Down; SettingChange(nil); end;
-    ord('M'): begin sbMarkImpassableTiles.Down := not sbMarkImpassableTiles.Down; SettingChange(nil); end;
-    ord('B'): begin sbMarkBuildableTiles.Down := not sbMarkBuildableTiles.Down; SettingChange(nil); end;
-    ord('U'): begin sbShowUnknownSpecials.Down := not sbShowUnknownSpecials.Down; SettingChange(nil); end;
+    ord('G'): begin sbShowGrid.Down := not sbShowGrid.Down; SettingChange(sbShowGrid); end;
+    ord('M'): begin sbMarkImpassableTiles.Down := not sbMarkImpassableTiles.Down; SettingChange(sbMarkImpassableTiles); end;
+    ord('B'): begin sbMarkBuildableTiles.Down := not sbMarkBuildableTiles.Down; SettingChange(sbMarkBuildableTiles); end;
+    ord('U'): begin sbShowUnknownSpecials.Down := not sbShowUnknownSpecials.Down; SettingChange(sbShowUnknownSpecials); end;
     end;
   end;
 end;
@@ -828,14 +840,29 @@ end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
 begin
-  render_map;
+  case (Sender as TComponent).Tag of
+  1: begin Settings.UseAllocationIndexes := (Sender as TMenuItem).Checked; render_map; render_minimap; end;
+  2: begin Settings.ShowEventMarkers := (Sender as TMenuItem).Checked; render_map; end;
+  3: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
+  11: begin Settings.AlwaysAskOnQuit := (Sender as TMenuItem).Checked end;
+  12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
+  20:
+    begin
+      if GridColorDialog.Execute then
+      begin
+        Settings.GridColor := GridColorDialog.Color;
+        if sbShowGrid.Down then
+          render_map;
+      end;
+    end;
+  else render_map;
+  end;
 end;
 
-procedure TMainWindow.Useallocationindexes1Click(Sender: TObject);
+procedure TMainWindow.More1Click(Sender: TObject);
 begin
-  Useallocationindexes1.Checked := not Useallocationindexes1.Checked;
-  render_minimap;
-  render_map;
+  ShowMessage('To change more advanced settings and preferences,'#13'edit the file D2kEditor.ini directly in a text editor.'#13#13+
+              'The file is saved each time you close the program.'#13'Close the program before you do any changes.');
 end;
 
 procedure TMainWindow.Setmapsize1Click(Sender: TObject);

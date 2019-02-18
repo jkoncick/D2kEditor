@@ -66,7 +66,7 @@ var
 implementation
 
 uses
-  main, block_preset_dialog;
+  main, block_preset_dialog, _settings;
 
 {$R *.dfm}
 
@@ -135,7 +135,7 @@ begin
       end;
   if TilesetGrid.Checked then
   begin
-    TilesetImage.Canvas.Pen.Color:= clBlack;
+    TilesetImage.Canvas.Pen.Color:= Settings.GridColor;
     TilesetImage.Canvas.Pen.Width := 1;
     for x:= 0 to 20-1 do
     begin

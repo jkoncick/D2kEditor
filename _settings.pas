@@ -22,6 +22,12 @@ type
     DrawBuildingMarker: boolean;
     DrawObjectBrush: boolean;
     DrawPaintBrush: boolean;
+    LoadR16Image: boolean;
+    LoadR8Image: boolean;
+    UseAllocationIndexes: boolean;
+    ShowEventMarkers: boolean;
+    MarkDefenceAreas: boolean;
+    GridColor: Cardinal;
 
     // Default values
     DefaultMapWidth: integer;
@@ -58,6 +64,7 @@ type
     procedure save_editor_settings;
     procedure determine_game_paths_from_path(path: String);
     procedure load_window_position(ini: TMemIniFile; window: TForm; window_name: String);
+    procedure save_window_position(ini: TMemIniFile; window: TForm; window_name: String);
     procedure update_recent_files(filename: String);
     procedure get_map_test_settings;
     procedure save_map_test_settings;
@@ -91,6 +98,12 @@ begin
   DrawBuildingMarker := ini.ReadBool('Preferences', 'DrawBuildingMarker', true);
   DrawObjectBrush := ini.ReadBool('Preferences', 'DrawObjectBrush', true);
   DrawPaintBrush := ini.ReadBool('Preferences', 'DrawPaintBrush', true);
+  LoadR16Image := ini.ReadBool('Preferences', 'LoadR16Image', true);
+  LoadR8Image := ini.ReadBool('Preferences', 'LoadR8Image', true);
+  UseAllocationIndexes := ini.ReadBool('Preferences', 'UseAllocationIndexes', false);
+  ShowEventMarkers := ini.ReadBool('Preferences', 'ShowEventMarkers', true);
+  MarkDefenceAreas := ini.ReadBool('Preferences', 'MarkDefenceAreas', true);
+  GridColor := ini.ReadInteger('Preferences', 'GridColor', $000000);
   // Load default values
   DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
   DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 64);
@@ -114,8 +127,6 @@ begin
   if not PreserveGUISettings then
     exit;
   load_window_position(ini, MainWindow, 'MainWindow');
-  MainWindow.Width := ini.ReadInteger('GUI','MainWindow.Width',MainWindow.Width);
-  MainWindow.Height := ini.ReadInteger('GUI','MainWindow.Height',MainWindow.Height);
   MainWindow.CbSelectStructures.Checked := ini.ReadBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
 end;
 
@@ -131,21 +142,16 @@ begin
     exit;
   end;
   load_window_position(ini, TilesetDialog, 'TilesetDialog');
-  TilesetDialog.Height := ini.ReadInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
   load_window_position(ini, BlockPresetDialog, 'BlockPresetDialog');
   load_window_position(ini, SetDialog, 'SetDialog');
   load_window_position(ini, TestMapDialog, 'TestMapDialog');
   load_window_position(ini, MissionDialog, 'MissionDialog');
-  MissionDialog.Height := ini.ReadInteger('GUI','MissionDialog.Height',MissionDialog.Height);
   MissionDialog.StringValueList.Height := ini.ReadInteger('GUI','MissionDialog.StringValueList.Height',MissionDialog.StringValueList.Height);
   load_window_position(ini, EventDialog, 'EventDialog');
-  EventDialog.Width := ini.ReadInteger('GUI','EventDialog.Width',EventDialog.Width);
-  EventDialog.Height := ini.ReadInteger('GUI','EventDialog.Height',EventDialog.Height);
   EventDialog.LowerPanel.Height := ini.ReadInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
   EventDialog.EventGrid.ColWidths[4] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
   EventDialog.EventGrid.ColWidths[5] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   load_window_position(ini, MapStatsDialog, 'MapStatsDialog');
-  MapStatsDialog.Height := ini.ReadInteger('GUI','MapStatsDialog.Height',MapStatsDialog.Height);
   ini.Destroy;
 end;
 
@@ -167,6 +173,12 @@ begin
   ini.WriteBool('Preferences', 'DrawBuildingMarker', DrawBuildingMarker);
   ini.WriteBool('Preferences', 'DrawObjectBrush', DrawObjectBrush);
   ini.WriteBool('Preferences', 'DrawPaintBrush', DrawPaintBrush);
+  ini.WriteBool('Preferences', 'LoadR16Image', LoadR16Image);
+  ini.WriteBool('Preferences', 'LoadR8Image', LoadR8Image);
+  ini.WriteBool('Preferences', 'UseAllocationIndexes', UseAllocationIndexes);
+  ini.WriteBool('Preferences', 'ShowEventMarkers', ShowEventMarkers);
+  ini.WriteBool('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);
+  ini.WriteInteger('Preferences', 'Gridcolor', GridColor);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);
   ini.WriteInteger('Defaults', 'DefaultMapHeight', DefaultMapHeight);
@@ -187,34 +199,19 @@ begin
       ini.WriteString('RecentFiles', 'file' + inttostr(i), RecentFiles[i]);
   end;
   // Save GUI settings
-  ini.WriteInteger('GUI','MainWindow.Left',MainWindow.Left);
-  ini.WriteInteger('GUI','MainWindow.Top',MainWindow.Top);
-  ini.WriteInteger('GUI','MainWindow.Width',MainWindow.Width);
-  ini.WriteInteger('GUI','MainWindow.Height',MainWindow.Height);
+  save_window_position(ini, MainWindow, 'MainWindow');
   ini.WriteBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
-  ini.WriteInteger('GUI','TilesetDialog.Left',TilesetDialog.Left);
-  ini.WriteInteger('GUI','TilesetDialog.Top',TilesetDialog.Top);
-  ini.WriteInteger('GUI','TilesetDialog.Height',TilesetDialog.Height);
-  ini.WriteInteger('GUI','BlockPresetDialog.Left',BlockPresetDialog .Left);
-  ini.WriteInteger('GUI','BlockPresetDialog.Top',BlockPresetDialog.Top);
-  ini.WriteInteger('GUI','SetDialog.Left',SetDialog.Left);
-  ini.WriteInteger('GUI','SetDialog.Top',SetDialog.Top);
-  ini.WriteInteger('GUI','TestMapDialog.Left',TestMapDialog.Left);
-  ini.WriteInteger('GUI','TestMapDialog.Top',TestMapDialog.Top);
-  ini.WriteInteger('GUI','MissionDialog.Left',MissionDialog.Left);
-  ini.WriteInteger('GUI','MissionDialog.Top',MissionDialog.Top);
-  ini.WriteInteger('GUI','MissionDialog.Height',MissionDialog.Height);
+  save_window_position(ini, TilesetDialog, 'TilesetDialog');
+  save_window_position(ini, BlockPresetDialog, 'BlockPresetDialog');
+  save_window_position(ini, SetDialog, 'SetDialog');
+  save_window_position(ini, TestMapDialog, 'TestMapDialog');
+  save_window_position(ini, MissionDialog, 'MissionDialog');
   ini.WriteInteger('GUI','MissionDialog.StringValueList.Height',MissionDialog.StringValueList.Height);
-  ini.WriteInteger('GUI','EventDialog.Left',EventDialog.Left);
-  ini.WriteInteger('GUI','EventDialog.Top',EventDialog.Top);
-  ini.WriteInteger('GUI','EventDialog.Width',EventDialog.Width);
-  ini.WriteInteger('GUI','EventDialog.Height',EventDialog.Height);
+  save_window_position(ini, EventDialog, 'EventDialog');
   ini.WriteInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
   ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
   ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
-  ini.WriteInteger('GUI','MapStatsDialog.Left',MapStatsDialog.Left);
-  ini.WriteInteger('GUI','MapStatsDialog.Top',MapStatsDialog.Top);
-  ini.WriteInteger('GUI','MapStatsDialog.Height',MapStatsDialog.Height);
+  save_window_position(ini, MapStatsDialog, 'MapStatsDialog');
   ini.UpdateFile;
   ini.Destroy;
 end;
@@ -279,6 +276,25 @@ begin
     window.Left := left;
     window.Top := top;
   end;
+  // Load window size
+  if window.BorderStyle <> bsSizeable then
+    exit;
+  if not ((window.Constraints.MinWidth = window.Constraints.MaxWidth) and (window.Constraints.MinWidth <> 0)) then
+    window.Width := ini.ReadInteger('GUI', window_name + '.Width', window.Width);
+  if not ((window.Constraints.MinHeight = window.Constraints.MaxHeight) and (window.Constraints.MinHeight <> 0)) then
+    window.Height := ini.ReadInteger('GUI', window_name + '.Height', window.Height);
+end;
+
+procedure TSettings.save_window_position(ini: TMemIniFile; window: TForm; window_name: String);
+begin
+  ini.WriteInteger('GUI', window_name + '.Left', window.Left);
+  ini.WriteInteger('GUI', window_name + '.Top', window.Top);
+  if window.BorderStyle <> bsSizeable then
+    exit;
+  if not ((window.Constraints.MinWidth = window.Constraints.MaxWidth) and (window.Constraints.MinWidth <> 0)) then
+    ini.WriteInteger('GUI', window_name + '.Width', window.Width);
+  if not ((window.Constraints.MinHeight = window.Constraints.MaxHeight) and (window.Constraints.MinHeight <> 0)) then
+    ini.WriteInteger('GUI', window_name + '.Height', window.Height);
 end;
 
 procedure TSettings.update_recent_files(filename: String);

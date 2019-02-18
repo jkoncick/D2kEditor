@@ -296,13 +296,13 @@ begin
   fn_r8_editor := current_dir+'/tilesets/'+tileset_name+'.r8';
   fn_bmp_editor := current_dir+'/tilesets/'+tileset_name+'.bmp';
   // Try to load tileset image in given order
-  if FileExists(fn_r16_game) then
+  if FileExists(fn_r16_game) and Settings.LoadR16Image then
     load_r16_image(fn_r16_game)
-  else if FileExists(fn_r8_game) then
+  else if FileExists(fn_r8_game) and Settings.LoadR8Image then
     load_r8_image(fn_r8_game)
-  else if FileExists(fn_r16_editor) then
+  else if FileExists(fn_r16_editor) and Settings.LoadR16Image then
     load_r16_image(fn_r16_editor)
-  else if FileExists(fn_r8_editor) then
+  else if FileExists(fn_r8_editor) and Settings.LoadR8Image then
     load_r8_image(fn_r8_editor)
   else if FileExists(fn_bmp_editor) then
   begin

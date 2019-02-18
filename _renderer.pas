@@ -57,7 +57,7 @@ var
 
 implementation
 
-uses SysUtils, Math, Forms, main, _mission, _tileset, _structures, Classes;
+uses SysUtils, Math, Forms, main, _mission, _tileset, _structures, _settings, Classes;
 
 procedure TRenderer.init;
 var
@@ -471,7 +471,7 @@ begin
   end;
   // Draw grid
   cnv_target.CopyMode:=cmSrcCopy;
-  cnv_target.Pen.Color := clBlack;
+  cnv_target.Pen.Color := Settings.GridColor;
   cnv_target.Pen.Width := 1;
   if o_show_grid then
   begin
