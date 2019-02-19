@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Version 1.3 (released 2019-02-03)
+Version 1.3 (released 2019-02-19)
 ---------------------------------
 Fixed: Size preset buttons in Tileset window were off by one position
 Added: Find object feature
@@ -25,6 +25,13 @@ Changed: Program now automatically loads all all .ini files placed into "tileset
 Added: Loading tileset images directly from game's internal .R8 and .r16 files
 Removed: Editor is no longer distributed with tileset .bmp files
 Fixed: Improved auto-detection of game folder, detection of missions stored under "Data\Missions" folder
+Changed: Mission settings window should fit 1024 pixels wide resolution
+Added: Tileset name and Attributes fields on Mission settings window
+Added: Custom Text.uib field on Mission settings window (mission .ini file)
+Added: Conditions can be organized by moving up and down (like events)
+Added: Grid color setting and several more settings
+Added: AI manual (written by Cm_blast)
+Added: AI templates (created by Cm_blast)
 
 
 Version 1.2 (released 2015-11-16)
