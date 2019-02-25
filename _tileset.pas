@@ -11,8 +11,8 @@ const cnt_block_preset_groups = 8;
 const cnt_block_preset_keys = 40; // 0-9, A-Z...
 const max_tile_color_rules = 10;
 const max_fill_area_rules = 10;
-const max_paint_tiles = 80;
-const max_block_presets = 64;
+const max_paint_tiles = 64;
+const max_block_presets = 512;
 const max_custom_block_size = 8;
 const max_custom_blocks = 40;
 
@@ -84,17 +84,17 @@ type
 
 type
   TBlockPreset = record
-    width: word;
-    height: word;
-    pos_x: word;
-    pos_y: word;
+    width: byte;
+    height: byte;
+    pos_x: byte;
+    pos_y: byte;
     custom_block_index: integer;
   end;
 
 type
   TCustomBlock = record
-    width: word;
-    height: word;
+    width: byte;
+    height: byte;
     tiles: array[0..max_custom_block_size-1, 0..max_custom_block_size-1] of word;
   end;
 
@@ -141,12 +141,13 @@ type
     spice_restriction_check_attr: cardinal;
 
     paint_tile_groups: array[0..cnt_paint_tile_groups-1] of TPaintTileGroup;
-    paint_tiles: array[0..cnt_paint_tile_groups-1, 0..max_paint_tiles-1] of integer; // Tile numbers of clean sand/rock/dunes
+    paint_tiles: array[0..cnt_paint_tile_groups-1, 0..max_paint_tiles-1] of word; // Tile numbers of clean sand/rock/dunes
     paint_tiles_cnt: array[0..cnt_paint_tile_groups-1] of integer;
 
     block_preset_groups: array[0..cnt_block_preset_groups-1] of TBlockPresetGroup;
     block_preset_key_variants: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of TBlockPresetVariantList;
-    block_presets: array[0..cnt_block_preset_groups-1, 0..max_block_presets-1] of TBlockPreset;
+    block_presets: array[0..max_block_presets-1] of TBlockPreset;
+    block_presets_used: integer;
 
     custom_blocks: array[0..max_custom_blocks-1] of TCustomBlock;
 
@@ -536,9 +537,9 @@ begin
     MainWindow.block_preset_select[i].Caption := block_preset_groups[i].name;
   end;
   // Load block presets
+  preset_index := 0;
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
-    preset_index := 0;
     for j := 0 to cnt_block_preset_keys - 1 do
     begin
       key := ' ';
@@ -565,29 +566,30 @@ begin
         if decoder2.Count = 4 then
         begin
           // Normal block preset
-          block_presets[i, preset_index].width := strtoint(decoder2[0]);
-          block_presets[i, preset_index].height := strtoint(decoder2[1]);
-          block_presets[i, preset_index].pos_x := strtoint(decoder2[2]);
-          block_presets[i, preset_index].pos_y := strtoint(decoder2[3]);
-          block_presets[i, preset_index].custom_block_index := -1;
+          block_presets[preset_index].width := strtoint(decoder2[0]);
+          block_presets[preset_index].height := strtoint(decoder2[1]);
+          block_presets[preset_index].pos_x := strtoint(decoder2[2]);
+          block_presets[preset_index].pos_y := strtoint(decoder2[3]);
+          block_presets[preset_index].custom_block_index := -1;
         end else
         if decoder2.Count = 1 then
         begin
           // Custom block
-          block_presets[i, preset_index].width := 0;
-          block_presets[i, preset_index].height := 0;
-          block_presets[i, preset_index].pos_x := 0;
-          block_presets[i, preset_index].pos_y := 0;
+          block_presets[preset_index].width := 0;
+          block_presets[preset_index].height := 0;
+          block_presets[preset_index].pos_x := 0;
+          block_presets[preset_index].pos_y := 0;
           index := strtoint(decoder2[0]) - 1;
           if (index < max_custom_blocks) and (index >= 0)then
-            block_presets[i, preset_index].custom_block_index := index
+            block_presets[preset_index].custom_block_index := index
           else
-            block_presets[i, preset_index].custom_block_index := -1;
+            block_presets[preset_index].custom_block_index := -1;
         end;
         inc(preset_index);
       end;
     end;
   end;
+  block_presets_used := preset_index;
   // Load custom blocks
   ini.ReadSection('Custom_Blocks', tmp_strings);
   for i := 0 to tmp_strings.Count - 1 do
@@ -741,7 +743,7 @@ begin
     end;
   end;
   preset_index := block_preset_key_variants[group, key_index].first_preset_index + variant;
-  result := block_presets[group, preset_index];
+  result := block_presets[preset_index];
 end;
 
 end.

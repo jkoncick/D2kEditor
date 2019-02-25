@@ -835,7 +835,7 @@ end;
 
 procedure TMainWindow.Showstatus1Click(Sender: TObject);
 begin
-  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename);
+  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename+#13'Block presets used: '+inttostr(Tileset.block_presets_used));
 end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
@@ -953,7 +953,8 @@ begin
   ShowMessage('Mouse actions'#13#13+
               'In Structures mode:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13+
               'Event marker in Struct. mode:'#13'Double click = Go to event'#13'Left+drag = Move event'#13#13+
-              'In Terrain mode:'#13'Left = Paint / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right+drag = Scroll map'#13'Shift+select = Erase selection');
+              'In Terrain mode:'#13'Left = Paint / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right+drag = Scroll map'#13'Shift+select = Erase selection'#13#13+
+              'On Block preset window:'#13'Left = Select block'#13'Right = Next variant'#13'Middle = Show / hide keys');
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
