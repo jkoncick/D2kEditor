@@ -338,7 +338,7 @@ begin
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
   moving_event := -1;
   moving_condition := -1;
-  top := 60;
+  top := 40;
   // Initialize terrain editing controls
   for i := 0 to Length(brush_size_presets) - 1 do
     cbBrushSize.Items.Add(inttostr(brush_size_presets[i,1]) + ' x ' + inttostr(brush_size_presets[i,2]));
@@ -383,6 +383,8 @@ begin
   block_preset_select[0].Down := True;
   // Load settings
   Settings.load_precreate_editor_settings;
+  if (Settings.GamePath = '') and (not FileExists(current_dir + 'D2kEditor.ini')) then
+    Application.MessageBox('This program requires original Dune 2000 graphics files to work.'#13'It needs to know where Dune 2000 is located on your computer and will load graphics from that location.'#13+'Please open any existing Map or Mission file under Dune 2000 game folder and the program will configure itself.'#13+'Alternatively, close the program and configure all paths manually in D2kEditor.ini file under [Paths] section.'#13+'In case you do not have Dune 2000 and want to create maps, you can copy tileset .bmp files (i.e. BLOXBGBS.bmp) into Tilesets folder.', 'First time open', MB_OK or MB_ICONINFORMATION);
   // Initialize structures
   Structures.init;
   // Initialize mission
