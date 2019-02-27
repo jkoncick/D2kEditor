@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Version 1.3 (released 2019-02-19)
+Version 1.3 (released 2019-02-27)
 ---------------------------------
 Fixed: Size preset buttons in Tileset window were off by one position
 Added: Find object feature
@@ -32,6 +32,9 @@ Added: Conditions can be organized by moving up and down (like events)
 Added: Grid color setting and several more settings
 Added: AI manual (written by Cm_blast)
 Added: AI templates (created by Cm_blast)
+Added: Information message upon start when starting program for the first time
+Fixed: Some errors on BLOXBAT tileset configuration, added missing tiles to new "Sand stains" preset group
+Added: README.txt file
 
 
 Version 1.2 (released 2015-11-16)
