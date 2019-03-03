@@ -240,6 +240,7 @@ type
     // Terrain editing variables
     paint_tile_group: integer;
     paint_tile_select: array[-2..cnt_paint_tile_groups-1] of TSpeedButton;
+    paint_tile_select_active: TSpeedButton;
     block_preset_group: integer;
     block_preset_select: array[0..cnt_block_preset_groups-1] of TSpeedButton;
     block_preset_dialog_opened: boolean;
@@ -1427,16 +1428,19 @@ begin
     paint_tile_select[paint_tile_group].Down := false;
     LbPaintTileGroupName.Caption := '';
   end;
+  if RbPaintMode.Checked and (paint_tile_select_active <> nil) then
+  begin
+    paint_tile_select_active.Down := true;
+    LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
+  end;
   render_editing_marker;
 end;
 
 procedure TMainWindow.PaintTileSelectClick(Sender: TObject);
-var
-  index: integer;
 begin
-  index := (Sender as TSpeedButton).Tag;
-  paint_tile_group := index;
-  LbPaintTileGroupName.Caption := (Sender as TSpeedButton).Hint;
+  paint_tile_select_active := Sender as TSpeedButton;
+  paint_tile_group := paint_tile_select_active.Tag;
+  LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
   RbPaintMode.Checked := true;
 end;
 
@@ -1564,10 +1568,23 @@ var
 begin
   // Draw glyphs in terrain editing GUI
   draw_paint_tile_select_glyph(-1, Tileset.thin_spice_tile, Tileset.tileimage.Canvas);
+  sbThinSpice.Hint := tileset.thin_spice_name;
   draw_paint_tile_select_glyph(-2, Tileset.thick_spice_tile, Tileset.tileimage.Canvas);
+  sbThickSpice.Hint := tileset.thick_spice_name;
   for i := 0 to cnt_paint_tile_groups-1 do
+  begin
     draw_paint_tile_select_glyph(i, Tileset.paint_tile_groups[i].tile_index, Tileset.tileimage.Canvas);
+    paint_tile_select[i].Enabled := Tileset.paint_tile_groups[i].name <> '';
+    paint_tile_select[i].Hint := Tileset.paint_tile_groups[i].name;
+  end;
+  for i := 0 to cnt_block_preset_groups-1 do
+  begin
+    block_preset_select[i].Enabled := Tileset.block_preset_groups[i].name <> '';
+    block_preset_select[i].Caption := Tileset.block_preset_groups[i].name;
+  end;
   draw_cursor_image;
+  if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
+    LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
     TilesetDialog.DrawTileset(nil);
   if (BlockPresetDialog <> nil) then

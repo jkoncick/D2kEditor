@@ -135,8 +135,10 @@ type
 
     thin_spice_tile: integer;
     thin_spice_color: TColor;
+    thin_spice_name: String;
     thick_spice_tile: integer;
     thick_spice_color: TColor;
+    thick_spice_name: String;
     spice_restriction_and_attr: cardinal;
     spice_restriction_check_attr: cardinal;
 
@@ -511,8 +513,10 @@ begin
   // Load spice settings
   thin_spice_tile := ini.ReadInteger('Spice_Settings', 'ThinSpice.tile', 0);
   thin_spice_color := ini.ReadInteger('Spice_Settings', 'ThinSpice.color', 0);
+  thin_spice_name := ini.ReadString('Spice_Settings', 'ThinSpice.name', 'Thin spice');
   thick_spice_tile := ini.ReadInteger('Spice_Settings', 'ThickSpice.tile', 0);
   thick_spice_color := ini.ReadInteger('Spice_Settings', 'ThickSpice.color', 0);
+  thick_spice_name := ini.ReadString('Spice_Settings', 'ThickSpice.name', 'Thick spice');
   decoder.DelimitedText := ini.ReadString('Spice_Settings', 'SpiceRestrictionRule', '0');
   spice_restriction_and_attr := strtoint(decoder[0]);
   if decoder.Count = 2 then
@@ -523,8 +527,6 @@ begin
   for i := 0 to cnt_paint_tile_groups - 1 do
   begin
     paint_tile_groups[i].name := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.name', '');
-    MainWindow.paint_tile_select[i].Enabled := paint_tile_groups[i].name <> '';
-    MainWindow.paint_tile_select[i].Hint := paint_tile_groups[i].name;
     paint_tile_groups[i].tile_index := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.tile', 0);
     paint_tile_groups[i].smooth_group := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.smoothgroup', 0) - 1;
   end;
@@ -533,8 +535,6 @@ begin
   begin
     block_preset_groups[i].name := ini.ReadString('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.name', '');
     block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.paint', 0) - 1;
-    MainWindow.block_preset_select[i].Enabled := block_preset_groups[i].name <> '';
-    MainWindow.block_preset_select[i].Caption := block_preset_groups[i].name;
   end;
   // Load block presets
   preset_index := 0;
