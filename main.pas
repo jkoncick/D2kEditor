@@ -298,7 +298,8 @@ type
     procedure draw_paint_tile_select_glyph(target: integer; tile_index: integer; source_canvas: TCanvas);
 
     // Procedures related to selecting/placing block
-    procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word; custom_block_index: integer);
+    procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
+    procedure select_block_preset(preset: PBlockPreset);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
 
     // Procedures related to cursor image
@@ -838,7 +839,7 @@ end;
 
 procedure TMainWindow.Showstatus1Click(Sender: TObject);
 begin
-  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename+#13'Block presets used: '+inttostr(Tileset.block_presets_used));
+  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename+#13'Block presets used: '+inttostr(Tileset.block_presets_used)+#13'Preset tiles used: '+inttostr(Tileset.block_preset_tiles_used));
 end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
@@ -1785,10 +1786,10 @@ end;
 
 procedure TMainWindow.apply_key_preset(key: word);
 var
-  preset: TBlockPreset;
+  preset: PBlockPreset;
 begin
   preset := Tileset.get_block_preset(block_preset_group, key, bpNext);
-  select_block_from_tileset(preset.width, preset.height, preset.pos_x, preset.pos_y, preset.custom_block_index);
+  select_block_preset(preset);
 end;
 
 procedure TMainWindow.show_power_and_statistics;
@@ -1845,7 +1846,7 @@ begin
   paint_tile_select[target].Glyph.Canvas.Pixels[0,27] := $0;
 end;
 
-procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top: word; custom_block_index: integer);
+procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top: word);
 var
   x, y: integer;
 begin
@@ -1853,29 +1854,31 @@ begin
   TilesetDialog.block_height := b_height;
   TilesetDialog.block_left := b_left;
   TilesetDialog.block_top := b_top;
-  if custom_block_index = -1 then
-  begin
-    // Normal block
-    block_width := b_width;
-    block_height := b_height;
-    for x:= 0 to block_width - 1 do
-      for y := 0 to block_height - 1 do
-      begin
-        block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
-        block_data[x,y].special := 0;
-      end;
-  end else
-  begin
-    // Custom block
-    block_width := Tileset.custom_blocks[custom_block_index].width;
-    block_height := Tileset.custom_blocks[custom_block_index].height;
-    for x:= 0 to block_width - 1 do
-      for y := 0 to block_height - 1 do
-      begin
-        block_data[x,y].tile := Tileset.custom_blocks[custom_block_index].tiles[x,y];
-        block_data[x,y].special := 0;
-      end;
-  end;
+  block_width := b_width;
+  block_height := b_height;
+  for x:= 0 to block_width - 1 do
+    for y := 0 to block_height - 1 do
+    begin
+      block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
+      block_data[x,y].special := 0;
+    end;
+  RbBlockMode.Checked := true;
+  mouse_already_clicked := false;
+  draw_cursor_image;
+end;
+
+procedure TMainWindow.select_block_preset(preset: PBlockPreset);
+var
+  x, y: integer;
+begin
+  block_width := preset.width;
+  block_height := preset.height;
+  for x := 0 to block_width - 1 do
+    for y := 0 to block_height - 1 do
+    begin
+      block_data[x,y].tile := Tileset.block_preset_tiles[preset.block_preset_tile_index + x + y * preset.width];
+      block_data[x,y].special := 0;
+    end;
   RbBlockMode.Checked := true;
   mouse_already_clicked := false;
   draw_cursor_image;

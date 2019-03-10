@@ -345,7 +345,7 @@ end;
 procedure TMap.put_edge_block(var xpos, ypos: integer; moveoff_x,
   moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
 var
-  block_preset: TBlockPreset;
+  block_preset: PBlockPreset;
   smooth_group: integer;
   x, y: integer;
 begin
@@ -362,7 +362,7 @@ begin
       // into history and in the end we apply the changes (like doing redo)
       undo_history[undo_max].x := x + xpos + blockoff_x;
       undo_history[undo_max].y := y + ypos + blockoff_y;
-      undo_history[undo_max].data.tile := (block_preset.pos_y + y) * 20 + block_preset.pos_x + x;
+      undo_history[undo_max].data.tile := Tileset.block_preset_tiles[block_preset.block_preset_tile_index + x + y * block_preset.width];
       undo_history[undo_max].data.special := 0;
       undo_history[undo_max].is_first := false;
       undo_max := (undo_max + 1) and max_undo_steps;

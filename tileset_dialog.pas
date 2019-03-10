@@ -206,7 +206,7 @@ begin
   b_height := preset_height;
   if (b_left + b_width > 20) or (b_top + b_height > 40) then
     exit;
-  MainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top, -1);
+  MainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top);
   DrawTileset(nil);
   if Button = mbLeft then
   begin
@@ -240,7 +240,7 @@ begin
   if select_started then
   begin
     select_started := false;
-    MainWindow.select_block_from_tileset(block_width, block_height, block_left, block_top, -1);
+    MainWindow.select_block_from_tileset(block_width, block_height, block_left, block_top);
     if Button = mbLeft then
     begin
       close;

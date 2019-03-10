@@ -13,8 +13,7 @@ const max_tile_color_rules = 10;
 const max_fill_area_rules = 10;
 const max_paint_tiles = 64;
 const max_block_presets = 512;
-const max_custom_block_size = 8;
-const max_custom_blocks = 40;
+const max_block_preset_tiles = 1024;
 
 // Constants for get_block_preset function
 const bpNext = -1;
@@ -86,19 +85,10 @@ type
   TBlockPreset = record
     width: byte;
     height: byte;
-    pos_x: byte;
-    pos_y: byte;
-    custom_block_index: integer;
+    block_preset_tile_index: word;
   end;
 
-type
-  TCustomBlock = record
-    width: byte;
-    height: byte;
-    tiles: array[0..max_custom_block_size-1, 0..max_custom_block_size-1] of word;
-  end;
-
-const empty_block_preset: TBlockPreset = (width: 0; height: 0; pos_x: 0; pos_y: 0; custom_block_index: -1);
+  PBlockPreset = ^TBlockPreset;
 
 // Tileset class
 type
@@ -150,8 +140,11 @@ type
     block_preset_key_variants: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of TBlockPresetVariantList;
     block_presets: array[0..max_block_presets-1] of TBlockPreset;
     block_presets_used: integer;
+    block_preset_tiles: array[0..max_block_preset_tiles] of word;
+    block_preset_tiles_used: integer;
 
-    custom_blocks: array[0..max_custom_blocks-1] of TCustomBlock;
+    // Dummy constant
+    empty_block_preset: TBlockPreset;
 
   public
     procedure init;
@@ -174,7 +167,7 @@ type
     function block_key_to_index(key: word): integer;
 
     function get_random_paint_tile(group: integer): integer;
-    function get_block_preset(group: integer; key: word; variant: integer): TBlockPreset;
+    function get_block_preset(group: integer; key: word; variant: integer): PBlockPreset;
 
   end;
 
@@ -212,6 +205,8 @@ begin
     tileset_list[i] := ChangeFileExt(tmp_strings[i], '');
   end;
   tmp_strings.Destroy;
+  empty_block_preset.width := 0;
+  empty_block_preset.height := 0;
 end;
 
 procedure TTileset.change_tileset(index: integer);
@@ -464,10 +459,11 @@ var
   ini: TMemIniFile;
   tmp_strings: TStringList;
   decoder, decoder2: TStringList;
-  i, j, k: integer;
+  i, j, k, x, y: integer;
   key: char;
   preset_index: integer;
-  index, width, height: integer;
+  preset_tile_index: integer;
+  index, width, height, pos_x, pos_y: integer;
 begin
   if not FileExists(filename) then
     exit;
@@ -538,6 +534,7 @@ begin
   end;
   // Load block presets
   preset_index := 0;
+  preset_tile_index := 0;
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
     for j := 0 to cnt_block_preset_keys - 1 do
@@ -566,49 +563,45 @@ begin
         if decoder2.Count = 4 then
         begin
           // Normal block preset
-          block_presets[preset_index].width := strtoint(decoder2[0]);
-          block_presets[preset_index].height := strtoint(decoder2[1]);
-          block_presets[preset_index].pos_x := strtoint(decoder2[2]);
-          block_presets[preset_index].pos_y := strtoint(decoder2[3]);
-          block_presets[preset_index].custom_block_index := -1;
+          width := strtoint(decoder2[0]);
+          height := strtoint(decoder2[1]);
+          if (preset_tile_index + width * height >= max_block_preset_tiles) then
+            continue;
+          pos_x := strtoint(decoder2[2]);
+          pos_y := strtoint(decoder2[3]);
+          block_presets[preset_index].width := width;
+          block_presets[preset_index].height := height;
+          block_presets[preset_index].block_preset_tile_index := preset_tile_index;
+          for y := 0 to height - 1 do
+            for x := 0 to width - 1 do
+              block_preset_tiles[preset_tile_index + x + y * width] := x + pos_x + (y + pos_y) * 20;
+          inc(preset_tile_index, width * height);
         end else
         if decoder2.Count = 1 then
         begin
           // Custom block
-          block_presets[preset_index].width := 0;
-          block_presets[preset_index].height := 0;
-          block_presets[preset_index].pos_x := 0;
-          block_presets[preset_index].pos_y := 0;
-          index := strtoint(decoder2[0]) - 1;
-          if (index < max_custom_blocks) and (index >= 0)then
-            block_presets[preset_index].custom_block_index := index
-          else
-            block_presets[preset_index].custom_block_index := -1;
+          index := strtoint(decoder2[0]);
+          decoder2.DelimitedText := ini.ReadString('Custom_Blocks', inttostr(index), '');
+          width := strtoint(decoder2[0]);
+          height := strtoint(decoder2[1]);
+          if (preset_tile_index + width * height >= max_block_preset_tiles) then
+            continue;
+          if (decoder2.Count - 2 <> width * height) then
+            continue;
+          block_presets[preset_index].width := width;
+          block_presets[preset_index].height := height;
+          block_presets[preset_index].block_preset_tile_index := preset_tile_index;
+          for y := 0 to height - 1 do
+            for x := 0 to width - 1 do
+              block_preset_tiles[preset_tile_index + x + y * width] := strtoint(decoder2[x + y * width + 2]);
+          inc(preset_tile_index, width * height);
         end;
         inc(preset_index);
       end;
     end;
   end;
   block_presets_used := preset_index;
-  // Load custom blocks
-  ini.ReadSection('Custom_Blocks', tmp_strings);
-  for i := 0 to tmp_strings.Count - 1 do
-  begin
-    index := strtoint(tmp_strings[i]) - 1;
-    if (index >= max_custom_blocks) or (index < 0) then
-      continue;
-    decoder2.DelimitedText := ini.ReadString('Custom_Blocks', tmp_strings[i], '');
-    if decoder2.Count < 2 then
-      continue;
-    width := strtoint(decoder2[0]);
-    height := strtoint(decoder2[1]);
-    if (width > max_custom_block_size) or (height > max_custom_block_size) then
-      continue;
-    custom_blocks[index].width := width;
-    custom_blocks[index].height := height;
-    for j := 2 to decoder2.Count - 1 do
-      custom_blocks[index].tiles[(j - 2) mod width, (j - 2) div width] := strtoint(decoder2[j]);
-  end;
+  block_preset_tiles_used := preset_tile_index;
 
   ini.Destroy;
   tmp_strings.Destroy;
@@ -700,7 +693,7 @@ begin
   result := paint_tiles[group, random(paint_tiles_cnt[group])];
 end;
 
-function TTileset.get_block_preset(group: integer; key: word; variant: integer): TBlockPreset;
+function TTileset.get_block_preset(group: integer; key: word; variant: integer): PBlockPreset;
 var
   num_variants: integer;
   key_index, preset_index: integer;
@@ -709,14 +702,14 @@ begin
   // Unknown key
   if key_index = -1 then
   begin
-    result := empty_block_preset;
+    result := @empty_block_preset;
     exit;
   end;
   num_variants := block_preset_key_variants[group, key_index].num_variants;
   // No block preset for this key
   if num_variants = 0 then
   begin
-    result := empty_block_preset;
+    result := @empty_block_preset;
     exit;
   end
   // Just one block preset variant for this key
@@ -743,7 +736,7 @@ begin
     end;
   end;
   preset_index := block_preset_key_variants[group, key_index].first_preset_index + variant;
-  result := block_presets[preset_index];
+  result := @block_presets[preset_index];
 end;
 
 end.
