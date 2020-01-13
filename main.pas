@@ -10,7 +10,7 @@ uses
   // Dialogs
   set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog,
   // Units
-  _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings;
+  _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -135,6 +135,7 @@ type
     Alwaysaskonquit1: TMenuItem;
     Hidepresetwindow1: TMenuItem;
     More1: TMenuItem;
+    Memo1: TMemo;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -244,6 +245,7 @@ type
     block_preset_group: integer;
     block_preset_select: array[0..cnt_block_preset_groups-1] of TSpeedButton;
     block_preset_dialog_opened: boolean;
+    cur_preset_index: integer;
 
     // Tile block variables
     block_width: word;
@@ -299,7 +301,7 @@ type
 
     // Procedures related to selecting/placing block
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
-    procedure select_block_preset(preset: PBlockPreset);
+    procedure select_block_preset(preset_index: integer);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
 
     // Procedures related to cursor image
@@ -412,6 +414,8 @@ begin
     tileset_menuitems[i].OnClick := SelectTileset;
     MainWindow.Selecttileset1.Add(tileset_menuitems[i]);
   end;
+  // Initialize Random Generator
+  //--RandomGen.init(Memo1.Lines);
   // Initialize Structures
   for i := 0 to Structures.cnt_misc_objects - 1 do
     MiscObjList.Items.Add(Structures.misc_object_info[i].name);
@@ -527,6 +531,14 @@ var
   index: integer;
 begin
   case key of
+    {--106:
+      begin RandomGen.reset; render_minimap; render_map;  end;
+    109: //KP-
+      begin RandomGen.manual_undo(ssShift in Shift); render_map; end;
+    107: //KP+
+      begin RandomGen.manual_step(0); render_map; end;
+    111: //KP/
+      Memo1.Lines.Clear;}
     // Esc: cancel event position selection
     27:
     begin
@@ -839,7 +851,7 @@ end;
 
 procedure TMainWindow.Showstatus1Click(Sender: TObject);
 begin
-  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename+#13'Block presets used: '+inttostr(Tileset.block_presets_used)+#13'Preset tiles used: '+inttostr(Tileset.block_preset_tiles_used));
+  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename+#13'Block presets used: '+inttostr(Tileset.block_presets_used)+#13'Preset tiles used: '+inttostr(Tileset.block_preset_tiles_used)+#13'Connection points used: '+inttostr(Tileset.connection_points_used));
 end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
@@ -1222,6 +1234,7 @@ begin
           // Enable additional clicks if cursor image was moved from mouse cursor position
           mouse_already_clicked := false;
         Map.put_block(cursor_left, cursor_top, block_width, block_height, Addr(block_data));
+        //--RandomGen.place_seed_block(cur_preset_index, cursor_left, cursor_top, ssShift in Shift);
       end
       else if (ssShift in Shift) and mode(mPaintMode) and (Tileset.paint_tile_groups[paint_tile_group].smooth_group > -1) then
       begin
@@ -1785,11 +1798,8 @@ begin
 end;
 
 procedure TMainWindow.apply_key_preset(key: word);
-var
-  preset: PBlockPreset;
 begin
-  preset := Tileset.get_block_preset(block_preset_group, key, bpNext);
-  select_block_preset(preset);
+  select_block_preset(Tileset.get_block_preset(block_preset_group, key, bpNext));
 end;
 
 procedure TMainWindow.show_power_and_statistics;
@@ -1867,10 +1877,13 @@ begin
   draw_cursor_image;
 end;
 
-procedure TMainWindow.select_block_preset(preset: PBlockPreset);
+procedure TMainWindow.select_block_preset(preset_index: integer);
 var
+  preset: PBlockPreset;
   x, y: integer;
 begin
+  cur_preset_index := preset_index;
+  preset := @Tileset.block_presets[preset_index];
   block_width := preset.width;
   block_height := preset.height;
   for x := 0 to block_width - 1 do
@@ -1998,6 +2011,8 @@ begin
     Assignmisfile1Click(nil);
   end else
     unload_mission;
+  // Reset random generator
+  //--RandomGen.reset;
   // Get test map settings
   Settings.get_map_test_settings;
   // Finish it
@@ -2006,6 +2021,7 @@ begin
   resize_map_canvas;
   render_minimap;
   render_map;
+  //--Memo1.Lines.Clear;
 end;
 
 end.

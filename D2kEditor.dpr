@@ -16,7 +16,8 @@ uses
   _tileset in '_tileset.pas',
   _structures in '_structures.pas',
   _stringtable in '_stringtable.pas',
-  _settings in '_settings.pas';
+  _settings in '_settings.pas',
+  _randomgen in '_randomgen.pas';
 
 {$R *.res}
 
@@ -31,6 +32,7 @@ begin
   StringTable := TStringTable.Create;
   SoundStringTable := TStringTable.Create;
   Settings := TSettings.Create;
+  //--RandomGen := TRandomGen.Create;
   Application.CreateForm(TMainWindow, MainWindow);
   Application.CreateForm(TSetDialog, SetDialog);
   Application.CreateForm(TTilesetDialog, TilesetDialog);

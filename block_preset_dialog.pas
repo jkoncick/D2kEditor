@@ -170,11 +170,9 @@ end;
 procedure TBlockPresetDialog.select_preset(row, col: integer);
 var
   key: word;
-  preset: PBlockPreset;
 begin
   key := ord(block_preset_keys[row, col]);
-  preset := tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row, col]);
-  MainWindow.select_block_preset(preset);
+  MainWindow.select_block_preset(tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row, col]));
   if settings.HidePresetWindow then
     Hide;
 end;
@@ -202,7 +200,7 @@ var
   tile_x, tile_y: integer;
 begin
   key := ord(block_preset_keys[row, col]);
-  preset := tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row,col]);
+  preset := @Tileset.block_presets[tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row,col])];
   BlockPresetImage.Canvas.Pen.Color := clBtnFace;
   BlockPresetImage.Canvas.Brush.Color := clBtnFace;
   BlockPresetImage.Canvas.Rectangle(col*96, row*96, col*96+96, row*96+96);

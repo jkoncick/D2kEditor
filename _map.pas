@@ -350,7 +350,7 @@ var
   x, y: integer;
 begin
   smooth_group := Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_group;
-  block_preset := Tileset.get_block_preset(smooth_group, ord(block_preset_key), bpRandom);
+  block_preset := @Tileset.block_presets[Tileset.get_block_preset(smooth_group, ord(block_preset_key), bpRandom)];
   // Reuse already defined block-key-presets for this purpose
   // Place edge block (it can be either 1x1 or 2x2, so we use loops)
   for y := 0 to block_preset.height - 1 do

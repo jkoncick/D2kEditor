@@ -4,6 +4,21 @@ interface
 
 uses Windows, Graphics, Types, _map;
 
+const constraint_type_color: array[0..8] of TColor = (clTeal, clOlive, clGray, clPurple, clTeal+$404040, clOlive+$404040, clGray+$404040, clPurple+$404040, clRed);
+const constraint_side_rect: array[0..3, 0..3] of integer = (
+  (8, 23, 16, 31),
+  (16, 31, 8, 23),
+  (8, 23, 0, 15),
+  (0, 15, 8, 23)
+);
+const constraint_side_point: array[0..3, 0..1] of integer = (
+  (14, 28),
+  (28, 14),
+  (14, 0),
+  (0, 14)
+);
+
+
 type EditingMarkerType = (emBuilding, emBuildingNotOnBuildable, emSingleObject, emSelectionArea, emPaintArea);
 
 type
@@ -43,6 +58,11 @@ type
       o_show_grid, o_draw_concrete, o_mark_impassable, o_mark_buildable, o_show_unknown_specials,
       o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas,
       o_rendering_optimization: boolean);
+    procedure render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
+    procedure draw_cross(cnv_target: TCanvas; x1, x2, y1, y2: word; color: TColor; width: integer);
+    procedure draw_ellipse(cnv_target: TCanvas; x1, y1, x2, y2: word; pcolor, bcolor: TColor; width: integer; text: String);
+    procedure draw_point(cnv_target: TCanvas; x, y: word; color: TColor);
+
     procedure render_minimap_contents(cnv_target: TCanvas; data: TMapDataPtr; data_width, data_height: word;
       o_use_alloc_indexes: boolean);
 
@@ -57,7 +77,7 @@ var
 
 implementation
 
-uses SysUtils, Math, Forms, main, _mission, _tileset, _structures, _settings, Classes;
+uses SysUtils, Math, Forms, main, _mission, _tileset, _structures, _settings, Classes, _randomgen;
 
 procedure TRenderer.init;
 var
@@ -266,6 +286,7 @@ begin
         cnv_target.MoveTo(x*32+31, y*32);
         cnv_target.LineTo(x*32, y*32+31);
       end;
+      //--render_randomgen_data(cnv_target, cnv_left, cnv_top, x, y);
     end;
   end;
   cnv_target.Pen.Width := 1;
@@ -486,6 +507,115 @@ begin
       cnv_target.LineTo(cnv_width*32,y*32);
     end;
   end;
+end;
+
+procedure TRenderer.render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
+var
+  randomgen_tile_record: ^TTileRecord;
+  pos_x, pos_y: integer;
+  xx, yy: integer;
+  i: integer;
+  ctype: byte;
+  checktype: byte;
+  ccolor: TColor;
+  checkcolor: TColor;
+begin
+  // Draw tile record from random map generator
+  pos_x := x + cnv_left;
+  pos_y := y + cnv_top;
+  xx := x*32;
+  yy := y*32;
+  randomgen_tile_record := @RandomGen.tile_records[pos_x, pos_y];
+  // Draw active constraints
+  for i := 0 to 3 do
+  begin
+    if randomgen_tile_record.constraints[i].radius > 0 then
+    begin
+      ctype := randomgen_tile_record.constraints[i].c_type;
+      ccolor := constraint_type_color[ctype] + (randomgen_tile_record.constraints[i].radius - 1) * $004000;
+      if ctype <> constraint_type_connectionPoint then
+        draw_cross(cnv_target, xx+constraint_side_rect[i,0], xx+constraint_side_rect[i,1], yy+constraint_side_rect[i,2], yy+constraint_side_rect[i,3], ccolor, 2)
+      else
+        draw_point(cnv_target, xx+constraint_side_point[i,0], yy+constraint_side_point[i,1], ccolor);
+    end;
+  end;
+  // Draw last check for constraint
+  if RandomGen.constraint_check_step <> 0 then
+  begin
+    for i := 0 to 3 do
+    begin
+      if randomgen_tile_record.constraint_checks[i].step <> RandomGen.constraint_check_step then
+        continue;
+      ctype := randomgen_tile_record.constraints[i].c_type;
+      checktype := randomgen_tile_record.constraint_checks[i].c_type;
+      checkcolor := constraint_type_color[checktype];
+      // If there was violation, fill the ellipse with color
+      if randomgen_tile_record.constraint_checks[i].violated then
+        ccolor := constraint_type_color[ctype]
+      else
+        ccolor := $01000000;
+      draw_ellipse(cnv_target, xx+constraint_side_rect[i,0], yy+constraint_side_rect[i,2], xx+constraint_side_rect[i,1], yy+constraint_side_rect[i,3], checkcolor, ccolor, 2, inttostr(randomgen_tile_record.constraint_checks[i].distance));
+    end;
+  end;
+
+  cnv_target.Pen.Width := 1;
+  cnv_target.Brush.Style := bsClear;
+  // Draw connection points
+  for i := 0 to RandomGen.num_active_connection_points - 1 do
+  begin
+    if (x + cnv_left <> RandomGen.active_connection_points[i].pos_x) or (y + cnv_top <> RandomGen.active_connection_points[i].pos_y) then
+      continue;
+    cnv_target.Pen.Color := clRed;
+    cnv_target.Font.Color := clRed;
+    cnv_target.Rectangle(xx, yy, xx+32, yy+32);
+    cnv_target.TextOut(xx + 12, yy + 3, inttostr(i));
+    cnv_target.TextOut(xx + 12, yy + 17, inttostr(RandomGen.active_connection_points[i].parent_step));
+  end;
+  // Draw blocks
+  for i := 0 to RandomGen.current_step - 1 do
+  begin
+    if (x + cnv_left <> RandomGen.hist_placed_blocks[i].pos_x) or (y + cnv_top <> RandomGen.hist_placed_blocks[i].pos_y) then
+      continue;
+    cnv_target.Pen.Color := clLime;
+    cnv_target.Font.Color := clLime;
+    cnv_target.Rectangle(xx, yy, xx+32, yy+32);
+    cnv_target.TextOut(xx + 12, yy + 3, inttostr(i));
+    cnv_target.TextOut(xx + 12, yy + 17, inttostr(RandomGen.hist_placed_blocks[i].num_backtracked));
+  end;
+end;
+
+procedure TRenderer.draw_cross(cnv_target: TCanvas; x1, x2, y1, y2: word; color: TColor; width: integer);
+begin
+  cnv_target.Pen.Color := color;
+  cnv_target.Pen.Width := width;
+  cnv_target.MoveTo(x1, y1);
+  cnv_target.LineTo(x2, y2);
+  cnv_target.MoveTo(x2, y1);
+  cnv_target.LineTo(x1, y2);
+end;
+
+procedure TRenderer.draw_ellipse(cnv_target: TCanvas; x1, y1, x2, y2: word; pcolor, bcolor: TColor; width: integer; text: String);
+begin
+  cnv_target.Pen.Color := pcolor;
+  cnv_target.Pen.Width := width;
+  if (bcolor > $00FFFFFF) then
+    cnv_target.Brush.Style := bsClear
+  else begin
+    cnv_target.Brush.Style := bsSolid;
+    cnv_target.Brush.Color := bcolor;
+  end;
+  cnv_target.Ellipse(x1, y1, x2+1, y2+1);
+  cnv_target.Font.Color := clLime;
+  cnv_target.TextOut((x1+x2-cnv_target.TextWidth(text)) div 2, (y1+y2-cnv_target.TextHeight(text)) div 2 , text);
+end;
+
+procedure TRenderer.draw_point(cnv_target: TCanvas; x, y: word; color: TColor);
+begin
+  cnv_target.Pen.Color := color;
+  cnv_target.Pen.Width := 1;
+  cnv_target.Brush.Style := bsSolid;
+  cnv_target.Brush.Color := color;
+  cnv_target.Rectangle(x, y, x+4, y+4);
 end;
 
 procedure TRenderer.render_minimap_contents(cnv_target: TCanvas; data: TMapDataPtr; data_width, data_height: word;

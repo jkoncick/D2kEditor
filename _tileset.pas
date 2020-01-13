@@ -14,6 +14,9 @@ const max_fill_area_rules = 10;
 const max_paint_tiles = 64;
 const max_block_presets = 512;
 const max_block_preset_tiles = 1024;
+const max_connection_points = 512;
+const cnt_connection_point_types = 16;
+const cnt_block_groups = 256;
 
 // Constants for get_block_preset function
 const bpNext = -1;
@@ -78,7 +81,7 @@ type
 type
   TBlockPresetVariantList = record
     first_preset_index: word;
-    num_variants: word;
+    num_variants: byte;
   end;
 
 type
@@ -86,9 +89,31 @@ type
     width: byte;
     height: byte;
     block_preset_tile_index: word;
+    block_group: byte;
+    num_connection_points: byte;
+    connection_point_index: word;
   end;
 
   PBlockPreset = ^TBlockPreset;
+
+type
+  TConnectionPoint = record
+    type_and_direction: byte;
+    offset: byte;
+  end;
+
+type
+  TBlockGroup = record
+    repeat_distance: byte;
+    absolute_weight: word;
+  end;
+
+type
+  TConnectionPointType = record
+    paint_group: byte;
+    connection_point_width: byte;
+    connection_point_height: byte;
+  end;
 
 // Tileset class
 type
@@ -143,8 +168,10 @@ type
     block_preset_tiles: array[0..max_block_preset_tiles] of word;
     block_preset_tiles_used: integer;
 
-    // Dummy constant
-    empty_block_preset: TBlockPreset;
+    connection_points: array[0..max_connection_points-1] of TConnectionPoint;
+    connection_points_used: integer;
+    block_groups: array[0..cnt_block_groups] of TBlockGroup;
+    connection_point_types: array[0..cnt_connection_point_types-1] of TConnectionPointType;
 
   public
     procedure init;
@@ -167,7 +194,7 @@ type
     function block_key_to_index(key: word): integer;
 
     function get_random_paint_tile(group: integer): integer;
-    function get_block_preset(group: integer; key: word; variant: integer): PBlockPreset;
+    function get_block_preset(group: integer; key: word; variant: integer): integer;
 
   end;
 
@@ -205,8 +232,9 @@ begin
     tileset_list[i] := ChangeFileExt(tmp_strings[i], '');
   end;
   tmp_strings.Destroy;
-  empty_block_preset.width := 0;
-  empty_block_preset.height := 0;
+  // Initialize empty block preset
+  block_presets[0].width := 0;
+  block_presets[0].height := 0;
 end;
 
 procedure TTileset.change_tileset(index: integer);
@@ -459,10 +487,12 @@ var
   ini: TMemIniFile;
   tmp_strings: TStringList;
   decoder, decoder2: TStringList;
-  i, j, k, x, y: integer;
+  i, j, k, l, x, y: integer;
   key: char;
   preset_index: integer;
   preset_tile_index: integer;
+  connection_point_index: integer;
+  tmp_block_preset: PBlockPreset;
   index, width, height, pos_x, pos_y: integer;
 begin
   if not FileExists(filename) then
@@ -533,7 +563,7 @@ begin
     block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.paint', 0) - 1;
   end;
   // Load block presets
-  preset_index := 0;
+  preset_index := 1;
   preset_tile_index := 0;
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
@@ -602,6 +632,81 @@ begin
   end;
   block_presets_used := preset_index;
   block_preset_tiles_used := preset_tile_index;
+
+  // Load connection points
+  connection_point_index := 0;
+  for i := 0 to cnt_block_preset_groups - 1 do
+  begin
+    for j := 0 to cnt_block_preset_keys - 1 do
+    begin
+      key := ' ';
+      if (j >= 0) and (j <= 9) then
+        key := chr(j + ord('0'))
+      else if (j >= 10) and (j <= 35) then
+        key := chr(j + ord('A') - 10)
+      else if j = 36 then
+        key := '<'
+      else if j = 37 then
+        key := '>'
+      else if j = 38 then
+        key := ':'
+      else if j = 39 then
+        key := '?';
+      for k := 0 to block_preset_key_variants[i, j].num_variants - 1 do
+      begin
+        tmp_block_preset := @block_presets[block_preset_key_variants[i, j].first_preset_index + k];
+        decoder.DelimitedText := ini.ReadString('Connection_Points_For_Group_'+(inttostr(i+1)), key + inttostr(k+1), '');
+        if decoder.Count = 0 then
+        begin
+          tmp_block_preset.block_group := 0;
+          tmp_block_preset.num_connection_points := 0;
+          tmp_block_preset.connection_point_index := 0;
+          continue;
+        end;
+        tmp_block_preset.block_group := strtoint(decoder[0]);
+        tmp_block_preset.num_connection_points := decoder.Count - 1;
+        tmp_block_preset.connection_point_index := connection_point_index;
+        for l := 1 to decoder.Count - 1 do
+        begin
+          decoder2.DelimitedText := decoder[l];
+          if (connection_point_index >= max_connection_points) then
+            break;
+          if decoder2.Count = 3 then
+          begin
+            // 8 bytes: XTTTTDDD (16 types, 8 directions)
+            connection_points[connection_point_index].type_and_direction := (strtoint(decoder2[0]) shl 3) or (strtoint(decoder2[1]) - 1);
+            connection_points[connection_point_index].offset := strtoint(decoder2[2]);
+          end;
+          inc(connection_point_index);
+        end;
+      end;
+    end;
+  end;
+  connection_points_used := connection_point_index;
+
+  // Load block groups
+  for i := 0 to cnt_block_groups - 1 do
+  begin
+    decoder2.DelimitedText := ini.ReadString('Block_Groups',inttostr(i),'');
+    if decoder2.Count <> 2 then
+    begin
+      block_groups[i].repeat_distance := 0;
+      block_groups[i].absolute_weight := 0;
+    end else
+    begin
+      block_groups[i].repeat_distance := strtoint(decoder2[0]);
+      block_groups[i].absolute_weight := strtoint(decoder2[1]);
+    end;
+  end;
+
+  // Load connection point types
+  for i := 0 to cnt_connection_point_types - 1 do
+    begin
+      decoder2.DelimitedText := ini.ReadString('Connection_Point_Types',inttostr(i), '1.1.1');
+      connection_point_types[i].paint_group := strtoint(decoder2[0]) - 1;
+      connection_point_types[i].connection_point_width := strtoint(decoder2[1]);
+      connection_point_types[i].connection_point_height := strtoint(decoder2[2]);
+    end;
 
   ini.Destroy;
   tmp_strings.Destroy;
@@ -693,7 +798,7 @@ begin
   result := paint_tiles[group, random(paint_tiles_cnt[group])];
 end;
 
-function TTileset.get_block_preset(group: integer; key: word; variant: integer): PBlockPreset;
+function TTileset.get_block_preset(group: integer; key: word; variant: integer): integer;
 var
   num_variants: integer;
   key_index, preset_index: integer;
@@ -702,14 +807,14 @@ begin
   // Unknown key
   if key_index = -1 then
   begin
-    result := @empty_block_preset;
+    result := 0;
     exit;
   end;
   num_variants := block_preset_key_variants[group, key_index].num_variants;
   // No block preset for this key
   if num_variants = 0 then
   begin
-    result := @empty_block_preset;
+    result := 0;
     exit;
   end
   // Just one block preset variant for this key
@@ -736,7 +841,7 @@ begin
     end;
   end;
   preset_index := block_preset_key_variants[group, key_index].first_preset_index + variant;
-  result := @block_presets[preset_index];
+  result := preset_index;
 end;
 
 end.

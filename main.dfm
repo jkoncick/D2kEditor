@@ -409,11 +409,20 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
       end
     end
+  end
+  object Memo1: TMemo
+    Left = 0
+    Top = 0
+    Width = 329
+    Height = 569
+    ScrollBars = ssVertical
+    TabOrder = 4
+    Visible = False
   end
   object AppMenu: TMainMenu
     object File1: TMenuItem
