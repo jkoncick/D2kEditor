@@ -600,7 +600,7 @@ begin
     base_area_type := 0;
     if (pos_x >= 0) and (pos_x < Map.width) and (pos_y >= 0) and (pos_y < Map.height) then
       for i := 1 to 3 do
-        if Tileset.attributes[Map.data[pos_x, pos_y].tile] and (1 shl i) = (1 shl i) then
+        if Tileset.attributes_editor[Map.data[pos_x, pos_y].tile] and (1 shl i) = (1 shl i) then
           base_area_type := i;
   end else
     // Base area type is same as for the current distinct area
@@ -906,7 +906,7 @@ begin
   rating := 1.0;
   for i := 0 to active_cp_added_cnt -1 do
   begin
-    active_cp := @active_cp_added[i];
+    //active_cp := @active_cp_added[i];
     {x := active_cp.pos_x;
     y := active_cp.pos_y;
     direction := (Tileset.connection_points[active_cp.connection_point_index].type_and_direction and 3);
@@ -1190,7 +1190,7 @@ begin
   // Check if tile has attribute according to base area type
   check_bit := 1 shl base_area_type;
   tile_index := Map.data[pos_x, pos_y].tile;
-  result := Tileset.attributes[tile_index] and check_bit = check_bit;
+  result := Tileset.attributes_editor[tile_index] and check_bit = check_bit;
 end;
 
 procedure TRandomGen.check_constraint_violation(pos_x, pos_y, direction, check_type: integer; strict: boolean; var constraint_violated: boolean);
@@ -1279,7 +1279,7 @@ begin
           2: dec(pos_y);
           3: dec(pos_x);
         end;
-        if (pos_x >= 0) and (pos_x < Map.width) and (pos_y >= 0) and (pos_y < Map.height) and (Tileset.attributes[Map.data[pos_x, pos_y].tile] and (1 shl base_area_type) <> 0) then
+        if (pos_x >= 0) and (pos_x < Map.width) and (pos_y >= 0) and (pos_y < Map.height) and (Tileset.attributes_editor[Map.data[pos_x, pos_y].tile] and (1 shl base_area_type) <> 0) then
         begin
           success := fill_enclosed_area_step(pos_x, pos_y, direction, base_area_type, target_area_type);
           if success then
@@ -1312,7 +1312,7 @@ begin
   if (pos_x < 0) or (pos_x >= Map.width) or (pos_y < 0) or (pos_y >= Map.height) then
     exit; // Outside map
   map_tile := @Map.data[pos_x, pos_y];
-  if Tileset.attributes[map_tile.tile] and (1 shl base_area_type) = 0 then
+  if Tileset.attributes_editor[map_tile.tile] and (1 shl base_area_type) = 0 then
   begin
     // Tile is not of base area type - check for constraint
     side_constraint := @tile_records[pos_x, pos_y].constraints[direction xor 2];
@@ -1356,7 +1356,7 @@ begin
   if (pos_x < 0) or (pos_x >= Map.width) or (pos_y < 0) or (pos_y >= Map.height) then
     exit;
   map_tile := @Map.data[pos_x, pos_y];
-  if Tileset.attributes[map_tile.tile] and (1 shl target_area_type) = 0 then
+  if Tileset.attributes_editor[map_tile.tile] and (1 shl target_area_type) = 0 then
     exit;
   // Do actual change
   map_tile.tile := Tileset.get_random_paint_tile(base_area_type);

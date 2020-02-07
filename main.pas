@@ -136,6 +136,8 @@ type
     Hidepresetwindow1: TMenuItem;
     More1: TMenuItem;
     Memo1: TMemo;
+    TileAttributeseditor1: TMenuItem;
+    N12: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -168,6 +170,7 @@ type
     procedure Selectnext1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
     procedure Loadtilesetattributes1Click(Sender: TObject);
+    procedure TileAttributeseditor1Click(Sender: TObject);
     procedure Showstatus1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure More1Click(Sender: TObject);
@@ -281,7 +284,7 @@ type
     procedure load_map(filename: String);
     procedure save_map(filename: String);
     procedure unload_mission;
-    function check_map_errors: boolean;    
+    function check_map_errors: boolean;
     procedure set_window_titles(map_name: String);
     procedure refresh_recent_files_menu;
 
@@ -290,6 +293,7 @@ type
     procedure launch_game;
 
     // Miscellaneous helper procedures
+    procedure tileset_changed;
     procedure set_special_value;
     function mode(m: SelectedMode): boolean;
     function mouse_over_map_canvas: boolean;
@@ -320,6 +324,8 @@ var
   MainWindow: TMainWindow;
 
 implementation
+
+uses tileatr_editor;
 
 {$R *.dfm}
 
@@ -463,6 +469,7 @@ begin
   end;
   Settings.save_editor_settings;
   MainWindow.OnResize := nil;
+  TileAtrEditor.OnResize := nil;
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
@@ -570,6 +577,7 @@ begin
         PaintTileSelectClick(paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group]);
       end;
     end;
+    255: TileAttributeseditor1Click(nil);
   end;
   if mode(mBlockMode) then
   case key of
@@ -832,8 +840,10 @@ procedure TMainWindow.Loadtileset1Click(Sender: TObject);
 begin
   if TilesetOpenDialog.Execute then
   begin
-    Tileset.use_custom_image(TilesetOpenDialog.FileName);
+    Tileset.load_image_from_file(TilesetOpenDialog.FileName);
     // Re-render everything
+    tileset_changed;
+    render_tileset;
     render_map;
   end;
 end;
@@ -842,16 +852,22 @@ procedure TMainWindow.Loadtilesetattributes1Click(Sender: TObject);
 begin
   if TileatrOpenDialog.Execute then
   begin
-    Tileset.load_attributes(TileatrOpenDialog.FileName);
+    Tileset.load_attributes_from_file(TileatrOpenDialog.FileName);
     // Re-render everything
+    tileset_changed;
     render_minimap;
     render_map;
   end;
 end;
 
+procedure TMainWindow.TileAttributeseditor1Click(Sender: TObject);
+begin
+  TileAtrEditor.Show;
+end;
+
 procedure TMainWindow.Showstatus1Click(Sender: TObject);
 begin
-  ShowMessage('Tileset index: '+inttostr(Tileset.current_tileset)+#13'Tileset name: '+Tileset.tileset_name+#13'Tileset attributes name: '+Tileset.tileatr_name+#13'Tileset image file: '+Tileset.tileimage_filename+#13'Tileset attributes file: '+Tileset.tileatr_filename+#13'Block presets used: '+inttostr(Tileset.block_presets_used)+#13'Preset tiles used: '+inttostr(Tileset.block_preset_tiles_used)+#13'Connection points used: '+inttostr(Tileset.connection_points_used));
+  ShowMessage(Tileset.get_status);
 end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
@@ -1641,7 +1657,7 @@ begin
     unload_mission;
     // No tileset specified for map, if mis file not present - set to default one
     if (Tileset.current_tileset = -1) then
-      Tileset.change_tileset(Settings.DefaultTileset);
+      Tileset.change_tileset_by_name(Settings.DefaultTilesetName);
   end;
   set_window_titles(ChangeFileExt(ExtractFileName(Map.filename), ''));
   if MapStatsDialog.Visible then
@@ -1751,6 +1767,23 @@ begin
   if not MissionDialog.cbUseINI.Checked then
     DeleteFile(Settings.MissionsPath + '\TESTMAP.INI');
   ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), PChar('-SPAWN ' + Settings.TestMapParameters), PChar(Settings.GamePath), SW_SHOWNORMAL);
+end;
+
+procedure TMainWindow.tileset_changed;
+var
+  i: integer;
+begin
+  if Tileset.current_tileset <> -1 then
+  begin
+    tileset_menuitems[Tileset.current_tileset].Checked := true;
+    StatusBar.Panels[1].Text := Tileset.tileset_name;
+  end else
+  begin
+    StatusBar.Panels[1].Text := 'Custom files';
+    for i := 0 to Length(tileset_menuitems) -1 do
+      tileset_menuitems[i].Checked := false;
+  end;
+  TileAtrEditor.tileset_changed;
 end;
 
 procedure TMainWindow.set_special_value;
@@ -1998,7 +2031,7 @@ end;
 procedure TMainWindow.new_map(new_width, new_height: integer);
 begin
   if (Tileset.current_tileset = -1) then
-      Tileset.change_tileset(Settings.DefaultTileset);
+      Tileset.change_tileset_by_name(Settings.DefaultTilesetName);
   Map.new_map(new_width, new_height);
   StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
   StatusBar.Panels[3].Text := 'Map not saved';

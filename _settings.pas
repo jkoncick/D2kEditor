@@ -34,7 +34,7 @@ type
     DefaultMapHeight: integer;
     DefaultMisTechLevel: integer;
     DefaultMisStartingMoney: integer;
-    DefaultTileset: integer;
+    DefaultTilesetName: String;
     AssignMisFileToNewMap: boolean;
     PreplaceWormSpawner: boolean;
 
@@ -78,7 +78,7 @@ implementation
 
 uses
   SysUtils, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, _map, _stringtable;
+  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, _map, _stringtable;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -109,7 +109,7 @@ begin
   DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 64);
   DefaultMisTechLevel := ini.ReadInteger('Defaults', 'DefaultMisTechLevel', 1);
   DefaultMisStartingMoney := ini.ReadInteger('Defaults', 'DefaultMisStartingMoney', 3000);
-  DefaultTileset := ini.ReadInteger('Defaults', 'DefaultTileset', 2);
+  DefaultTilesetName := ini.ReadString('Defaults', 'DefaultTilesetName', 'BLOXBGBS');
   AssignMisFileToNewMap := ini.ReadBool('Defaults', 'AssignMisFileToNewMap', true);
   PreplaceWormSpawner := ini.ReadBool('Defaults', 'PreplaceWormSpawner', false);
   // Load file paths
@@ -152,6 +152,7 @@ begin
   EventDialog.EventGrid.ColWidths[4] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
   EventDialog.EventGrid.ColWidths[5] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   load_window_position(ini, MapStatsDialog, 'MapStatsDialog');
+  load_window_position(ini, TileAtrEditor, 'TileAtrEditor');
   ini.Destroy;
 end;
 
@@ -184,7 +185,7 @@ begin
   ini.WriteInteger('Defaults', 'DefaultMapHeight', DefaultMapHeight);
   ini.WriteInteger('Defaults', 'DefaultMisTechLevel', DefaultMisTechLevel);
   ini.WriteInteger('Defaults', 'DefaultMisStartingMoney', DefaultMisStartingMoney);
-  ini.WriteInteger('Defaults', 'DefaultTileset', DefaultTileset);
+  ini.WriteString('Defaults', 'DefaultTilesetName', DefaultTilesetName);
   ini.WriteBool('Defaults', 'AssignMisFileToNewMap', AssignMisFileToNewMap);
   ini.WriteBool('Defaults', 'PreplaceWormSpawner', PreplaceWormSpawner);
   // Save file paths
@@ -212,6 +213,7 @@ begin
   ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
   ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   save_window_position(ini, MapStatsDialog, 'MapStatsDialog');
+  save_window_position(ini, TileAtrEditor, 'TileAtrEditor');
   ini.UpdateFile;
   ini.Destroy;
 end;

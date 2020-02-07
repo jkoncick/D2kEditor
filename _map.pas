@@ -335,7 +335,7 @@ begin
   if y < 0 then y := 0;
   if x >= map_width then x := map_width - 1;
   if y >= map_height then y := map_height - 1;
-  atr := Tileset.attributes[map_data[x,y].tile];
+  atr := Tileset.attributes_editor[map_data[x,y].tile];
   if exact then
     result := (atr and ($01 shl tmp_paint_tile_group)) <> 0
   else

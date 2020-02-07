@@ -10,6 +10,7 @@ uses
   event_dialog in 'event_dialog.pas' {EventDialog},
   mission_dialog in 'mission_dialog.pas' {MissionDialog},
   map_stats_dialog in 'map_stats_dialog.pas' {MapStatsDialog},
+  tileatr_editor in 'tileatr_editor.pas' {TileAtrEditor},
   _renderer in '_renderer.pas',
   _map in '_map.pas',
   _mission in '_mission.pas',
@@ -18,6 +19,7 @@ uses
   _stringtable in '_stringtable.pas',
   _settings in '_settings.pas',
   _randomgen in '_randomgen.pas';
+
 
 {$R *.res}
 
@@ -41,6 +43,7 @@ begin
   Application.CreateForm(TEventDialog, EventDialog);
   Application.CreateForm(TMissionDialog, MissionDialog);
   Application.CreateForm(TMapStatsDialog, MapStatsDialog);
+  Application.CreateForm(TTileAtrEditor, TileAtrEditor);
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
   // Load map given as first parameter

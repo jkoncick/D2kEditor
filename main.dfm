@@ -527,6 +527,14 @@ object MainWindow: TMainWindow
       object N6: TMenuItem
         Caption = '-'
       end
+      object TileAttributeseditor1: TMenuItem
+        Caption = 'Attributes editor...'
+        ShortCut = 16465
+        OnClick = TileAttributeseditor1Click
+      end
+      object N12: TMenuItem
+        Caption = '-'
+      end
       object Showstatus1: TMenuItem
         Caption = 'Show status'
         OnClick = Showstatus1Click
