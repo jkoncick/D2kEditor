@@ -69,8 +69,6 @@ const bottom_style_types: array[0..3] of TBottomStyleType =
     (size_x: 3; size_y: 3; rock_tile_x: 14; rock_tile_y: 30; conc_tile_x:  6; conc_tile_y: 32)  // 3x3
   );
 
-const concrete_tiles: array[0..5] of word = (651, 657, 658, 659, 671, 691);
-
 type
   TStructures = class
 

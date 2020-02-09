@@ -18,6 +18,39 @@ const constraint_side_point: array[0..3, 0..1] of integer = (
   (0, 14)
 );
 
+const thin_spice_tiles: array[0..255] of word = (
+  794,794,765,765,794,794,765,765,767,767,753,763,767,767,753,763,
+  766,766,752,752,766,766,762,762,792,792,757,798,792,792,799,771,
+  794,794,765,765,794,794,765,765,767,767,753,763,767,767,753,763,
+  766,766,752,762,766,766,762,762,792,792,757,798,792,792,799,771,
+  764,764,791,791,764,764,791,791,751,751,755,777,751,751,755,777,
+  750,750,754,754,750,750,776,776,756,756,790,780,756,756,781,788,
+  764,764,791,791,764,764,791,791,761,761,797,769,761,761,797,769,
+  750,750,754,754,750,750,776,776,778,778,782,784,778,778,789,775,
+  794,794,765,765,794,794,765,765,767,767,753,763,767,767,753,763,
+  766,766,752,752,766,766,762,762,792,792,757,798,792,792,799,771,
+  794,794,765,765,794,794,765,765,767,767,753,763,767,767,753,763,
+  766,766,752,752,766,766,762,762,792,792,757,798,792,792,799,771,
+  764,764,791,791,764,764,791,791,751,751,755,777,751,751,755,777,
+  760,760,796,796,760,760,770,770,779,779,783,786,779,779,787,774,
+  764,764,791,791,764,764,791,791,761,761,797,769,761,761,797,769,
+  760,760,796,796,760,760,770,770,768,768,785,773,768,768,772,793
+);
+
+const thick_spice_pattern: array[0..7, 0..7] of byte = (
+  (1,4,4,1,1,4,1,4),
+  (4,4,2,4,2,2,4,1),
+  (3,3,2,2,3,3,3,3),
+  (2,3,4,2,1,4,1,3),
+  (4,1,1,4,2,4,3,4),
+  (2,1,2,3,3,4,4,3),
+  (2,2,3,2,2,1,4,4),
+  (4,3,4,2,4,4,4,3)
+);
+
+const thick_spice_tiles: array[0..3] of word = (300,301,320,321);
+
+const concrete_tiles: array[0..2] of word = (651, 671, 691);
 
 type EditingMarkerType = (emBuilding, emBuildingNotOnBuildable, emSingleObject, emSelectionArea, emPaintArea);
 
@@ -58,6 +91,7 @@ type
       o_show_grid, o_draw_concrete, o_mark_impassable, o_mark_buildable, o_show_unknown_specials,
       o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas,
       o_rendering_optimization: boolean);
+    function is_spice(value: word): boolean;
     procedure render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
     procedure draw_cross(cnv_target: TCanvas; x1, x2, y1, y2: word; color: TColor; width: integer);
     procedure draw_ellipse(cnv_target: TCanvas; x1, y1, x2, y2: word; pcolor, bcolor: TColor; width: integer; text: String);
@@ -169,6 +203,7 @@ var
   is_misc: boolean;
   bottom_offset: word;
   wall_bitmap: word;
+  spice_tile_value: word;
   dest_rect: TRect;
   src_rect: TRect;
   tile_attr: TileType;
@@ -257,12 +292,33 @@ begin
   begin
     for x:= min_x to max_x do
     begin
-      special := data[x + cnv_left, y + cnv_top].special;
+      xx := x + cnv_left;
+      yy := y + cnv_top;
+      special := data[xx, yy].special;
       // Draw spice like a normal terrain tile
       if special = 1 then
-        tile := Tileset.thin_spice_tile
-      else if special = 2 then
-        tile := Tileset.thick_spice_tile
+      begin
+        spice_tile_value := 0;
+        if is_spice(data[max(xx-1,0), max(yy-1,0)].special) then
+          inc(spice_tile_value, 1);   // top-left
+        if is_spice(data[xx, max(yy-1,0)].special) then
+          inc(spice_tile_value, 2);   // top
+        if is_spice(data[min(xx+1,data_width-1), max(yy-1,0)].special) then
+          inc(spice_tile_value, 4);   // top-right
+        if is_spice(data[max(xx-1,0), yy].special) then
+          inc(spice_tile_value, 8);   // left
+        if is_spice(data[min(xx+1,data_width-1), yy].special) then
+          inc(spice_tile_value, 16);  // right
+        if is_spice(data[max(xx-1,0), min(yy+1,data_height-1)].special) then
+          inc(spice_tile_value, 32);  // bottom-left
+        if is_spice(data[xx, min(yy+1,data_height-1)].special) then
+          inc(spice_tile_value, 64);  // bottom
+        if is_spice(data[min(xx+1,data_width-1), min(yy+1,data_height-1)].special) then
+          inc(spice_tile_value, 128); // bottom-right
+        tile := thin_spice_tiles[spice_tile_value];
+      end else
+      if special = 2 then
+        tile := thick_spice_tiles[thick_spice_pattern[yy and 7, xx and 7]-1]
       else
         // No spice, draw terrain tile normally
         tile := data[x + cnv_left, y + cnv_top].tile;
@@ -342,7 +398,7 @@ begin
                 // Do not draw concrete on non-buildable tile
                 if Tileset.get_tile_type(data[actual_x+xx, actual_y + yy].tile) <> ttBuildable then
                   continue;
-                conc_tile := concrete_tiles[(actual_x + actual_y) mod Length(concrete_tiles)];
+                conc_tile := concrete_tiles[(actual_x+xx + actual_y+yy) mod Length(concrete_tiles)];
                 conc_tile_x := conc_tile mod 20;
                 conc_tile_y := conc_tile div 20;
                 dest_rect := Rect((x + xx)*32, (y + yy)*32, (x + xx)*32 + 32, (y + yy)*32 + 32);
@@ -507,6 +563,11 @@ begin
       cnv_target.LineTo(cnv_width*32,y*32);
     end;
   end;
+end;
+
+function TRenderer.is_spice(value: word): boolean;
+begin
+  result := (value = 1) or (value = 2);
 end;
 
 procedure TRenderer.render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);

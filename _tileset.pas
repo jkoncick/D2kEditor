@@ -593,10 +593,10 @@ begin
     inc(fill_area_rules_used);
   end;
   // Load spice settings
-  thin_spice_tile := ini.ReadInteger('Spice_Settings', 'ThinSpice.tile', 0);
+  thin_spice_tile := ini.ReadInteger('Spice_Settings', 'ThinSpice.tile', 793);
   thin_spice_color := ini.ReadInteger('Spice_Settings', 'ThinSpice.color', 0);
   thin_spice_name := ini.ReadString('Spice_Settings', 'ThinSpice.name', 'Thin spice');
-  thick_spice_tile := ini.ReadInteger('Spice_Settings', 'ThickSpice.tile', 0);
+  thick_spice_tile := ini.ReadInteger('Spice_Settings', 'ThickSpice.tile', 301);
   thick_spice_color := ini.ReadInteger('Spice_Settings', 'ThickSpice.color', 0);
   thick_spice_name := ini.ReadString('Spice_Settings', 'ThickSpice.name', 'Thick spice');
   decoder.DelimitedText := ini.ReadString('Spice_Settings', 'SpiceRestrictionRule', '0');
