@@ -80,7 +80,7 @@ type
     lblTilesetName: TLabel;
     lblTileatrName: TLabel;
     lblTextUib: TLabel;
-    edTextUib: TEdit;
+    cbTextUib: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -107,6 +107,7 @@ type
     procedure cbDiffModeClick(Sender: TObject);
     procedure cbMapSideIdChange(Sender: TObject);
     procedure seMapMissionNumberChange(Sender: TObject);
+    procedure cbTextUibChange(Sender: TObject);
   private
     player_label: array[0..cnt_mis_players-1] of TLabel;
     tech_level: array[0..cnt_mis_players-1] of TSpinEdit;
@@ -146,6 +147,7 @@ var
   i, j: integer;
   ini: TMemIniFile;
   tmp_strings: TStringList;
+  SR: TSearchRec;
 begin
   StringTable.init_value_list(StringValueList);
   for i := 0 to cnt_mis_players-1 do
@@ -237,8 +239,19 @@ begin
     misai_properties[i].position := strtoint(Copy(tmp_strings[i], 3, Length(tmp_strings[i]) - 2));
   end;
   ini.Destroy;
-  tmp_strings.Destroy;
   cbMapMusic.Items := EventDialog.cbMusicName.Items;
+  // Initialize music names
+  tmp_strings.Clear;
+  if FindFirst(Settings.GamePath + '\Data\UI_DATA\*.UIB', 0, SR) = 0 then
+  begin
+    repeat
+      if (SR.Name <> 'campaign.uib') and (SR.Name <> 'colours.uib') and (SR.Name <> 'menus.uib') and (SR.Name <> 'samples.uib') then
+        tmp_strings.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbTextUib.Items := tmp_strings;
+  tmp_strings.Free;
   // Register AI clipboard format
   ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
 end;
@@ -368,10 +381,11 @@ begin
   cbMapSideId.ItemIndex := ini.ReadInteger('Basic','SideId',-1);
   seMapMissionNumber.Enabled := true;
   seMapMissionNumber.Value := ini.ReadInteger('Basic','MissionNumber',0);
-  edTextUib.Enabled := true;
-  edTextUib.Text := ini.ReadString('Basic','TextUib','');
+  cbTextUib.Enabled := true;
+  cbTextUib.Text := ini.ReadString('Basic','TextUib','');
   cbMapSideIdChange(nil);
   seMapMissionNumberChange(nil);
+  cbTextUibChange(nil);
   // Load rules
   RuleValueList.Enabled := true;
   tmp_strings := TStringList.Create;
@@ -416,8 +430,9 @@ begin
   cbMapSideId.ItemIndex := -1;
   seMapMissionNumber.Enabled := false;
   seMapMissionNumber.Value := 0;
-  edTextUib.Enabled := false;
-  edTextUib.Clear;
+  cbTextUib.Enabled := false;
+  cbTextUib.Text := '';
+  cbTextUibChange(nil);
   RuleValueList.Enabled := false;
   RuleValueList.Strings.Clear;
   StringValueList.Enabled := false;
@@ -458,10 +473,10 @@ begin
     ini.DeleteKey('Basic','MissionNumber')
   else
     ini.WriteInteger('Basic','MissionNumber',seMapMissionNumber.Value);
-  if edTextUib.Text = '' then
+  if cbTextUib.Text = '' then
     ini.DeleteKey('Basic','TextUib')
   else
-    ini.WriteString('Basic','TextUib',edTextUib.Text);
+    ini.WriteString('Basic','TextUib',cbTextUib.Text);
   // Save rules
   for i := 0 to Length(rule_definitions) - 1 do
   begin
@@ -729,6 +744,20 @@ procedure TMissionDialog.seMapMissionNumberChange(Sender: TObject);
 begin
   if seMapMissionNumber.Value <> 0 then
     Settings.MissionNumber := seMapMissionNumber.Value;
+end;
+
+procedure TMissionDialog.cbTextUibChange(Sender: TObject);
+var
+  filename: String;
+begin
+  Settings.TextUib := cbTextUib.Text;
+  filename := Settings.GamePath + '\Data\UI_DATA\';
+  if (Settings.TextUib <> '') and FileExists(filename + Settings.TextUib) then
+    filename := filename + Settings.TextUib
+  else
+    filename := filename + 'TEXT.UIB';
+  if StringTable.load_from_file(filename) then
+    TileAtrEditor.init_tile_hint_text_list;
 end;
 
 end.

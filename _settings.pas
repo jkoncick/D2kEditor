@@ -42,7 +42,6 @@ type
     GameExecutable: String;
     GamePath: String;
     MissionsPath: String;
-    TextUIBPath: String;
 
     // Recent files
     RecentFiles: Array[1..cnt_recent_files] of String;
@@ -78,7 +77,7 @@ implementation
 
 uses
   SysUtils, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, _map, _stringtable;
+  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, _map;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -116,7 +115,6 @@ begin
   GamePath := ini.ReadString('Paths','GamePath','');
   GameExecutable := ini.ReadString('Paths','GameExecutable','');
   MissionsPath := ini.ReadString('Paths','MissionsPath','');
-  TextUIBPath := ini.ReadString('Paths','TextUIBPath','');
   determine_game_paths_from_path(current_dir);
   // Load recent files
   for i := 1 to cnt_recent_files do
@@ -192,7 +190,6 @@ begin
   ini.WriteString('Paths','GamePath',GamePath);
   ini.WriteString('Paths','GameExecutable',GameExecutable);
   ini.WriteString('Paths','MissionsPath',MissionsPath);
-  ini.WriteString('Paths','TextUIBPath',TextUIBPath);
   // Save recent files
   for i := 1 to cnt_recent_files do
   begin
@@ -248,12 +245,6 @@ begin
       MissionsPath := temp_path
     else
       MissionsPath := GamePath + '\Missions';
-  end;
-  // Get TEXT.UIB filename and load it
-  if (TextUIBPath = '') or (not FileExists(TextUIBPath)) then
-  begin
-    TextUIBPath := GamePath + '\Data\UI_DATA\TEXT.UIB';
-    StringTable.load_from_file(TextUIBPath);
   end;
 end;
 
@@ -374,7 +365,9 @@ begin
   ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
   ini.WriteInteger('Settings', 'Seed', Seed);
   if TextUib <> '' then
-    ini.WriteString('Settings', 'TextUib', TextUib);
+    ini.WriteString('Settings', 'TextUib', TextUib)
+  else
+    ini.DeleteKey('Settings', 'TextUib');
   ini.Destroy;
 end;
 

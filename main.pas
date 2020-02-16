@@ -400,7 +400,7 @@ begin
   // Initialize mission
   Mission.init;
   // Load string table
-  StringTable.load_from_file(Settings.TextUIBPath);
+  StringTable.load_from_file(Settings.GamePath + '\Data\UI_DATA\TEXT.UIB');
   SoundStringTable.load_from_file(Settings.GamePath + '\Data\UI_DATA\samples.uib');
   // Load and initialize graphics
   Renderer.init;
@@ -1740,17 +1740,25 @@ begin
   begin
     Application.MessageBox('No map to test.', 'Cannot test map', MB_ICONERROR);
     result := false;
-  end else
+    exit;
+  end;
   if not Mission.mis_assigned then
   begin
     Application.MessageBox('No mission file is assigned to this map.', 'Cannot test map', MB_ICONERROR);
     result := false;
-  end else
+    exit;
+  end;
   if not FileExists(Settings.GameExecutable) then
   begin
     Application.MessageBox(PChar('Cannot find game executable (' + Settings.GameExecutable + ')'), 'Cannot test map', MB_ICONERROR);
     result := false;
-  end else
+    exit;
+  end;
+  if (Settings.TextUib <> '') and not FileExists(Settings.GamePath + '\Data\UI_DATA\' + Settings.TextUib) then
+  begin
+    Application.MessageBox(PChar('The custom TEXT.UIB file (' + Settings.TextUib + ') does not exist.'#13'Map will be tested with the game''s default TEXT.UIB file.'), 'Warning', MB_ICONWARNING);
+    Settings.TextUib := '';
+  end;
   if Settings.CheckMapErrorsOnTest then
     result := check_map_errors
   else

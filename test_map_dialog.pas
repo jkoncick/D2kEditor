@@ -72,7 +72,7 @@ end;
 
 procedure TTestMapDialog.btnDefaultTextUibClick(Sender: TObject);
 begin
-  eTextUib.Text := 'TEXT.UIB';
+  eTextUib.Text := '';
 end;
 
 procedure TTestMapDialog.btnCancelClick(Sender: TObject);

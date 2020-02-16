@@ -268,7 +268,7 @@ object MissionDialog: TMissionDialog
       end
       object cbMapMusic: TComboBox
         Left = 344
-        Top = 344
+        Top = 342
         Width = 177
         Height = 21
         ItemHeight = 13
@@ -292,12 +292,14 @@ object MissionDialog: TMissionDialog
         TabOrder = 15
         OnChange = edTileatrNameChange
       end
-      object edTextUib: TEdit
+      object cbTextUib: TComboBox
         Left = 112
         Top = 318
         Width = 161
         Height = 21
+        ItemHeight = 13
         TabOrder = 16
+        OnChange = cbTextUibChange
       end
     end
     object RulesAndStringsPanel: TPanel

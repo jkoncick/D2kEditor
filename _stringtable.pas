@@ -15,13 +15,14 @@ type
   TStringTable = class
 
   private
+    file_name: String;
     entries: array of TStringTableEntry;
     num_entries: integer;
     custom_text_value_list: TValueListEditor;
 
   public
     procedure init_value_list(value_list: TValueListEditor);
-    procedure load_from_file(filename: String);
+    function load_from_file(filename: String): boolean;
     function get_table_size: integer;
     function get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
     procedure set_custom_text(index: integer; text: String);
@@ -46,7 +47,7 @@ begin
   custom_text_value_list := value_list;
 end;
 
-procedure TStringTable.load_from_file(filename: String);
+function TStringTable.load_from_file(filename: String): boolean;
 var
   string_table_file: file of byte;
   buffer: array of byte;
@@ -55,7 +56,10 @@ var
   len: integer;
   index: integer;
 begin
+  result := false;
   if not FileExists(filename) then
+    exit;
+  if filename = file_name then
     exit;
   AssignFile(string_table_file, filename);
   Reset(string_table_file);
@@ -63,6 +67,7 @@ begin
   SetLength(buffer, file_size);
   BlockRead(string_table_file, buffer[0], file_size);
   CloseFile(string_table_file);
+  file_name := filename;
   num_entries := buffer[0] + buffer[1] * 256;
   SetLength(entries, num_entries);
   pos := 4;
@@ -77,6 +82,7 @@ begin
     pos := pos + len + 2;
     inc(index);
   end;
+  result := true;
 end;
 
 function TStringTable.get_table_size: integer;

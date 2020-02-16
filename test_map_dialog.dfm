@@ -149,7 +149,7 @@ object TestMapDialog: TTestMapDialog
     Top = 144
     Width = 57
     Height = 25
-    Caption = 'Default'
+    Caption = 'Clear'
     TabOrder = 9
     OnClick = btnDefaultTextUibClick
   end
