@@ -885,6 +885,8 @@ begin
         Settings.GridColor := GridColorDialog.Color;
         if sbShowGrid.Down then
           render_map;
+        TileAtrEditor.render_tileset;
+        TilesetDialog.DrawTileset(nil);
       end;
     end;
   else render_map;

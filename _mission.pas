@@ -455,7 +455,7 @@ begin
   end;
   case event_type of
     etAllegiance:   contents := player_names[event.player] + ' -> ' + player_names[event.allegiance_target] + ' (' + allegiance_type[event.allegiance_type] + ')';
-    etPlaySound:    contents := inttostr(event.value) + ' - ' + SoundStringTable.get_text(event.value, dummy);
+    etPlaySound:    contents := inttostr(event.value) + ' - ' + SoundStringTable.get_text(event.value, false, dummy);
     etSetBuildRate: contents := inttostr(event.value);
     etSetAttackBuildingRate: contents := inttostr(event.value);
     etSetCash:      contents := inttostr(event.value);
@@ -465,7 +465,7 @@ begin
     etShowMessage:
     begin
       contents := '(' + inttostr(event.message_index) + ') ';
-      contents := contents + StringTable.get_text(event.message_index, dummy);
+      contents := contents + StringTable.get_text(event.message_index, true, dummy);
     end;
     etSetFlag:      contents := inttostr(event.player) + ' = ' + flag_value[event.value];
     etPlayMusic:    SetString(contents, PChar(Addr(event.units[0])), StrLen(PChar(Addr(event.units[0]))));

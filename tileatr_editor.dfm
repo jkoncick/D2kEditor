@@ -94,6 +94,15 @@ object TileAtrEditor: TTileAtrEditor
     TabOrder = 2
     Text = '0000000000'
   end
+  object lbTileHintText: TListBox
+    Left = 680
+    Top = 38
+    Width = 204
+    Height = 548
+    ItemHeight = 13
+    TabOrder = 18
+    Visible = False
+  end
   object TileAtrList: TCheckListBox
     Left = 680
     Top = 38
@@ -155,9 +164,9 @@ object TileAtrEditor: TTileAtrEditor
   end
   object rgFilterMode: TRadioGroup
     Left = 892
-    Top = 339
+    Top = 332
     Width = 201
-    Height = 141
+    Height = 134
     Caption = ' Filter mode '
     ItemIndex = 0
     Items.Strings = (
@@ -174,7 +183,7 @@ object TileAtrEditor: TTileAtrEditor
     Left = 892
     Top = 252
     Width = 201
-    Height = 80
+    Height = 76
     Caption = ' Operation '
     ItemIndex = 0
     Items.Strings = (
@@ -193,18 +202,19 @@ object TileAtrEditor: TTileAtrEditor
   end
   object rgViewMode: TRadioGroup
     Left = 892
-    Top = 486
+    Top = 470
     Width = 201
-    Height = 100
+    Height = 116
     Caption = ' View mode  '
     ItemIndex = 0
     Items.Strings = (
       'Draw tile attributes'
       'Draw minimap colors'
       'Draw fill area groups + spice rule'
-      'Check block preset coverage')
+      'Check block preset coverage'
+      'Edit tile hint text')
     TabOrder = 8
-    OnClick = btnTileAtrValueApplyClick
+    OnClick = rgViewModeClick
   end
   object btnConvertEditorAttributes: TButton
     Left = 1040

@@ -137,7 +137,7 @@ var
 implementation
 
 uses
-  _stringtable, _settings, _tileset, event_dialog, main;
+  _stringtable, _settings, _tileset, event_dialog, main, tileatr_editor;
 
 {$R *.dfm}
 

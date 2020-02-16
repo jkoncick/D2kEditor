@@ -141,7 +141,8 @@ type
     palette: PLogPalette;
 
     // Tileset attribute variables
-    attributes: array[0..(cnt_tileset_tiles*2)-1] of cardinal;
+    attributes: array[0..cnt_tileset_tiles-1] of cardinal;
+    tile_hint_text: array[0..cnt_tileset_tiles-1] of integer;
     attributes_editor: array[0..cnt_tileset_tiles-1] of byte;
     block_preset_coverage: array[0..cnt_tileset_tiles-1] of byte;
 
@@ -514,7 +515,8 @@ begin
   // Load TILEATR file
   AssignFile(tileatr_file, tileatr_filename);
   Reset(tileatr_file);
-  BlockRead(tileatr_file, attributes, cnt_tileset_tiles*2);
+  BlockRead(tileatr_file, attributes, cnt_tileset_tiles);
+  BlockRead(tileatr_file, tile_hint_text, cnt_tileset_tiles);
   CloseFile(tileatr_file);
   // Reset editor attributes
   for i := 0 to cnt_tileset_tiles - 1 do
@@ -792,7 +794,8 @@ begin
     exit;
   AssignFile(tileatr_file, tileatr_filename);
   ReWrite(tileatr_file);
-  BlockWrite(tileatr_file, attributes, cnt_tileset_tiles*2);
+  BlockWrite(tileatr_file, attributes, cnt_tileset_tiles);
+  BlockWrite(tileatr_file, tile_hint_text, cnt_tileset_tiles);
   CloseFile(tileatr_file);
   // Save editor attributes into tileset .ini file
   if config_filename = '' then

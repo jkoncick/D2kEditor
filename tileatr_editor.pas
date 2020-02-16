@@ -90,7 +90,7 @@ type
    FilterMode = (fmAll, fmExactAtr, fmHavingAtr, fmNotHavingAtr, fmHavingNotHavingAtr, fmNothing);
 
 type
-   ViewMode = (vmDrawTilesetAttributes, vmDrawMinimapColors, vmDrawFillAreaGroups, vmCheckBlockPresetCoverage);
+   ViewMode = (vmDrawTilesetAttributes, vmDrawMinimapColors, vmDrawFillAreaGroups, vmCheckBlockPresetCoverage, vmEditTileHintText);
 
 type
   TTileAtrEditor = class(TForm)
@@ -137,6 +137,7 @@ type
     cbDrawEditorAttributes: TCheckBox;
     TileAtrColorEditor: TPanel;
     cbAlwaysOnTop: TCheckBox;
+    lbTileHintText: TListBox;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -175,6 +176,7 @@ type
     procedure cbOptionClick(Sender: TObject);
     procedure btnConvertEditorAttributesClick(Sender: TObject);
     procedure cbAlwaysOnTopClick(Sender: TObject);
+    procedure rgViewModeClick(Sender: TObject);
 
   private
     { Private declarations }
@@ -204,7 +206,10 @@ type
     select_end_y: integer;
 
     procedure init_tilesets;
+  public
+    procedure init_tile_hint_text_list;
     procedure render_tileset;
+  private
     procedure do_undo;
     procedure do_redo;
     procedure reset_undo_history;
@@ -221,7 +226,7 @@ var
 
 implementation
 
-uses main;
+uses main, _stringtable, _settings;
 
 {$R *.dfm}
 
@@ -229,6 +234,7 @@ procedure TTileAtrEditor.FormCreate(Sender: TObject);
 begin
   TilesetImage.Picture.Bitmap.Width := 640;
   init_tilesets;
+  init_tile_hint_text_list;
 end;
 
 procedure TTileAtrEditor.FormResize(Sender: TObject);
@@ -256,22 +262,18 @@ end;
 procedure TTileAtrEditor.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  if ssCtrl in Shift then
-  begin
-    case key of
-      ord('G'): cbShowGrid.Checked := not cbShowGrid.Checked;
-      ord('M'): cbMarkSelection.Checked := not cbMarkSelection.Checked;
-    end;
-  end else
-  if ActiveControl <> TileAtrValue then
-  begin
-    case key of
-      ord('S'): rgOperation.ItemIndex := 0;
-      ord('A'): rgOperation.ItemIndex := 1;
-      ord('R'): rgOperation.ItemIndex := 2;
-      ord('M'): cbMultipleSelectMode.Checked := not cbMultipleSelectMode.Checked;
-      ord('C'): btnClearAttributesClick(nil);
-    end;
+  if (ActiveControl = TileAtrValue) or (ActiveControl = TileAtrNotValue) then
+    exit;
+  case key of
+    ord('G'): cbShowGrid.Checked := not cbShowGrid.Checked;
+    ord('L'): cbMarkSelection.Checked := not cbMarkSelection.Checked;
+    ord('S'): rgOperation.ItemIndex := 0;
+    ord('A'): rgOperation.ItemIndex := 1;
+    ord('R'): rgOperation.ItemIndex := 2;
+    ord('M'): cbMultipleSelectMode.Checked := not cbMultipleSelectMode.Checked;
+    ord('C'): btnClearAttributesClick(nil);
+    ord('E'): cbDrawEditorAttributes.Checked := not cbDrawEditorAttributes.Checked;
+    27: Close;
   end;
 end;
 
@@ -371,13 +373,13 @@ end;
 
 procedure TTileAtrEditor.KeyShortcuts1Click(Sender: TObject);
 begin
-  ShowMessage('Key shortcuts:'#13#13'Tab = Toggle Game/Editor attributes'#13'Ctrl + G = Show Grid'#13'Ctrl + M = Mark Selection'#13 +
-              'S = Set attributes'#13'A = Add selected attributes'#13'R = Remove selected attributes'#13'C = Clear selected attributes'#13'M = Multiple-select mode');
+  ShowMessage('Key shortcuts:'#13#13'G = Show Grid'#13'L = Mark Selection'#13 +
+              'S = Set attributes'#13'A = Add selected attributes'#13'R = Remove selected attributes'#13'C = Clear selected attributes'#13'M = Multi-select mode'#13'E = Draw editor attributes');
 end;
 
 procedure TTileAtrEditor.MouseActions1Click(Sender: TObject);
 begin
-  ShowMessage('Mouse actions:'#13#13'Left click = Set tileset attributes'#13'Right click = Get tileset attributes'#13'Middle click = Unmark selected tile'#13'Use "Multiple-tile-select mode" and'#13'drag over all tiles you want to modify.');
+  ShowMessage('Mouse actions:'#13#13'Left click = Set tileset attributes'#13'Right click = Get tileset attributes'#13'Middle click = Unmark selected tile'#13'Use "Multi-select mode" and'#13'drag over all tiles you want to modify.');
 end;
 
 procedure TTileAtrEditor.TilesetImageMouseDown(Sender: TObject;
@@ -386,22 +388,35 @@ var
   pos_x, pos_y: integer;
   tile_index: integer;
   tile_value: int64;
+  view_mode: ViewMode;
+  attributes_mode: boolean;
 begin
   pos_x := X div 32;
   pos_y := Y div 32 + tileset_top;
   tile_index := pos_x + pos_y * 20;
+  view_mode := ViewMode(rgViewMode.ItemIndex);
+  attributes_mode := (view_mode = vmDrawTilesetAttributes) or (view_mode = vmDrawMinimapColors) or (view_mode = vmDrawFillAreaGroups);
   if Button = mbRight then
   begin
-    tile_value := Tileset.get_tile_attributes(tile_index);
-    set_tile_attribute_value(tile_value, 0);
-    set_tile_attribute_list(tile_value, 0);
+    if attributes_mode then
+    begin
+      tile_value := Tileset.get_tile_attributes(tile_index);
+      set_tile_attribute_value(tile_value, 0);
+      set_tile_attribute_list(tile_value, 0);
+    end else
+    if view_mode = vmEditTileHintText then
+      lbTileHintText.ItemIndex := Tileset.tile_hint_text[tile_index];
     active_tile := tile_index;
   end
   else if Button = mbLeft then
   begin
     if not cbMultipleSelectMode.Checked then
-      set_tile_attributes(tile_index, true)
-    else
+    begin
+      if attributes_mode then
+        set_tile_attributes(tile_index, true)
+      else
+        Tileset.tile_hint_text[tile_index] := lbTileHintText.ItemIndex;
+    end else
     begin
       select_started := true;
       select_start_x := pos_x;
@@ -409,6 +424,7 @@ begin
       select_end_x := pos_x;
       select_end_y := pos_y;
     end;
+    TilesetImage.ShowHint := false;
   end
   else if Button = mbMiddle then
   begin
@@ -421,6 +437,8 @@ procedure TTileAtrEditor.TilesetImageMouseMove(Sender: TObject;
   Shift: TShiftState; X, Y: Integer);
 var
   pos_x, pos_y: integer;
+  is_custom: boolean;
+  tile_hint_text_id: integer;
 begin
   pos_x := X div 32;
   pos_y := Y div 32 + tileset_top;
@@ -437,6 +455,19 @@ begin
     select_end_y := pos_y;
     render_tileset;
   end;
+  if ViewMode(rgViewMode.ItemIndex) = vmEditTileHintText then
+  begin
+    tile_hint_text_id := Tileset.tile_hint_text[pos_x + pos_y*20];
+    if tile_hint_text_id <> -1 then
+    begin
+      Application.CancelHint;
+      TilesetImage.ShowHint := true;
+      TilesetImage.Hint := StringTable.get_text(tile_hint_text_id, false, is_custom);
+    end else
+    begin
+      TilesetImage.ShowHint := false;
+    end;
+  end;
 end;
 
 procedure TTileAtrEditor.TilesetImageMouseUp(Sender: TObject;
@@ -444,6 +475,8 @@ procedure TTileAtrEditor.TilesetImageMouseUp(Sender: TObject;
 var
   min_x, min_y, max_x, max_y: integer;
   xx, yy: integer;
+  view_mode: ViewMode;
+  attributes_mode: boolean;
 begin
   if select_started then
   begin
@@ -453,10 +486,18 @@ begin
     max_x := max(select_start_x, select_end_x);
     min_y := min(select_start_y, select_end_y);
     max_y := max(select_start_y, select_end_y);
+    view_mode := ViewMode(rgViewMode.ItemIndex);
+    attributes_mode := (view_mode = vmDrawTilesetAttributes) or (view_mode = vmDrawMinimapColors) or (view_mode = vmDrawFillAreaGroups);
     for yy := min_y to max_y do
       for xx:= min_x to max_x do
-        set_tile_attributes(xx + yy*20, false);
+        begin
+          if attributes_mode then
+            set_tile_attributes(xx + yy*20, false)
+          else if view_mode = vmEditTileHintText then
+            Tileset.tile_hint_text[xx + yy*20] := lbTileHintText.ItemIndex;
+        end;
     render_tileset;
+    TilesetImage.ShowHint := false;
   end;
 end;
 
@@ -515,6 +556,7 @@ begin
   for i := 0 to 7 do
     TileAtrListEditor.State[i] := cbUnchecked;
   TileAtrListClickCheck(nil);
+  lbTileHintText.ItemIndex := -1;
 end;
 
 procedure TTileAtrEditor.rgFilterModeClick(Sender: TObject);
@@ -558,6 +600,24 @@ begin
     FormStyle := fsNormal;
 end;
 
+procedure TTileAtrEditor.rgViewModeClick(Sender: TObject);
+var
+  view_mode: ViewMode;
+  attributes_mode: boolean;
+begin
+  view_mode := ViewMode(rgViewMode.ItemIndex);
+  attributes_mode := (view_mode = vmDrawTilesetAttributes) or (view_mode = vmDrawMinimapColors) or (view_mode = vmDrawFillAreaGroups);
+  TileAtrList.Enabled := attributes_mode;
+  TileAtrListEditor.Enabled := attributes_mode;
+  rgOperation.Enabled := attributes_mode;
+  rgFilterMode.Enabled := attributes_mode;
+  TileAtrValue.Enabled := attributes_mode;
+  TileAtrNotValue.Enabled := attributes_mode;
+  TileAtrList.Visible := view_mode <> vmEditTileHintText;
+  lbTileHintText.Visible := view_mode = vmEditTileHintText;
+  render_tileset;
+end;
+
 procedure TTileAtrEditor.init_tilesets;
 var
   i: integer;
@@ -576,12 +636,31 @@ begin
   end;
 end;
 
+procedure TTileAtrEditor.init_tile_hint_text_list;
+var
+  string_list: TStringList;
+  i: integer;
+  is_custom: boolean;
+  str: String;
+begin
+  string_list := TStringList.Create;
+  for i := 0 to StringTable.get_table_size-1 do
+  begin
+    str := inttostr(i) + ' - ' + StringTable.get_text(i, false, is_custom);
+    if is_custom then
+      str := '*' + str;
+    string_list.Add(str);
+  end;
+  lbTileHintText.Items := string_list;
+end;
+
 procedure TTileAtrEditor.render_tileset;
 var
   top_pixels: integer;
   x, y: integer;
   tile_index: integer;
   tile_value: int64;
+  tile_hint_text_id: String;
   filter_mode: FilterMode;
   view_mode: ViewMode;
   mark_tile: boolean;
@@ -594,12 +673,13 @@ begin
   selected_not_value := strtoint64('$'+TileAtrNotValue.Text);
   if Tileset.tileatr_filename <> '' then
   begin
+    TilesetImage.Canvas.Font.Color := Settings.GridColor;
     // Draw tileset
     TilesetImage.Canvas.CopyRect(Rect(0,0,640,tileset_height*32), Tileset.tileimage.Canvas, Rect(0,top_pixels,640,top_pixels+tileset_height*32));
     // Draw grid
     if cbShowGrid.Checked then
     begin
-      TilesetImage.Canvas.Pen.Color:= clBlack;
+      TilesetImage.Canvas.Pen.Color:= Settings.GridColor;
       TilesetImage.Canvas.Pen.Width := 1;
       for x:= 0 to 20-1 do
       begin
@@ -666,6 +746,17 @@ begin
               color := color or $00A000
             else if Tileset.block_preset_coverage[tile_index] > 1 then
               color := color or $0000D0;
+          end else
+            mark_tile := false;
+        end else
+        if view_mode = vmEditTileHintText then
+        begin
+          if Tileset.tile_hint_text[tile_index] <> -1 then
+          begin
+            mark_tile := true;
+            color := Settings.GridColor;
+            tile_hint_text_id := inttostr(Tileset.tile_hint_text[tile_index]);
+            TilesetImage.Canvas.TextOut(x*32 + (32 - TilesetImage.Canvas.TextWidth(tile_hint_text_id)) div 2, y*32+10, tile_hint_text_id);
           end else
             mark_tile := false;
         end;

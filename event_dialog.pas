@@ -346,7 +346,7 @@ begin
   StringList := TStringList.Create;
   for i := 0 to SoundStringTable.get_table_size - 1 do
   begin
-    StringList.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, dummy));
+    StringList.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, false, dummy));
   end;
   cbSoundName.Items := StringList;
   // Initialize music names
@@ -889,7 +889,7 @@ end;
 
 procedure TEventDialog.seMessageIdChange(Sender: TObject);
 begin
-  edMessageText.Text := StringTable.get_text(StrToIntDef(seMessageId.Text,0), msg_text_is_custom);
+  edMessageText.Text := StringTable.get_text(StrToIntDef(seMessageId.Text,0), true, msg_text_is_custom);
   edMessageText.ReadOnly := not msg_text_is_custom;
   if not btnCustomMsgText.Visible then
     exit;
@@ -1395,7 +1395,7 @@ begin
   begin
     btnCustomMsgText.Caption := 'Custom text';
     StringTable.remove_custom_text(seMessageId.Value);
-    edMessageText.Text := StringTable.get_text(seMessageId.Value, msg_text_is_custom);
+    edMessageText.Text := StringTable.get_text(seMessageId.Value, true, msg_text_is_custom);
     edMessageText.ReadOnly := true;
     fill_grids;
   end;

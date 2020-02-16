@@ -23,7 +23,7 @@ type
     procedure init_value_list(value_list: TValueListEditor);
     procedure load_from_file(filename: String);
     function get_table_size: integer;
-    function get_text(index: integer; var is_custom: boolean): String;
+    function get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
     procedure set_custom_text(index: integer; text: String);
     procedure remove_custom_text(index: integer);
     // Loading and saving custom texts
@@ -84,12 +84,12 @@ begin
   result := num_entries;
 end;
 
-function TStringTable.get_text(index: integer; var is_custom: boolean): String;
+function TStringTable.get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
 var
   row: integer;
 begin
   is_custom := false;
-  if (custom_text_value_list <> nil) and custom_text_value_list.FindRow(inttostr(index), row) then
+  if (custom_text_value_list <> nil) and accept_custom and custom_text_value_list.FindRow(inttostr(index), row) then
   begin
     result := custom_text_value_list.Cells[1,row];
     is_custom := true;
