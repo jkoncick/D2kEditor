@@ -364,8 +364,8 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 1;
-    btn.Top := 70;
-    btn.Left := 2 + i * 38;
+    btn.Top := 70 + (i div 4) * 38;
+    btn.Left := 2 + (i mod 4) * 38;
     btn.Width := 38;
     btn.Height := 38;
     btn.Glyph.Width := 28;
@@ -381,7 +381,7 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 2;
-    btn.Top := 320 + 20 * (i mod (cnt_block_preset_groups div 2));
+    btn.Top := 356 + 20 * (i mod (cnt_block_preset_groups div 2));
     btn.Left := 2 + 76 * (i div (cnt_block_preset_groups div 2));
     btn.Width := 76;
     btn.Height := 20;
@@ -1254,7 +1254,7 @@ begin
         Map.put_block(cursor_left, cursor_top, block_width, block_height, Addr(block_data));
         //--RandomGen.place_seed_block(cur_preset_index, cursor_left, cursor_top, ssShift in Shift);
       end
-      else if (ssShift in Shift) and mode(mPaintMode) and (Tileset.paint_tile_groups[paint_tile_group].smooth_group > -1) then
+      else if (ssShift in Shift) and mode(mPaintMode) and (Tileset.paint_tile_groups[paint_tile_group].smooth_preset_group > -1) then
       begin
         // Smooth rock/dunes edge
         Map.smooth_edges(map_x, map_y, paint_tile_group);

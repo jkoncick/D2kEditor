@@ -6,7 +6,7 @@ uses Windows, Graphics;
 
 // Tileset constants
 const cnt_tileset_tiles = 800;
-const cnt_paint_tile_groups = 4;
+const cnt_paint_tile_groups = 8;
 const cnt_block_preset_groups = 8;
 const cnt_block_preset_keys = 40; // 0-9, A-Z...
 const max_tile_color_rules = 32;
@@ -53,6 +53,15 @@ type
   TileType = (ttPassable, ttImpassable, ttInfantryOnly, ttBuildable);
 
 type
+  SmoothPresetType = (
+    spStraightLeft, spStraightUp, spStraightRight, spStraightDown,
+    spCornerLeftUp, spCornerUpRight, spCornerRightDown, spCornerDownLeft,
+    spTurnRightDown, spTurnDownLeft, spTurnLeftUp, spTurnUpRight,
+    spCurveNegLeft, spCurveNegUp, spCurveNegRight, spCurveNegDown,
+    spCurvePosLeft, spCurvePosUp, spCurvePosRight, spCurvePosDown
+  );
+
+type
   TTileColorRule = record
     color: TColor;
     attr: int64;
@@ -68,8 +77,10 @@ type
 type
   TPaintTileGroup = record
     name: string;
-    tile_index: integer;
-    smooth_group: integer;
+    tile_index: word;
+    smooth_preset_group: shortint;
+    paint_tiles_cnt: byte;
+    smooth_presets: string;
   end;
 
 type
@@ -145,6 +156,7 @@ type
     tile_hint_text: array[0..cnt_tileset_tiles-1] of integer;
     attributes_editor: array[0..cnt_tileset_tiles-1] of byte;
     block_preset_coverage: array[0..cnt_tileset_tiles-1] of byte;
+    tile_paint_group: array[0..cnt_tileset_tiles-1] of shortint;
 
     // Tileset configuration
     tile_color_rules: array[0..max_tile_color_rules-1] of TTileColorRule;
@@ -164,7 +176,6 @@ type
 
     paint_tile_groups: array[0..cnt_paint_tile_groups-1] of TPaintTileGroup;
     paint_tiles: array[0..max_paint_tiles-1] of word; // Tile numbers of clean sand/rock/dunes
-    paint_tiles_cnt: array[0..cnt_paint_tile_groups-1] of integer;
     paint_tiles_used: integer;
 
     block_preset_groups: array[0..cnt_block_preset_groups-1] of TBlockPresetGroup;
@@ -200,9 +211,8 @@ type
   public
     procedure save_attributes;
     procedure convert_editor_attributes;
-    procedure init_paint_tiles_from_editor_attributes;
 
-    function get_tile_attributes(tile: word): Int64;
+    function get_tile_attributes(tile: word; use_tile_paint_group: boolean): Int64;
     procedure set_tile_attributes(tile: word; value: Int64);
     function get_tile_type(tile: word): TileType;
     function get_tile_color(tile: word): TColor;
@@ -537,7 +547,6 @@ begin
         attributes_editor[tile] := attributes_editor[tile] or (1 shl i)
     end;
   end;
-  init_paint_tiles_from_editor_attributes;
 end;
 
 procedure TTileset.load_config;
@@ -608,11 +617,28 @@ begin
   else
     spice_restriction_not_attr := 0;
   // Load paint tile groups
+  paint_tiles_used := 0;
+  for i := 0 to cnt_tileset_tiles - 1 do
+    tile_paint_group[i] := -1;
   for i := 0 to cnt_paint_tile_groups - 1 do
   begin
     paint_tile_groups[i].name := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.name', '');
     paint_tile_groups[i].tile_index := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.tile', 0);
-    paint_tile_groups[i].smooth_group := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.smoothgroup', 0) - 1;
+    paint_tile_groups[i].paint_tiles_cnt := 0;
+    decoder.DelimitedText := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.paint_tiles', '');
+    for j := 0 to decoder.Count-1 do
+    begin
+      if paint_tiles_used < max_paint_tiles then
+      begin
+        tile := strtoint(decoder[j]);
+        paint_tiles[paint_tiles_used] := tile;
+        inc(paint_tile_groups[i].paint_tiles_cnt);
+        inc(paint_tiles_used);
+        tile_paint_group[tile] := i;
+      end;
+    end;
+    paint_tile_groups[i].smooth_preset_group := ini.ReadInteger('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.smooth_preset_group', 0) - 1;
+    paint_tile_groups[i].smooth_presets := ini.ReadString('Paint_Tile_Groups', 'Group'+inttostr(i+1)+'.smooth_presets', '');
   end;
   // Load block preset groups
   for i := 0 to cnt_block_preset_groups - 1 do
@@ -850,8 +876,6 @@ begin
         lines_output.Add(line);
     end;
   lines_output.SaveToFile(config_filename);
-  // Re-init paint tiles
-  init_paint_tiles_from_editor_attributes;
 end;
 
 procedure TTileset.convert_editor_attributes;
@@ -860,37 +884,16 @@ var
 begin
   for i := 0 to cnt_tileset_tiles-1 do
   begin
-    attributes_editor[i] := attributes_editor[i] or (attributes[i] and $FF);
+    attributes_editor[i] := attributes_editor[i] or ((attributes[i] shr 4) and $0F);
     attributes[i] := attributes[i] and $FFFFFF00;
   end;
-  init_paint_tiles_from_editor_attributes;
 end;
 
-procedure TTileset.init_paint_tiles_from_editor_attributes;
-var
-  i, j: integer;
-begin
-  // Get all paint tiles (sand/rock/dunes) from editor attributes
-  paint_tiles_used := 0;
-  for i := 0 to Length(paint_tiles_cnt) - 1 do
-    paint_tiles_cnt[i] := 0; // Initialize to zero
-  for i := 0 to cnt_paint_tile_groups - 1 do
-  begin
-    for j := 0 to cnt_tileset_tiles - 1 do
-    begin
-      if ((attributes_editor[j] and (1 shl i)) <> 0) and (paint_tiles_used < max_paint_tiles) then
-      begin
-        paint_tiles[paint_tiles_used] := j;
-        inc(paint_tiles_cnt[i]);
-        inc(paint_tiles_used);
-      end;
-    end;
-  end;
-end;
-
-function TTileset.get_tile_attributes(tile: word): Int64;
+function TTileset.get_tile_attributes(tile: word; use_tile_paint_group: boolean): Int64;
 begin
   result := attributes_editor[tile];
+  if tile_paint_group[tile] <> -1 then
+    result := result or (1 shl (tile_paint_group[tile] + 8));
   result := result shl 32;
   result := result or attributes[tile];
 end;
@@ -921,7 +924,7 @@ var
   i: integer;
   attr_value: int64;
 begin
-  attr_value := get_tile_attributes(tile);
+  attr_value := get_tile_attributes(tile, true);
   for i := 0 to tile_color_rules_used - 1 do
   begin
     if ((attr_value and tile_color_rules[i].attr) = tile_color_rules[i].attr) and ((attr_value and tile_color_rules[i].not_attr) = 0) then
@@ -944,7 +947,7 @@ begin
     result := 0;
     exit;
   end;
-  attr_value := get_tile_attributes(tile);
+  attr_value := get_tile_attributes(tile, true);
   for i := 0 to fill_area_rules_used - 1 do
   begin
     if ((attr_value and fill_area_rules[i].attr) = fill_area_rules[i].attr) and ((attr_value and fill_area_rules[i].not_attr) = 0) then
@@ -960,7 +963,7 @@ function TTileset.check_spice_can_be_placed(tile: word): boolean;
 var
   attr_value: int64;
 begin
-  attr_value := get_tile_attributes(tile);
+  attr_value := get_tile_attributes(tile, true);
   result := ((attr_value and spice_restriction_attr) = spice_restriction_attr) and ((attr_value and spice_restriction_not_attr) = 0);
 end;
 
@@ -987,15 +990,15 @@ var
   i: integer;
   start_index: integer;
 begin
-  if (group >= cnt_paint_tile_groups) or (paint_tiles_cnt[group] = 0) then
+  if (group >= cnt_paint_tile_groups) or (paint_tile_groups[group].paint_tiles_cnt = 0) then
   begin
     result := 0;
     exit;
   end;
   start_index := 0;
   for i := 0 to group - 1 do
-    inc(start_index, paint_tiles_cnt[i]);
-  result := paint_tiles[random(paint_tiles_cnt[group]) + start_index];
+    inc(start_index, paint_tile_groups[i].paint_tiles_cnt);
+  result := paint_tiles[random(paint_tile_groups[group].paint_tiles_cnt) + start_index];
 end;
 
 function TTileset.get_block_preset(group: integer; key: word; variant: integer): integer;

@@ -2,7 +2,7 @@ unit _map;
 
 interface
 
-uses _structures;
+uses _structures, _tileset;
 
 const max_map_width = 128;
 const max_map_height = 128;
@@ -101,7 +101,7 @@ type
     // Procedures related to auto-smoothing edges
   private
     function check_edge_tile(x,y: integer; exact: boolean): boolean;
-    procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
+    procedure put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y: integer; smooth_preset_type: SmoothPresetType);
   public
     procedure smooth_edges(x, y: integer; paint_tile_group: integer);
 
@@ -128,7 +128,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, _renderer, _tileset, _mission, _settings, main;
+uses Windows, Forms, SysUtils, _renderer, _mission, _settings, main;
 
 
 // Modify map tile and save old values into undo history.
@@ -328,29 +328,25 @@ end;
 
 
 function TMap.check_edge_tile(x, y: integer; exact: boolean): boolean;
-var
-  atr: cardinal;
 begin
   if x < 0 then x := 0;
   if y < 0 then y := 0;
   if x >= map_width then x := map_width - 1;
   if y >= map_height then y := map_height - 1;
-  atr := Tileset.attributes_editor[map_data[x,y].tile];
-  if exact then
-    result := (atr and ($01 shl tmp_paint_tile_group)) <> 0
-  else
-    result := (atr and ($10 shl tmp_paint_tile_group)) <> 0;
+  result := Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group;
+  if not exact then
+    result := result or ((Tileset.attributes_editor[map_data[x,y].tile] and (1 shl tmp_paint_tile_group)) <> 0);
 end;
 
 procedure TMap.put_edge_block(var xpos, ypos: integer; moveoff_x,
-  moveoff_y, blockoff_x, blockoff_y: integer; block_preset_key: char);
+  moveoff_y, blockoff_x, blockoff_y: integer; smooth_preset_type: SmoothPresetType);
 var
   block_preset: PBlockPreset;
-  smooth_group: integer;
+  smooth_preset_group: integer;
   x, y: integer;
 begin
-  smooth_group := Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_group;
-  block_preset := @Tileset.block_presets[Tileset.get_block_preset(smooth_group, ord(block_preset_key), bpRandom)];
+  smooth_preset_group := Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_preset_group;
+  block_preset := @Tileset.block_presets[Tileset.get_block_preset(smooth_preset_group, ord(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets[ord(smooth_preset_type)+1]), bpRandom)];
   // Reuse already defined block-key-presets for this purpose
   // Place edge block (it can be either 1x1 or 2x2, so we use loops)
   for y := 0 to block_preset.height - 1 do
@@ -377,11 +373,13 @@ var
   start_x, start_y: integer;
   sum: integer;
   steps: integer;
+  use_curves: boolean;
 begin
   start_x := x;
   start_y := y;
   Renderer.invalidate_init;
   tmp_paint_tile_group := paint_tile_group;
+  use_curves := length(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets) = 20;
   undo_max := undo_pos;
   steps := 0;
   // Start smoothing edge from starting point (where user shift-clicked)
@@ -400,59 +398,59 @@ begin
     // Transform current tile into edge tile and move to following tile
     case (sum and 15) of
        7: begin // down
-          if (sum and 128 > 0) and not check_edge_tile(x+1,y+2, false) then
-            put_edge_block(x,y,2,1,0,0,'X')
+          if use_curves and (sum and 128 > 0) and not check_edge_tile(x+1,y+2, false) then
+            put_edge_block(x,y,2,1,0,0,spCurveNegDown)
           else
-            put_edge_block(x,y,1,0,0,0,'C');
+            put_edge_block(x,y,1,0,0,0,spStraightDown);
         end;
       11: begin // right
-          if (sum and 32 > 0) and not check_edge_tile(x+2,y-1, false) then
-            put_edge_block(x,y,1,-2,0,-1,'G')
+          if use_curves and (sum and 32 > 0) and not check_edge_tile(x+2,y-1, false) then
+            put_edge_block(x,y,1,-2,0,-1,spCurveNegRight)
           else
-            put_edge_block(x,y,0,-1,0,0,'D');
+            put_edge_block(x,y,0,-1,0,0,spStraightRight);
         end;
       14: begin // up
-          if (sum and 16 > 0) and not check_edge_tile(x-1,y-2, false) then
-            put_edge_block(x,y,-2,-1,-1,-1,'4')
+          if use_curves and (sum and 16 > 0) and not check_edge_tile(x-1,y-2, false) then
+            put_edge_block(x,y,-2,-1,-1,-1,spCurveNegUp)
           else
-            put_edge_block(x,y,-1,0,0,0,'3');
+            put_edge_block(x,y,-1,0,0,0,spStraightUp);
         end;
       13: begin // left
-          if (sum and 64 > 0) and not check_edge_tile(x-2,y+1, false) then
-            put_edge_block(x,y,-1,2,-1,0,'Q')
+          if use_curves and (sum and 64 > 0) and not check_edge_tile(x-2,y+1, false) then
+            put_edge_block(x,y,-1,2,-1,0,spCurveNegLeft)
           else
-            put_edge_block(x,y,0,1,0,0,'E');
+            put_edge_block(x,y,0,1,0,0,spStraightLeft);
         end;
        3: begin // down-right corner
-          if (sum and 32 > 0) and check_edge_tile(x+2,y-1, false) then
-            put_edge_block(x,y,2,-1,0,-1,'V')
+          if use_curves and (sum and 32 > 0) and check_edge_tile(x+2,y-1, false) then
+            put_edge_block(x,y,2,-1,0,-1,spCurvePosDown)
           else
-            put_edge_block(x,y,0,-1,0,0,'B');
+            put_edge_block(x,y,0,-1,0,0,spCornerRightDown);
         end;
       10: begin // up-right corner
-          if (sum and 16 > 0) and check_edge_tile(x-1,y-2, false) then
-            put_edge_block(x,y,-1,-2,-1,-1,'T')
+          if use_curves and (sum and 16 > 0) and check_edge_tile(x-1,y-2, false) then
+            put_edge_block(x,y,-1,-2,-1,-1,spCurvePosRight)
           else
-            put_edge_block(x,y,-1,0,0,0,'5');
+            put_edge_block(x,y,-1,0,0,0,spCornerUpRight);
         end;
       12: begin // up-left corner
-          if (sum and 64 > 0) and check_edge_tile(x-2,y+1, false) then
-            put_edge_block(x,y,-2,1,-1,0,'2')
+          if use_curves and (sum and 64 > 0) and check_edge_tile(x-2,y+1, false) then
+            put_edge_block(x,y,-2,1,-1,0,spCurvePosUp)
           else
-            put_edge_block(x,y,0,1,0,0,'1');
+            put_edge_block(x,y,0,1,0,0,spCornerLeftUp);
         end;
        5: begin // down-left corner
-          if (sum and 128 > 0) and check_edge_tile(x+1,y+2, false) then
-            put_edge_block(x,y,1,2,0,0,'A')
+          if use_curves and (sum and 128 > 0) and check_edge_tile(x+1,y+2, false) then
+            put_edge_block(x,y,1,2,0,0,spCurvePosLeft)
           else
-            put_edge_block(x,y,1,0,0,0,'Z');
+            put_edge_block(x,y,1,0,0,0,spCornerDownLeft);
         end;
-      15: begin // inner curves
+      15: begin // inner turns
         case sum of
-          239: put_edge_block(x,y,-1,0,0,0,'F'); // down-right curve
-          191: put_edge_block(x,y,0,1,0,0,'R');  // up-right curve
-          127: put_edge_block(x,y,1,0,0,0,'W');  // up-left curve
-          223: put_edge_block(x,y,0,-1,0,0,'S'); // down-left curve
+          239: put_edge_block(x,y,-1,0,0,0,spTurnLeftUp); // down-right turn
+          191: put_edge_block(x,y,0,1,0,0,spTurnDownLeft);  // up-right turn
+          127: put_edge_block(x,y,1,0,0,0,spTurnRightDown);  // up-left turn
+          223: put_edge_block(x,y,0,-1,0,0,spTurnUpRight); // down-left turn
           else break; // Invalid combination - end
         end;
         end;

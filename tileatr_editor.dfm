@@ -142,9 +142,9 @@ object TileAtrEditor: TTileAtrEditor
       'Spice amount (bit 3)'
       'Unknown/Unused'
       'Unknown/Unused'
-      'Unknown/Unused'
-      'Unknown/Unused'
-      'Unknown/Unused'
+      'Unknown (side bit 1)'
+      'Unknown (side bit 2)'
+      'Unknown (side bit 3)'
       'Unknown/Unused'
       'Rock (wheeled +10% speed)'
       'Dunes (wheeled -50%, other -20% sp.)'
@@ -274,14 +274,14 @@ object TileAtrEditor: TTileAtrEditor
     Font.Style = []
     ItemHeight = 17
     Items.Strings = (
-      'Editor Paint type 1'
-      'Editor Paint type 2'
-      'Editor Paint type 3'
-      'Editor Paint type 4'
       'Editor Area type 1'
       'Editor Area type 2'
       'Editor Area type 3'
-      'Editor Area type 4')
+      'Editor Area type 4'
+      'Editor Area type 5'
+      'Editor Area type 6'
+      'Editor Area type 7'
+      'Editor Area type 8')
     ParentFont = False
     Style = lbOwnerDrawFixed
     TabOrder = 13

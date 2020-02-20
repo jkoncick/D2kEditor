@@ -1,8 +1,8 @@
 object MainWindow: TMainWindow
   Left = 190
   Top = 111
-  Width = 950
-  Height = 680
+  Width = 960
+  Height = 720
   HorzScrollBar.Visible = False
   VertScrollBar.Visible = False
   Caption = 'Dune 2000 Map and Mission Editor'
@@ -75,8 +75,8 @@ object MainWindow: TMainWindow
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 607
-    Width = 942
+    Top = 647
+    Width = 952
     Height = 19
     Panels = <
       item
@@ -187,7 +187,7 @@ object MainWindow: TMainWindow
       Top = 170
       Width = 166
       Height = 404
-      ActivePage = PageStructures
+      ActivePage = PageTerrain
       Align = alBottom
       TabOrder = 0
       OnChange = EditorPagesChange
@@ -298,7 +298,7 @@ object MainWindow: TMainWindow
         end
         object BlockFrame: TBevel
           Left = 14
-          Top = 182
+          Top = 218
           Width = 132
           Height = 132
           Shape = bsFrame
@@ -306,21 +306,21 @@ object MainWindow: TMainWindow
         end
         object BlockImage: TImage
           Left = 16
-          Top = 184
+          Top = 220
           Width = 128
           Height = 128
           OnClick = BlockImageClick
         end
         object Bevel1: TBevel
           Left = 2
-          Top = 112
+          Top = 148
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
         object Bevel2: TBevel
           Left = 2
-          Top = 144
+          Top = 180
           Width = 152
           Height = 4
           Shape = bsBottomLine
@@ -352,14 +352,14 @@ object MainWindow: TMainWindow
           OnClick = PaintTileSelectClick
         end
         object LbPaintTileGroupName: TLabel
-          Left = 20
+          Left = 4
           Top = 52
           Width = 3
           Height = 13
         end
         object RbBlockMode: TRadioButton
           Left = 4
-          Top = 156
+          Top = 192
           Width = 77
           Height = 17
           Caption = 'Block mode'
@@ -379,7 +379,7 @@ object MainWindow: TMainWindow
         end
         object OpenTileset: TButton
           Left = 88
-          Top = 152
+          Top = 188
           Width = 65
           Height = 25
           Caption = 'Open tileset'
@@ -388,7 +388,7 @@ object MainWindow: TMainWindow
         end
         object RbSelectMode: TRadioButton
           Left = 4
-          Top = 122
+          Top = 158
           Width = 81
           Height = 17
           Caption = 'Select mode'
@@ -397,7 +397,7 @@ object MainWindow: TMainWindow
         end
         object CbSelectStructures: TCheckBox
           Left = 90
-          Top = 122
+          Top = 158
           Width = 97
           Height = 17
           Caption = 'Structures'
@@ -409,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
       end

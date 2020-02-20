@@ -54,14 +54,14 @@ const atr_colors_game: array[0..31] of cardinal = (
   );
 
 const atr_colors_editor: array[0..7] of cardinal = (
-  $0000E0,
+  $0000C0,
   $00C000,
   $C00000,
-  $C000C0,
-  $00009F,
-  $007F00,
-  $7F0000,
-  $7F007F
+  $8000E0,
+  $0080E0,
+  $80E000,
+  $E00080,
+  $00A0A0
   );
 
 const fill_area_group_colors: array[0..max_fill_area_rules-1] of cardinal = (
@@ -400,7 +400,7 @@ begin
   begin
     if attributes_mode then
     begin
-      tile_value := Tileset.get_tile_attributes(tile_index);
+      tile_value := Tileset.get_tile_attributes(tile_index, false);
       set_tile_attribute_value(tile_value, 0);
       set_tile_attribute_list(tile_value, 0);
     end else
@@ -660,12 +660,12 @@ var
   x, y: integer;
   tile_index: integer;
   tile_value: int64;
-  tile_hint_text_id: String;
   filter_mode: FilterMode;
   view_mode: ViewMode;
   mark_tile: boolean;
   selected_value, selected_not_value: int64;
   color, color_editor: cardinal;
+  tile_text: String;
   min_x, min_y, max_x, max_y: integer;
 begin
   top_pixels := tileset_top * 32;
@@ -701,10 +701,11 @@ begin
       for x := 0 to 19 do
       begin
         tile_index := x + (y + tileset_top) * 20;
-        tile_value := Tileset.get_tile_attributes(tile_index);
+        tile_value := Tileset.get_tile_attributes(tile_index, false);
         // Determine whether tile should be marked according to current filter mode
         mark_tile := false;
         color_editor := 0;
+        tile_text := '';
         case filter_mode of
           fmAll:                mark_tile := true;
           fmExactAtr:           mark_tile := tile_value = selected_value;
@@ -736,12 +737,15 @@ begin
         end else
         if view_mode = vmCheckBlockPresetCoverage then
         begin
-          if (Tileset.block_preset_coverage[tile_index] > 0) or ((tile_value and $f00000000) <> 0) then
+          if (Tileset.block_preset_coverage[tile_index] > 0) or (Tileset.tile_paint_group[tile_index] > -1) then
           begin
             mark_tile := true;
             color := $000000;
-            if (tile_value and $f00000000) <> 0 then
+            if Tileset.tile_paint_group[tile_index] > -1 then
+            begin
               color := $D00000;
+              tile_text := inttostr(Tileset.tile_paint_group[tile_index]+1);
+            end;
             if Tileset.block_preset_coverage[tile_index] = 1 then
               color := color or $00A000
             else if Tileset.block_preset_coverage[tile_index] > 1 then
@@ -755,8 +759,7 @@ begin
           begin
             mark_tile := true;
             color := Settings.GridColor;
-            tile_hint_text_id := inttostr(Tileset.tile_hint_text[tile_index]);
-            TilesetImage.Canvas.TextOut(x*32 + (32 - TilesetImage.Canvas.TextWidth(tile_hint_text_id)) div 2, y*32+10, tile_hint_text_id);
+            tile_text := inttostr(Tileset.tile_hint_text[tile_index]);
           end else
             mark_tile := false;
         end;
@@ -773,6 +776,9 @@ begin
             TilesetImage.Canvas.Rectangle(x*32+14, y*32+14, x*32+18, y*32+18);
             TilesetImage.Canvas.Rectangle(x*32+15, y*32+15, x*32+17, y*32+17);
           end;
+          //Draw text (i.e. number)
+          if tile_text <> '' then
+            TilesetImage.Canvas.TextOut(x*32 + (32 - TilesetImage.Canvas.TextWidth(tile_text)) div 2, y*32+10, tile_text);
         end;
         // Highlight selected tile
         if (active_tile = tile_index) and cbMarkSelection.Checked then
@@ -807,7 +813,7 @@ begin
     exit;
   repeat
     undo_pos := (undo_pos - 1) and max_undo_steps;
-    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index);
+    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index, false);
     Tileset.set_tile_attributes(undo_history[undo_pos].index, undo_history[undo_pos].data);
     undo_history[undo_pos].data := tmp_data;
   until undo_history[undo_pos].is_first or (undo_pos = undo_start);
@@ -823,7 +829,7 @@ begin
   if undo_pos = undo_max then
     exit;
   repeat
-    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index);
+    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index, false);
     Tileset.set_tile_attributes(undo_history[undo_pos].index, undo_history[undo_pos].data);
     undo_history[undo_pos].data := tmp_data;
     undo_pos := (undo_pos + 1) and max_undo_steps;
@@ -910,7 +916,7 @@ var
   operation: SetOperation;
 begin
   selected_value := strtoint64('$'+TileAtrValue.Text);
-  current_value := Tileset.get_tile_attributes(tile_index);
+  current_value := Tileset.get_tile_attributes(tile_index, false);
   target_value := 0;
   operation := SetOperation(rgOperation.ItemIndex);
   // Get the target tileatr value according to the operation
