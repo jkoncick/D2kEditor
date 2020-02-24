@@ -210,7 +210,7 @@ object TileAtrEditor: TTileAtrEditor
     Items.Strings = (
       'Draw tile attributes'
       'Draw minimap colors'
-      'Draw fill area groups + spice rule'
+      'Draw fill area groups'
       'Check block preset coverage'
       'Edit tile hint text')
     TabOrder = 8

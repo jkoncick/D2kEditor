@@ -154,14 +154,13 @@ end;
 // Apply "paint" operation to a single tile
 procedure TMap.paint_tile(x, y: integer; paint_tile_group: integer);
 begin
-  if paint_tile_group < 0 then
-  begin
-    // Paint spice. Check for spice-to-sand restriction.
-    if Settings.RestrictSpiceToSand and not Tileset.check_spice_can_be_placed(map_data[x, y].tile) then
-      exit;
-    modify_map_tile(x, y, map_data[x,y].tile, paint_tile_group * -1)
-  end else
-    // Paint sand/rock/dunes
+  if (Settings.RestrictPainting) and (not Tileset.check_paint_tile_restriction(map_data[x,y].tile, map_data[x,y].special, paint_tile_group)) then
+    exit;
+  if (paint_tile_group < -2) and (Tileset.paint_tile_groups[paint_tile_group].paint_tiles_cnt = 0) then
+    // Paint spice
+    modify_map_tile(x, y, map_data[x,y].tile, (paint_tile_group+5))
+  else
+    // Paint sand/rock/dunes etc.
     modify_map_tile(x, y, Tileset.get_random_paint_tile(paint_tile_group), 0);
 end;
 
@@ -324,6 +323,7 @@ begin
   undo_start := 0;
   undo_max := 0;
   undo_pos := 0;
+  undo_history[0].is_first := true;
 end;
 
 
@@ -334,7 +334,7 @@ begin
   if x >= map_width then x := map_width - 1;
   if y >= map_height then y := map_height - 1;
   result := Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group;
-  if not exact then
+  if (not exact) and (tmp_paint_tile_group >= 0) then
     result := result or ((Tileset.attributes_editor[map_data[x,y].tile] and (1 shl tmp_paint_tile_group)) <> 0);
 end;
 

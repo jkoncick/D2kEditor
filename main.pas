@@ -114,8 +114,6 @@ type
     Bevel1: TBevel;
     Bevel2: TBevel;
     cbBrushSize: TComboBox;
-    sbThinSpice: TSpeedButton;
-    sbThickSpice: TSpeedButton;
     LbPaintTileGroupName: TLabel;
     UnitList: TListBox;
     LbUnitList: TLabel;
@@ -138,6 +136,7 @@ type
     Memo1: TMemo;
     TileAttributeseditor1: TMenuItem;
     N12: TMenuItem;
+    Restrictpainting1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -243,7 +242,7 @@ type
 
     // Terrain editing variables
     paint_tile_group: integer;
-    paint_tile_select: array[-2..cnt_paint_tile_groups-1] of TSpeedButton;
+    paint_tile_select: array[-4..cnt_paint_tile_groups-1] of TSpeedButton;
     paint_tile_select_active: TSpeedButton;
     block_preset_group: integer;
     block_preset_select: array[0..cnt_block_preset_groups-1] of TSpeedButton;
@@ -353,19 +352,13 @@ begin
   for i := 0 to Length(brush_size_presets) - 1 do
     cbBrushSize.Items.Add(inttostr(brush_size_presets[i,1]) + ' x ' + inttostr(brush_size_presets[i,2]));
   cbBrushSize.ItemIndex := 0;
-  sbThinSpice.Glyph.Width := 28;
-  sbThinSpice.Glyph.Height := 28;
-  sbThickSpice.Glyph.Width := 28;
-  sbThickSpice.Glyph.Height := 28;
-  paint_tile_select[-1] := sbThinSpice;
-  paint_tile_select[-2] := sbThickSpice;
-  for i := 0 to cnt_paint_tile_groups-1 do
+  for i := -4 to cnt_paint_tile_groups-1 do
   begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 1;
-    btn.Top := 70 + (i div 4) * 38;
-    btn.Left := 2 + (i mod 4) * 38;
+    btn.Top := 52 + ((i+4) div 4) * 38;
+    btn.Left := 2 + ((i+4) mod 4) * 38;
     btn.Width := 38;
     btn.Height := 38;
     btn.Glyph.Width := 28;
@@ -381,7 +374,7 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 2;
-    btn.Top := 356 + 20 * (i mod (cnt_block_preset_groups div 2));
+    btn.Top := 376 + 20 * (i mod (cnt_block_preset_groups div 2));
     btn.Left := 2 + 76 * (i div (cnt_block_preset_groups div 2));
     btn.Width := 76;
     btn.Height := 20;
@@ -450,6 +443,7 @@ begin
   GridColorDialog.Color := Settings.GridColor;
   Alwaysaskonquit1.Checked := Settings.AlwaysAskOnQuit;
   Hidepresetwindow1.Checked := Settings.HidePresetWindow;
+  Restrictpainting1.Checked := Settings.RestrictPainting;
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -617,8 +611,8 @@ begin
     // Structures editing mode selection
     ord('E'): begin MiscObjList.ItemIndex := 3; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
     // Terrain editing mode selection
-    ord('Q'): begin EditorPages.TabIndex := 1; sbThinSpice.Down := true; PaintTileSelectClick(sbThinSpice); end;
-    ord('W'): begin EditorPages.TabIndex := 1; sbThickSpice.Down := true; PaintTileSelectClick(sbThickSpice);  end;
+    ord('Q'): begin EditorPages.TabIndex := 1; paint_tile_select[-4].Down := true; PaintTileSelectClick(paint_tile_select[-4]); end;
+    ord('W'): begin EditorPages.TabIndex := 1; paint_tile_select[-3].Down := true; PaintTileSelectClick(paint_tile_select[-3]); end;
     ord('S'): begin EditorPages.TabIndex := 1; paint_tile_select[0].Down := true; PaintTileSelectClick(paint_tile_select[0]); end;
     ord('R'): begin EditorPages.TabIndex := 1; paint_tile_select[1].Down := true; PaintTileSelectClick(paint_tile_select[1]); end;
     ord('D'): begin EditorPages.TabIndex := 1; paint_tile_select[2].Down := true; PaintTileSelectClick(paint_tile_select[2]); end;
@@ -878,6 +872,7 @@ begin
   3: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
   11: begin Settings.AlwaysAskOnQuit := (Sender as TMenuItem).Checked end;
   12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
+  13: begin Settings.RestrictPainting := (Sender as TMenuItem).Checked end;
   20:
     begin
       if GridColorDialog.Execute then
@@ -1147,6 +1142,8 @@ var
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
+  if Button = mbRight then
+    Caption := inttohex(Tileset.get_tile_attributes(Map.data[map_x, map_y].tile, Map.data[map_x, map_y].special, true), 16);
   // Disable multiple clicks in the same tile
   if mouse_already_clicked and (mouse_last_button = Button) then
     exit;
@@ -1599,11 +1596,7 @@ var
   i: integer;
 begin
   // Draw glyphs in terrain editing GUI
-  draw_paint_tile_select_glyph(-1, Tileset.thin_spice_tile, Tileset.tileimage.Canvas);
-  sbThinSpice.Hint := tileset.thin_spice_name;
-  draw_paint_tile_select_glyph(-2, Tileset.thick_spice_tile, Tileset.tileimage.Canvas);
-  sbThickSpice.Hint := tileset.thick_spice_name;
-  for i := 0 to cnt_paint_tile_groups-1 do
+  for i := -4 to cnt_paint_tile_groups-1 do
   begin
     draw_paint_tile_select_glyph(i, Tileset.paint_tile_groups[i].tile_index, Tileset.tileimage.Canvas);
     paint_tile_select[i].Enabled := Tileset.paint_tile_groups[i].name <> '';
@@ -1896,7 +1889,7 @@ begin
   tile_x := tile_index mod 20;
   tile_y := tile_index div 20;
   paint_tile_select[target].Glyph.Canvas.CopyRect(Rect(0,0,28,28), source_canvas, Rect(tile_x*32+2, tile_y*32+2, tile_x*32+30, tile_y*32+30));
-  paint_tile_select[target].Glyph.Canvas.Pixels[0,27] := $0;
+  paint_tile_select[target].Glyph.Canvas.Pixels[0,27] := $1;
 end;
 
 procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top: word);

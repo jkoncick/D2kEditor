@@ -13,7 +13,7 @@ type
   public
     // Preferences
     PreserveGUISettings: boolean;
-    RestrictSpiceToSand: boolean;
+    RestrictPainting: boolean;
     EnableEventNotes: boolean;
     HidePresetWindow: boolean;
     CheckMapErrorsOnSave: boolean;
@@ -88,7 +88,7 @@ begin
   tmp_ini := ini;
   // Load preferences
   PreserveGUISettings := ini.ReadBool('Preferences', 'PreserveGUISettings', true);
-  RestrictSpiceToSand := ini.ReadBool('Preferences', 'RestrictSpiceToSand', true);
+  RestrictPainting := ini.ReadBool('Preferences', 'RestrictPainting', true);
   EnableEventNotes := ini.ReadBool('Preferences', 'EnableEventNotes', true);
   HidePresetWindow := ini.ReadBool('Preferences', 'HidePresetWindow', true);
   CheckMapErrorsOnSave := ini.ReadBool('Preferences', 'CheckMapErrorsOnSave', true);
@@ -163,7 +163,7 @@ begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   // Save preferences
   ini.WriteBool('Preferences', 'PreserveGUISettings', PreserveGUISettings);
-  ini.WriteBool('Preferences', 'RestrictSpiceToSand', RestrictSpiceToSand);
+  ini.WriteBool('Preferences', 'RestrictPainting', RestrictPainting);
   ini.WriteBool('Preferences', 'EnableEventNotes', EnableEventNotes);
   ini.WriteBool('Preferences', 'HidePresetWindow', HidePresetWindow);
   ini.WriteBool('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);

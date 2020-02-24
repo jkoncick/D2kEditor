@@ -598,7 +598,7 @@ begin
   begin
     // This is new block within a distinct area - determine it from the area type on tile block is being placed
     base_area_type := 0;
-    if (pos_x >= 0) and (pos_x < Map.width) and (pos_y >= 0) and (pos_y < Map.height) and (Tileset.tile_paint_group[Map.data[pos_x, pos_y].tile] <> -1) then
+    if (pos_x >= 0) and (pos_x < Map.width) and (pos_y >= 0) and (pos_y < Map.height) and (Tileset.tile_paint_group[Map.data[pos_x, pos_y].tile] <> -128) then
       base_area_type := Tileset.tile_paint_group[Map.data[pos_x, pos_y].tile];
   end else
     // Base area type is same as for the current distinct area

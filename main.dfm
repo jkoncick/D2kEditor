@@ -187,7 +187,7 @@ object MainWindow: TMainWindow
       Top = 170
       Width = 166
       Height = 404
-      ActivePage = PageTerrain
+      ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
       OnChange = EditorPagesChange
@@ -298,7 +298,7 @@ object MainWindow: TMainWindow
         end
         object BlockFrame: TBevel
           Left = 14
-          Top = 218
+          Top = 238
           Width = 132
           Height = 132
           Shape = bsFrame
@@ -306,60 +306,34 @@ object MainWindow: TMainWindow
         end
         object BlockImage: TImage
           Left = 16
-          Top = 220
+          Top = 240
           Width = 128
           Height = 128
           OnClick = BlockImageClick
         end
         object Bevel1: TBevel
           Left = 2
-          Top = 148
+          Top = 168
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
         object Bevel2: TBevel
           Left = 2
-          Top = 180
+          Top = 200
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
-        object sbThinSpice: TSpeedButton
-          Tag = -1
-          Left = 78
-          Top = 32
-          Width = 38
-          Height = 38
-          Hint = 'Thin spice'
-          AllowAllUp = True
-          GroupIndex = 1
-          ParentShowHint = False
-          ShowHint = True
-          OnClick = PaintTileSelectClick
-        end
-        object sbThickSpice: TSpeedButton
-          Tag = -2
-          Left = 116
-          Top = 32
-          Width = 38
-          Height = 38
-          Hint = 'Thick spice'
-          AllowAllUp = True
-          GroupIndex = 1
-          ParentShowHint = False
-          ShowHint = True
-          OnClick = PaintTileSelectClick
-        end
         object LbPaintTileGroupName: TLabel
-          Left = 4
-          Top = 52
+          Left = 80
+          Top = 34
           Width = 3
           Height = 13
         end
         object RbBlockMode: TRadioButton
           Left = 4
-          Top = 192
+          Top = 212
           Width = 77
           Height = 17
           Caption = 'Block mode'
@@ -379,7 +353,7 @@ object MainWindow: TMainWindow
         end
         object OpenTileset: TButton
           Left = 88
-          Top = 188
+          Top = 208
           Width = 65
           Height = 25
           Caption = 'Open tileset'
@@ -388,7 +362,7 @@ object MainWindow: TMainWindow
         end
         object RbSelectMode: TRadioButton
           Left = 4
-          Top = 158
+          Top = 178
           Width = 81
           Height = 17
           Caption = 'Select mode'
@@ -397,7 +371,7 @@ object MainWindow: TMainWindow
         end
         object CbSelectStructures: TCheckBox
           Left = 90
-          Top = 158
+          Top = 178
           Width = 97
           Height = 17
           Caption = 'Structures'
@@ -583,6 +557,12 @@ object MainWindow: TMainWindow
         Tag = 12
         AutoCheck = True
         Caption = 'Hide preset window'
+        OnClick = SettingChange
+      end
+      object Restrictpainting1: TMenuItem
+        Tag = 13
+        AutoCheck = True
+        Caption = 'Restrict painting'
         OnClick = SettingChange
       end
       object More1: TMenuItem

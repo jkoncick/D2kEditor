@@ -64,8 +64,10 @@ const atr_colors_editor: array[0..7] of cardinal = (
   $00A0A0
   );
 
-const fill_area_group_colors: array[0..max_fill_area_rules-1] of cardinal = (
+const fill_area_group_colors: array[0..max_fill_area_rules] of cardinal = (
   $00C000,
+  $2179E7,
+  $808080,
   $C00000,
   $C000C0,
   $0000C0,
@@ -79,8 +81,7 @@ const fill_area_group_colors: array[0..max_fill_area_rules-1] of cardinal = (
   $E08000,
   $E06060,
   $60E060,
-  $6060E0,
-  $E0E0E0
+  $6060E0
   );
 
 type
@@ -400,7 +401,7 @@ begin
   begin
     if attributes_mode then
     begin
-      tile_value := Tileset.get_tile_attributes(tile_index, false);
+      tile_value := Tileset.get_tile_attributes(tile_index, 0, false);
       set_tile_attribute_value(tile_value, 0);
       set_tile_attribute_list(tile_value, 0);
     end else
@@ -701,7 +702,7 @@ begin
       for x := 0 to 19 do
       begin
         tile_index := x + (y + tileset_top) * 20;
-        tile_value := Tileset.get_tile_attributes(tile_index, false);
+        tile_value := Tileset.get_tile_attributes(tile_index, 0, false);
         // Determine whether tile should be marked according to current filter mode
         mark_tile := false;
         color_editor := 0;
@@ -723,28 +724,23 @@ begin
         if view_mode = vmDrawMinimapColors then
         begin
           if mark_tile then
-            color := Tileset.get_tile_color(tile_index);
+            color := Tileset.get_tile_color(tile_index, 0);
         end else
         if view_mode = vmDrawFillAreaGroups then
         begin
           if mark_tile then
-          begin
-            color := fill_area_group_colors[Tileset.get_fill_area_type(tile_index, 0)-1];
-            // Mark tiles where spice can be placed
-            if cbDrawEditorAttributes.Checked and Tileset.check_spice_can_be_placed(tile_index) then
-              color_editor := $2179E7;
-          end;
+            color := fill_area_group_colors[Tileset.get_fill_area_type(tile_index, 0)];
         end else
         if view_mode = vmCheckBlockPresetCoverage then
         begin
-          if (Tileset.block_preset_coverage[tile_index] > 0) or (Tileset.tile_paint_group[tile_index] > -1) then
+          if (Tileset.block_preset_coverage[tile_index] > 0) or (Tileset.tile_paint_group[tile_index] <> -128) then
           begin
             mark_tile := true;
             color := $000000;
-            if Tileset.tile_paint_group[tile_index] > -1 then
+            if Tileset.tile_paint_group[tile_index] <> -128 then
             begin
               color := $D00000;
-              tile_text := inttostr(Tileset.tile_paint_group[tile_index]+1);
+              tile_text := Tileset.get_paint_tile_group_char(Tileset.tile_paint_group[tile_index]);
             end;
             if Tileset.block_preset_coverage[tile_index] = 1 then
               color := color or $00A000
@@ -813,7 +809,7 @@ begin
     exit;
   repeat
     undo_pos := (undo_pos - 1) and max_undo_steps;
-    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index, false);
+    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index, 0, false);
     Tileset.set_tile_attributes(undo_history[undo_pos].index, undo_history[undo_pos].data);
     undo_history[undo_pos].data := tmp_data;
   until undo_history[undo_pos].is_first or (undo_pos = undo_start);
@@ -829,7 +825,7 @@ begin
   if undo_pos = undo_max then
     exit;
   repeat
-    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index, false);
+    tmp_data := Tileset.get_tile_attributes(undo_history[undo_pos].index, 0, false);
     Tileset.set_tile_attributes(undo_history[undo_pos].index, undo_history[undo_pos].data);
     undo_history[undo_pos].data := tmp_data;
     undo_pos := (undo_pos + 1) and max_undo_steps;
@@ -916,7 +912,7 @@ var
   operation: SetOperation;
 begin
   selected_value := strtoint64('$'+TileAtrValue.Text);
-  current_value := Tileset.get_tile_attributes(tile_index, false);
+  current_value := Tileset.get_tile_attributes(tile_index, 0, false);
   target_value := 0;
   operation := SetOperation(rgOperation.ItemIndex);
   // Get the target tileatr value according to the operation

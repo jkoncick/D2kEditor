@@ -719,17 +719,13 @@ begin
   for y:= min_y to max_y do
     for x:= min_x to max_x do
     begin
-      cnv_target.Pixels[x+border_x,y+border_y] := Tileset.get_tile_color(data[x,y].tile);
+      cnv_target.Pixels[x+border_x,y+border_y] := Tileset.get_tile_color(data[x,y].tile, data[x,y].special);
     end;
   // Rendering structures
   for y:= Max(min_y - (max_building_height - 1), 0) to max_y do
     for x:= Max(min_x - (max_building_width - 1), 0) to max_x do
     begin
       special := data[x,y].special;
-      if special = 1 then
-        cnv_target.Pixels[x+border_x,y+border_y] := Tileset.thin_spice_color;
-      if special = 2 then
-        cnv_target.Pixels[x+border_x,y+border_y] := Tileset.thick_spice_color;
       if not Structures.special_value_to_params(special,player,index,is_misc) then
         continue
       else if is_misc then
