@@ -12,7 +12,7 @@ const cnt_block_preset_keys = 40; // 0-9, A-Z...
 const max_minimap_color_rules = 32;
 const max_fill_area_rules = 16;
 const max_paint_tiles = 128;
-const max_block_presets = 512;
+const max_block_presets = 640;
 const max_block_preset_tiles = 1024;
 const max_connection_points = 512;
 const cnt_connection_point_types = 16;
@@ -560,7 +560,8 @@ var
   connection_point_index: integer;
   tmp_block_preset: PBlockPreset;
   tile, index, width, height, pos_x, pos_y: integer;
-  group_name, attr_str: String;
+  custom_tiles: boolean;
+  group_name: String;
 begin
   if (config_filename = '') or not FileExists(config_filename) then
     exit;
@@ -660,41 +661,50 @@ begin
         decoder2.DelimitedText := decoder[k];
         if (preset_index >= max_block_presets) then
           break;
-        if decoder2.Count = 4 then
+        if (decoder2.Count < 3) then
+          break;
+        // Load width and height first
+        custom_tiles := false;
+        width := strtoint(decoder2[0]);
+        height := strtoint(decoder2[1]);
+        if width < 0 then
         begin
-          // Normal block preset
-          width := strtoint(decoder2[0]);
-          height := strtoint(decoder2[1]);
-          if (preset_tile_index + width * height >= max_block_preset_tiles) then
-            continue;
-          pos_x := strtoint(decoder2[2]);
-          pos_y := strtoint(decoder2[3]);
-          block_presets[preset_index].width := width;
-          block_presets[preset_index].height := height;
-          block_presets[preset_index].block_preset_tile_index := preset_tile_index;
+          width := width * -1;
+          custom_tiles := true;
+        end;
+        if height < 0 then
+        begin
+          height := height * -1;
+          custom_tiles := true;
+        end;
+        if (preset_tile_index + width * height >= max_block_preset_tiles) then
+          continue;
+        block_presets[preset_index].width := width;
+        block_presets[preset_index].height := height;
+        block_presets[preset_index].block_preset_tile_index := preset_tile_index;
+        // Load preset tiles
+        if not custom_tiles then
+        begin
+          // Continuous tiles
+          if decoder2.Count = 4 then
+          begin
+            pos_x := strtoint(decoder2[2]);
+            pos_y := strtoint(decoder2[3]);
+            index := pos_x + pos_y * 20;
+          end else
+            index := strtoint(decoder2[2]);
           for y := 0 to height - 1 do
             for x := 0 to width - 1 do
               begin
-                tile := x + pos_x + (y + pos_y) * 20;
+                tile := index + x + (y * 20);
                 block_preset_tiles[preset_tile_index + x + y * width] := tile;
                 inc(block_preset_coverage[tile]);
               end;
-          inc(preset_tile_index, width * height);
         end else
-        if decoder2.Count = 1 then
         begin
-          // Custom block
-          index := strtoint(decoder2[0]);
-          decoder2.DelimitedText := ini.ReadString('Custom_Blocks', inttostr(index), '');
-          width := strtoint(decoder2[0]);
-          height := strtoint(decoder2[1]);
-          if (preset_tile_index + width * height >= max_block_preset_tiles) then
-            continue;
+          // Custom tiles
           if (decoder2.Count - 2 <> width * height) then
             continue;
-          block_presets[preset_index].width := width;
-          block_presets[preset_index].height := height;
-          block_presets[preset_index].block_preset_tile_index := preset_tile_index;
           for y := 0 to height - 1 do
             for x := 0 to width - 1 do
             begin
@@ -702,8 +712,8 @@ begin
               block_preset_tiles[preset_tile_index + x + y * width] := tile;
               inc(block_preset_coverage[tile]);
             end;
-          inc(preset_tile_index, width * height);
         end;
+        inc(preset_tile_index, width * height);
         inc(preset_index);
       end;
     end;
