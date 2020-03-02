@@ -47,6 +47,13 @@ object TileAtrEditor: TTileAtrEditor
     Caption = 'Not:'
     Visible = False
   end
+  object lbRule: TLabel
+    Left = 892
+    Top = 448
+    Width = 25
+    Height = 13
+    Caption = 'Rule:'
+  end
   object StatusBar: TStatusBar
     Left = 0
     Top = 591
@@ -164,37 +171,39 @@ object TileAtrEditor: TTileAtrEditor
   end
   object rgFilterMode: TRadioGroup
     Left = 892
-    Top = 332
+    Top = 288
     Width = 201
-    Height = 134
+    Height = 153
     Caption = ' Filter mode '
     ItemIndex = 0
     Items.Strings = (
       'Mark all tiles'
       'Mark tiles of this type'
-      'Filter tiles having attributes'
+      'Filter tiles having all attributes'
+      'Filter tiles having any of attributes'
       'Filter tiles not having attributes'
-      'Filter tiles having/not having'
+      'Filter tiles by rule...'
       'Mark nothing')
     TabOrder = 5
     OnClick = rgFilterModeClick
   end
   object rgOperation: TRadioGroup
     Left = 892
-    Top = 252
+    Top = 248
     Width = 201
-    Height = 76
-    Caption = ' Operation '
+    Height = 37
+    Caption = ' Attribute Operation '
+    Columns = 3
     ItemIndex = 0
     Items.Strings = (
-      'Set attributes'
-      'Add selected attributes'
-      'Remove selected attributes')
+      'Set'
+      'Add'
+      'Remove')
     TabOrder = 6
   end
   object cbMultipleSelectMode: TCheckBox
     Left = 892
-    Top = 186
+    Top = 182
     Width = 121
     Height = 17
     Caption = 'Multi-select mode'
@@ -218,7 +227,7 @@ object TileAtrEditor: TTileAtrEditor
   end
   object btnConvertEditorAttributes: TButton
     Left = 1040
-    Top = 228
+    Top = 224
     Width = 53
     Height = 21
     Hint = 'Convert editor attributes from older TILEATR*.BIN files'
@@ -230,7 +239,7 @@ object TileAtrEditor: TTileAtrEditor
   end
   object cbShowGrid: TCheckBox
     Left = 1012
-    Top = 186
+    Top = 182
     Width = 71
     Height = 17
     Caption = 'Show Grid'
@@ -239,7 +248,7 @@ object TileAtrEditor: TTileAtrEditor
   end
   object cbMarkSelection: TCheckBox
     Left = 892
-    Top = 208
+    Top = 204
     Width = 109
     Height = 17
     Caption = 'Mark selected tile'
@@ -318,7 +327,7 @@ object TileAtrEditor: TTileAtrEditor
   end
   object cbDrawEditorAttributes: TCheckBox
     Left = 892
-    Top = 230
+    Top = 226
     Width = 125
     Height = 17
     Caption = 'Draw editor attributes'
@@ -329,12 +338,32 @@ object TileAtrEditor: TTileAtrEditor
   end
   object cbAlwaysOnTop: TCheckBox
     Left = 1012
-    Top = 208
+    Top = 204
     Width = 75
     Height = 17
     Caption = 'Alw. on Top'
     TabOrder = 17
     OnClick = cbAlwaysOnTopClick
+  end
+  object edRule: TEdit
+    Left = 920
+    Top = 444
+    Width = 172
+    Height = 21
+    TabOrder = 19
+    OnChange = edRuleChange
+  end
+  object cbAnyOf: TCheckBox
+    Left = 1024
+    Top = 399
+    Width = 65
+    Height = 17
+    Hint = 'Use "Filter tiles having any of attributes" mode'
+    Caption = 'Any attr.'
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 20
+    OnClick = rgFilterModeClick
   end
   object MainMenu: TMainMenu
     object File1: TMenuItem

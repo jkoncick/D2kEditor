@@ -88,7 +88,7 @@ type
    SetOperation = (opSet, opAdd, opRemove);
 
 type
-   FilterMode = (fmAll, fmExactAtr, fmHavingAtr, fmNotHavingAtr, fmHavingNotHavingAtr, fmNothing);
+   FilterMode = (fmAll, fmExactAtr, fmHavingAllAtr, fmHavingAnyOfAtr, fmNotHavingAtr, fmByRule, fmNothing);
 
 type
    ViewMode = (vmDrawTilesetAttributes, vmDrawMinimapColors, vmDrawFillAreaGroups, vmCheckBlockPresetCoverage, vmEditTileHintText);
@@ -139,6 +139,9 @@ type
     TileAtrColorEditor: TPanel;
     cbAlwaysOnTop: TCheckBox;
     lbTileHintText: TListBox;
+    edRule: TEdit;
+    lbRule: TLabel;
+    cbAnyOf: TCheckBox;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -178,6 +181,7 @@ type
     procedure btnConvertEditorAttributesClick(Sender: TObject);
     procedure cbAlwaysOnTopClick(Sender: TObject);
     procedure rgViewModeClick(Sender: TObject);
+    procedure edRuleChange(Sender: TObject);
 
   private
     { Private declarations }
@@ -189,6 +193,7 @@ type
     active_tile: integer;
     tileset_top: integer;
     tileset_height: integer;
+    rule: TTileAtrRule;
 
     // Undo variables
     undo_history: array[0..max_undo_steps] of TUndoEntry;
@@ -216,6 +221,7 @@ type
     procedure reset_undo_history;
     procedure set_tile_attribute_list(value, not_value: int64);
     procedure set_tile_attribute_value(value, not_value: int64);
+    procedure set_tile_attribute_rule(value, not_value: int64);
     procedure get_tile_attribute_color(value: int64; var color, color_editor: cardinal);
     procedure set_tile_attributes(tile_index: integer; single_op: boolean);
   public
@@ -263,7 +269,7 @@ end;
 procedure TTileAtrEditor.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  if (ActiveControl = TileAtrValue) or (ActiveControl = TileAtrNotValue) then
+  if (ActiveControl = TileAtrValue) or (ActiveControl = TileAtrNotValue) or (ActiveControl = edRule) then
     exit;
   case key of
     ord('G'): cbShowGrid.Checked := not cbShowGrid.Checked;
@@ -404,6 +410,7 @@ begin
       tile_value := Tileset.get_tile_attributes(tile_index, 0, false);
       set_tile_attribute_value(tile_value, 0);
       set_tile_attribute_list(tile_value, 0);
+      set_tile_attribute_rule(tile_value, 0);
     end else
     if view_mode = vmEditTileHintText then
       lbTileHintText.ItemIndex := Tileset.tile_hint_text[tile_index];
@@ -533,7 +540,9 @@ begin
       not_value := not_value or v;
   end;
   set_tile_attribute_value(value, not_value);
-  active_tile := -1;
+  set_tile_attribute_rule(value, not_value);
+  if sender <> nil then
+    active_tile := -1;
   render_tileset;
 end;
 
@@ -545,6 +554,7 @@ begin
   not_value := strtoint64('$'+TileAtrNotValue.Text);
   set_tile_attribute_list(value, not_value);
   set_tile_attribute_value(value, not_value);
+  set_tile_attribute_rule(value, not_value);
   render_tileset;
 end;
 
@@ -565,7 +575,7 @@ var
   not_atr_active: boolean;
   i: integer;
 begin
-  not_atr_active := FilterMode(rgFilterMode.ItemIndex) = fmHavingNotHavingAtr;
+  not_atr_active := FilterMode(rgFilterMode.ItemIndex) = fmByRule;
   TileAtrList.AllowGrayed := not_atr_active;
   TileAtrListEditor.AllowGrayed := not_atr_active;
   lbTileAtrNotValue.Visible := not_atr_active;
@@ -579,6 +589,7 @@ begin
       if TileAtrListEditor.State[i] = cbGrayed then
         TileAtrListEditor.State[i] := cbUnchecked;
   end;
+  TileAtrListClickCheck(nil);
   render_tileset;
 end;
 
@@ -614,8 +625,24 @@ begin
   rgFilterMode.Enabled := attributes_mode;
   TileAtrValue.Enabled := attributes_mode;
   TileAtrNotValue.Enabled := attributes_mode;
+  edRule.Enabled := attributes_mode;
+  cbAnyOf.Enabled := attributes_mode;
+  cbDrawEditorAttributes.Enabled := attributes_mode;
+  btnConvertEditorAttributes.Enabled := attributes_mode;
   TileAtrList.Visible := view_mode <> vmEditTileHintText;
   lbTileHintText.Visible := view_mode = vmEditTileHintText;
+  render_tileset;
+end;
+
+procedure TTileAtrEditor.edRuleChange(Sender: TObject);
+var
+  rule_valid: boolean;
+begin
+  rule_valid := Tileset.load_rule(edRule.Text, Addr(rule));
+  if rule_valid then
+    edRule.Font.Color := clBlack
+  else
+    edRule.Font.Color := clRed;
   render_tileset;
 end;
 
@@ -664,14 +691,13 @@ var
   filter_mode: FilterMode;
   view_mode: ViewMode;
   mark_tile: boolean;
-  selected_value, selected_not_value: int64;
+  selected_value: int64;
   color, color_editor: cardinal;
   tile_text: String;
   min_x, min_y, max_x, max_y: integer;
 begin
   top_pixels := tileset_top * 32;
   selected_value := strtoint64('$'+TileAtrValue.Text);
-  selected_not_value := strtoint64('$'+TileAtrNotValue.Text);
   if Tileset.tileatr_filename <> '' then
   begin
     TilesetImage.Canvas.Font.Color := Settings.GridColor;
@@ -702,18 +728,19 @@ begin
       for x := 0 to 19 do
       begin
         tile_index := x + (y + tileset_top) * 20;
-        tile_value := Tileset.get_tile_attributes(tile_index, 0, false);
+        tile_value := Tileset.get_tile_attributes(tile_index, 0, filter_mode = fmByRule);
         // Determine whether tile should be marked according to current filter mode
         mark_tile := false;
         color_editor := 0;
         tile_text := '';
         case filter_mode of
-          fmAll:                mark_tile := true;
-          fmExactAtr:           mark_tile := tile_value = selected_value;
-          fmHavingAtr:          mark_tile := (tile_value and selected_value) = selected_value;
-          fmNotHavingAtr:       mark_tile := (tile_value and selected_value) = 0;
-          fmHavingNotHavingAtr: mark_tile := ((tile_value and selected_value) = selected_value) and ((tile_value and selected_not_value) = 0);
-          fmNothing:            mark_tile := false;
+          fmAll:            mark_tile := true;
+          fmExactAtr:       mark_tile := tile_value = selected_value;
+          fmHavingAllAtr:   mark_tile := (tile_value and selected_value) = selected_value;
+          fmHavingAnyOfAtr: mark_tile := (tile_value and selected_value) <> 0;
+          fmNotHavingAtr:   mark_tile := (tile_value and selected_value) = 0;
+          fmByRule:         mark_tile := Tileset.evaluate_rule(tile_value, Addr(rule));
+          fmNothing:        mark_tile := false;
           end;
         // Determine color according to current view mode
         if view_mode = vmDrawTilesetAttributes then
@@ -883,6 +910,31 @@ begin
     TileAtrColorEditor.Color := color
   else
     TileAtrColorEditor.Color := color_editor;
+end;
+
+procedure TTileAtrEditor.set_tile_attribute_rule(value, not_value: int64);
+var
+  mode: FilterMode;
+  rule_str: string;
+begin
+  mode := FilterMode(rgFilterMode.ItemIndex);
+  rule_str := '';
+  case mode of
+    fmAll:            rule_str := '';
+    fmExactAtr:       rule_str := '';
+    fmHavingAllAtr:   rule_str := '$' + IntToHex(value, 1);
+    fmHavingAnyOfAtr: rule_str := '-$' + IntToHex(value, 1);
+    fmNotHavingAtr:   rule_str := '$0;$' + IntToHex(value, 1);
+    fmByRule:         rule_str := IfThen(cbAnyOf.Checked, '-', '') + '$' + IntToHex(value, 1) + IfThen(not_value <> 0, ';$' + IntToHex(not_value, 1), '');
+    fmNothing:        rule_str := '';
+  end;
+  edRule.OnChange := nil;
+  edRule.Text := rule_str;
+  edRule.Font.Color := clBlack;
+  edRule.ReadOnly := mode <> fmByRule;
+  edRule.OnChange := edRuleChange;
+  if mode = fmByRule then
+    Tileset.load_rule(edRule.Text, Addr(rule));
 end;
 
 procedure TTileAtrEditor.get_tile_attribute_color(value: int64; var color, color_editor: cardinal);

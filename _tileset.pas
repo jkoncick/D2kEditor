@@ -205,8 +205,8 @@ type
     procedure load_palette;
     procedure load_attributes;
     procedure load_config;
-    procedure load_rule(decoder: TStringList; rule_ptr: TTileAtrRulePtr);
   public
+    function load_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;
     procedure save_attributes;
     procedure convert_editor_attributes;
 
@@ -581,8 +581,7 @@ begin
     if i >= max_minimap_color_rules then
       break;
     minimap_color_rules[i].color := strtoint(tmp_strings[i]);
-    decoder.DelimitedText := ini.ReadString('Minimap_Color_Rules', tmp_strings[i], '');
-    load_rule(decoder, Addr(minimap_color_rules[i].rule));
+    load_rule(ini.ReadString('Minimap_Color_Rules', tmp_strings[i], '0'), Addr(minimap_color_rules[i].rule));
     inc(minimap_color_rules_used);
   end;
   // Load fill area rules
@@ -592,8 +591,7 @@ begin
   begin
     if i >= max_fill_area_rules then
       break;
-    decoder.DelimitedText := ini.ReadString('Fill_Area_Rules', tmp_strings[i], '');
-    load_rule(decoder, Addr(fill_area_rules[i].rule));
+    load_rule(ini.ReadString('Fill_Area_Rules', tmp_strings[i], '0'), Addr(fill_area_rules[i].rule));
     inc(fill_area_rules_used);
   end;
   // Load paint tile groups
@@ -622,8 +620,7 @@ begin
       tile_paint_group[paint_tile_groups[i].tile_index] := i;
     paint_tile_groups[i].smooth_preset_group := ini.ReadInteger('Paint_Tile_Groups', group_name+'.smooth_preset_group', 0) - 1;
     paint_tile_groups[i].smooth_presets := ini.ReadString('Paint_Tile_Groups', group_name+'.smooth_presets', '');
-    decoder.DelimitedText := ini.ReadString('Paint_Tile_Groups', group_name+'.restriction_rule', '0');
-    load_rule(decoder, Addr(paint_tile_groups[i].restriction_rule));
+    load_rule(ini.ReadString('Paint_Tile_Groups', group_name+'.restriction_rule', '0'), Addr(paint_tile_groups[i].restriction_rule));
   end;
   // Load block preset groups
   for i := 0 to cnt_block_preset_groups - 1 do
@@ -802,13 +799,25 @@ begin
   decoder2.Destroy;
 end;
 
-procedure TTileset.load_rule(decoder: TStringList; rule_ptr: TTileAtrRulePtr);
+function TTileset.load_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;
+var
+  decoder: TStringList;
 begin
-  rule_ptr.attr := strtoint64(decoder[0]);
+  if rule = '' then
+  begin
+    result := false;
+    exit;
+  end;
+  decoder := TStringList.Create;
+  decoder.Delimiter := ';';
+  decoder.DelimitedText := rule;
+  rule_ptr.attr := strtoint64def(decoder[0], -1);
   if decoder.Count = 2 then
-    rule_ptr.not_attr := strtoint64(decoder[1])
+    rule_ptr.not_attr := strtoint64def(decoder[1], -1)
   else
     rule_ptr.not_attr := 0;
+  result := (decoder.Count <= 2) and (rule_ptr.attr <> -1) and (rule_ptr.not_attr <> -1);
+  decoder.Destroy;
 end;
 
 procedure TTileset.save_attributes();
