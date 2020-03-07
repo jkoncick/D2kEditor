@@ -374,7 +374,15 @@ object MainWindow: TMainWindow
           Top = 178
           Width = 97
           Height = 17
+          Hint = 
+            'Unchecked = copy terrain only'#13#10'Checked = copy terrain and struct' +
+            'ures'#13#10'Grayed = copy structures only'
+          AllowGrayed = True
           Caption = 'Structures'
+          Checked = True
+          ParentShowHint = False
+          ShowHint = True
+          State = cbChecked
           TabOrder = 4
         end
         object cbBrushSize: TComboBox

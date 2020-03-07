@@ -322,7 +322,16 @@ begin
       else
         // No spice, draw terrain tile normally
         tile := data[x + cnv_left, y + cnv_top].tile;
-      cnv_target.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
+      if tile = 65535 then
+      begin
+        // Blank tile
+        cnv_target.Pen.Color := clBtnFace;
+        cnv_target.Brush.Color := clBtnFace;
+        cnv_target.Brush.Style := bsSolid;
+        cnv_target.Rectangle(x*32,y*32,x*32+32,y*32+32);
+      end else
+        // Actual tile
+        cnv_target.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
       // Draw tile attribute markers
       if o_mark_impassable or o_mark_buildable then
       begin

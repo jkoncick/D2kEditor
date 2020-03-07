@@ -81,7 +81,7 @@ type
   public
     procedure set_special_value(x,y: integer; special: word);
     procedure paint_rect(x,y, width, height: integer; paint_tile_group: integer);
-    procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; structures: boolean);
+    procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean);
     procedure put_block(x,y, width, height: integer; block: TMapDataPtr);
     function check_structure_can_be_placed(x,y: integer; special: word): boolean;
 
@@ -146,8 +146,10 @@ begin
   undo_max := undo_pos;
   MainWindow.Undo1.Enabled := true;
   MainWindow.Redo1.Enabled := false;
-  map_data[x,y].tile := tile;
-  map_data[x,y].special := special;
+  if tile <> 65535 then
+    map_data[x,y].tile := tile;
+  if special <> 65535 then
+    map_data[x,y].special := special;
   Renderer.invalidate_map_tile(x, y);
 end;
 
@@ -156,7 +158,10 @@ procedure TMap.paint_tile(x, y: integer; paint_tile_group: integer);
 begin
   if (Settings.RestrictPainting) and (not Tileset.check_paint_tile_restriction(map_data[x,y].tile, map_data[x,y].special, paint_tile_group)) then
     exit;
-  if (paint_tile_group < -2) and (Tileset.paint_tile_groups[paint_tile_group].paint_tiles_cnt = 0) then
+  if paint_tile_group = -5 then
+    // Erase special value only
+    modify_map_tile(x, y, map_data[x,y].tile, 0)
+  else if (paint_tile_group < -2) and (Tileset.paint_tile_groups[paint_tile_group].paint_tiles_cnt = 0) then
     // Paint spice
     modify_map_tile(x, y, map_data[x,y].tile, (paint_tile_group+5))
   else
@@ -186,7 +191,7 @@ begin
     end;
 end;
 
-procedure TMap.copy_block(x, y, width, height: integer; block: TMapDataPtr; structures: boolean);
+procedure TMap.copy_block(x, y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean);
 var
   xx, yy: integer;
   value: TMapTile;
@@ -197,7 +202,9 @@ begin
       if (x + xx < map_width) and (y + yy < map_height) then
       begin
         value := map_data[x + xx, y + yy];
-        if not structures then
+        if not copy_terrain then
+          value.tile := 65535;
+        if not copy_structures then
           value.special := 0;
       end else
       begin

@@ -348,6 +348,7 @@ begin
   moving_event := -1;
   moving_condition := -1;
   top := 40;
+  CursorImage.Picture.Bitmap.TransparentColor := clBtnFace;
   // Initialize terrain editing controls
   for i := 0 to Length(brush_size_presets) - 1 do
     cbBrushSize.Items.Add(inttostr(brush_size_presets[i,1]) + ' x ' + inttostr(brush_size_presets[i,2]));
@@ -1331,7 +1332,7 @@ begin
     // Erase copied area
     if ssShift in Shift then
     begin
-      Map.paint_rect(min_x, min_y, max_x-min_x+1, max_y-min_y+1, 0);
+      Map.paint_rect(min_x, min_y, max_x-min_x+1, max_y-min_y+1, IfThen(CbSelectStructures.State = cbGrayed, -5, 0)); // -5 = erase structures only, 0 = sand paint type
       render_minimap;
       render_map;
     end;
@@ -1611,7 +1612,7 @@ begin
   if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
     LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
   if (TilesetDialog <> nil) and TilesetDialog.Visible then
-    TilesetDialog.DrawTileset(nil);
+    TilesetDialog.tileset_changed;
   if (BlockPresetDialog <> nil) then
     BlockPresetDialog.init_presets;
 end;
@@ -1896,10 +1897,6 @@ procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top
 var
   x, y: integer;
 begin
-  TilesetDialog.block_width := b_width;
-  TilesetDialog.block_height := b_height;
-  TilesetDialog.block_left := b_left;
-  TilesetDialog.block_top := b_top;
   block_width := b_width;
   block_height := b_height;
   for x:= 0 to block_width - 1 do
@@ -1908,7 +1905,6 @@ begin
       block_data[x,y].tile := (b_top + y) * 20 + b_left + x;
       block_data[x,y].special := 0;
     end;
-  RbBlockMode.Checked := true;
   mouse_already_clicked := false;
   draw_cursor_image;
 end;
@@ -1926,7 +1922,7 @@ begin
     for y := 0 to block_height - 1 do
     begin
       block_data[x,y].tile := Tileset.block_preset_tiles[preset.block_preset_tile_index + x + y * preset.width];
-      block_data[x,y].special := 0;
+      block_data[x,y].special := IfThen(block_data[x,y].tile = 65535, 65535, 0);
     end;
   RbBlockMode.Checked := true;
   mouse_already_clicked := false;
@@ -1937,7 +1933,7 @@ procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word
 begin
   block_width := b_width;
   block_height := b_height;
-  Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.Checked and structures);
+  Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.State <> cbGrayed, (CbSelectStructures.State <> cbUnchecked) and structures);
   draw_cursor_image;
   RbBlockMode.Checked := True;
 end;
@@ -1965,6 +1961,7 @@ var
   tile_x, tile_y: word;
   border_x, border_y: integer;
   str: String;
+  any_blank_tiles: boolean;
 begin
   border_x := (BlockImage.Width - block_width * 32) div 2;
   border_y := (BlockImage.Height - block_height * 32) div 2;
@@ -1993,6 +1990,13 @@ begin
         BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
       end;
   end;
+  // Check if block has any blank tile so that it should be transparent
+  any_blank_tiles := false;
+  for x:= 0 to block_width-1 do
+    for y := 0 to block_height-1 do
+      if block_data[x,y].tile = 65535 then
+        any_blank_tiles := true;
+  CursorImage.Transparent := any_blank_tiles;
   // Render cursor image
   Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
     false, true, false, false, sbShowUnknownSpecials.Down,

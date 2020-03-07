@@ -3,6 +3,8 @@ object TilesetDialog: TTilesetDialog
   Top = 66
   Width = 682
   Height = 642
+  HorzScrollBar.Visible = False
+  VertScrollBar.Visible = False
   Caption = 'Tile block selection'
   Color = clBtnFace
   Constraints.MaxHeight = 1348
@@ -48,7 +50,7 @@ object TilesetDialog: TTilesetDialog
     Tag = 1
     Left = 216
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '1 x 1'
@@ -56,9 +58,9 @@ object TilesetDialog: TTilesetDialog
   end
   object sbPreset22: TSpeedButton
     Tag = 2
-    Left = 264
+    Left = 256
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '2 x 2'
@@ -66,9 +68,9 @@ object TilesetDialog: TTilesetDialog
   end
   object sbPreset33: TSpeedButton
     Tag = 3
-    Left = 312
+    Left = 296
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '3 x 3'
@@ -76,9 +78,9 @@ object TilesetDialog: TTilesetDialog
   end
   object sbPreset44: TSpeedButton
     Tag = 4
-    Left = 360
+    Left = 336
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '4 x 4'
@@ -86,9 +88,9 @@ object TilesetDialog: TTilesetDialog
   end
   object sbPreset21: TSpeedButton
     Tag = 5
-    Left = 408
+    Left = 376
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '2 x 1'
@@ -96,9 +98,9 @@ object TilesetDialog: TTilesetDialog
   end
   object sbPreset12: TSpeedButton
     Tag = 6
-    Left = 456
+    Left = 416
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '1 x 2'
@@ -106,9 +108,9 @@ object TilesetDialog: TTilesetDialog
   end
   object sbPreset32: TSpeedButton
     Tag = 7
-    Left = 504
+    Left = 456
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '3 x 2'
@@ -116,13 +118,50 @@ object TilesetDialog: TTilesetDialog
   end
   object sbPreset23: TSpeedButton
     Tag = 8
-    Left = 552
+    Left = 496
     Top = 3
-    Width = 49
+    Width = 41
     Height = 19
     GroupIndex = 1
     Caption = '2 x 3'
     OnClick = SetBlockSize
+  end
+  object lbPresetSize: TLabel
+    Left = 680
+    Top = 52
+    Width = 23
+    Height = 13
+    Caption = 'Size:'
+    Visible = False
+  end
+  object lbPresetSizeX: TLabel
+    Left = 760
+    Top = 52
+    Width = 7
+    Height = 13
+    Caption = 'X'
+    Visible = False
+  end
+  object Bevel1: TBevel
+    Left = 678
+    Top = 78
+    Width = 196
+    Height = 196
+    Shape = bsFrame
+  end
+  object PresetImage: TImage
+    Left = 680
+    Top = 80
+    Width = 192
+    Height = 192
+    OnMouseDown = PresetImageMouseDown
+  end
+  object lbPresetCode: TLabel
+    Left = 680
+    Top = 284
+    Width = 60
+    Height = 13
+    Caption = 'Preset code:'
   end
   object TilesetScroll: TScrollBar
     Left = 650
@@ -153,5 +192,96 @@ object TilesetDialog: TTilesetDialog
     Caption = 'Mark tiles'
     TabOrder = 2
     OnClick = DrawTileset
+  end
+  object cbPresetHelper: TCheckBox
+    Left = 552
+    Top = 4
+    Width = 105
+    Height = 17
+    Caption = 'Preset Helper >>'
+    TabOrder = 3
+    OnClick = cbPresetHelperClick
+  end
+  object rbContinuousTiles: TRadioButton
+    Left = 680
+    Top = 24
+    Width = 113
+    Height = 17
+    Caption = 'Continuous tiles'
+    Checked = True
+    TabOrder = 4
+    TabStop = True
+    OnClick = PresetTypeChange
+  end
+  object rbCustomTiles: TRadioButton
+    Left = 792
+    Top = 24
+    Width = 81
+    Height = 17
+    Caption = 'Custom tiles'
+    TabOrder = 5
+    OnClick = PresetTypeChange
+  end
+  object sePresetWidth: TSpinEdit
+    Left = 712
+    Top = 48
+    Width = 41
+    Height = 22
+    MaxValue = 8
+    MinValue = 1
+    TabOrder = 6
+    Value = 1
+    Visible = False
+    OnChange = SetCustomPresetSize
+  end
+  object sePresetHeight: TSpinEdit
+    Left = 776
+    Top = 48
+    Width = 41
+    Height = 22
+    MaxValue = 8
+    MinValue = 1
+    TabOrder = 7
+    Value = 1
+    Visible = False
+    OnChange = SetCustomPresetSize
+  end
+  object mmPresetDefinition: TMemo
+    Left = 680
+    Top = 304
+    Width = 193
+    Height = 89
+    Lines.Strings = (
+      '')
+    ReadOnly = True
+    TabOrder = 8
+  end
+  object btnClearPreset: TButton
+    Left = 824
+    Top = 46
+    Width = 49
+    Height = 25
+    Caption = 'Clear'
+    TabOrder = 9
+    Visible = False
+    OnClick = ClearPreset
+  end
+  object btnCopyPresetCode: TButton
+    Left = 776
+    Top = 280
+    Width = 97
+    Height = 21
+    Caption = 'Copy to clipboard'
+    TabOrder = 10
+    OnClick = btnCopyPresetCodeClick
+  end
+  object btnUsePreset: TButton
+    Left = 680
+    Top = 400
+    Width = 75
+    Height = 25
+    Caption = 'Use preset'
+    TabOrder = 11
+    OnClick = btnUsePresetClick
   end
 end
