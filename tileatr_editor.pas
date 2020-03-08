@@ -177,6 +177,7 @@ type
     procedure btnTileAtrValueApplyClick(Sender: TObject);
     procedure btnClearAttributesClick(Sender: TObject);
     procedure rgFilterModeClick(Sender: TObject);
+    procedure cbAnyOfClick(Sender: TObject);
     procedure cbOptionClick(Sender: TObject);
     procedure btnConvertEditorAttributesClick(Sender: TObject);
     procedure cbAlwaysOnTopClick(Sender: TObject);
@@ -593,6 +594,16 @@ begin
   render_tileset;
 end;
 
+procedure TTileAtrEditor.cbAnyOfClick(Sender: TObject);
+var
+  value, not_value: int64;
+begin
+  value := strtoint64('$'+TileAtrValue.Text);
+  not_value := strtoint64('$'+TileAtrNotValue.Text);
+  set_tile_attribute_rule(value, not_value);
+  render_tileset;
+end;
+
 procedure TTileAtrEditor.cbOptionClick(Sender: TObject);
 begin
   render_tileset;
@@ -640,10 +651,16 @@ var
 begin
   rule_valid := Tileset.load_rule(edRule.Text, Addr(rule));
   if rule_valid then
-    edRule.Font.Color := clBlack
-  else
+  begin
+    edRule.Font.Color := clBlack;
+    cbAnyOf.OnClick := nil;
+    cbAnyOf.Checked := rule.attr < 0;
+    cbAnyOf.OnClick := cbAnyOfClick;
+    set_tile_attribute_list(abs(rule.attr) and $ffffffffff, rule.not_attr and $ffffffffff);
+    set_tile_attribute_value(abs(rule.attr) and $ffffffffff, rule.not_attr and $ffffffffff);
+    render_tileset;
+  end else
     edRule.Font.Color := clRed;
-  render_tileset;
 end;
 
 procedure TTileAtrEditor.init_tilesets;

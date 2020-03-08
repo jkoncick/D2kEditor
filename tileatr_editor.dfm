@@ -350,6 +350,7 @@ object TileAtrEditor: TTileAtrEditor
     Top = 444
     Width = 172
     Height = 21
+    ReadOnly = True
     TabOrder = 19
     OnChange = edRuleChange
   end
@@ -363,7 +364,7 @@ object TileAtrEditor: TTileAtrEditor
     ParentShowHint = False
     ShowHint = True
     TabOrder = 20
-    OnClick = rgFilterModeClick
+    OnClick = cbAnyOfClick
   end
   object MainMenu: TMainMenu
     object File1: TMenuItem
