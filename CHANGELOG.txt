@@ -1,5 +1,100 @@
 D2kEditor changelog
 
+Version 1.4 (released 2020-XX-XX)
+---------------------------------
+Three major new features and changes:
+1) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
+   TileAtrEditor has been made obsolete program.
+2) Significant improvements related to creating maps using custom tilesets. 
+   Creating maps using custom tilesets is now much easier and faster.
+3) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
+   You will need to update your custom tileset .ini files to make them compatible with this version of program.
+
+Other changes:
+Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
+Added: Select structures only mode. You can set the checkbox "Structures" next to "Select mode" radio button to
+       third (grayed) state, which means select structures only. Useful for copying or moving base+units layout.
+Added: Editor will load contents of custom TEXT.UIB file, if it is specified in mission .ini file.
+       The "Test map" feature will automatically launch game with custom TEXT.UIB file.
+Added: Preset Helper feature (accessible from "Open tileset" window). Here you can easily design a block preset and copy
+       its code to tileset .ini file, or directly use that block in terrain editor.
+Changed: In D2kEditor.ini file, the default tileset is not specified as tileset index, but as tileset name 
+         (setting was renamed to "DefaultTilesetName"). 
+
+
+Ad 1)
+- Tile Attribute editor is now available from main menu under Tileset.
+- You can edit the currently selected tileset for current map. Swithching tileset would change it for current map too. 
+- You save map and tile attributes independently. When you save attributes, changes will apply immediately to your map.
+- There is "Test in-game" feature (F8) that would save attributes and launch current map in game.
+
+- You can now edit all 32 game attributes. Previously only 7 attributes (which were present in original TILEATRx.BIN files)
+  were editable, but according to latest TILEATRx.BIN research, it was discovered that the other attributes are internal
+  attributes used by game during gameplay for various purposes. You can achieve various effects using those additional
+  attributes, for example place a real working concrete on a map.
+- Editor attributes (special attributes used only by the editor to recognize which tile is sand, rock, dune tile etc.) are
+  no longer part of TILEATRx.BIN files, because they conflicted with internal game attributes. You no longer need to 
+  distribute two separate versions of TILEATRx.BIN files: one for game and one for editor.
+- Editor attributes are stored inside tileset .ini file and editor saves them into .ini file automatically.
+- TILEATRx.BIN files are no longer distributed with the program. The program loads these files from game folder.
+
+- Added more flexible ways how you can filter tiles by attributes. Added "Filter tiles having any of attributes" mode,
+  as well as "Filter tiles by rule" mode. Removed "Mark infantry-only" mode as this was just a specific case of a rule.
+- "Filter tiles by rule" is the most advanced mode, where you can specify which attributes tiles need to have (either
+  all of any of them) and which attributes tiles must not have (basically combination of all three previous filter modes).
+  In this mode you can easily design your rule and then use it in your tileset .ini file.
+- Added new view modes: "Draw minimap colors" and "Draw fill area groups" mode. These modes can help you design minimap
+  color rules and fill area rules in your tileset .ini file, as you can easily and immediately see the result here.
+- Added "Edit tile hint text" mode. Tile hint text is a text that displays in game when you move mouse cursor over that
+  tile. In original tilesets this is used only on spice tiles.
+
+Ad 2)
+- In Terrain editing mode, there are now 4 common paint groups and 8 tileset-specific paint groups (12 paint groups total).
+- The 4 common pain groups are reserved for Thin Spice, Thick Spice, Concrete and Void. The latter two are not commonly
+  used in maps, but are potentially usable for new designs, or in custom tilesets. For example concrete can be used for
+  decoration (in original tilesets it cannot be built on it), but it can be made buildable using specific tile attributes 
+  and used as real concrete in for example Dune 2 tileset. The Void could be used to make non-rectangle maps, or it is 
+  useful for indoors tilesets (i.e. Heighliner).
+- The 8 paint groups can be used for any terrain types. The original tilesets use no more tha 3 types (Sand/Rock/Dunes) 
+  or 4 types (Ice), however, in custom tilesets you can use all 8.
+- Improved "Auto-Smooth edges" feature (Shift-Click) and made it more flexible and configurable for custom tilesets.
+  You can take advantage of this feaure for any terrain type in custom tilesets, it is not strictly limited for
+  Rock and Dunes edge in original tilesets.
+- Added "Restrict painting" feature, which will let you paint specific tiles only on specific terrain type (i.e. spice and
+  dunes can be painted only on sand, concrete can be painted only on rock). Previously there was spice restriction rule, 
+  but it was made generally usable for any paint type. This can be turned off in Settings menu.
+- Added support for block presets with "blank" tiles. You can now have presets of any shape (not strictly rectangle shape).
+
+Ad 3)
+- Changed the way how rules (minimap color rules, fill area rules) are specified. Rules are now specified in this form:
+  $attrubites_tile_must_have
+  -OR-
+  $attrubites_tile_must_have;$attrubites_tile_must_not_have
+  If $attrubites_tile_must_have is negative, it means tile must have ANY of specified attributes.
+  To design a rule, you can simply use specific filter on Tile Attributes editor and just copy the rule specification.
+- You can specify up to 12 paint groups in [Paint_Tile_Groups] section.
+  Groups A,B,C,D are reserved for thin spice, thick spice, concrete and void.
+  Groups 1-8 are tileset-specific groups you can use for any terrain type.
+- The list of tiles used by a paint group is no longer specified by marking those tiles by editor attributes 
+  (Paint type 1-4), but directly as part of paint group specification ("GroupX.paint_tiles"). You can specify same tile
+  number multiple times, which would increase probability of that tile being randomly selected.
+- The block presets used by "Auto-smooth edges" feature (Shift-click) are specified with "GroupX.smooth_preset_group" and
+  "Group2.smooth_presets" properties. The presets are specified as list of keys on keyboard. There are two different modes
+  of "Auto-smooth edges" feature:
+  1) 20 presets mode: used by original Dune2000 tilesets. Uses 12 1x1 blocks and 8 2x2 curved blocks.
+  2) 12 presets mode: uses only 1x1 blocks (4 straight blocks, 4 corners, 4 inner turns).
+- Added paint group restruction rule, which can be specified as "GroupX.restriction_rule"
+- The [Spice_Settings] section was completely removed. The spice minimap colors are now specified as additional minimap 
+  color rules. The thin/thick spice name, tile and restriction rule is specified as part of paint group A and B.
+- Spice is now also specified as separate fill area group.
+- Changed way how custom block presets (= blocks consisting of tiles not continuously arranged in tileset) are specified.
+  You no longer need to specify them under separate [Custom_Blocks] section, but directly under [Block_Preset_Group_X]
+  section along with standard blocks. To distinguish custom blocks, the width and height must be negative.
+  You can utilize "Preset Helper" feature to easily design a block preset, and then copy its code and paste to .ini file.
+- Normal block presets are represented as "width.height.tileset_x.tileset.y", but you can newly specify them also in
+  simplified form "width.height.tile_index"
+
+
 Version 1.3 (released 2019-02-27)
 ---------------------------------
 Fixed: Size preset buttons in Tileset window were off by one position
