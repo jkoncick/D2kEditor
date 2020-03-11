@@ -276,6 +276,8 @@ begin
     window.Width := ini.ReadInteger('GUI', window_name + '.Width', window.Width);
   if not ((window.Constraints.MinHeight = window.Constraints.MaxHeight) and (window.Constraints.MinHeight <> 0)) then
     window.Height := ini.ReadInteger('GUI', window_name + '.Height', window.Height);
+  if ini.ReadBool('GUI', window_name + '.Maximized', false) then
+    window.WindowState := wsMaximized;
 end;
 
 procedure TSettings.save_window_position(ini: TMemIniFile; window: TForm; window_name: String);
@@ -288,6 +290,7 @@ begin
     ini.WriteInteger('GUI', window_name + '.Width', window.Width);
   if not ((window.Constraints.MinHeight = window.Constraints.MaxHeight) and (window.Constraints.MinHeight <> 0)) then
     ini.WriteInteger('GUI', window_name + '.Height', window.Height);
+  ini.WriteBool('GUI', window_name + '.Maximized', window.WindowState = wsMaximized);
 end;
 
 procedure TSettings.update_recent_files(filename: String);
