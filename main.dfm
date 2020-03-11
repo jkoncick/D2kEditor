@@ -449,6 +449,10 @@ object MainWindow: TMainWindow
         Caption = 'Save map image'
         OnClick = Savemapimage1Click
       end
+      object Saveminimapimage1: TMenuItem
+        Caption = 'Save minimap image'
+        OnClick = Saveminimapimage1Click
+      end
       object N2: TMenuItem
         Caption = '-'
       end

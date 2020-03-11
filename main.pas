@@ -137,6 +137,7 @@ type
     TileAttributeseditor1: TMenuItem;
     N12: TMenuItem;
     Restrictpainting1: TMenuItem;
+    Saveminimapimage1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -160,6 +161,7 @@ type
     procedure Savemap1Click(Sender: TObject);
     procedure Savemapas1Click(Sender: TObject);
     procedure Savemapimage1Click(Sender: TObject);
+    procedure Saveminimapimage1Click(Sender: TObject);
     procedure Exit1Click(Sender: TObject);
     procedure Undo1Click(Sender: TObject);
     procedure Redo1Click(Sender: TObject);
@@ -733,6 +735,7 @@ var
 begin
   if not Map.loaded then
     exit;
+  MapImageSaveDialog.Title := 'Save map image';
   if MapImageSaveDialog.Execute then
   begin
     tmp_bitmap := TBitmap.Create;
@@ -743,6 +746,17 @@ begin
       Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, false);
     tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
     tmp_bitmap.Destroy;
+  end;
+end;
+
+procedure TMainWindow.Saveminimapimage1Click(Sender: TObject);
+begin
+  if not Map.loaded then
+    exit;
+  MapImageSaveDialog.Title := 'Save minimap image';
+  if MapImageSaveDialog.Execute then
+  begin
+    minimap_buffer.SaveToFile(MapImageSaveDialog.FileName);
   end;
 end;
 
