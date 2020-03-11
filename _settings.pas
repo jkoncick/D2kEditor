@@ -151,6 +151,16 @@ begin
   EventDialog.EventGrid.ColWidths[5] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   load_window_position(ini, MapStatsDialog, 'MapStatsDialog');
   load_window_position(ini, TileAtrEditor, 'TileAtrEditor');
+  // Load file dialog paths
+  MainWindow.MapOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapOpenDialog', MissionsPath);
+  MainWindow.MapSaveDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapSaveDialog', MissionsPath);
+  MainWindow.TilesetOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'TilesetOpenDialog', GamePath + '\Data');
+  MainWindow.TileatrOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'TileatrOpenDialog', GamePath + '\Data\bin');
+  MainWindow.MapImageSaveDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapImageSaveDialog', '');
+  MissionDialog.ExportAIDialog.InitialDir := ini.ReadString('FileDialogPaths', 'ExportAIDialog', current_dir + 'AI_templates');
+  MissionDialog.ImportAIDialog.InitialDir := ini.ReadString('FileDialogPaths', 'ImportAIDialog', current_dir + 'AI_templates');
+  TileAtrEditor.SaveTileAtrDialog.InitialDir := ini.ReadString('FileDialogPaths', 'SaveTileAtrDialog', GamePath + '\Data\bin');
+
   ini.Destroy;
 end;
 
@@ -211,6 +221,24 @@ begin
   ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   save_window_position(ini, MapStatsDialog, 'MapStatsDialog');
   save_window_position(ini, TileAtrEditor, 'TileAtrEditor');
+  // Save file dialog paths
+  if MainWindow.MapOpenDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'MapOpenDialog', ExtractFilePath(MainWindow.MapOpenDialog.FileName));
+  if MainWindow.MapSaveDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'MapSaveDialog', ExtractFilePath(MainWindow.MapSaveDialog.FileName));
+  if MainWindow.TilesetOpenDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'TilesetOpenDialog', ExtractFilePath(MainWindow.TilesetOpenDialog.FileName));
+  if MainWindow.TileatrOpenDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'TileatrOpenDialog', ExtractFilePath(MainWindow.TileatrOpenDialog.FileName));
+  if MainWindow.MapImageSaveDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'MapImageSaveDialog', ExtractFilePath(MainWindow.MapImageSaveDialog.FileName));
+  if MissionDialog.ExportAIDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'ExportAIDialog', ExtractFilePath(MissionDialog.ExportAIDialog.FileName));
+  if MissionDialog.ImportAIDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'ImportAIDialog', ExtractFilePath(MissionDialog.ImportAIDialog.FileName));
+  if TileAtrEditor.SaveTileAtrDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'SaveTileAtrDialog', ExtractFilePath(TileAtrEditor.SaveTileAtrDialog.FileName));
+
   ini.UpdateFile;
   ini.Destroy;
 end;
