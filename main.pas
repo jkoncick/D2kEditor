@@ -221,6 +221,7 @@ type
     procedure BlockImageClick(Sender: TObject);
     procedure RbTerrainModeClick(Sender: TObject);
     procedure PaintTileSelectClick(Sender: TObject);
+    procedure PaintTileSelectDblClick(Sender: TObject);
     procedure BlockPresetGroupSelectClick(Sender: TObject);
 
   public
@@ -367,8 +368,8 @@ begin
     btn.Glyph.Width := 28;
     btn.Glyph.Height := 28;
     btn.ShowHint := True;
-    btn.AllowAllUp := True;
     btn.OnClick := PaintTileSelectClick;
+    btn.OnDblClick := PaintTileSelectDblClick;
     btn.Parent := PageTerrain;
     paint_tile_select[i] := btn;
   end;
@@ -534,6 +535,7 @@ procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
 var
   index: integer;
 begin
+  mouse_already_clicked := false;
   case key of
     {--106:
       begin RandomGen.reset; render_minimap; render_map;  end;
@@ -569,9 +571,10 @@ begin
         MiscObjList.SetFocus;
       end else
       begin
-        cbBrushSize.ItemIndex := 0;
-        paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group].Down := true;
-        PaintTileSelectClick(paint_tile_select[Tileset.block_preset_groups[block_preset_group].paint_group]);
+        if Tileset.block_preset_groups[block_preset_group].paint_group <> -5 then
+          paint_tile_group := Tileset.block_preset_groups[block_preset_group].paint_group;
+        paint_tile_select[paint_tile_group].Down := true;
+        PaintTileSelectClick(paint_tile_select[paint_tile_group]);
       end;
     end;
     255: TileAttributeseditor1Click(nil);
@@ -1469,6 +1472,7 @@ begin
     (Sender as TRadioButton).SetFocus;
   if not RbPaintMode.Checked then
   begin
+    paint_tile_select[paint_tile_group].AllowAllUp := true;
     paint_tile_select[paint_tile_group].Down := false;
     LbPaintTileGroupName.Caption := '';
   end;
@@ -1484,8 +1488,19 @@ procedure TMainWindow.PaintTileSelectClick(Sender: TObject);
 begin
   paint_tile_select_active := Sender as TSpeedButton;
   paint_tile_group := paint_tile_select_active.Tag;
+  paint_tile_select[paint_tile_group].AllowAllUp := false;
   LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
   RbPaintMode.Checked := true;
+end;
+
+procedure TMainWindow.PaintTileSelectDblClick(Sender: TObject);
+begin
+  // Auto-select preset group
+  if Tileset.paint_tile_groups[paint_tile_group].smooth_preset_group <> -1 then
+  begin
+    block_preset_select[Tileset.paint_tile_groups[paint_tile_group].smooth_preset_group].Down := true;
+    BlockPresetGroupSelectClick(block_preset_select[Tileset.paint_tile_groups[paint_tile_group].smooth_preset_group]);
+  end;
 end;
 
 procedure TMainWindow.BlockPresetGroupSelectClick(Sender: TObject);

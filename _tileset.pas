@@ -138,6 +138,8 @@ type
 
   private
     last_block_preset_variant: integer;
+    last_block_preset_group: integer;
+    last_block_preset_key: word;
 
   public
     // List of available tilesets
@@ -626,7 +628,7 @@ begin
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
     block_preset_groups[i].name := ini.ReadString('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.name', '');
-    block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.paint', 0) - 1;
+    block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.paint', -4) - 1;
   end;
   // Load block presets
   preset_index := 1;
@@ -1088,7 +1090,9 @@ begin
   begin
     if variant = bpNext then
     begin
-      if last_block_preset_variant >= num_variants then
+      if (last_block_preset_group <> group) or (last_block_preset_key <> key) then
+        last_block_preset_variant := 0
+      else if last_block_preset_variant >= num_variants then
         last_block_preset_variant := 0;
       variant := last_block_preset_variant;
       inc(last_block_preset_variant);
@@ -1103,6 +1107,8 @@ begin
     end;
   end;
   preset_index := block_preset_key_variants[group, key_index].first_preset_index + variant;
+  last_block_preset_group := group;
+  last_block_preset_key := key;
   result := preset_index;
 end;
 

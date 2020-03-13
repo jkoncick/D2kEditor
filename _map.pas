@@ -341,8 +341,13 @@ begin
   if x >= map_width then x := map_width - 1;
   if y >= map_height then y := map_height - 1;
   result := Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group;
-  if (not exact) and (tmp_paint_tile_group >= 0) then
-    result := result or ((Tileset.attributes_editor[map_data[x,y].tile] and (1 shl tmp_paint_tile_group)) <> 0);
+  if not exact then
+  begin
+    if (tmp_paint_tile_group >= 0) then
+      result := result or ((Tileset.attributes_editor[map_data[x,y].tile] and (1 shl tmp_paint_tile_group)) <> 0)
+    else
+      result := result or (Tileset.attributes_editor[map_data[x,y].tile] = 0);
+  end;
 end;
 
 procedure TMap.put_edge_block(var xpos, ypos: integer; moveoff_x,
