@@ -672,7 +672,7 @@ begin
     for j := 0 to new_width - 1 do
       if (i >= map_height) or (j >= map_width) then
       begin
-        map_data[j,i].tile := Tileset.get_random_paint_tile(0);
+        map_data[j,i].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
         map_data[j,i].special := 0;
       end;
   // Set new map size
@@ -699,7 +699,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -714,7 +714,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -729,7 +729,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -744,7 +744,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(0);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -802,7 +802,7 @@ begin
   for x := 0 to map_width - 1 do
     for y := 0 to map_height - 1 do
     begin
-      map_data[x,y].tile := Tileset.get_random_paint_tile(0);
+      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
       map_data[x,y].special := 0;
     end;
   if Settings.PreplaceWormSpawner then

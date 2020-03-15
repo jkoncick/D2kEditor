@@ -167,6 +167,8 @@ type
     tile_paint_group: array[0..cnt_tileset_tiles-1] of shortint;
 
     // Tileset configuration
+    default_paint_group: integer;
+
     minimap_color_rules: array[0..max_minimap_color_rules-1] of TMinimapColorRule;
     minimap_color_rules_used: integer;
 
@@ -578,6 +580,7 @@ begin
   decoder2.Delimiter := '.';
   // Load basic information
   tileatr_name := ini.ReadString('Basic', 'tileatr', '');
+  default_paint_group := ini.ReadInteger('Basic', 'default_paint_group', 1) - 1;
   // Load minimap color rules
   minimap_color_rules_used := 0;
   ini.ReadSection('Minimap_Color_Rules', tmp_strings);

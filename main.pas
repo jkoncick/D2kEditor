@@ -1407,7 +1407,7 @@ begin
     // Erase copied area
     if ssShift in Shift then
     begin
-      Map.paint_rect(min_x, min_y, max_x-min_x+1, max_y-min_y+1, IfThen(CbSelectStructures.State = cbGrayed, -5, 0)); // -5 = erase structures only, 0 = sand paint type
+      Map.paint_rect(min_x, min_y, max_x-min_x+1, max_y-min_y+1, IfThen(CbSelectStructures.State = cbGrayed, -5, Tileset.default_paint_group)); // -5 = erase structures only, 0 = default paint type
       render_minimap;
       render_map;
     end;
