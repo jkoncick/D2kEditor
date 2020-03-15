@@ -370,23 +370,22 @@ object TileAtrEditor: TTileAtrEditor
     object File1: TMenuItem
       Caption = 'File'
       object OpenTileAtr1: TMenuItem
-        Caption = 'Load Attributes'
+        Caption = 'Load attributes file'
         OnClick = OpenTileAtr1Click
       end
       object OpenTileset1: TMenuItem
-        Caption = 'Load Image'
+        Caption = 'Load image'
         OnClick = OpenTileset1Click
       end
       object OpenBoth1: TMenuItem
-        Caption = 'Load Both'
-        ShortCut = 16463
+        Caption = 'Load both'
         OnClick = OpenBoth1Click
       end
       object N3: TMenuItem
         Caption = '-'
       end
       object ReloadTileatr1: TMenuItem
-        Caption = 'Reload Attributes'
+        Caption = 'Reload tileset'
         ShortCut = 16466
         OnClick = ReloadTileatr1Click
       end
@@ -394,7 +393,7 @@ object TileAtrEditor: TTileAtrEditor
         Caption = '-'
       end
       object SaveTileAtr1: TMenuItem
-        Caption = 'Save Attributes'
+        Caption = 'Save attributes'
         ShortCut = 16467
         OnClick = SaveTileAtr1Click
       end

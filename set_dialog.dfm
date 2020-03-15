@@ -3,7 +3,7 @@ object SetDialog: TSetDialog
   Top = 188
   BorderStyle = bsDialog
   Caption = 'SetDialog'
-  ClientHeight = 135
+  ClientHeight = 138
   ClientWidth = 176
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -65,7 +65,7 @@ object SetDialog: TSetDialog
   end
   object BtnOK: TButton
     Left = 8
-    Top = 104
+    Top = 106
     Width = 75
     Height = 25
     Caption = 'OK'
@@ -74,7 +74,7 @@ object SetDialog: TSetDialog
   end
   object BtnCancel: TButton
     Left = 96
-    Top = 104
+    Top = 106
     Width = 75
     Height = 25
     Caption = 'Cancel'
@@ -192,6 +192,25 @@ object SetDialog: TSetDialog
       Height = 17
       Caption = 'Swap'
       TabOrder = 2
+    end
+  end
+  object Tileset_Menu: TPanel
+    Left = 0
+    Top = 0
+    Width = 177
+    Height = 100
+    BevelOuter = bvNone
+    TabOrder = 5
+    object Tileset_List: TListBox
+      Left = 0
+      Top = 0
+      Width = 177
+      Height = 100
+      Align = alClient
+      Columns = 2
+      ItemHeight = 13
+      TabOrder = 0
+      OnDblClick = BtnOKClick
     end
   end
 end

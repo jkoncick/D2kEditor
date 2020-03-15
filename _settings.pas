@@ -151,6 +151,7 @@ begin
   EventDialog.EventGrid.ColWidths[5] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   load_window_position(ini, MapStatsDialog, 'MapStatsDialog');
   load_window_position(ini, TileAtrEditor, 'TileAtrEditor');
+  TileAtrEditor.cbAlwaysOnTop.Checked := ini.ReadBool('GUI','TileAtrEditor.cbAlwaysOnTop.Checked',TileAtrEditor.cbAlwaysOnTop.Checked);
   // Load file dialog paths
   MainWindow.MapOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapOpenDialog', MissionsPath);
   MainWindow.MapSaveDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapSaveDialog', MissionsPath);
@@ -221,6 +222,7 @@ begin
   ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   save_window_position(ini, MapStatsDialog, 'MapStatsDialog');
   save_window_position(ini, TileAtrEditor, 'TileAtrEditor');
+  ini.WriteBool('GUI','TileAtrEditor.cbAlwaysOnTop.Checked',TileAtrEditor.cbAlwaysOnTop.Checked);
   // Save file dialog paths
   if MainWindow.MapOpenDialog.FileName <> '' then
     ini.WriteString('FileDialogPaths', 'MapOpenDialog', ExtractFilePath(MainWindow.MapOpenDialog.FileName));

@@ -28,6 +28,8 @@ type
     ChStrOwn_Swap: TCheckBox;
     ChStrOwn_LbPlayerFrom: TLabel;
     ChStrOwn_LbPlayerTo: TLabel;
+    Tileset_Menu: TPanel;
+    Tileset_List: TListBox;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -50,13 +52,17 @@ var
 implementation
 
 uses
-  main, _settings, _map;
+  main, _settings, _map, _tileset;
 
 {$R *.dfm}
 
 { TSetDialog }
 
 procedure TSetDialog.FormCreate(Sender: TObject);
+var
+  tilesets: TStringList;
+  i: integer;
+  default_tileset: integer;
 begin
   ChStrOwn_PlayerFrom.Items := MainWindow.PlayerSelect.Items;
   ChStrOwn_PlayerFrom.ItemIndex := 0;
@@ -67,6 +73,17 @@ begin
   SetMapSize_Width.Value := Settings.DefaultMapWidth;
   SetMapSize_Height.MaxValue := max_map_height;
   SetMapSize_Height.Value := Settings.DefaultMapHeight;
+  tilesets := TStringList.Create;
+  default_tileset := 0;
+  for i := 0 to Tileset.cnt_tilesets - 1 do
+  begin
+    tilesets.Add(Tileset.tileset_list[i]);
+    if Tileset.tileset_list[i] = Settings.DefaultTilesetName then
+      default_tileset := i;
+  end;
+  Tileset_List.Items := tilesets;
+  tilesets.Destroy;
+  Tileset_List.ItemIndex := default_tileset;
 end;
 
 procedure TSetDialog.FormKeyDown(Sender: TObject; var Key: Word;
@@ -88,6 +105,7 @@ begin
   SetMapSize_Menu.Visible := False;
   ShiftMap_Menu.Visible := False;
   ChStrOwn_Menu.Visible := False;
+  Tileset_Menu.Visible := False;
   case menu of
     1:  begin
           Caption := 'Set map size';
@@ -104,6 +122,10 @@ begin
     4:  begin
           SetMapSize_Menu.Visible := True;
           Caption := 'Set map size';
+        end;
+    5:  begin
+          Tileset_Menu.Visible := True;
+          Caption := 'Select tileset';
         end;
   end;
   current_menu := menu;
@@ -146,6 +168,10 @@ begin
             close;
             MainWindow.new_map(SetMapSize_Width.Value,SetMapSize_Height.Value);
           end;
+        end;
+    5:  begin
+          close;
+          MainWindow.change_tileset(Tileset_List.ItemIndex);
         end;
   end;
 end;

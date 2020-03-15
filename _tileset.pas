@@ -199,7 +199,7 @@ type
     procedure load_image_from_file(filename: String);
     procedure load_attributes_from_file(filename: String);
     procedure save_attributes_to_file(filename: String);
-    procedure reload_attributes;
+    procedure reload_tileset;
   private
     procedure load_tileimage;
     procedure load_r16_image(filename: String);
@@ -339,6 +339,8 @@ procedure TTileset.load_image_from_file(filename: String);
 var
   ext: String;
 begin
+  if (filename = '') or not FileExists(filename) then
+    exit;
   Ext := UpperCase(ExtractFileExt(filename));
   if Ext = '.R16' then
     load_r16_image(filename)
@@ -367,8 +369,9 @@ begin
   save_attributes;
 end;
 
-procedure TTileset.reload_attributes;
+procedure TTileset.reload_tileset;
 begin
+  load_image_from_file(tileimage_filename);
   load_attributes;
   load_config;
 end;

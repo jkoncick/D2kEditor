@@ -489,30 +489,37 @@ object MainWindow: TMainWindow
     end
     object ileset1: TMenuItem
       Caption = 'Tileset'
-      object Selecttileset1: TMenuItem
-        Caption = 'Select tileset'
+      object Changetileset1: TMenuItem
+        Caption = 'Change tileset...'
+        ShortCut = 16468
+        OnClick = Changetileset1Click
       end
       object Selectnext1: TMenuItem
-        Caption = 'Select next'
-        ShortCut = 16468
+        Caption = 'Next tileset'
+        ShortCut = 24660
         OnClick = Selectnext1Click
+      end
+      object Reloadtileset1: TMenuItem
+        Caption = 'Reload tileset'
+        ShortCut = 24658
+        OnClick = Reloadtileset1Click
       end
       object N3: TMenuItem
         Caption = '-'
       end
       object Loadtileset1: TMenuItem
-        Caption = 'Load image'
+        Caption = 'Load custom image'
         OnClick = Loadtileset1Click
       end
       object Loadtilesetattributes1: TMenuItem
-        Caption = 'Load attributes'
+        Caption = 'Load custom attributes'
         OnClick = Loadtilesetattributes1Click
       end
       object N6: TMenuItem
         Caption = '-'
       end
       object TileAttributeseditor1: TMenuItem
-        Caption = 'Attributes editor...'
+        Caption = 'Tile attributes editor...'
         ShortCut = 16465
         OnClick = TileAttributeseditor1Click
       end
@@ -520,7 +527,7 @@ object MainWindow: TMainWindow
         Caption = '-'
       end
       object Showstatus1: TMenuItem
-        Caption = 'Show status'
+        Caption = 'Show status (debug)'
         OnClick = Showstatus1Click
       end
     end

@@ -46,7 +46,7 @@ type
     Loadtileset1: TMenuItem;
     TilesetOpenDialog: TOpenDialog;
     MapSaveDialog: TSaveDialog;
-    Selecttileset1: TMenuItem;
+    Changetileset1: TMenuItem;
     MiniMap: TImage;
     Settings1: TMenuItem;
     XPManifest1: TXPManifest;
@@ -138,6 +138,7 @@ type
     N12: TMenuItem;
     Restrictpainting1: TMenuItem;
     Saveminimapimage1: TMenuItem;
+    Reloadtileset1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -167,8 +168,9 @@ type
     procedure Redo1Click(Sender: TObject);
     procedure Copy1Click(Sender: TObject);
     procedure Paste1Click(Sender: TObject);
-    procedure SelectTileset(Sender: TObject);
+    procedure Changetileset1Click(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
+    procedure Reloadtileset1Click(Sender: TObject);
     procedure Loadtileset1Click(Sender: TObject);
     procedure Loadtilesetattributes1Click(Sender: TObject);
     procedure TileAttributeseditor1Click(Sender: TObject);
@@ -268,7 +270,6 @@ type
 
     // Dynamic menu items
     recent_files_menuitems: array[1..cnt_recent_files] of TMenuItem;
-    tileset_menuitems: array of TMenuItem;
 
     // Rendering procedures
     procedure resize_map_canvas;
@@ -315,6 +316,7 @@ type
     procedure shift_map(direction, num_tiles: integer);
     procedure change_structure_owner(player_from, player_to: integer; swap: boolean);
     procedure new_map(new_width, new_height: integer);
+    procedure change_tileset(index: integer);
   end;
 
 var
@@ -402,17 +404,6 @@ begin
   minimap_buffer.Height := MiniMap.Height;
   // Initialize tilesets
   Tileset.init;
-  SetLength(tileset_menuitems, Tileset.cnt_tilesets);
-  for i := 0 to Tileset.cnt_tilesets -1 do
-  begin
-    tileset_menuitems[i] := TMenuItem.Create(Selecttileset1);
-    tileset_menuitems[i].Caption := Tileset.tileset_list[i];
-    tileset_menuitems[i].RadioItem := true;
-    tileset_menuitems[i].GroupIndex := 1;
-    tileset_menuitems[i].Tag := i;
-    tileset_menuitems[i].OnClick := SelectTileset;
-    MainWindow.Selecttileset1.Add(tileset_menuitems[i]);
-  end;
   // Initialize Random Generator
   //--RandomGen.init(Memo1.Lines);
   // Initialize Structures
@@ -716,7 +707,9 @@ end;
 
 procedure TMainWindow.Newmap1Click(Sender: TObject);
 begin
+  SetDialog.select_menu(5);
   SetDialog.select_menu(4);
+  EditorPages.ActivePage := PageTerrain;
 end;
 
 procedure TMainWindow.Openmap1Click(Sender: TObject);
@@ -870,13 +863,9 @@ begin
   CloseClipboard;
 end;
 
-procedure TMainWindow.SelectTileset(Sender: TObject);
+procedure TMainWindow.Changetileset1Click(Sender: TObject);
 begin
-  Tileset.change_tileset((sender as TMenuItem).Tag);
-  MissionDialog.tileset_changed;
-  // Re-render everything
-  render_minimap;
-  render_map;
+  SetDialog.select_menu(5);
 end;
 
 procedure TMainWindow.Selectnext1Click(Sender: TObject);
@@ -886,6 +875,16 @@ begin
   // Re-render everything
   render_minimap;
   render_map;
+end;
+
+procedure TMainWindow.Reloadtileset1Click(Sender: TObject);
+begin
+  Tileset.reload_tileset;
+  TileAtrEditor.render_tileset;
+  // Re-render everything
+  render_tileset;
+  render_map;
+  render_minimap;
 end;
 
 procedure TMainWindow.Loadtileset1Click(Sender: TObject);
@@ -1862,18 +1861,14 @@ begin
 end;
 
 procedure TMainWindow.tileset_changed;
-var
-  i: integer;
 begin
   if Tileset.current_tileset <> -1 then
   begin
-    tileset_menuitems[Tileset.current_tileset].Checked := true;
+    SetDialog.Tileset_List.ItemIndex := Tileset.current_tileset;
     StatusBar.Panels[1].Text := Tileset.tileset_name;
   end else
   begin
     StatusBar.Panels[1].Text := 'Custom files';
-    for i := 0 to Length(tileset_menuitems) -1 do
-      tileset_menuitems[i].Checked := false;
   end;
   TileAtrEditor.tileset_changed;
 end;
@@ -2150,6 +2145,15 @@ begin
   render_minimap;
   render_map;
   //--Memo1.Lines.Clear;
+end;
+
+procedure TMainWindow.change_tileset(index: integer);
+begin
+  Tileset.change_tileset(index);
+  MissionDialog.tileset_changed;
+  // Re-render everything
+  render_minimap;
+  render_map;
 end;
 
 end.

@@ -317,14 +317,7 @@ end;
 
 procedure TTileAtrEditor.ReloadTileatr1Click(Sender: TObject);
 begin
-  if Tileset.tileatr_filename <> '' then
-  begin
-    Tileset.reload_attributes;
-    render_tileset;
-    MainWindow.render_tileset;
-    MainWindow.render_map;
-    MainWindow.render_minimap;
-  end;
+  MainWindow.Reloadtileset1Click(nil);
 end;
 
 procedure TTileAtrEditor.SaveTileAtr1Click(Sender: TObject);
@@ -364,7 +357,7 @@ end;
 
 procedure TTileAtrEditor.QuickOpenClick(Sender: TObject);
 begin
-  MainWindow.SelectTileset(Sender);
+  MainWindow.change_tileset((Sender as TMenuItem).Tag);
 end;
 
 procedure TTileAtrEditor.Undo1Click(Sender: TObject);
