@@ -76,7 +76,7 @@ var
 implementation
 
 uses
-  SysUtils, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
+  SysUtils, StdCtrls, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
   mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, _map;
 
 procedure TSettings.load_precreate_editor_settings;
@@ -125,7 +125,7 @@ begin
   if not PreserveGUISettings then
     exit;
   load_window_position(ini, MainWindow, 'MainWindow');
-  MainWindow.CbSelectStructures.Checked := ini.ReadBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
+  MainWindow.CbSelectStructures.State := TCheckBoxState(ini.ReadInteger('GUI','MainWindow.CbSelectStructures.State',Ord(MainWindow.CbSelectStructures.State)));
 end;
 
 procedure TSettings.load_postcreate_editor_settings;
@@ -208,7 +208,7 @@ begin
   end;
   // Save GUI settings
   save_window_position(ini, MainWindow, 'MainWindow');
-  ini.WriteBool('GUI','MainWindow.CbSelectStructures.Checked',MainWindow.CbSelectStructures.Checked);
+  ini.WriteInteger('GUI','MainWindow.CbSelectStructures.State',Ord(MainWindow.CbSelectStructures.State));
   save_window_position(ini, TilesetDialog, 'TilesetDialog');
   save_window_position(ini, BlockPresetDialog, 'BlockPresetDialog');
   save_window_position(ini, SetDialog, 'SetDialog');

@@ -59,7 +59,6 @@ object MainWindow: TMainWindow
     PageSize = 0
     TabOrder = 0
     OnChange = MapScrollChange
-    OnKeyDown = MapScrollHKeyDown
   end
   object MapScrollV: TScrollBar
     Left = 488
@@ -71,7 +70,6 @@ object MainWindow: TMainWindow
     PageSize = 0
     TabOrder = 1
     OnChange = MapScrollChange
-    OnKeyDown = MapScrollVKeyDown
   end
   object StatusBar: TStatusBar
     Left = 0

@@ -189,10 +189,6 @@ type
     procedure About1Click(Sender: TObject);
     // Main form components events
     procedure MapScrollChange(Sender: TObject);
-    procedure MapScrollHKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
-    procedure MapScrollVKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
     procedure MapCanvasMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
     procedure MapCanvasMouseDown(Sender: TObject; Button: TMouseButton;
@@ -521,6 +517,13 @@ end;
 
 procedure TMainWindow.CMDialogKey(var AMessage: TCMDialogKey);
 begin
+  // Arrow keys
+  if (AMessage.CharCode >= 37) and (AMessage.CharCode <= 40) then
+  begin
+    FormKeyDown(nil, AMessage.CharCode, []);
+    AMessage.Result := 1;
+  end else
+  // TAB
   if AMessage.CharCode = VK_TAB then
   begin
     EditorPages.TabIndex := (EditorPages.TabIndex + 1) and 1;
@@ -551,7 +554,7 @@ begin
       if not EditorPages.Visible then
         finish_event_position_selection(-1,-1);
     end;
-    // Space: open tileset window
+    // Space: open tileset/preset window
     32:
     begin
       EditorPages.TabIndex := 1;
@@ -578,6 +581,26 @@ begin
       end;
     end;
     255: TileAttributeseditor1Click(nil);
+    //255: ShellExecute(0, 'open', PChar('https://www.youtube.com/watch?v=oHg5SJYRHA0'), nil, nil, SW_SHOWNORMAL);
+  end;
+  if (key >= 37) and (key <= 40) then
+  begin
+    // Arrow keys
+    if ssShift in Shift then
+      case key of
+        37: MapScrollH.Position := 0;
+        38: MapScrollV.Position := 0;
+        39: MapScrollH.Position := Map.width;
+        40: MapScrollV.Position := Map.height;
+        end
+    else
+      case key of
+        37: MapScrollH.Position := MapScrollH.Position-1;
+        38: MapScrollV.Position := MapScrollV.Position-1;
+        39: MapScrollH.Position := MapScrollH.Position+1;
+        40: MapScrollV.Position := MapScrollV.Position+1;
+        end;
+    key := 0;
   end;
   if mode(mBlockMode) then
   case key of
@@ -586,6 +609,7 @@ begin
     100: {Num4} begin CursorImage.Left := CursorImage.Left - 32; resize_cursor_image; end;
     102: {Num6} begin CursorImage.Left := CursorImage.Left + 32; resize_cursor_image; end;
     104: {Num8} begin CursorImage.Top := CursorImage.Top - 32; resize_cursor_image; end;
+    101: {Num5} begin MapCanvasMouseDown(nil, mbLeft, [], CursorImage.Top,CursorImage.Left) end;
     end
   else if mode(mStructures) and (ActiveControl <> SpecialValue) and (key >= 96) and (key <= 96 + Structures.cnt_map_players) then
   begin
@@ -623,16 +647,10 @@ begin
     ord('R'): begin EditorPages.TabIndex := 1; paint_tile_select[1].Down := true; PaintTileSelectClick(paint_tile_select[1]); end;
     ord('D'): begin EditorPages.TabIndex := 1; paint_tile_select[2].Down := true; PaintTileSelectClick(paint_tile_select[2]); end;
     ord('C'): begin EditorPages.TabIndex := 1; RbSelectMode.Checked := true; end;
-    ord('T'): CbSelectStructures.Checked := not CbSelectStructures.Checked;
+    ord('T'): CbSelectStructures.State := TCheckBoxState((Ord(CbSelectStructures.State) + 1) mod 3);
     ord('B'): begin EditorPages.TabIndex := 1; RbBlockMode.Checked := true; end;
     end;
   end else
-  if mode(mTerrain) then
-  begin
-    // Block key presets
-    if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 186) or (key = 188) or (key = 190) or (key = 191) then
-      apply_key_preset(key);
-  end;
   // Ctrl+key
   if ssCtrl in Shift then
   begin
@@ -643,6 +661,12 @@ begin
     ord('B'): begin sbMarkBuildableTiles.Down := not sbMarkBuildableTiles.Down; SettingChange(sbMarkBuildableTiles); end;
     ord('U'): begin sbShowUnknownSpecials.Down := not sbShowUnknownSpecials.Down; SettingChange(sbShowUnknownSpecials); end;
     end;
+  end else
+  if mode(mTerrain) then
+  begin
+    // Block key presets
+    if ((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 186) or (key = 188) or (key = 190) or (key = 191) then
+      apply_key_preset(key);
   end;
 end;
 
@@ -651,12 +675,20 @@ procedure TMainWindow.FormMouseWheelUp(Sender: TObject; Shift: TShiftState;
 begin
   if (MousePos.X - left) < (mapCanvas.Width + 30) then
   begin
-    if (MousePos.Y - top) < (mapCanvas.Height - 30)
+    Handled := true;
+    // If Ctrl is held and in paint mode, change brush size
+    if (ssShift in Shift) and mode(mTerrain) then
+    begin
+      cbBrushSize.ItemIndex := Min(cbBrushSize.ItemIndex + 1, cbBrushSize.Items.Count - 1);
+      render_editing_marker;
+      exit;
+    end;
+    // Scroll map
+    if (MousePos.Y - top - 50) < (mapCanvas.Height - (mapCanvas.Height div 8))
     then
       MapScrollV.Position := MapScrollV.Position - 2
     else
       MapScrollH.Position := MapScrollH.Position - 2;
-    Handled := true;
   end;
 end;
 
@@ -665,12 +697,20 @@ procedure TMainWindow.FormMouseWheelDown(Sender: TObject;
 begin
   if (MousePos.X - left) < (mapCanvas.Width + 30) then
   begin
-    if (MousePos.Y - top) < (mapCanvas.Height - 30)
+    Handled := true;
+    // If Ctrl is held and in paint mode, change brush size
+    if (ssShift in Shift) and mode(mTerrain) then
+    begin
+      cbBrushSize.ItemIndex := Max(cbBrushSize.ItemIndex - 1, 0);
+      render_editing_marker;
+      exit;
+    end;
+    // Scroll map
+    if (MousePos.Y - top - 50) < (mapCanvas.Height - (mapCanvas.Height div 8))
     then
       MapScrollV.Position := MapScrollV.Position + 2
     else
       MapScrollH.Position := MapScrollH.Position + 2;
-    Handled := true;
   end;
 end;
 
@@ -990,26 +1030,67 @@ end;
 
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
 begin
-  ShowMessage('Key Shortcuts:'#13#13'Space = Open tileset window'#13'Tab = Switch Structures / Terrain'#13'Shift + 1 - 8 = Block size preset'#13+
-              'Shift + Q = Thin spice'#13'Shift + W = Thick spice'#13'Shift + E = Spice bloom'#13'Shift + S = Paint sand'#13'Shift + R = Paint rock'#13'Shift + D = Paint dunes'#13'Shift + B = Tile block'#13'Shift + C = Select and copy mode'#13'Shift + T = Select structures'#13+
-              'F1 - F4 = Block key-preset group'#13'Num 2,4,6,8 = Move block on map'#13'Num 0 - Num 6 = Select player');
+  ShowMessage('Key Shortcuts:'#13#13+
+              'Arrow keys = Scroll map'#13+
+              'Space = Open tileset/preset window'#13+
+              'Tab = Switch Structures / Terrain mode'#13+
+              'Shift + Q = Thin spice'#13+
+              'Shift + W = Thick spice'#13+
+              'Shift + E = Spice bloom'#13+
+              'Shift + S = Paint sand'#13+
+              'Shift + R = Paint rock'#13+
+              'Shift + D = Paint dunes'#13+
+              'Shift + B = Block mode'#13+
+              'Shift + C = Select mode'#13#13+
+              'In Terrain mode:'#13+
+              '0-9, A-Z = Block preset'#13+
+              '` (key under Esc) = Switch to paint mode'#13+
+              'F1 - F4 = Change block preset group'#13+
+              'Shift + 1 - 8 = Change brush size'#13+
+              'Shift + T = Toggle select structures'#13+
+              'Num 2,4,6,8 = Move block on map'#13+
+              'Num 5 = Place block'#13#13+
+              'In Structures mode:'#13+
+              'Num 0 - Num 7 = Select player');
 end;
 
 procedure TMainWindow.Mouseactions1Click(Sender: TObject);
 begin
   ShowMessage('Mouse actions'#13#13+
-              'In Structures mode:'#13'Left = Place structure'#13'Right = Remove structure'#13'Middle = Copy structure'#13#13+
-              'Event marker in Struct. mode:'#13'Double click = Go to event'#13'Left+drag = Move event'#13#13+
-              'In Terrain mode:'#13'Left = Paint / Place block'#13'Double click = Fill area'#13'Shift+click = Smooth edge'#13'Middle = Copy block'#13'Right+drag = Scroll map'#13'Shift+select = Erase selection'#13#13+
-              'On Block preset window:'#13'Left = Select block'#13'Right = Next variant'#13'Middle = Show / hide keys');
+              'In Structures mode:'#13+
+              'Left = Place structure'#13+
+              'Right = Remove structure'#13+
+              'Middle = Copy structure'#13#13+
+              'Event marker in Struct. mode:'#13+
+              'Double click = Go to event'#13+
+              'Left+move = Move event'#13#13+
+              'In Terrain mode:'#13+
+              'Left = Paint / Place block'#13+
+              'Double click = Fill area'#13+
+              'Shift+click = Auto-smooth edge'#13+
+              'Middle = Copy block'#13+
+              'Right+move = Scroll map'#13+
+              'Hold Ctrl = Switch to select mode'#13+
+              'Shift+wheel = Change brush size'#13+
+              'Shift+select = Erase selection'#13#13+
+              'On Block preset window:'#13+
+              'Left = Select block'#13+
+              'Right = Next variant'#13+
+              'Middle = Show / hide keys');
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
 begin
-  ShowMessage('Dune 2000 Map and Mission Editor'#13#13'Part of D2K+ Editing tools'#13#13+
-              'Made by Klofkac (kozten@seznam.cz)'#13'Version 1.3'#13'Date: 2019-02-27'#13#13+
+  ShowMessage('Dune 2000 Map and Mission Editor'#13#13+
+              'Part of D2K+ Editing tools'#13#13+
+              'Made by Klofkac (kozten@seznam.cz)'#13+
+              'Version 1.3'#13+
+              'Date: 2019-02-27'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
-              'Special thanks to:'#13'mvi - for making the original Mission editor'#13'FunkyFr3sh - for patching Dune 2000'#13'FED2k community - for their support');
+              'Special thanks to:'#13+
+              'mvi - for making the original Mission editor'#13+
+              'FunkyFr3sh - for patching Dune 2000'#13+
+              'FED2k community - for their support');
 end;
 
 procedure TMainWindow.MapScrollChange(Sender: TObject);
@@ -1026,38 +1107,6 @@ begin
     pos := MapCanvas.ScreenToClient(Mouse.CursorPos);
     MapCanvasMouseMove(nil, [], pos.X, pos.Y);
   end
-end;
-
-procedure TMainWindow.MapScrollHKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
-begin
-  // Keyboard control of map shifting
-  if key = 38 then
-  begin
-    key := 0;
-    MapScrollV.Position := MapScrollV.Position-1;
-  end;
-  if key = 40 then
-  begin
-    key := 0;
-    MapScrollV.Position := MapScrollV.Position+1;
-  end;
-end;
-
-procedure TMainWindow.MapScrollVKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
-begin
-  // Keyboard control of map shifting
-  if key = 37 then
-  begin
-    MapScrollH.Position := MapScrollH.Position-1;
-    key := 0;
-  end;
-  if key = 39 then
-  begin
-    MapScrollH.Position := MapScrollH.Position+1;
-    key := 0;
-  end;
 end;
 
 procedure TMainWindow.MapCanvasMouseMove(Sender: TObject;
@@ -1160,14 +1209,18 @@ var
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
-  if Button = mbRight then
-    Caption := inttohex(Tileset.get_tile_attributes(Map.data[map_x, map_y].tile, Map.data[map_x, map_y].special, true), 16);
   // Disable multiple clicks in the same tile
   if mouse_already_clicked and (mouse_last_button = Button) then
     exit;
   mouse_already_clicked := true;
   mouse_last_button := Button;
   editing_marker_disabled := false;
+  // Get tile attributes for this tile (DEBUG only)
+  if (Button = mbRight) and (ssShift in Shift) then
+  begin
+    Caption := inttohex(Tileset.get_tile_attributes(Map.data[map_x, map_y].tile, Map.data[map_x, map_y].special, true), 16);
+    exit;
+  end;
   // Event position selection mode
   if (not EditorPages.Visible) and (Button = mbLeft) then
   begin
@@ -1186,6 +1239,12 @@ begin
     exit;
   end;
   moving_disable := true;
+  // Switch to Select mode if Ctrl is held
+  if (Button = mbLeft) and (ssCtrl in Shift) then
+  begin
+    EditorPages.TabIndex := 1;
+    RbSelectMode.Checked := true;
+  end;
   // Finally placing/painting structures/terrain
   if mode(mStructures) then
     begin
