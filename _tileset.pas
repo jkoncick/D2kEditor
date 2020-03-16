@@ -76,6 +76,7 @@ type
 
 type
   TFillAreaRule = record
+    name: string;
     rule: TTileAtrRule;
   end;
 
@@ -599,6 +600,7 @@ begin
   begin
     if i >= max_fill_area_rules then
       break;
+    fill_area_rules[i].name := tmp_strings[i];
     load_rule(ini.ReadString('Fill_Area_Rules', tmp_strings[i], '0'), Addr(fill_area_rules[i].rule));
     inc(fill_area_rules_used);
   end;
@@ -999,11 +1001,11 @@ begin
   begin
     if evaluate_rule(attr_value, Addr(fill_area_rules[i].rule)) then
     begin
-      result := i + 1;
+      result := i;
       exit;
     end;
   end;
-  result := 0;
+  result := fill_area_rules_used - 1;
 end;
 
 function TTileset.check_paint_tile_restriction(tile, special: word; paint_tile_group: integer): boolean;

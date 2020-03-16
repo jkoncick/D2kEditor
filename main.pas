@@ -139,6 +139,8 @@ type
     Restrictpainting1: TMenuItem;
     Saveminimapimage1: TMenuItem;
     Reloadtileset1: TMenuItem;
+    cbSelectAreaType: TComboBox;
+    lbSelectAreaType: TLabel;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -305,7 +307,7 @@ type
     // Procedures related to selecting/placing block
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure select_block_preset(preset_index: integer);
-    procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
+    procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean);
 
     // Procedures related to cursor image
     procedure resize_cursor_image;
@@ -359,7 +361,7 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 1;
-    btn.Top := 52 + ((i+4) div 4) * 38;
+    btn.Top := 48 + ((i+4) div 4) * 38;
     btn.Left := 2 + ((i+4) mod 4) * 38;
     btn.Width := 38;
     btn.Height := 38;
@@ -376,7 +378,7 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 2;
-    btn.Top := 376 + 20 * (i mod (cnt_block_preset_groups div 2));
+    btn.Top := 396 + 20 * (i mod (cnt_block_preset_groups div 2));
     btn.Left := 2 + 76 * (i div (cnt_block_preset_groups div 2));
     btn.Width := 76;
     btn.Height := 20;
@@ -464,12 +466,12 @@ begin
   resize_map_canvas;
   EditorMenu.Left := ClientWidth - 168;
   EditorMenu.Height := ClientHeight - StatusBar.Height;
-  tmp_height := EditorMenu.Height - 404;
+  tmp_height := EditorMenu.Height - 400;
   BuildingList.Height := tmp_height div 2;
   UnitList.Height := tmp_height div 2;
   LbUnitList.Top := BuildingList.Top + BuildingList.Height + 3;
   UnitList.Top := LbUnitList.Top + 16;
-  EditorPages.Height := EditorMenu.Height - 174;
+  EditorPages.Height := EditorMenu.Height - 168;
   StatusBar.Panels[3].Width := ClientWidth - 570;
   if Map.loaded then
   begin
@@ -709,7 +711,6 @@ procedure TMainWindow.Newmap1Click(Sender: TObject);
 begin
   SetDialog.select_menu(5);
   SetDialog.select_menu(4);
-  EditorPages.ActivePage := PageTerrain;
 end;
 
 procedure TMainWindow.Openmap1Click(Sender: TObject);
@@ -723,7 +724,9 @@ end;
 procedure TMainWindow.Reopenmap1Click(Sender: TObject);
 begin
   if Map.loaded and (Map.filename <> '') then
-    load_map(Map.filename);
+    load_map(Map.filename)
+  else if (not Map.loaded) and (Settings.RecentFiles[1] <> '') then
+    load_map(Settings.RecentFiles[1]);
 end;
 
 procedure TMainWindow.OpenRecentFile(Sender: TObject);
@@ -1341,7 +1344,7 @@ begin
     else if button = mbMiddle then
     begin
       // Copy selected block
-      copy_block_from_map(brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], map_x, map_y, false);
+      copy_block_from_map(brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], map_x, map_y, false, false);
       exit;
     end;
   end;
@@ -1403,11 +1406,10 @@ begin
     max_x := Max(block_select_start_x, block_select_end_x);
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
-    copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true);
+    copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true, ssShift in Shift);
     // Erase copied area
     if ssShift in Shift then
     begin
-      Map.paint_rect(min_x, min_y, max_x-min_x+1, max_y-min_y+1, IfThen(CbSelectStructures.State = cbGrayed, -5, Tileset.default_paint_group)); // -5 = erase structures only, 0 = default paint type
       render_minimap;
       render_map;
     end;
@@ -1681,6 +1683,7 @@ end;
 
 procedure TMainWindow.render_tileset;
 var
+  area_types: TStringList;
   i: integer;
 begin
   // Draw glyphs in terrain editing GUI
@@ -1695,6 +1698,14 @@ begin
     block_preset_select[i].Enabled := Tileset.block_preset_groups[i].name <> '';
     block_preset_select[i].Caption := Tileset.block_preset_groups[i].name;
   end;
+  // Fill Area type combo box
+  area_types := TStringList.Create;
+  area_types.Add('(Everything)');
+  for i := 0 to Tileset.fill_area_rules_used - 1 do
+    area_types.Add(Tileset.fill_area_rules[i].name);
+  cbSelectAreaType.Items := area_types;
+  cbSelectAreaType.ItemIndex := 0;
+  area_types.Clear;
   draw_cursor_image;
   if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
     LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
@@ -2012,11 +2023,11 @@ begin
   draw_cursor_image;
 end;
 
-procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word; structures: boolean);
+procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean);
 begin
   block_width := b_width;
   block_height := b_height;
-  Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.State <> cbGrayed, (CbSelectStructures.State <> cbUnchecked) and structures);
+  Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.State <> cbGrayed, (CbSelectStructures.State <> cbUnchecked) and structures, cbSelectAreaType.ItemIndex - 1, erase);
   draw_cursor_image;
   RbBlockMode.Checked := True;
 end;
@@ -2144,6 +2155,7 @@ begin
   resize_map_canvas;
   render_minimap;
   render_map;
+  EditorPages.ActivePage := PageTerrain;
   //--Memo1.Lines.Clear;
 end;
 

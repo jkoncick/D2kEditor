@@ -65,6 +65,7 @@ type
 
     // Temporary variables
     tmp_paint_tile_group: integer;
+    tile_dirty: array[0..max_map_width-1, 0..max_map_height-1] of boolean;
 
   public
     Property loaded: boolean read map_loaded;
@@ -81,7 +82,7 @@ type
   public
     procedure set_special_value(x,y: integer; special: word);
     procedure paint_rect(x,y, width, height: integer; paint_tile_group: integer);
-    procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean);
+    procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean; area_type: integer; erase: boolean);
     procedure put_block(x,y, width, height: integer; block: TMapDataPtr);
     function check_structure_can_be_placed(x,y: integer; special: word): boolean;
 
@@ -128,7 +129,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, _renderer, _mission, _settings, main;
+uses Windows, Forms, SysUtils, Math, _renderer, _mission, _settings, main;
 
 
 // Modify map tile and save old values into undo history.
@@ -158,10 +159,7 @@ procedure TMap.paint_tile(x, y: integer; paint_tile_group: integer);
 begin
   if (Settings.RestrictPainting) and (not Tileset.check_paint_tile_restriction(map_data[x,y].tile, map_data[x,y].special, paint_tile_group)) then
     exit;
-  if paint_tile_group = -5 then
-    // Erase special value only
-    modify_map_tile(x, y, map_data[x,y].tile, 0)
-  else if (paint_tile_group < -2) and (Tileset.paint_tile_groups[paint_tile_group].paint_tiles_cnt = 0) then
+  if (paint_tile_group < -2) and (Tileset.paint_tile_groups[paint_tile_group].paint_tiles_cnt = 0) then
     // Paint spice
     modify_map_tile(x, y, map_data[x,y].tile, (paint_tile_group+5))
   else
@@ -191,21 +189,38 @@ begin
     end;
 end;
 
-procedure TMap.copy_block(x, y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean);
+procedure TMap.copy_block(x, y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean; area_type: integer; erase: boolean);
 var
   xx, yy: integer;
   value: TMapTile;
 begin
+  if erase then
+  begin
+    undo_block_start := true;
+    Renderer.invalidate_init;
+  end;
   for xx := 0 to width - 1 do
     for yy := 0 to height - 1 do
     begin
       if (x + xx < map_width) and (y + yy < map_height) then
       begin
         value := map_data[x + xx, y + yy];
+        if (area_type <> -1) and (Tileset.get_fill_area_type(value.tile, value.special) <> area_type) then
+        begin
+          // Do not copy tile that does not match selected area type
+          value.tile := 65535;
+          value.special := 65535;
+        end else
+        begin
+          if erase then
+            modify_map_tile(x + xx, y + yy, IfThen(copy_terrain, Tileset.get_random_paint_tile(Tileset.default_paint_group), 65535), IfThen((not copy_terrain) and (value.special <= 2), 65535, 0));
+          if (not copy_structures) and (value.special > 2) then
+            value.special := 0;
+        end;
         if not copy_terrain then
           value.tile := 65535;
-        if not copy_structures then
-          value.special := 0;
+        if (not copy_terrain) and (value.special <= 2) then
+          value.special := 65535;
       end else
       begin
         value.tile := 0;
@@ -254,6 +269,8 @@ begin
   until undo_history[tmp_pos].is_first;
   if (undo_history[tmp_pos].x = x) and (undo_history[tmp_pos].y = y) then
     do_undo;
+  // Reset dirty flags
+  FillChar(tile_dirty, max_map_width * max_map_height, 0);
   // Fill area
   undo_block_start := true;
   Renderer.invalidate_init;
@@ -263,11 +280,10 @@ end;
 
 procedure TMap.fill_area_step(x, y: integer; area_type: integer);
 begin
-  if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type then
+  if (Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type) or tile_dirty[x, y] or ((Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group) and (map_data[x,y].special = 0)) then
     exit;
   paint_tile(x, y, tmp_paint_tile_group);
-  if Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) = area_type then
-    exit;
+  tile_dirty[x, y] := true;
   if x > 0 then
     fill_area_step(x-1, y, area_type);
   if x < (map_width - 1) then

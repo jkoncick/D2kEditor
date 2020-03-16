@@ -64,9 +64,7 @@ const atr_colors_editor: array[0..7] of cardinal = (
   $00A0A0
   );
 
-const fill_area_group_colors: array[0..max_fill_area_rules] of cardinal = (
-  $00C000,
-  $2179E7,
+const fill_area_group_colors: array[0..max_fill_area_rules-1] of cardinal = (
   $808080,
   $C00000,
   $C000C0,
@@ -81,7 +79,8 @@ const fill_area_group_colors: array[0..max_fill_area_rules] of cardinal = (
   $E08000,
   $E06060,
   $60E060,
-  $6060E0
+  $6060E0,
+  $00C000
   );
 
 type
@@ -701,6 +700,7 @@ var
   filter_mode: FilterMode;
   view_mode: ViewMode;
   mark_tile: boolean;
+  fill_area_type: integer;
   selected_value: int64;
   color, color_editor: cardinal;
   tile_text: String;
@@ -766,7 +766,13 @@ begin
         if view_mode = vmDrawFillAreaGroups then
         begin
           if mark_tile then
-            color := fill_area_group_colors[Tileset.get_fill_area_type(tile_index, 0)];
+          begin
+            fill_area_type := Tileset.get_fill_area_type(tile_index, 0);
+            if fill_area_type = (Tileset.fill_area_rules_used - 1) then
+              // Tiles ftom the last fill area group should be always green
+              fill_area_type := max_fill_area_rules - 1;
+            color := fill_area_group_colors[fill_area_type];
+          end;
         end else
         if view_mode = vmCheckBlockPresetCoverage then
         begin

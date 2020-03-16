@@ -114,7 +114,7 @@ object MainWindow: TMainWindow
     TabOrder = 3
     object MiniMapFrame: TBevel
       Left = 18
-      Top = 6
+      Top = 4
       Width = 132
       Height = 132
       Shape = bsFrame
@@ -122,7 +122,7 @@ object MainWindow: TMainWindow
     end
     object MiniMap: TImage
       Left = 20
-      Top = 8
+      Top = 6
       Width = 128
       Height = 128
       OnMouseDown = MiniMapMouseDown
@@ -130,7 +130,7 @@ object MainWindow: TMainWindow
     end
     object sbShowGrid: TSpeedButton
       Left = 8
-      Top = 144
+      Top = 140
       Width = 38
       Height = 22
       Hint = 'Show Grid (Ctrl+G)'
@@ -143,7 +143,7 @@ object MainWindow: TMainWindow
     end
     object sbMarkImpassableTiles: TSpeedButton
       Left = 46
-      Top = 144
+      Top = 140
       Width = 38
       Height = 22
       Hint = 'Mark impassable tiles (Ctrl+M)'
@@ -156,7 +156,7 @@ object MainWindow: TMainWindow
     end
     object sbMarkBuildableTiles: TSpeedButton
       Left = 84
-      Top = 144
+      Top = 140
       Width = 38
       Height = 22
       Hint = 'Mark buildable tiles (Ctrl+B)'
@@ -169,7 +169,7 @@ object MainWindow: TMainWindow
     end
     object sbShowUnknownSpecials: TSpeedButton
       Left = 122
-      Top = 144
+      Top = 140
       Width = 38
       Height = 22
       Hint = 'Show unknown specials (Ctrl+U)'
@@ -182,9 +182,9 @@ object MainWindow: TMainWindow
     end
     object EditorPages: TPageControl
       Left = 1
-      Top = 170
+      Top = 164
       Width = 166
-      Height = 404
+      Height = 410
       ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
@@ -193,10 +193,10 @@ object MainWindow: TMainWindow
         Caption = 'Structures       '
         object LbStructureValue: TLabel
           Left = 8
-          Top = 2
-          Width = 65
+          Top = 4
+          Width = 68
           Height = 13
-          Caption = 'Special Value'
+          Caption = 'Special Value:'
         end
         object LbMiscObjList: TLabel
           Left = 8
@@ -289,14 +289,14 @@ object MainWindow: TMainWindow
         ImageIndex = 1
         object LbBrushSize: TLabel
           Left = 4
-          Top = 8
+          Top = 6
           Width = 51
           Height = 13
           Caption = 'Brush size:'
         end
         object BlockFrame: TBevel
           Left = 14
-          Top = 238
+          Top = 258
           Width = 132
           Height = 132
           Shape = bsFrame
@@ -304,34 +304,41 @@ object MainWindow: TMainWindow
         end
         object BlockImage: TImage
           Left = 16
-          Top = 240
+          Top = 260
           Width = 128
           Height = 128
           OnClick = BlockImageClick
         end
         object Bevel1: TBevel
           Left = 2
-          Top = 168
+          Top = 164
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
         object Bevel2: TBevel
           Left = 2
-          Top = 200
+          Top = 220
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
         object LbPaintTileGroupName: TLabel
           Left = 80
-          Top = 34
+          Top = 30
           Width = 3
           Height = 13
         end
+        object lbSelectAreaType: TLabel
+          Left = 4
+          Top = 200
+          Width = 25
+          Height = 13
+          Caption = 'Area:'
+        end
         object RbBlockMode: TRadioButton
           Left = 4
-          Top = 212
+          Top = 232
           Width = 77
           Height = 17
           Caption = 'Block mode'
@@ -342,8 +349,8 @@ object MainWindow: TMainWindow
         end
         object RbPaintMode: TRadioButton
           Left = 4
-          Top = 32
-          Width = 74
+          Top = 28
+          Width = 77
           Height = 17
           Caption = 'Paint mode'
           TabOrder = 1
@@ -351,7 +358,7 @@ object MainWindow: TMainWindow
         end
         object OpenTileset: TButton
           Left = 88
-          Top = 208
+          Top = 228
           Width = 65
           Height = 25
           Caption = 'Open tileset'
@@ -360,7 +367,7 @@ object MainWindow: TMainWindow
         end
         object RbSelectMode: TRadioButton
           Left = 4
-          Top = 178
+          Top = 174
           Width = 81
           Height = 17
           Caption = 'Select mode'
@@ -369,7 +376,7 @@ object MainWindow: TMainWindow
         end
         object CbSelectStructures: TCheckBox
           Left = 90
-          Top = 178
+          Top = 174
           Width = 97
           Height = 17
           Hint = 
@@ -385,12 +392,21 @@ object MainWindow: TMainWindow
         end
         object cbBrushSize: TComboBox
           Left = 80
-          Top = 4
+          Top = 2
           Width = 73
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 5
+        end
+        object cbSelectAreaType: TComboBox
+          Left = 32
+          Top = 196
+          Width = 121
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 6
         end
       end
     end
