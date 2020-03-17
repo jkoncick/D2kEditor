@@ -1029,7 +1029,6 @@ begin
     TileAtrListClickCheck(nil);
   end;
   btnConvertEditorAttributes.Enabled := Tileset.config_filename <> '';
-  Saveandtest1.Enabled := Tileset.current_tileset <> -1;
   active_tile := -1;
   reset_undo_history;
   render_tileset;

@@ -574,7 +574,6 @@ begin
       end;
     end;
     255: TileAttributeseditor1Click(nil);
-    //255: ShellExecute(0, 'open', PChar('https://www.youtube.com/watch?v=oHg5SJYRHA0'), nil, nil, SW_SHOWNORMAL);
   end;
   if (key >= 37) and (key <= 40) then
   begin
@@ -1086,8 +1085,8 @@ begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13+
               'Part of D2K+ Editing tools'#13#13+
               'Made by Klofkac (kozten@seznam.cz)'#13+
-              'Version 1.3'#13+
-              'Date: 2019-02-27'#13#13+
+              'Version 1.4'#13+
+              'Date: 2020-03-17'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13+
               'mvi - for making the original Mission editor'#13+
@@ -1861,6 +1860,11 @@ procedure TMainWindow.launch_game;
 var
   temp_map_name: String;
 begin
+  if random(9001) = 1337 then
+  begin
+    ShellExecute(0, 'open', PChar('https://www.youtube.com/watch?v=oHg5SJYRHA0'), nil, nil, SW_SHOWNORMAL);
+    exit;
+  end;
   Settings.save_map_test_settings;
   temp_map_name := Missiondialog.edMapName.Text;
   Missiondialog.edMapName.Text := 'TESTMAP';

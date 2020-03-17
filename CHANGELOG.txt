@@ -1,30 +1,43 @@
 D2kEditor changelog
 
-Version 1.4 (released 2020-XX-XX)
+Version 1.4 (released 2020-03-17)
 ---------------------------------
+Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
+Added: Save minimap image feature
+Fixed: Outpost and Modified Outpost are visually distinguished by antenna turn direction.
+Fixed: The "Maximized" window property is now preserved for all dialogs when you close and open program again.
+Fixed: The last used directory for various open/save dialogs is preserved independently for each dialog.
+Fixed: Scrolling map with arrows will always work
+Fixed: Some key shortcuts (i.e. Ctrl+G) will no longer select a preset
+Added: You can use Shift + mouse wheel up/down to change brush size
+Added: You can hold Ctrl + click to map to easily and quickly switch to Select mode and start a selection 
+Added: Select structures only mode. You can set the checkbox "Structures" next to "Select mode" radio button to
+       third (grayed) state, which means select structures only. Useful for copying or moving a base layout.
+Added: Area type in Select mode. You can make a selection only of tiles of specified type, which makes possible to
+       select more precise non-rectangle areas. If you hold Shift, the selected area is erased, which makes possible to
+       easily move the area around.
+Added: Using "Reopen map" immediately after starting program will open the map which was open last time.
+Added: New dialog window to change a tileset. When you start new map, this dialog will open so you can select a tileset.
+Added: Reload tileset option. Useful when you modify tileset .ini file.
+Changed: In D2kEditor.ini file, the default tileset is not specified as tileset index, but as tileset name 
+         (setting was renamed to "DefaultTilesetName"). 
+Added: Editor will load contents of custom TEXT.UIB file, if it is specified in mission .ini file.
+       The "Test map" feature will automatically launch game with custom TEXT.UIB file.
+Added: Preset Helper feature (accessible from "Open tileset" window). Here you can easily design a block preset and copy
+       its code to tileset .ini file, or directly use that block in terrain editor.
+
 Three major new features and changes:
 1) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
-   TileAtrEditor has been made obsolete program.
+   TileAtrEditor became obsolete and no longer needed.
 2) Significant improvements related to creating maps using custom tilesets. 
    Creating maps using custom tilesets is now much easier and faster.
 3) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
    You will need to update your custom tileset .ini files to make them compatible with this version of program.
 
-Other changes:
-Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
-Added: Select structures only mode. You can set the checkbox "Structures" next to "Select mode" radio button to
-       third (grayed) state, which means select structures only. Useful for copying or moving base+units layout.
-Added: Editor will load contents of custom TEXT.UIB file, if it is specified in mission .ini file.
-       The "Test map" feature will automatically launch game with custom TEXT.UIB file.
-Added: Preset Helper feature (accessible from "Open tileset" window). Here you can easily design a block preset and copy
-       its code to tileset .ini file, or directly use that block in terrain editor.
-Changed: In D2kEditor.ini file, the default tileset is not specified as tileset index, but as tileset name 
-         (setting was renamed to "DefaultTilesetName"). 
-
 
 Ad 1)
 - Tile Attribute editor is now available from main menu under Tileset.
-- You can edit the currently selected tileset for current map. Swithching tileset would change it for current map too. 
+- You can edit the current tileset used by current map. Swithching tileset would change it for current map too. 
 - You save map and tile attributes independently. When you save attributes, changes will apply immediately to your map.
 - There is "Test in-game" feature (F8) that would save attributes and launch current map in game.
 
@@ -61,8 +74,7 @@ Ad 2)
   You can take advantage of this feaure for any terrain type in custom tilesets, it is not strictly limited for
   Rock and Dunes edge in original tilesets.
 - Added "Restrict painting" feature, which will let you paint specific tiles only on specific terrain type (i.e. spice and
-  dunes can be painted only on sand, concrete can be painted only on rock). Previously there was spice restriction rule, 
-  but it was made generally usable for any paint type. This can be turned off in Settings menu.
+  dunes can be painted only on sand, concrete can be painted only on rock). This can be turned off in Settings menu.
 - Added support for block presets with "blank" tiles. You can now have presets of any shape (not strictly rectangle shape).
 
 Ad 3)
@@ -72,6 +84,7 @@ Ad 3)
   $attrubites_tile_must_have;$attrubites_tile_must_not_have
   If $attrubites_tile_must_have is negative, it means tile must have ANY of specified attributes.
   To design a rule, you can simply use specific filter on Tile Attributes editor and just copy the rule specification.
+- Fill area rules now have names. The names correspond to area types in Select mode.
 - You can specify up to 12 paint groups in [Paint_Tile_Groups] section.
   Groups A,B,C,D are reserved for thin spice, thick spice, concrete and void.
   Groups 1-8 are tileset-specific groups you can use for any terrain type.
@@ -93,6 +106,7 @@ Ad 3)
   You can utilize "Preset Helper" feature to easily design a block preset, and then copy its code and paste to .ini file.
 - Normal block presets are represented as "width.height.tileset_x.tileset.y", but you can newly specify them also in
   simplified form "width.height.tile_index"
+- Added "default_paint_group" under [Basic] section which is used to fill a new map. If not specified, group 1 is used.
 
 
 Version 1.3 (released 2019-02-27)
