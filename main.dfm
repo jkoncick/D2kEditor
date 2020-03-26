@@ -2,7 +2,7 @@ object MainWindow: TMainWindow
   Left = 190
   Top = 111
   Width = 960
-  Height = 720
+  Height = 746
   HorzScrollBar.Visible = False
   VertScrollBar.Visible = False
   Caption = 'Dune 2000 Map and Mission Editor'
@@ -73,7 +73,7 @@ object MainWindow: TMainWindow
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 647
+    Top = 673
     Width = 952
     Height = 19
     Panels = <

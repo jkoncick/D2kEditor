@@ -65,6 +65,7 @@ type
 
     // Temporary variables
     tmp_paint_tile_group: integer;
+    tmp_last_direction: boolean;
     tile_dirty: array[0..max_map_width-1, 0..max_map_height-1] of boolean;
 
   public
@@ -394,6 +395,7 @@ begin
   // Finally move to next position (anticlockwise direction)
   xpos := xpos + moveoff_x;
   ypos := ypos + moveoff_y;
+  tmp_last_direction := (moveoff_x > 0) or (moveoff_y > 0);
 end;
 
 procedure TMap.smooth_edges(x, y: integer; paint_tile_group: integer);
@@ -401,13 +403,14 @@ var
   start_x, start_y: integer;
   sum: integer;
   steps: integer;
-  use_curves: boolean;
+  use_curves, use_cornerlink: boolean;
 begin
   start_x := x;
   start_y := y;
   Renderer.invalidate_init;
   tmp_paint_tile_group := paint_tile_group;
   use_curves := length(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets) = 20;
+  use_cornerlink := length(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets) = 14;
   undo_max := undo_pos;
   steps := 0;
   // Start smoothing edge from starting point (where user shift-clicked)
@@ -474,6 +477,11 @@ begin
             put_edge_block(x,y,1,0,0,0,spCornerDownLeft);
         end;
       15: begin // inner turns
+        if use_cornerlink and (sum = 111) then
+          put_edge_block(x,y,IfThen(tmp_last_direction,-1,1),0,0,0,spCurveNegLeft)
+        else if use_cornerlink and (sum = 159) then
+          put_edge_block(x,y,0,IfThen(tmp_last_direction,1,-1),0,0,spCurveNegUp)
+        else
         case sum of
           239: put_edge_block(x,y,-1,0,0,0,spTurnLeftUp); // down-right turn
           191: put_edge_block(x,y,0,1,0,0,spTurnDownLeft);  // up-right turn

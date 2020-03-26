@@ -1110,7 +1110,7 @@ begin
       // Get random variant but different from the last one
       repeat
         variant := random(num_variants);
-      until variant <> last_block_preset_variant;
+      until (variant <> last_block_preset_variant) or (last_block_preset_key <> key);
       last_block_preset_variant := variant;
     end;
   end;
