@@ -307,7 +307,7 @@ type
     // Procedures related to selecting/placing block
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure select_block_preset(preset_index: integer);
-    procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean);
+    procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean; area_type: integer);
 
     // Procedures related to cursor image
     procedure resize_cursor_image;
@@ -671,7 +671,7 @@ begin
     // If Ctrl is held and in paint mode, change brush size
     if (ssShift in Shift) and mode(mTerrain) then
     begin
-      cbBrushSize.ItemIndex := Min(cbBrushSize.ItemIndex + 1, cbBrushSize.Items.Count - 1);
+      cbBrushSize.ItemIndex := Min(cbBrushSize.ItemIndex + 1, 3);
       render_editing_marker;
       exit;
     end;
@@ -1343,7 +1343,7 @@ begin
     else if button = mbMiddle then
     begin
       // Copy selected block
-      copy_block_from_map(brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], map_x, map_y, false, false);
+      copy_block_from_map(brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], map_x, map_y, false, false, -1);
       exit;
     end;
   end;
@@ -1405,7 +1405,7 @@ begin
     max_x := Max(block_select_start_x, block_select_end_x);
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
-    copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true, ssShift in Shift);
+    copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true, ssShift in Shift, cbSelectAreaType.ItemIndex - 1);
     // Erase copied area
     if ssShift in Shift then
     begin
@@ -2027,11 +2027,11 @@ begin
   draw_cursor_image;
 end;
 
-procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean);
+procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean; area_type: integer);
 begin
   block_width := b_width;
   block_height := b_height;
-  Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.State <> cbGrayed, (CbSelectStructures.State <> cbUnchecked) and structures, cbSelectAreaType.ItemIndex - 1, erase);
+  Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.State <> cbGrayed, (CbSelectStructures.State <> cbUnchecked) and structures, area_type, erase);
   draw_cursor_image;
   RbBlockMode.Checked := True;
 end;

@@ -221,6 +221,7 @@ type
     function get_tile_type(tile: word): TileType;
     function get_tile_color(tile, special: word): TColor;
     function get_fill_area_type(tile: word; special: word): integer;
+    function check_area_type(tile, special: word; area_type: integer): boolean;
     function check_paint_tile_restriction(tile, special: word; paint_tile_group: integer): boolean;
     function evaluate_rule(attr_value: int64; rule_ptr: TTileAtrRulePtr): boolean;
     function block_key_to_index(key: word): integer;
@@ -1006,6 +1007,14 @@ begin
     end;
   end;
   result := fill_area_rules_used - 1;
+end;
+
+function TTileset.check_area_type(tile, special: word; area_type: integer): boolean;
+var
+  attr_value: int64;
+begin
+  attr_value := get_tile_attributes(tile, special, true);
+  result := evaluate_rule(attr_value, Addr(fill_area_rules[area_type].rule));
 end;
 
 function TTileset.check_paint_tile_restriction(tile, special: word; paint_tile_group: integer): boolean;

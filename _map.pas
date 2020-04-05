@@ -206,17 +206,17 @@ begin
       if (x + xx < map_width) and (y + yy < map_height) then
       begin
         value := map_data[x + xx, y + yy];
-        if (area_type <> -1) and (Tileset.get_fill_area_type(value.tile, value.special) <> area_type) then
-        begin
-          // Do not copy tile that does not match selected area type
-          value.tile := 65535;
-          value.special := 65535;
-        end else
+        if (area_type = -1) or Tileset.check_area_type(value.tile, value.special, area_type) then
         begin
           if erase then
             modify_map_tile(x + xx, y + yy, IfThen(copy_terrain, Tileset.get_random_paint_tile(Tileset.default_paint_group), 65535), IfThen((not copy_terrain) and (value.special <= 2), 65535, 0));
           if (not copy_structures) and (value.special > 2) then
             value.special := 0;
+        end else
+        begin
+          // Do not copy tile that does not match selected area type
+          value.tile := 65535;
+          value.special := 65535;
         end;
         if not copy_terrain then
           value.tile := 65535;
@@ -281,7 +281,7 @@ end;
 
 procedure TMap.fill_area_step(x, y: integer; area_type: integer);
 begin
-  if (Tileset.get_fill_area_type(map_data[x,y].tile, map_data[x,y].special) <> area_type) or tile_dirty[x, y] or ((Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group) and (map_data[x,y].special = 0)) then
+  if (not Tileset.check_area_type(map_data[x,y].tile, map_data[x,y].special, area_type)) or tile_dirty[x, y] or ((Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group) and (map_data[x,y].special = 0)) then
     exit;
   paint_tile(x, y, tmp_paint_tile_group);
   tile_dirty[x, y] := true;
