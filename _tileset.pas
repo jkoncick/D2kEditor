@@ -145,7 +145,7 @@ type
   public
     // List of available tilesets
     cnt_tilesets: integer;
-    tileset_list: array of String;
+    tileset_list: TStringList;
 
     // Status variables
     current_tileset: integer;
@@ -243,6 +243,7 @@ procedure TTileset.init;
 var
   SR: TSearchRec;
   tmp_strings: TStringList;
+  tmp_inifile: TIniFile;
   i: integer;
 begin
   current_tileset := -1;
@@ -260,12 +261,16 @@ begin
       FindClose(SR);
   end;
   cnt_tilesets := tmp_strings.Count;
-  SetLength(tileset_list, cnt_tilesets);
+  tileset_list := TStringList.Create;
+  tileset_list.Capacity := cnt_tilesets;
   for i := 0 to cnt_tilesets -1 do
   begin
-    tileset_list[i] := ChangeFileExt(tmp_strings[i], '');
+    tmp_inifile := TIniFile.Create(current_dir+'\tilesets\'+tmp_strings[i]);
+    tileset_list.Add(tmp_inifile.ReadString('Basic','name', ChangeFileExt(tmp_strings[i], '')) + '=' + ChangeFileExt(tmp_strings[i], ''));
+    tmp_inifile.Destroy;
   end;
   tmp_strings.Destroy;
+  tileset_list.Sort;
   // Initialize empty block preset
   block_presets[0].width := 0;
   block_presets[0].height := 0;
@@ -280,7 +285,7 @@ begin
   if (index >= cnt_tilesets) or (index < 0) then
     exit;
   current_tileset := index;
-  tileset_name := tileset_list[index];
+  tileset_name := tileset_list.ValueFromIndex[index];
   // Load tileset configuration
   config_filename := current_dir+'\tilesets\'+tileset_name+'.ini';
   load_config;
@@ -312,7 +317,7 @@ begin
   for i:= 0 to cnt_tilesets-1 do
   begin
     // Case-insensitive string compare
-    if AnsiCompareText(name, tileset_list[i]) = 0 then
+    if AnsiCompareText(name, tileset_list.ValueFromIndex[i]) = 0 then
     begin
       change_tileset(i);
       exit;

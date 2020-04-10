@@ -22,10 +22,11 @@ object SetDialog: TSetDialog
   object SetMapSize_Menu: TPanel
     Left = 0
     Top = 0
-    Width = 177
-    Height = 97
+    Width = 176
+    Height = 101
+    Align = alClient
     BevelOuter = bvNone
-    TabOrder = 0
+    TabOrder = 1
     object SetMapSize_LbWidth: TLabel
       Left = 16
       Top = 16
@@ -63,31 +64,14 @@ object SetDialog: TSetDialog
       Value = 32
     end
   end
-  object BtnOK: TButton
-    Left = 8
-    Top = 106
-    Width = 75
-    Height = 25
-    Caption = 'OK'
-    TabOrder = 1
-    OnClick = BtnOKClick
-  end
-  object BtnCancel: TButton
-    Left = 96
-    Top = 106
-    Width = 75
-    Height = 25
-    Caption = 'Cancel'
-    TabOrder = 2
-    OnClick = BtnCancelClick
-  end
   object ShiftMap_Menu: TPanel
     Left = 0
     Top = 0
-    Width = 177
-    Height = 97
+    Width = 176
+    Height = 101
+    Align = alClient
     BevelOuter = bvNone
-    TabOrder = 3
+    TabOrder = 2
     object ShiftMap_LbNumTiles: TLabel
       Left = 16
       Top = 64
@@ -149,10 +133,11 @@ object SetDialog: TSetDialog
   object ChStrOwn_Menu: TPanel
     Left = 0
     Top = 0
-    Width = 177
-    Height = 97
+    Width = 176
+    Height = 101
+    Align = alClient
     BevelOuter = bvNone
-    TabOrder = 4
+    TabOrder = 3
     object ChStrOwn_LbPlayerFrom: TLabel
       Left = 8
       Top = 16
@@ -197,20 +182,47 @@ object SetDialog: TSetDialog
   object Tileset_Menu: TPanel
     Left = 0
     Top = 0
-    Width = 177
-    Height = 100
+    Width = 176
+    Height = 101
+    Align = alClient
     BevelOuter = bvNone
-    TabOrder = 5
+    TabOrder = 0
     object Tileset_List: TListBox
       Left = 0
       Top = 0
-      Width = 177
-      Height = 100
+      Width = 176
+      Height = 101
       Align = alClient
-      Columns = 2
       ItemHeight = 13
       TabOrder = 0
       OnDblClick = BtnOKClick
+    end
+  end
+  object pnButtons: TPanel
+    Left = 0
+    Top = 101
+    Width = 176
+    Height = 37
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 4
+    object BtnCancel: TButton
+      Left = 94
+      Top = 6
+      Width = 75
+      Height = 25
+      Caption = 'Cancel'
+      TabOrder = 1
+      OnClick = BtnCancelClick
+    end
+    object BtnOK: TButton
+      Left = 8
+      Top = 6
+      Width = 75
+      Height = 25
+      Caption = 'OK'
+      TabOrder = 0
+      OnClick = BtnOKClick
     end
   end
 end

@@ -30,6 +30,7 @@ type
     ChStrOwn_LbPlayerTo: TLabel;
     Tileset_Menu: TPanel;
     Tileset_List: TListBox;
+    pnButtons: TPanel;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -77,8 +78,8 @@ begin
   default_tileset := 0;
   for i := 0 to Tileset.cnt_tilesets - 1 do
   begin
-    tilesets.Add(Tileset.tileset_list[i]);
-    if Tileset.tileset_list[i] = Settings.DefaultTilesetName then
+    tilesets.Add(Tileset.tileset_list.Names[i]);
+    if Tileset.tileset_list.ValueFromIndex[i] = Settings.DefaultTilesetName then
       default_tileset := i;
   end;
   Tileset_List.Items := tilesets;
@@ -97,7 +98,10 @@ end;
 
 procedure TSetDialog.FormShow(Sender: TObject);
 begin
-  BtnOK.SetFocus;
+  if current_menu = 5 then
+    Tileset_List.SetFocus
+  else
+    BtnOK.SetFocus;
 end;
 
 procedure TSetDialog.select_menu(menu: integer);
@@ -106,6 +110,7 @@ begin
   ShiftMap_Menu.Visible := False;
   ChStrOwn_Menu.Visible := False;
   Tileset_Menu.Visible := False;
+  Height := 172;
   case menu of
     1:  begin
           Caption := 'Set map size';
@@ -126,6 +131,7 @@ begin
     5:  begin
           Tileset_Menu.Visible := True;
           Caption := 'Select tileset';
+          Height := 350;
         end;
   end;
   current_menu := menu;

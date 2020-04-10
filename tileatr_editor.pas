@@ -664,7 +664,7 @@ begin
   for i := 0 to Tileset.cnt_tilesets -1 do
   begin
     menuitems[i] := TMenuItem.Create(Quickopen1);
-    menuitems[i].Caption := Tileset.tileset_list[i];
+    menuitems[i].Caption := Tileset.tileset_list.Names[i];
     menuitems[i].RadioItem := true;
     menuitems[i].GroupIndex := 1;
     menuitems[i].Tag := i;
