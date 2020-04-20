@@ -578,21 +578,48 @@ begin
   if (key >= 37) and (key <= 40) then
   begin
     // Arrow keys
-    if ssShift in Shift then
-      case key of
-        37: MapScrollH.Position := 0;
-        38: MapScrollV.Position := 0;
-        39: MapScrollH.Position := Map.width;
-        40: MapScrollV.Position := Map.height;
-        end
-    else
-      case key of
-        37: MapScrollH.Position := MapScrollH.Position-1;
-        38: MapScrollV.Position := MapScrollV.Position-1;
-        39: MapScrollH.Position := MapScrollH.Position+1;
-        40: MapScrollV.Position := MapScrollV.Position+1;
-        end;
-    key := 0;
+    if not ((ActiveControl = MiscObjList) or (ActiveControl = BuildingList) or (ActiveControl = UnitList)) then
+    begin
+      // Scroll map
+      if ssShift in Shift then
+        case key of
+          37: MapScrollH.Position := 0;
+          38: MapScrollV.Position := 0;
+          39: MapScrollH.Position := Map.width;
+          40: MapScrollV.Position := Map.height;
+          end
+      else
+        case key of
+          37: MapScrollH.Position := MapScrollH.Position-1;
+          38: MapScrollV.Position := MapScrollV.Position-1;
+          39: MapScrollH.Position := MapScrollH.Position+1;
+          40: MapScrollV.Position := MapScrollV.Position+1;
+          end;
+      key := 0;
+    end else
+    if (key = 37) or (key = 39) then
+    begin
+      // Switch between building list, unit list and misc. object list
+      MiscObjList.ItemIndex := -1;
+      BuildingList.ItemIndex := -1;
+      UnitList.ItemIndex := -1;
+      if ((key = 39) and (ActiveControl = MiscObjList)) or ((key = 37) and (ActiveControl = UnitList)) then
+      begin
+        BuildingList.ItemIndex := 0;
+        BuildingList.SetFocus;
+      end else
+      if key = 37 then
+      begin
+        MiscObjList.ItemIndex := 0;
+        MiscObjList.SetFocus
+      end else
+      begin
+        UnitList.ItemIndex := 0;
+        UnitList.SetFocus;
+      end;
+      key := 0;
+      set_special_value;
+    end;
   end;
   if mode(mBlockMode) then
   case key of
