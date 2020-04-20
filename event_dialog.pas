@@ -1192,6 +1192,7 @@ begin
   if Mission.add_event(selected_event + 1) then
   begin
     Mission.mis_data.events[selected_event + 1] := Mission.mis_data.events[selected_event];
+    Mission.event_notes[selected_event + 1] := Mission.event_notes[selected_event];
     fill_grids;
     EventGrid.Row := selected_event + 2;
   end;
@@ -1216,23 +1217,33 @@ begin
 end;
 
 procedure TEventDialog.MoveUp1Click(Sender: TObject);
+var
+  tmp_note: String;
 begin
   if selected_event = 0 then
     exit;
   tmp_event := Mission.mis_data.events[selected_event];
   Mission.mis_data.events[selected_event] := Mission.mis_data.events[selected_event - 1];
   Mission.mis_data.events[selected_event - 1] := tmp_event;
+  tmp_note := Mission.event_notes[selected_event];
+  Mission.event_notes[selected_event] := Mission.event_notes[selected_event - 1];
+  Mission.event_notes[selected_event - 1] := tmp_note;
   fill_grids;
   EventGrid.Row := selected_event;
 end;
 
 procedure TEventDialog.MoveDown1Click(Sender: TObject);
+var
+  tmp_note: String;
 begin
   if selected_event >= Mission.mis_data.num_events - 1 then
     exit;
   tmp_event := Mission.mis_data.events[selected_event];
   Mission.mis_data.events[selected_event] := Mission.mis_data.events[selected_event + 1];
   Mission.mis_data.events[selected_event + 1] := tmp_event;
+  tmp_note := Mission.event_notes[selected_event];
+  Mission.event_notes[selected_event] := Mission.event_notes[selected_event + 1];
+  Mission.event_notes[selected_event + 1] := tmp_note;
   fill_grids;
   EventGrid.Row := selected_event + 2;
 end;
@@ -1254,6 +1265,7 @@ begin
   if Mission.add_condition then
   begin
     Mission.mis_data.conditions[Mission.mis_data.num_conditions-1] := Mission.mis_data.conditions[selected_condition];
+    Mission.condition_notes[Mission.mis_data.num_conditions-1] := Mission.condition_notes[selected_condition];
     fill_grids;
     ConditionGrid.Row := Mission.mis_data.num_conditions;
   end;

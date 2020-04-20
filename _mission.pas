@@ -555,8 +555,12 @@ begin
     exit;
   end;
   for i := mis_data.num_events downto position + 1 do
+  begin
     mis_data.events[i] := mis_data.events[i-1];
+    event_notes[i] := event_notes[i-1];
+  end;
   FillChar(mis_data.events[position], sizeof(TEvent), 0);
+  event_notes[position] := '';
   inc(mis_data.num_events);
   result := true;
 end;
@@ -569,6 +573,7 @@ begin
     exit;
   end;
   FillChar(mis_data.conditions[mis_data.num_conditions], sizeof(TCondition), 0);
+  condition_notes[mis_data.num_conditions] := '';
   inc(mis_data.num_conditions);
   result := true;
 end;
@@ -583,8 +588,12 @@ begin
   event_used_position := event_type_info[mis_data.events[deleted_index].event_type].use_map_position;
   // Delete event and shift all events up
   for i := deleted_index to mis_data.num_events - 2 do
+  begin
     mis_data.events[i] := mis_data.events[i+1];
+    event_notes[i] := event_notes[i+1];
+  end;
   FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
+  event_notes[mis_data.num_events - 1] := '';
   dec(mis_data.num_events);
   // Update event markers on map if event had position
   if event_used_position then
@@ -605,8 +614,12 @@ begin
   condition_used_position := mis_data.conditions[deleted_index].condition_type = Byte(ctTileRevealed);
   // Delete condition and shift all conditions up
   for i := deleted_index to mis_data.num_conditions - 2 do
+  begin
     mis_data.conditions[i] := mis_data.conditions[i+1];
+    condition_notes[i] := condition_notes[i+1];
+  end;
   FillChar(mis_data.conditions[mis_data.num_conditions - 1], sizeof(TCondition), 0);
+  condition_notes[mis_data.num_conditions - 1] := '';
   // Go through all events
   for i := 0 to mis_data.num_events - 1 do
   begin
@@ -676,6 +689,7 @@ var
   condition_used_position: boolean;
   i, j: integer;
   tmp_condition: TCondition;
+  tmp_note: String;
   event: ^TEvent;
 begin
   if (c1 >= mis_data.num_conditions) or (c2 >= mis_data.num_conditions) then
@@ -685,6 +699,10 @@ begin
   tmp_condition := mis_data.conditions[c1];
   mis_data.conditions[c1] := mis_data.conditions[c2];
   mis_data.conditions[c2] := tmp_condition;
+  // Swap condition notes
+  tmp_note := condition_notes[c1];
+  condition_notes[c1] := condition_notes[c2];
+  condition_notes[c2] := tmp_note;
   // Go through all events
   for i := 0 to mis_data.num_events - 1 do
   begin
