@@ -280,11 +280,6 @@ begin
   if not select_started then
     exit;
   select_started := false;
-  block_width := min(block_width, 8);
-  block_height := min(block_height, 8);
-  sePresetWidth.Value := block_width;
-  sePresetHeight.Value := block_height;
-  set_continuous_preset_tiles;
   if not cbPresetHelper.Checked then
   begin
     MainWindow.select_block_from_tileset(block_width, block_height, block_left, block_top);
@@ -293,7 +288,13 @@ begin
       close;
       MainWindow.RbBlockMode.Checked := True;
     end;
-  end else
+  end;
+  block_width := min(block_width, 8);
+  block_height := min(block_height, 8);
+  sePresetWidth.Value := block_width;
+  sePresetHeight.Value := block_height;
+  set_continuous_preset_tiles;
+  if cbPresetHelper.Checked then
   begin
     block_preset_to_text;
     draw_block_preset;
@@ -318,8 +319,8 @@ procedure TTilesetDialog.cbPresetHelperClick(Sender: TObject);
 begin
   if cbPresetHelper.Checked then
   begin
-    Constraints.MinWidth := 888;
-    Constraints.MaxWidth := 888;
+    Constraints.MinWidth := 892;
+    Constraints.MaxWidth := 892;
     block_preset_to_text;
     draw_block_preset;
   end else
