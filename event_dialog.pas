@@ -152,6 +152,10 @@ type
     cbMarkEventsHavingCondition: TCheckBox;
     MoveUp2: TMenuItem;
     MoveDown2: TMenuItem;
+    btnMoveUnitUp: TButton;
+    btnMoveUnitDown: TButton;
+    btnMoveConditionUp: TButton;
+    btnMoveConditionDown: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -169,12 +173,16 @@ type
     procedure EventUnitListDblClick(Sender: TObject);
     procedure btnDeleteLastUnitClick(Sender: TObject);
     procedure btnDeleteAllUnitsClick(Sender: TObject);
+    procedure btnMoveUnitUpClick(Sender: TObject);
+    procedure btnMoveUnitDownClick(Sender: TObject);
     procedure EventConditionListClickCheck(Sender: TObject);
     procedure btnAddConditionClick(Sender: TObject);
     procedure btnDeleteConditionClick(Sender: TObject);
     procedure ConditionGridDblClick(Sender: TObject);
     procedure btnDeleteLastConditionClick(Sender: TObject);
     procedure btnDeleteAllConditionsClick(Sender: TObject);
+    procedure btnMoveConditionUpClick(Sender: TObject);
+    procedure btnMoveConditionDownClick(Sender: TObject);
     procedure EventGridMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState;
@@ -224,6 +232,7 @@ type
     procedure cbMarkEventsHavingConditionClick(Sender: TObject);
     procedure MoveUp2Click(Sender: TObject);
     procedure MoveDown2Click(Sender: TObject);
+    procedure swap_byte(byte1, byte2: PByte);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -983,6 +992,36 @@ begin
   EventUnitList.Items.Clear;
 end;
 
+procedure TEventDialog.btnMoveUnitUpClick(Sender: TObject);
+var
+  index: integer;
+  tmp_unit_name: String;
+begin
+  index := EventUnitList.ItemIndex;
+  if (index = -1) or (index = 0) then
+    exit;
+  swap_byte(Addr(tmp_event.units[index]), Addr(tmp_event.units[index-1]));
+  tmp_unit_name := EventUnitList.Items[index];
+  EventUnitList.Items[index] := EventUnitList.Items[index-1];
+  EventUnitList.Items[index-1] := tmp_unit_name;
+  EventUnitList.ItemIndex := EventUnitList.ItemIndex - 1;
+end;
+
+procedure TEventDialog.btnMoveUnitDownClick(Sender: TObject);
+var
+  index: integer;
+  tmp_unit_name: String;
+begin
+  index := EventUnitList.ItemIndex;
+  if (index = -1) or (index = (tmp_event.num_units - 1)) then
+    exit;
+  swap_byte(Addr(tmp_event.units[index]), Addr(tmp_event.units[index+1]));
+  tmp_unit_name := EventUnitList.Items[index];
+  EventUnitList.Items[index] := EventUnitList.Items[index+1];
+  EventUnitList.Items[index+1] := tmp_unit_name;
+  EventUnitList.ItemIndex := EventUnitList.ItemIndex + 1;
+end;
+
 procedure TEventDialog.EventConditionListClickCheck(Sender: TObject);
 var
   i: integer;
@@ -1061,6 +1100,42 @@ begin
   FillChar(tmp_event.condition_index, Length(tmp_event.condition_index), 0);
   FillChar(tmp_event.condition_not, Length(tmp_event.condition_not), 0);
   EventConditionList.Items.Clear;
+end;
+
+procedure TEventDialog.btnMoveConditionUpClick(Sender: TObject);
+var
+  index: integer;
+  tmp_condition_desc: String;
+begin
+  index := EventConditionList.ItemIndex;
+  if (index = -1) or (index = 0) then
+    exit;
+  swap_byte(Addr(tmp_event.condition_index[index]), Addr(tmp_event.condition_index[index-1]));
+  swap_byte(Addr(tmp_event.condition_not[index]), Addr(tmp_event.condition_not[index-1]));
+  tmp_condition_desc := EventConditionList.Items[index];
+  EventConditionList.Items[index] := EventConditionList.Items[index-1];
+  EventConditionList.Items[index-1] := tmp_condition_desc;
+  EventConditionList.Checked[index] := tmp_event.condition_not[index] = 1;
+  EventConditionList.Checked[index-1] := tmp_event.condition_not[index-1] = 1;
+  EventConditionList.ItemIndex := EventConditionList.ItemIndex - 1;
+end;
+
+procedure TEventDialog.btnMoveConditionDownClick(Sender: TObject);
+var
+  index: integer;
+  tmp_condition_desc: String;
+begin
+  index := EventConditionList.ItemIndex;
+  if (index = -1) or (index = (tmp_event.num_conditions - 1)) then
+    exit;
+  swap_byte(Addr(tmp_event.condition_index[index]), Addr(tmp_event.condition_index[index+1]));
+  swap_byte(Addr(tmp_event.condition_not[index]), Addr(tmp_event.condition_not[index+1]));
+  tmp_condition_desc := EventConditionList.Items[index];
+  EventConditionList.Items[index] := EventConditionList.Items[index+1];
+  EventConditionList.Items[index+1] := tmp_condition_desc;
+  EventConditionList.Checked[index] := tmp_event.condition_not[index] = 1;
+  EventConditionList.Checked[index+1] := tmp_event.condition_not[index+1] = 1;
+  EventConditionList.ItemIndex := EventConditionList.ItemIndex + 1;
 end;
 
 procedure TEventDialog.EventGridMouseDown(Sender: TObject;
@@ -1484,6 +1559,15 @@ end;
 procedure TEventDialog.cbMarkEventsHavingConditionClick(Sender: TObject);
 begin
   EventGrid.Invalidate;
+end;
+
+procedure TEventDialog.swap_byte(byte1, byte2: PByte);
+var
+  tmp_byte: Byte;
+begin
+  tmp_byte := byte1^;
+  byte1^ := byte2^;
+  byte2^ := tmp_byte;
 end;
 
 end.

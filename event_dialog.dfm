@@ -659,39 +659,75 @@ object EventDialog: TEventDialog
       end
       object btnAddUnit: TButton
         Left = 128
-        Top = 64
+        Top = 24
         Width = 24
         Height = 49
+        Hint = 'Add unit'
         Caption = '-->'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 4
         OnClick = btnAddUnitClick
       end
       object btnDeleteUnit: TButton
         Left = 128
-        Top = 120
+        Top = 80
         Width = 24
         Height = 25
+        Hint = 'Remove selected unit'
         Caption = '<--'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 5
         OnClick = btnDeleteUnitClick
       end
       object btnDeleteLastUnit: TButton
         Left = 128
-        Top = 152
+        Top = 112
         Width = 24
         Height = 25
+        Hint = 'Remove last unit'
         Caption = 'X'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 6
         OnClick = btnDeleteLastUnitClick
       end
       object btnDeleteAllUnits: TButton
         Left = 128
-        Top = 184
+        Top = 144
         Width = 24
         Height = 25
+        Hint = 'Remove all units'
         Caption = 'C'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 7
         OnClick = btnDeleteAllUnitsClick
+      end
+      object btnMoveUnitUp: TButton
+        Left = 128
+        Top = 192
+        Width = 24
+        Height = 25
+        Hint = 'Move unit up'
+        Caption = '^'
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 8
+        OnClick = btnMoveUnitUpClick
+      end
+      object btnMoveUnitDown: TButton
+        Left = 128
+        Top = 216
+        Width = 24
+        Height = 25
+        Hint = 'Move unit down'
+        Caption = 'v'
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 9
+        OnClick = btnMoveUnitDownClick
       end
     end
     object EventConditionListPanel: TPanel
@@ -732,46 +768,61 @@ object EventDialog: TEventDialog
       end
       object btnAddCondition: TButton
         Left = 196
-        Top = 80
+        Top = 56
         Width = 24
         Height = 33
+        Hint = 'Add condition'
         Caption = '<--'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 2
         OnClick = btnAddConditionClick
       end
       object btnDeleteCondition: TButton
         Left = 196
-        Top = 120
+        Top = 96
         Width = 24
         Height = 25
+        Hint = 'Remove selected condition'
         Caption = '-->'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 3
         OnClick = btnDeleteConditionClick
       end
       object btnDeleteLastCondition: TButton
         Left = 196
-        Top = 152
+        Top = 128
         Width = 24
         Height = 25
+        Hint = 'Remove last condition'
         Caption = 'X'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 4
         OnClick = btnDeleteLastConditionClick
       end
       object btnDeleteAllConditions: TButton
         Left = 196
-        Top = 184
+        Top = 160
         Width = 24
         Height = 25
+        Hint = 'Remove all conditions'
         Caption = 'C'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 5
         OnClick = btnDeleteAllConditionsClick
       end
       object btnPlusCondition: TButton
         Left = 196
-        Top = 40
+        Top = 16
         Width = 24
         Height = 33
+        Hint = 'Create new condition and add into list'
         Caption = '+'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 6
         OnClick = btnPlusConditionClick
       end
@@ -801,6 +852,30 @@ object EventDialog: TEventDialog
           TabOrder = 1
           OnClick = btnEventConditionListPasteClick
         end
+      end
+      object btnMoveConditionUp: TButton
+        Left = 196
+        Top = 192
+        Width = 24
+        Height = 25
+        Hint = 'Move condition up'
+        Caption = '^'
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 8
+        OnClick = btnMoveConditionUpClick
+      end
+      object btnMoveConditionDown: TButton
+        Left = 196
+        Top = 216
+        Width = 24
+        Height = 25
+        Hint = 'Move condition down'
+        Caption = 'v'
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 9
+        OnClick = btnMoveConditionDownClick
       end
     end
     object ConditionPropertiesPanel: TPanel
