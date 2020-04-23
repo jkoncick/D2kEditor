@@ -445,13 +445,20 @@ begin
 end;
 
 procedure TMainWindow.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  dialog_result: integer;
 begin
-  if Map.loaded and Settings.AlwaysAskOnQuit then
+  if Settings.AlwaysAskOnQuit and Map.check_map_modified then
   begin
-    if Application.MessageBox('Do you really want to quit?','D2kEditor', MB_YESNO or MB_ICONQUESTION) = IDNO then
+    dialog_result := Application.MessageBox('Do you want to save your map changes before exiting the program?','Save changes?', MB_YESNOCANCEL or MB_ICONQUESTION);
+    if dialog_result = IDCANCEL then
     begin
       Action := caNone;
       exit;
+    end else
+    if dialog_result = IDYES then
+    begin
+      Savemap1Click(nil);
     end;
   end;
   Settings.save_editor_settings;
@@ -791,6 +798,9 @@ begin
       set_window_titles(ChangeFileExt(ExtractFileName(Map.filename),''));
     end;
     save_map(MapSaveDialog.FileName);
+    // Update recent files list
+    Settings.update_recent_files(MapSaveDialog.FileName);
+    refresh_recent_files_menu;
   end;
 end;
 
@@ -827,8 +837,7 @@ end;
 
 procedure TMainWindow.Exit1Click(Sender: TObject);
 begin
-  MainWindow.OnResize := nil;
-  application.Terminate;
+  close;
 end;
 
 procedure TMainWindow.Undo1Click(Sender: TObject);

@@ -45,6 +45,7 @@ type
     // Map variables
     map_loaded: boolean;
     map_filename: String;
+    map_modified: boolean;
     map_data: TMapData;
     map_width: word;
     map_height: word;
@@ -57,6 +58,7 @@ type
     undo_start: integer;
     undo_max: integer;
     undo_pos: integer;
+    undo_pos_last_saved: integer;
     undo_block_start: boolean;
 
     // Search variables
@@ -110,6 +112,7 @@ type
     // Miscellaneous procedures
     procedure calculate_power_and_statistics;
     function check_errors: String;
+    function check_map_modified: boolean;
     function search_special(special: word; var result_x, result_y: integer): boolean;
 
     // Load & Save procedures
@@ -347,6 +350,7 @@ begin
   undo_start := 0;
   undo_max := 0;
   undo_pos := 0;
+  undo_pos_last_saved := 0;
   undo_history[0].is_first := true;
 end;
 
@@ -599,6 +603,16 @@ begin
   result := '';
 end;
 
+function TMap.check_map_modified: boolean;
+begin
+  if not map_loaded then
+  begin
+    result := false;
+    exit;
+  end;
+  result := (undo_pos_last_saved <> undo_pos) or map_modified or Mission.mis_modified;
+end;
+
 function TMap.search_special(special: word; var result_x, result_y: integer): boolean;
 var
   x, y: integer;
@@ -662,6 +676,7 @@ begin
   CloseFile(map_file);
   map_loaded := true;
   map_filename := filename;
+  map_modified := false;
   reset_undo_history;
   calculate_power_and_statistics;
 end;
@@ -682,6 +697,11 @@ begin
       Write(map_file, map_data[x,y].special);
     end;
   CloseFile(map_file);
+  if ExtractFileName(filename) <> 'TESTMAP.MAP' then
+  begin
+    map_modified := false;
+    undo_pos_last_saved := undo_pos;
+  end;
 end;
 
 
@@ -705,6 +725,7 @@ begin
   // Adjust also mission
   Mission.adjust_event_positions_on_map_resize;
   reset_undo_history;
+  map_modified := true;
   calculate_power_and_statistics;
 end;
 
@@ -776,6 +797,7 @@ begin
         end;
   end;
   reset_undo_history;
+  map_modified := true;
   calculate_power_and_statistics;
 end;
 
@@ -833,6 +855,7 @@ begin
     map_data[0,0].special := Structures.misc_object_info[1].value;
   map_filename := '';
   map_loaded := true;
+  map_modified := false;
   reset_undo_history;
   calculate_power_and_statistics;
 end;

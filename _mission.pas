@@ -175,6 +175,7 @@ type
   public
     mis_filename: String;
     mis_assigned: boolean;
+    mis_modified: boolean;
     mis_data: TMisFile;
     event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
     event_notes: array[0..63] of String;
@@ -211,6 +212,7 @@ type
     procedure delete_event(deleted_index: integer);
     procedure delete_condition(deleted_index: integer);
     function condition_is_used(index: integer): boolean;
+    procedure swap_events(e1, e2: integer);
     procedure swap_conditions(c1, c2: integer);
     // Auto-creating common events
     function get_or_create_condition(condition_type: ConditionType; player: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
@@ -267,6 +269,7 @@ begin
   Read(mis_file, mis_data);
   CloseFile(mis_file);
   mis_filename := filename;
+  mis_modified := false;
 
   tileset_name := String(mis_data.tileset);
   Tileset.change_tileset_by_name(tileset_name);
@@ -281,6 +284,9 @@ begin
   ReWrite(mis_file);
   Write(mis_file, mis_data);
   CloseFile(mis_file);
+
+  if ExtractFileName(filename) <> '_TESTMAP.MIS' then
+    mis_modified := false;
 end;
 
 procedure TMission.process_event_markers;
@@ -379,6 +385,8 @@ begin
       Mission.event_markers[x,y].emtype := emNone;
   // Clear notes
   clear_notes;
+  // Clear mofication flag
+  mis_modified := false;
 end;
 
 procedure TMission.load_notes_from_ini(ini: TMemIniFile);
@@ -562,6 +570,7 @@ begin
   FillChar(mis_data.events[position], sizeof(TEvent), 0);
   event_notes[position] := '';
   inc(mis_data.num_events);
+  mis_modified := true;
   result := true;
 end;
 
@@ -575,6 +584,7 @@ begin
   FillChar(mis_data.conditions[mis_data.num_conditions], sizeof(TCondition), 0);
   condition_notes[mis_data.num_conditions] := '';
   inc(mis_data.num_conditions);
+  mis_modified := true;
   result := true;
 end;
 
@@ -595,6 +605,7 @@ begin
   FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
   event_notes[mis_data.num_events - 1] := '';
   dec(mis_data.num_events);
+  mis_modified := true;
   // Update event markers on map if event had position
   if event_used_position then
   begin
@@ -656,6 +667,7 @@ begin
   end;
   // Finally decrease number of conditions and fill event dialog grids
   dec(mis_data.num_conditions);
+  mis_modified := true;
   // Update event markers on map if condition had position
   if condition_used_position then
   begin
@@ -681,6 +693,28 @@ begin
         result := true;
         exit;
       end;
+  end;
+end;
+
+procedure TMission.swap_events(e1, e2: integer);
+var
+  event_used_position: boolean;
+  tmp_event: TEvent;
+  tmp_note: String;
+begin
+  tmp_event := mis_data.events[e1];
+  mis_data.events[e1] := mis_data.events[e2];
+  mis_data.events[e2] := tmp_event;
+  tmp_note := event_notes[e1];
+  event_notes[e1] := event_notes[e2];
+  event_notes[e2] := tmp_note;
+  mis_modified := true;
+  // Update event markers on map if event had position
+  event_used_position := (event_type_info[mis_data.events[e1].event_type].use_map_position) or (event_type_info[mis_data.events[e2].event_type].use_map_position);
+  if event_used_position then
+  begin
+    process_event_markers;
+    MainWindow.render_map;
   end;
 end;
 
@@ -725,6 +759,7 @@ begin
         event.player := c1;
     end;
   end;
+  mis_modified := true;
   // Update event markers on map if condition had position
   if condition_used_position then
   begin

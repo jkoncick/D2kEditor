@@ -687,6 +687,7 @@ begin
   old_event_used_position := event_type_info[Mission.mis_data.events[selected_event].event_type].use_map_position;
   // Save event
   Mission.mis_data.events[selected_event] := tmp_event;
+  Mission.mis_modified := true;
   // Save event note
   if notes_enabled then
     Mission.event_notes[selected_event] := edeventNote.Text;
@@ -848,6 +849,7 @@ begin
     end;
   end;
   Mission.mis_data.conditions[selected_condition] := tmp_condition;
+  Mission.mis_modified := true;
   // Save condition note
   if notes_enabled then
     Mission.condition_notes[selected_condition] := edConditionNote.Text;
@@ -1217,33 +1219,19 @@ begin
 end;
 
 procedure TEventDialog.MoveUp1Click(Sender: TObject);
-var
-  tmp_note: String;
 begin
   if selected_event = 0 then
     exit;
-  tmp_event := Mission.mis_data.events[selected_event];
-  Mission.mis_data.events[selected_event] := Mission.mis_data.events[selected_event - 1];
-  Mission.mis_data.events[selected_event - 1] := tmp_event;
-  tmp_note := Mission.event_notes[selected_event];
-  Mission.event_notes[selected_event] := Mission.event_notes[selected_event - 1];
-  Mission.event_notes[selected_event - 1] := tmp_note;
+  Mission.swap_events(selected_event, selected_event-1);
   fill_grids;
   EventGrid.Row := selected_event;
 end;
 
 procedure TEventDialog.MoveDown1Click(Sender: TObject);
-var
-  tmp_note: String;
 begin
   if selected_event >= Mission.mis_data.num_events - 1 then
     exit;
-  tmp_event := Mission.mis_data.events[selected_event];
-  Mission.mis_data.events[selected_event] := Mission.mis_data.events[selected_event + 1];
-  Mission.mis_data.events[selected_event + 1] := tmp_event;
-  tmp_note := Mission.event_notes[selected_event];
-  Mission.event_notes[selected_event] := Mission.event_notes[selected_event + 1];
-  Mission.event_notes[selected_event + 1] := tmp_note;
+  Mission.swap_events(selected_event, selected_event+1);
   fill_grids;
   EventGrid.Row := selected_event + 2;
 end;
