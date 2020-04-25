@@ -722,4 +722,10 @@ object MainWindow: TMainWindow
   object GridColorDialog: TColorDialog
     Left = 224
   end
+  object FindDune2000Dialog: TOpenDialog
+    Filter = 'Dune 2000 game executable (DUNE2000.EXE)|dune2000.exe'
+    InitialDir = 'C:\'
+    Title = 'Find Dune 2000 game location'
+    Left = 256
+  end
 end

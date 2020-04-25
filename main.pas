@@ -141,6 +141,7 @@ type
     Reloadtileset1: TMenuItem;
     cbSelectAreaType: TComboBox;
     lbSelectAreaType: TLabel;
+    FindDune2000Dialog: TOpenDialog;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -390,8 +391,31 @@ begin
   block_preset_select[0].Down := True;
   // Load settings
   Settings.load_precreate_editor_settings;
+  // First time run intro message
   if (Settings.GamePath = '') and (not FileExists(current_dir + 'D2kEditor.ini')) then
-    Application.MessageBox('This program requires original Dune 2000 graphics files to work.'#13'It needs to know where Dune 2000 is located on your computer and will load graphics from that location.'#13+'Please open any existing Map or Mission file under Dune 2000 game folder and the program will configure itself.'#13+'Alternatively, close the program and configure all paths manually in D2kEditor.ini file under [Paths] section.'#13+'In case you do not have Dune 2000 and want to create maps, you can copy tileset .bmp files (i.e. BLOXBGBS.bmp) into Tilesets folder.', 'First time open', MB_OK or MB_ICONINFORMATION);
+  begin
+    Show;
+    if Application.MessageBox(
+      'This program requires original Dune 2000 graphics files to work.'#13+
+      'It needs to know where Dune 2000 is located on your computer and will load graphics from that location.'#13+
+      'Press YES button if you want to navigate to your Dune 2000 location and configure it now.'#13+
+      'Press NO button if you want to use program without Dune 2000 game or configure it later.'#13#13+
+      'If you choose NO, you will have following options to configure the program:'#13+
+      '- Open any existing Map or Mission file under Dune 2000 game folder and the program will configure automatically.'#13+
+      '- Close the program and configure all paths manually in D2kEditor.ini file under [Paths] section.'#13+
+      '- Delete D2kEditor.ini to make this message appear again.'#13+
+      'In case you do not have Dune 2000 and still want to create maps,'#13+
+      'you can copy tileset .bmp files (i.e. BLOXBGBS.bmp) and .bin files (i.e. TILEATR1.BIN) into Tilesets folder.',
+      'First time run', MB_YESNO or MB_ICONINFORMATION) = IDYES then
+    begin
+      if FindDune2000Dialog.Execute then
+      begin
+        Settings.determine_game_paths_from_path(FindDune2000Dialog.FileName);
+        if Settings.GamePath <> '' then
+          Application.MessageBox('Game path configured.', 'First time run', MB_OK or MB_ICONINFORMATION);
+      end;
+    end;
+  end;
   // Initialize structures
   Structures.init;
   // Initialize mission
