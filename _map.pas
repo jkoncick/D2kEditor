@@ -36,6 +36,7 @@ type
   TMapStats = record
     players: array[0..cnt_players-1] of TPlayerStats;
     objects: array[0..3] of integer;
+    num_structures_total: integer;
   end;
 
 type
@@ -529,6 +530,7 @@ begin
     output[x] := 0;
     need[x] := 0;
   end;
+  map_stats.num_structures_total := 0;
   // Process all map and compute power output/need and number of misc objects
   for y := 0 to map_height - 1 do
     for x := 0 to map_width -1 do
@@ -542,6 +544,7 @@ begin
             inc(map_stats.objects[stats_group]);
         end else
         begin
+          inc(map_stats.num_structures_total);
           tmp_power := Structures.structure_info[index].power;
           if tmp_power > 0 then
             need[player] := need[player] + tmp_power
@@ -570,7 +573,9 @@ var
   x, y: integer;
   index, player: word;
   is_misc: boolean;
-  player_starts: integer;
+  num_player_starts: integer;
+  num_spice_blooms: integer;
+  num_structures: integer;
 begin
   // Check for number of worm spawners
   if map_stats.objects[ord(sgWormSpawners)] = 0 then
@@ -579,10 +584,24 @@ begin
     exit;
   end;
   // Check for number of player starts
-  player_starts := map_stats.objects[ord(sgPlayerStarts)];
-  if (player_starts <> 0) and (player_starts <> 8) then
+  num_player_starts := map_stats.objects[ord(sgPlayerStarts)];
+  if (num_player_starts <> 0) and (num_player_starts <> 8) then
   begin
-    result := 'Invalid number of Player Starts. Must be either 0 (for campaign maps) or 8 (for multiplayer maps).';
+    result := format('Invalid number of Player Starts (%d). Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', [num_player_starts]);
+    exit;
+  end;
+  // Check for limit of spice blooms
+  num_spice_blooms := map_stats.objects[ord(sgSpiceBlooms)];
+  if num_spice_blooms > Structures.limit_spice_blooms then
+  begin
+    result := format('You placed %d spice blooms on map, which is more than maximum of %d supported by game.'#13'The spice blooms above the limit will not work.', [num_spice_blooms, Structures.limit_spice_blooms]);
+    exit;
+  end;
+  // Check for limit of structures
+  num_structures := map_stats.num_structures_total + map_stats.objects[ord(sgWormSpawners)];
+  if num_structures > Structures.limit_structures then
+  begin
+    result := format('You placed %d structures on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures, Structures.limit_structures]);
     exit;
   end;
   // Check for buildings exceeding map bounds
@@ -600,7 +619,10 @@ begin
         end;
       end;
     end;
-  result := '';
+  if Mission.mis_assigned then
+    result := Mission.check_errors
+  else
+    result := '';
 end;
 
 function TMap.check_map_modified: boolean;

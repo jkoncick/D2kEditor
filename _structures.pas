@@ -83,6 +83,8 @@ type
     cnt_misc_objects: integer;
     misc_object_info: array of TMiscObjectInfo;
 
+    limit_spice_blooms: integer;
+    limit_structures: integer;
   private
     tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
 
@@ -235,6 +237,13 @@ begin
     end;
   end;
   ini.Destroy;
+
+  // Read limits from limits.ini
+  ini := TMemIniFile.Create(current_dir + 'config/limits.ini');
+  limit_spice_blooms := ini.ReadInteger('Limits', 'spice_blooms', 30);
+  limit_structures := ini.ReadInteger('Limits', 'structures', 1000);
+  ini.Destroy;
+
   tmp_strings.Destroy;
   decoder.Destroy;
 end;

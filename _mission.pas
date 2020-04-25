@@ -223,6 +223,7 @@ type
     // Miscellaneous
     procedure shift_event_positions(shift_x: integer; shift_y: integer);
     procedure adjust_event_positions_on_map_resize;
+    function check_errors: String;
   end;
 
 var
@@ -1025,6 +1026,31 @@ begin
     end;
   end;
   process_event_markers;
+end;
+
+function TMission.check_errors: String;
+var
+  i: integer;
+begin
+  // Check if players with active AI have non-zero tech and credits
+  for i := 0 to 7 do
+  begin
+    if (mis_data.ai_segments[i, 1] = 1) and ((mis_data.tech_level[i] = 0) or (mis_data.starting_money[i] = 0)) then
+    begin
+      result := format('Players with active AI must have non-zero tech level and credits. Player ''%s'' does not meet this requirement.', [player_names[i]]);
+      exit;
+    end;
+  end;
+  // Check if Reinforcement or Starport Delivery events have non-zero units.
+  for i := 0 to mis_data.num_events - 1 do
+  begin
+    if ((mis_data.events[i].event_type = Byte(etReinforcement)) or (mis_data.events[i].event_type = Byte(etStarportDelivery))) and (mis_data.events[i].num_units = 0) then
+    begin
+      result := format('Event #%d of type %s has zero units to deliver.', [i, event_type_info[mis_data.events[i].event_type].name]);
+      exit;
+    end;
+  end;
+  result := '';
 end;
 
 end.
