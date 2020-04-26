@@ -1,22 +1,23 @@
 Installation
 ------------
 
+Step 1)
 Extract ALL files and folders to some local folder on your computer. 
 The program itself without folders (config, graphics, tilesets) will not work.
 
+Step 2)
 You need to have Dune 2000 game on your computer, because the editor requires 
 original Dune 2000 graphics files and some other files to work, and it needs to
 know location of the game.
 - If you copy the editor into some folder under your Dune 2000 game folder, program
   should detect it and you will be able to use it right away.
-- If you copy it to some different location, you will first need to open an existing map
-  or mission from the game folder, and then the program will configure itself as well.
-- Alternatively, configure all paths manually in D2kEditor.ini file under [Paths] 
-  section. This file gets created once you close the program.
-- If you do not have Dune 2000 game on your computer and you still want to create maps,
-  you can copy graphics files (either .r8, .r16 or .bmp files: i.e. "BLOXBGBS.bmp")
-  and TILEATRx.BIN files into tilesets folder.
+- Otherwise program will prompt you on first start and offer you to navigate to game
+  location manually.
+If you do not have Dune 2000 game on your computer and you still want to create maps,
+you can copy graphics files (either .r8, .r16 or .bmp files: i.e. "BLOXBGBS.bmp")
+and TILEATRx.BIN files into tilesets folder.
 
+Step 3)
 Copy and replace the file TILEDATA.BIN from config folder into Data\bin folder in
 your Dune 2000 game folder. This way you will be able to place any type of building
 or unit for any side (which was not possible in the original game).
