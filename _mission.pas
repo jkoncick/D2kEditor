@@ -14,7 +14,7 @@ const player_names_short: array[0..7] of string =
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
 
 const flag_value: array[0..1] of string = ('False', 'True');
-const deploy_action: array[0..2] of string = ('None', 'Hunt', 'Free');
+const deploy_action: array[0..3] of string = ('Guard', 'Attack', 'Retreat', 'Stay');
 const allegiance_type: array[0..2] of string = ('Ally', 'Enemy', 'Neutral');
 const allegiance_type_color: array[0..2] of TColor = (clGreen, clRed, clOlive);
 const comparison_function: array[0..3] of string = ('>', '<', '=', '%');
