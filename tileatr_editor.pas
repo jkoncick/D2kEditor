@@ -226,6 +226,8 @@ type
     procedure set_tile_attributes(tile_index: integer; single_op: boolean);
   public
     procedure tileset_changed;
+  private
+    function confirm_overwrite_original_file(filename: string): boolean;
   end;
 
 var
@@ -321,7 +323,7 @@ end;
 
 procedure TTileAtrEditor.SaveTileAtr1Click(Sender: TObject);
 begin
-  if Tileset.tileatr_filename <> '' then
+  if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
   begin
     Tileset.save_attributes;
     MainWindow.render_map;
@@ -331,15 +333,20 @@ end;
 
 procedure TTileAtrEditor.Saveandtest1Click(Sender: TObject);
 begin
-  SaveTileAtr1Click(Sender);
-  MainWindow.Quicklaunch1Click(Sender);
+  if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
+  begin
+    Tileset.save_attributes;
+    MainWindow.render_map;
+    MainWindow.render_minimap;
+    MainWindow.Quicklaunch1Click(Sender);
+  end;
 end;
 
 procedure TTileAtrEditor.SaveTileAtras1Click(Sender: TObject);
 begin
   if Tileset.tileatr_filename <> '' then
   begin
-    if SaveTileAtrDialog.Execute then
+    if SaveTileAtrDialog.Execute and confirm_overwrite_original_file(SaveTileAtrDialog.FileName) then
     begin
       Tileset.save_attributes_to_file(SaveTileAtrDialog.FileName);
       MainWindow.tileset_changed;
@@ -1032,6 +1039,33 @@ begin
   active_tile := -1;
   reset_undo_history;
   render_tileset;
+end;
+
+function TTileAtrEditor.confirm_overwrite_original_file(filename: string): boolean;
+var
+  f: string;
+  modified_date: TDateTime;
+  year, month, day: word;
+  dialog_result: integer;
+begin
+  result := true;
+  if AnsiCompareText(ExtractFilePath(filename), Settings.GamePath + '\DATA\BIN\') <> 0 then
+    exit;
+  f := UpperCase(ExtractFileName(filename));
+  if (f <> 'TILEATR1.BIN') and (f <> 'TILEATR2.BIN') and (f <> 'TILEATR3.BIN') and (f <> 'TILEATR4.BIN') and (f <> 'TILEATR5.BIN') and (f <> 'TILEATR6.BIN') and (f <> 'TILEATR7.BIN') then
+    exit;
+  modified_date := FileDateToDateTime(FileAge(filename));
+  DecodeDate(modified_date, year, month, day);
+  if year <> 1998 then
+    exit;
+  // At this point we know the file is original game's file - show confirmation dialog
+  dialog_result := Application.MessageBox(
+    PChar(
+    'You are about to modify an original Dune 2000 game file, which can break the game!'#13+
+    'Make sure you have a backup of file '''+filename+''' before overwriting it!'#13#13+
+    'Do you really want to save over the file?'),
+    'Save Tile Attributes Warning', MB_YESNO or MB_ICONWARNING);
+  result := dialog_result = IDYES;
 end;
 
 end.
