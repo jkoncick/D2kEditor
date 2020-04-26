@@ -156,6 +156,10 @@ type
     btnMoveUnitDown: TButton;
     btnMoveConditionUp: TButton;
     btnMoveConditionDown: TButton;
+    N2: TMenuItem;
+    Showkeyshortcuts1: TMenuItem;
+    N3: TMenuItem;
+    Showkeyshortcuts2: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -218,6 +222,7 @@ type
     procedure Harvesterreplacement1Click(Sender: TObject);
     procedure Annihilatemessage1Click(Sender: TObject);
     procedure Createrunonceflag1Click(Sender: TObject);
+    procedure Showkeyshortcuts1Click(Sender: TObject);
     procedure btnCreateEventsCancelClick(Sender: TObject);
     procedure cbCreateEventsPlayerChange(Sender: TObject);
     procedure btnCreateEventsOkClick(Sender: TObject);
@@ -232,6 +237,7 @@ type
     procedure cbMarkEventsHavingConditionClick(Sender: TObject);
     procedure MoveUp2Click(Sender: TObject);
     procedure MoveDown2Click(Sender: TObject);
+    procedure Showkeyshortcuts2Click(Sender: TObject);
     procedure swap_byte(byte1, byte2: PByte);
   private
     tmp_event: TEvent;
@@ -1374,6 +1380,20 @@ begin
   ConditionGrid.Row := selected_condition + 2;
 end;
 
+procedure TEventDialog.Showkeyshortcuts2Click(Sender: TObject);
+var
+  msg: string;
+  i: integer;
+begin
+  msg := 'Enter = Apply changes'#13#13'Quick condition type selection:'#13;
+  for i := 0 to Length(condition_type_info) - 1 do
+  begin
+    if condition_type_info[i].key <> ord(' ') then
+      msg := msg + chr(condition_type_info[i].key) + ' = ' + condition_type_info[i].name + #13;
+  end;
+  ShowMessage(msg);
+end;
+
 procedure TEventDialog.seFlagNumberChange(Sender: TObject);
 begin
   if Mission.mis_data.conditions[StrToIntDef(seFlagNumber.Text,0)].condition_type = Byte(ctFlag) then
@@ -1417,6 +1437,20 @@ procedure TEventDialog.Createrunonceflag1Click(Sender: TObject);
 begin
   Mission.add_run_once_flag(selected_event);
   update_contents;
+end;
+
+procedure TEventDialog.Showkeyshortcuts1Click(Sender: TObject);
+var
+  msg: string;
+  i: integer;
+begin
+  msg := 'Enter = Apply changes'#13#13'Quick event type selection:'#13;
+  for i := 0 to Length(event_type_info) - 1 do
+  begin
+    if event_type_info[i].key <> ord(' ') then
+      msg := msg + chr(event_type_info[i].key) + ' = ' + event_type_info[i].name + #13;
+  end;
+  ShowMessage(msg);
 end;
 
 procedure TEventDialog.btnCreateEventsCancelClick(Sender: TObject);

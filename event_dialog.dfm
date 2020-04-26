@@ -1325,6 +1325,13 @@ object EventDialog: TEventDialog
       ShortCut = 115
       OnClick = Createrunonceflag1Click
     end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object Showkeyshortcuts1: TMenuItem
+      Caption = 'Show key shortcuts'
+      OnClick = Showkeyshortcuts1Click
+    end
   end
   object ConditionGridPopupMenu: TPopupMenu
     Left = 424
@@ -1357,6 +1364,13 @@ object EventDialog: TEventDialog
       Caption = 'Move Down'
       ShortCut = 34
       OnClick = MoveDown2Click
+    end
+    object N3: TMenuItem
+      Caption = '-'
+    end
+    object Showkeyshortcuts2: TMenuItem
+      Caption = 'Show key shortcuts'
+      OnClick = Showkeyshortcuts2Click
     end
   end
 end
