@@ -1,13 +1,13 @@
 object MapStatsDialog: TMapStatsDialog
   Left = 192
   Top = 114
-  Width = 688
+  Width = 752
   Height = 534
   Caption = 'Map statistics'
   Color = clBtnFace
-  Constraints.MaxWidth = 688
+  Constraints.MaxWidth = 752
   Constraints.MinHeight = 400
-  Constraints.MinWidth = 688
+  Constraints.MinWidth = 752
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -24,10 +24,10 @@ object MapStatsDialog: TMapStatsDialog
   object StatsGrid: TStringGrid
     Left = 0
     Top = 0
-    Width = 680
+    Width = 744
     Height = 500
     Align = alClient
-    ColCount = 9
+    ColCount = 10
     DefaultRowHeight = 18
     RowCount = 8
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goThumbTracking]

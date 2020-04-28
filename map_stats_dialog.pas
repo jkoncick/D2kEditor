@@ -43,6 +43,7 @@ begin
   StatsGrid.Cells[0,7] := 'Power percent';
   for i := 0 to Structures.cnt_map_players - 1 do
     StatsGrid.Cells[i+1,0] := Structures.map_player_info[i].name;
+  StatsGrid.Cells[9,0] := 'Total';
   StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.cnt_structures;
   SetLength(tmp_stats, cnt_fixed_rows+Structures.cnt_structures);
   for i := 0 to Structures.cnt_structures - 1 do
@@ -61,6 +62,7 @@ var
   i,j: integer;
   is_misc: boolean;
   player, index: word;
+  total_value: integer;
 begin
   if not Map.loaded then
     exit;
@@ -95,11 +97,21 @@ begin
     end;
   // Show statistics on grid
   for i := 0 to cnt_fixed_rows + Structures.cnt_structures - 1 do
+  begin
+    total_value := 0;
     for j := 0 to cnt_players - 1 do
+    begin
+      total_value := total_value + tmp_stats[i,j];
       if (i < cnt_fixed_rows) or (tmp_stats[i,j] > 0) then
         StatsGrid.Cells[j+1,i+1] := inttostr(tmp_stats[i,j])
       else
         StatsGrid.Cells[j+1,i+1] := '';
+    end;
+    if ((i < cnt_fixed_rows) or (total_value > 0)) and (i <> Byte(osPowerPercent)) then
+      StatsGrid.Cells[9,i+1] := inttostr(total_value)
+    else
+      StatsGrid.Cells[9,i+1] := '';
+  end;
 end;
 
 end.
