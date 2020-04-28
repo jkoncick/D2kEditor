@@ -30,6 +30,7 @@ type
     power_percent: word;
     power_output: word;
     power_need: word;
+    num_refineries: word;
   end;
 
 type
@@ -529,6 +530,7 @@ begin
   begin
     output[x] := 0;
     need[x] := 0;
+    map_stats.players[x].num_refineries := 0;
   end;
   map_stats.num_structures_total := 0;
   // Process all map and compute power output/need and number of misc objects
@@ -545,6 +547,8 @@ begin
         end else
         begin
           inc(map_stats.num_structures_total);
+          if structures.structure_info[index].tiledataindex = 7 then
+            inc(map_stats.players[player].num_refineries);
           tmp_power := Structures.structure_info[index].power;
           if tmp_power > 0 then
             need[player] := need[player] + tmp_power
@@ -575,7 +579,8 @@ var
   is_misc: boolean;
   num_player_starts: integer;
   num_spice_blooms: integer;
-  num_structures: integer;
+  num_structures_total: integer;
+  num_refineries: integer;
 begin
   // Check for number of worm spawners
   if map_stats.objects[ord(sgWormSpawners)] = 0 then
@@ -598,11 +603,21 @@ begin
     exit;
   end;
   // Check for limit of structures
-  num_structures := map_stats.num_structures_total + map_stats.objects[ord(sgWormSpawners)];
-  if num_structures > Structures.limit_structures then
+  num_structures_total := map_stats.num_structures_total + map_stats.objects[ord(sgWormSpawners)];
+  if num_structures_total > Structures.limit_structures_total then
   begin
-    result := format('You placed %d structures on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures, Structures.limit_structures]);
+    result := format('You placed %d structures on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures_total, Structures.limit_structures_total]);
     exit;
+  end;
+  // Check for limit of refineries per player
+  for player := 0 to 7 do
+  begin
+    num_refineries := map_stats.players[player].num_refineries;
+    if num_refineries > Structures.limit_refineries_per_player then
+    begin
+      result := format('You placed %d refineries for player %s on map, which is more than game''s limit of %d.'#13'Remove some refineries.', [num_refineries, player_names[player], Structures.limit_refineries_per_player]);
+      exit;
+    end;
   end;
   // Check for buildings exceeding map bounds
   for x := 0 to map_width - 1 do

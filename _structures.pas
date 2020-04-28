@@ -84,7 +84,8 @@ type
     misc_object_info: array of TMiscObjectInfo;
 
     limit_spice_blooms: integer;
-    limit_structures: integer;
+    limit_structures_total: integer;
+    limit_refineries_per_player: integer;
   private
     tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
 
@@ -241,7 +242,8 @@ begin
   // Read limits from limits.ini
   ini := TMemIniFile.Create(current_dir + 'config/limits.ini');
   limit_spice_blooms := ini.ReadInteger('Limits', 'spice_blooms', 30);
-  limit_structures := ini.ReadInteger('Limits', 'structures', 1000);
+  limit_structures_total := ini.ReadInteger('Limits', 'structures_total', 1000);
+  limit_refineries_per_player := ini.ReadInteger('Limits', 'refineries_per_player', 10);
   ini.Destroy;
 
   tmp_strings.Destroy;
