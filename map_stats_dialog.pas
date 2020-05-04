@@ -16,6 +16,10 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure StatsGridMouseWheelDown(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
+    procedure StatsGridMouseWheelUp(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
   private
     tmp_stats: Array of Array[0..cnt_players-1] of integer;
   public
@@ -55,6 +59,22 @@ procedure TMapStatsDialog.FormKeyDown(Sender: TObject; var Key: Word;
 begin
   if key = 27 then
     close;
+end;
+
+procedure TMapStatsDialog.StatsGridMouseWheelDown(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if StatsGrid.TopRow < (StatsGrid.RowCount - StatsGrid.VisibleRowCount) then
+    StatsGrid.TopRow := StatsGrid.TopRow + 1;
+  Handled := true;
+end;
+
+procedure TMapStatsDialog.StatsGridMouseWheelUp(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if StatsGrid.TopRow > 1 then
+    StatsGrid.TopRow := StatsGrid.TopRow - 1;
+  Handled := true;
 end;
 
 procedure TMapStatsDialog.update_stats;

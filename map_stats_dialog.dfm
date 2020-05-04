@@ -32,5 +32,7 @@ object MapStatsDialog: TMapStatsDialog
     RowCount = 8
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goThumbTracking]
     TabOrder = 0
+    OnMouseWheelDown = StatsGridMouseWheelDown
+    OnMouseWheelUp = StatsGridMouseWheelUp
   end
 end
