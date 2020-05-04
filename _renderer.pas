@@ -88,8 +88,8 @@ type
 
     procedure render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
       data: TMapDataPtr; data_width, data_height: word;
-      o_show_grid, o_draw_concrete, o_mark_impassable, o_mark_buildable, o_show_unknown_specials,
-      o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas,
+      o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_wall_owner_side,
+      o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
       o_rendering_optimization: boolean);
     function is_spice(value: word): boolean;
     procedure render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
@@ -188,8 +188,8 @@ end;
 
 procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
   data: TMapDataPtr; data_width, data_height: word;
-  o_show_grid, o_draw_concrete, o_mark_impassable, o_mark_buildable, o_show_unknown_specials,
-  o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas,
+  o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_wall_owner_side,
+  o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
   o_rendering_optimization: boolean);
 var
   min_x, min_y, max_x, max_y: integer;
@@ -391,7 +391,7 @@ begin
           // Value is structure
           sinfo := Addr(Structures.structure_info[index]);
           // Draw concrete and building's bottom first
-          if (o_draw_concrete) and (index < Structures.first_unit_index) and (not sinfo.not_on_buildable) then
+          if (index < Structures.first_unit_index) and (not sinfo.not_on_buildable) then
           begin
             bottom_style_type := Addr(bottom_style_types[sinfo.bottom_style]);
             // Draw concrete under building
@@ -499,6 +499,15 @@ begin
           cnv_target.CopyMode := cmSrcPaint;
           cnv_target.CopyRect(dest_rect,graphics_structures.Canvas,src_rect);
           cnv_target.CopyMode := cmSrcCopy;
+          // Draw wall owner side marker
+          if o_mark_wall_owner_side and (index = 0) then
+          begin
+            cnv_target.Pen.Color := Structures.map_player_info[player].color;
+            cnv_target.Brush.Color := cnv_target.Pen.Color;
+            cnv_target.Brush.Style := bsSolid;
+            cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
+            cnv_target.Brush.Style := bsClear;
+          end;
         end;
       end
       // Draw unknown special value

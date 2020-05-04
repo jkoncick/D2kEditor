@@ -123,7 +123,7 @@ type
     sbShowGrid: TSpeedButton;
     sbMarkImpassableTiles: TSpeedButton;
     sbMarkBuildableTiles: TSpeedButton;
-    sbShowUnknownSpecials: TSpeedButton;
+    sbMarkWallOwnerSide: TSpeedButton;
     Recentfiles1: TMenuItem;
     N6: TMenuItem;
     Showstatus1: TMenuItem;
@@ -142,6 +142,7 @@ type
     cbSelectAreaType: TComboBox;
     lbSelectAreaType: TLabel;
     FindDune2000Dialog: TOpenDialog;
+    Showunknownspecials1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -457,6 +458,7 @@ begin
   Useallocationindexes1.Checked := Settings.UseAllocationIndexes;
   Showeventmarkers1.Checked := Settings.ShowEventMarkers;
   Markdefenceareas1.Checked := Settings.MarkDefenceAreas;
+  Showunknownspecials1.Checked := Settings.ShowUnknownSpecials;
   GridColorDialog.Color := Settings.GridColor;
   Alwaysaskonquit1.Checked := Settings.AlwaysAskOnQuit;
   Hidepresetwindow1.Checked := Settings.HidePresetWindow;
@@ -709,7 +711,7 @@ begin
     ord('G'): begin sbShowGrid.Down := not sbShowGrid.Down; SettingChange(sbShowGrid); end;
     ord('M'): begin sbMarkImpassableTiles.Down := not sbMarkImpassableTiles.Down; SettingChange(sbMarkImpassableTiles); end;
     ord('B'): begin sbMarkBuildableTiles.Down := not sbMarkBuildableTiles.Down; SettingChange(sbMarkBuildableTiles); end;
-    ord('U'): begin sbShowUnknownSpecials.Down := not sbShowUnknownSpecials.Down; SettingChange(sbShowUnknownSpecials); end;
+    ord('W'): begin sbMarkWallOwnerSide.Down := not sbMarkWallOwnerSide.Down; SettingChange(sbMarkWallOwnerSide); end;
     end;
   end else
   if mode(mTerrain) then
@@ -841,8 +843,9 @@ begin
     tmp_bitmap.Width := Map.width * 32;
     tmp_bitmap.Height := Map.height * 32;
     Renderer.render_map_contents(tmp_bitmap.Canvas, 0, 0, Map.width, Map.height, Addr(Map.data), Map.width, Map.height,
-      sbShowGrid.Down, true, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbShowUnknownSpecials.Down,
-      Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, false);
+      sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkWallOwnerSide.Down,
+      Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
+      false);
     tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
     tmp_bitmap.Destroy;
   end;
@@ -986,9 +989,10 @@ end;
 procedure TMainWindow.SettingChange(Sender: TObject);
 begin
   case (Sender as TComponent).Tag of
-  1: begin Settings.UseAllocationIndexes := (Sender as TMenuItem).Checked; render_map; render_minimap; end;
+  1: begin Settings.UseAllocationIndexes := (Sender as TMenuItem).Checked; render_map; render_minimap; draw_cursor_image; end;
   2: begin Settings.ShowEventMarkers := (Sender as TMenuItem).Checked; render_map; end;
   3: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
+  4: begin Settings.ShowUnknownSpecials := (Sender as TMenuItem).Checked; render_map; draw_cursor_image; end;
   11: begin Settings.AlwaysAskOnQuit := (Sender as TMenuItem).Checked end;
   12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
   13: begin Settings.RestrictPainting := (Sender as TMenuItem).Checked end;
@@ -1667,8 +1671,9 @@ begin
   if not Map.loaded then
     exit;
   Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
-    sbShowGrid.Down, true, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbShowUnknownSpecials.Down,
-    Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, true);
+    sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkWallOwnerSide.Down,
+    Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
+    true);
   render_editing_marker;
 end;
 
@@ -2157,8 +2162,9 @@ begin
   CursorImage.Transparent := any_blank_tiles;
   // Render cursor image
   Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
-    false, true, false, false, sbShowUnknownSpecials.Down,
-    Useallocationindexes1.Checked, false, false, false);
+    false, false, false, sbMarkWallOwnerSide.Down,
+    Useallocationindexes1.Checked, false, false, Showunknownspecials1.Checked,
+    false);
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;
   CursorImage.Canvas.Rectangle(0, 0, block_width * 32 + 1, block_height * 32 + 1);

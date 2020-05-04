@@ -167,15 +167,15 @@ object MainWindow: TMainWindow
       ShowHint = True
       OnClick = SettingChange
     end
-    object sbShowUnknownSpecials: TSpeedButton
+    object sbMarkWallOwnerSide: TSpeedButton
       Left = 122
       Top = 140
       Width = 38
       Height = 22
-      Hint = 'Show unknown specials (Ctrl+U)'
+      Hint = 'Mark Wall owner side (Ctrl+W)'
       AllowAllUp = True
       GroupIndex = 4
-      Caption = 'Unkn'
+      Caption = 'Wall'
       ParentShowHint = False
       ShowHint = True
       OnClick = SettingChange
@@ -461,6 +461,7 @@ object MainWindow: TMainWindow
       end
       object Savemapimage1: TMenuItem
         Caption = 'Save map image'
+        ShortCut = 16464
         OnClick = Savemapimage1Click
       end
       object Saveminimapimage1: TMenuItem
@@ -536,7 +537,7 @@ object MainWindow: TMainWindow
       end
       object TileAttributeseditor1: TMenuItem
         Caption = 'Tile attributes editor...'
-        ShortCut = 16465
+        ShortCut = 16449
         OnClick = TileAttributeseditor1Click
       end
       object N12: TMenuItem
@@ -570,6 +571,13 @@ object MainWindow: TMainWindow
         Caption = 'Mark defence areas'
         Checked = True
         ShortCut = 16452
+        OnClick = SettingChange
+      end
+      object Showunknownspecials1: TMenuItem
+        Tag = 4
+        AutoCheck = True
+        Caption = 'Show unknown specials'
+        ShortCut = 16469
         OnClick = SettingChange
       end
       object Gridcolor1: TMenuItem
@@ -625,7 +633,7 @@ object MainWindow: TMainWindow
       end
       object Showmapstatistics1: TMenuItem
         Caption = 'Show map statistics'
-        ShortCut = 16471
+        ShortCut = 16465
         OnClick = Showmapstatistics1Click
       end
     end
