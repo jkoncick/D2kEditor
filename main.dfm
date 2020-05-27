@@ -396,7 +396,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -405,7 +405,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 6
         end
       end
@@ -469,6 +469,14 @@ object MainWindow: TMainWindow
         OnClick = Saveminimapimage1Click
       end
       object N2: TMenuItem
+        Caption = '-'
+      end
+      object Missionlauncher1: TMenuItem
+        Caption = 'Mission launcher'
+        ShortCut = 16460
+        OnClick = Missionlauncher1Click
+      end
+      object N13: TMenuItem
         Caption = '-'
       end
       object Exit1: TMenuItem

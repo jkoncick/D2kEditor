@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Dialogs
-  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog,
+  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher,
   // Units
   _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen;
 
@@ -143,6 +143,8 @@ type
     lbSelectAreaType: TLabel;
     FindDune2000Dialog: TOpenDialog;
     Showunknownspecials1: TMenuItem;
+    Missionlauncher1: TMenuItem;
+    N13: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -167,6 +169,7 @@ type
     procedure Savemapas1Click(Sender: TObject);
     procedure Savemapimage1Click(Sender: TObject);
     procedure Saveminimapimage1Click(Sender: TObject);
+    procedure Missionlauncher1Click(Sender: TObject);
     procedure Exit1Click(Sender: TObject);
     procedure Undo1Click(Sender: TObject);
     procedure Redo1Click(Sender: TObject);
@@ -860,6 +863,11 @@ begin
   begin
     minimap_buffer.SaveToFile(MapImageSaveDialog.FileName);
   end;
+end;
+
+procedure TMainWindow.Missionlauncher1Click(Sender: TObject);
+begin
+  MissionLauncher.Show;
 end;
 
 procedure TMainWindow.Exit1Click(Sender: TObject);
@@ -1994,6 +2002,8 @@ begin
   result := result and not (MapStatsDialog.Visible and PtInRect(MapStatsDialog.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = MissionDialog.Handle) and PtInRect(MissionDialog.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = EventDialog.Handle) and PtInRect(EventDialog.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = TileAtrEditor.Handle) and PtInRect(TileAtrEditor.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = MissionLauncher.Handle) and PtInRect(MissionLauncher.BoundsRect, Mouse.CursorPos));
   result := result or block_select_started;
 end;
 

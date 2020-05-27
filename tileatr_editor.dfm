@@ -16,6 +16,7 @@ object TileAtrEditor: TTileAtrEditor
   KeyPreview = True
   Menu = MainMenu
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnMouseWheelDown = FormMouseWheelDown
