@@ -123,7 +123,7 @@ type
     sbShowGrid: TSpeedButton;
     sbMarkImpassableTiles: TSpeedButton;
     sbMarkBuildableTiles: TSpeedButton;
-    sbMarkWallOwnerSide: TSpeedButton;
+    sbMarkOwnerSide: TSpeedButton;
     Recentfiles1: TMenuItem;
     N6: TMenuItem;
     Showstatus1: TMenuItem;
@@ -714,7 +714,7 @@ begin
     ord('G'): begin sbShowGrid.Down := not sbShowGrid.Down; SettingChange(sbShowGrid); end;
     ord('M'): begin sbMarkImpassableTiles.Down := not sbMarkImpassableTiles.Down; SettingChange(sbMarkImpassableTiles); end;
     ord('B'): begin sbMarkBuildableTiles.Down := not sbMarkBuildableTiles.Down; SettingChange(sbMarkBuildableTiles); end;
-    ord('W'): begin sbMarkWallOwnerSide.Down := not sbMarkWallOwnerSide.Down; SettingChange(sbMarkWallOwnerSide); end;
+    ord('W'): begin sbMarkOwnerSide.Down := not sbMarkOwnerSide.Down; SettingChange(sbMarkOwnerSide); end;
     end;
   end else
   if mode(mTerrain) then
@@ -846,7 +846,7 @@ begin
     tmp_bitmap.Width := Map.width * 32;
     tmp_bitmap.Height := Map.height * 32;
     Renderer.render_map_contents(tmp_bitmap.Canvas, 0, 0, Map.width, Map.height, Addr(Map.data), Map.width, Map.height,
-      sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkWallOwnerSide.Down,
+      sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
       Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
       false);
     tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
@@ -1679,7 +1679,7 @@ begin
   if not Map.loaded then
     exit;
   Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
-    sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkWallOwnerSide.Down,
+    sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
     Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
     true);
   render_editing_marker;
@@ -2172,7 +2172,7 @@ begin
   CursorImage.Transparent := any_blank_tiles;
   // Render cursor image
   Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
-    false, false, false, sbMarkWallOwnerSide.Down,
+    false, false, false, sbMarkOwnerSide.Down,
     Useallocationindexes1.Checked, false, false, Showunknownspecials1.Checked,
     false);
   CursorImage.Canvas.Pen.Color := clBlue;

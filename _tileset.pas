@@ -39,11 +39,15 @@ type
   PByteArr = ^ByteArr;
 
 // Tileset attributes (game)
+const taConcrete = $800;
 const taVehiclesPass = $2000;
 const taInfantryPass = $4000;
 const taAnyPass = $6000;
 const taBuildable = $8000;
 const taSand = $10000;
+const taConcreteOwnerSideBit1 = $20000;
+const taConcreteOwnerSideBit2 = $40000;
+const taConcreteOwnerSideBit3 = $80000;
 const taRock = $20000000;
 const taDunes = $40000000;
 const taRoughRock = $80000000;

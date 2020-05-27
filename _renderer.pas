@@ -88,7 +88,7 @@ type
 
     procedure render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
       data: TMapDataPtr; data_width, data_height: word;
-      o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_wall_owner_side,
+      o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
       o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
       o_rendering_optimization: boolean);
     function is_spice(value: word): boolean;
@@ -188,7 +188,7 @@ end;
 
 procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
   data: TMapDataPtr; data_width, data_height: word;
-  o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_wall_owner_side,
+  o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
   o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
   o_rendering_optimization: boolean);
 var
@@ -206,7 +206,8 @@ var
   spice_tile_value: word;
   dest_rect: TRect;
   src_rect: TRect;
-  tile_attr: TileType;
+  tile_type: TileType;
+  tile_attr: Cardinal;
   sinfo: ^TStructureInfo;
   event_marker: ^TEventMarker;
   bottom_style_type: ^TBottomStyleType;
@@ -332,24 +333,37 @@ begin
       end else
         // Actual tile
         cnv_target.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
-      // Draw tile attribute markers
-      if o_mark_impassable or o_mark_buildable then
+      // Draw tile markers
+      if o_mark_impassable or o_mark_buildable or o_mark_owner_side then
       begin
         tile := data[x + cnv_left, y + cnv_top].tile;
-        tile_attr := Tileset.get_tile_type(tile);
-        if (tile_attr = ttImpassable) and o_mark_impassable then
-          cnv_target.Pen.Color := clRed
-        else if (tile_attr = ttInfantryOnly) and o_mark_impassable then
-          cnv_target.Pen.Color := $4080FF
-        else if (tile_attr = ttBuildable) and o_mark_buildable then
-          cnv_target.Pen.Color := $40FF80
-        else
-          continue;
-        cnv_target.Pen.Width := 2;
-        cnv_target.MoveTo(x*32, y*32);
-        cnv_target.LineTo(x*32+31, y*32+31);
-        cnv_target.MoveTo(x*32+31, y*32);
-        cnv_target.LineTo(x*32, y*32+31);
+        tile_type := Tileset.get_tile_type(tile);
+        tile_attr := Tileset.attributes[tile];
+        // Draw impassable/buildable tile marker
+        if (tile_type = ttImpassable) and o_mark_impassable then
+          draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, clRed, 2)
+        else if (tile_type = ttInfantryOnly) and o_mark_impassable then
+          draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, $4080FF, 2)
+        else if (tile_type = ttBuildable) and ((tile_attr and taConcrete) <> 0) and o_mark_buildable then
+          draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, $00D0D0, 2)
+        else if (tile_type = ttBuildable) and o_mark_buildable then
+          draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, $40FF80, 2);
+        // Draw concrete owner marker
+        if (tile_type = ttBuildable) and ((tile_attr and taConcrete) <> 0) and o_mark_owner_side then
+        begin
+          player := 0;
+          if (tile_attr and taConcreteOwnerSideBit1) <> 0 then
+            Inc(player, 1);
+          if (tile_attr and taConcreteOwnerSideBit2) <> 0 then
+            Inc(player, 2);
+          if (tile_attr and taConcreteOwnerSideBit3) <> 0 then
+            Inc(player, 4);
+          cnv_target.Pen.Color := Structures.map_player_info[player].color;
+          cnv_target.Brush.Color := cnv_target.Pen.Color;
+          cnv_target.Brush.Style := bsSolid;
+          cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
+          cnv_target.Brush.Style := bsClear;
+        end;
       end;
       //--render_randomgen_data(cnv_target, cnv_left, cnv_top, x, y);
     end;
@@ -500,7 +514,7 @@ begin
           cnv_target.CopyRect(dest_rect,graphics_structures.Canvas,src_rect);
           cnv_target.CopyMode := cmSrcCopy;
           // Draw wall owner side marker
-          if o_mark_wall_owner_side and (index = 0) then
+          if o_mark_owner_side and (index = 0) then
           begin
             cnv_target.Pen.Color := Structures.map_player_info[player].color;
             cnv_target.Brush.Color := cnv_target.Pen.Color;

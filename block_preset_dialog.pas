@@ -45,7 +45,7 @@ var
 
 implementation
 
-uses _tileset, _settings, main, tileset_dialog;
+uses _tileset, _settings, _structures, main, tileset_dialog;
 
 {$R *.dfm}
 
@@ -198,6 +198,8 @@ var
   x, y: integer;
   tile: word;
   tile_x, tile_y: integer;
+  tile_attr: Cardinal;
+  player: integer;
 begin
   key := ord(block_preset_keys[row, col]);
   preset := @Tileset.block_presets[tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row,col])];
@@ -231,6 +233,23 @@ begin
       end;
       if (src_rect.Left < src_rect.Right) and (src_rect.Top < src_rect.Bottom) then
         BlockPresetImage.Canvas.CopyRect(dest_rect, Tileset.tileimage.Canvas, src_rect);
+      // Draw concrete owner marker
+      tile_attr := Tileset.attributes[tile];
+      if MainWindow.sbMarkOwnerSide.Down and ((tile_attr and $8800) = $8800) then
+      begin
+        player := 0;
+        if (tile_attr and taConcreteOwnerSideBit1) <> 0 then
+          Inc(player, 1);
+        if (tile_attr and taConcreteOwnerSideBit2) <> 0 then
+          Inc(player, 2);
+        if (tile_attr and taConcreteOwnerSideBit3) <> 0 then
+          Inc(player, 4);
+        BlockPresetImage.Canvas.Pen.Color := Structures.map_player_info[player].color;
+        BlockPresetImage.Canvas.Brush.Color := BlockPresetImage.Canvas.Pen.Color;
+        BlockPresetImage.Canvas.Brush.Style := bsSolid;
+        BlockPresetImage.Canvas.Ellipse(off_x + x*32 + 8, off_y + y*32 + 8, off_x + x*32 + 24, off_y + y*32 + 24);
+        BlockPresetImage.Canvas.Brush.Style := bsClear;
+      end;
     end;
 
   if variants_cnt[row,col] > 1 then

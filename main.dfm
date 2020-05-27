@@ -167,15 +167,15 @@ object MainWindow: TMainWindow
       ShowHint = True
       OnClick = SettingChange
     end
-    object sbMarkWallOwnerSide: TSpeedButton
+    object sbMarkOwnerSide: TSpeedButton
       Left = 122
       Top = 140
       Width = 38
       Height = 22
-      Hint = 'Mark Wall owner side (Ctrl+W)'
+      Hint = 'Mark Wall & Concrete owner side (Ctrl+W)'
       AllowAllUp = True
       GroupIndex = 4
-      Caption = 'Wall'
+      Caption = 'Own'
       ParentShowHint = False
       ShowHint = True
       OnClick = SettingChange
@@ -396,7 +396,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -405,7 +405,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 6
         end
       end
