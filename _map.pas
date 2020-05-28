@@ -125,6 +125,7 @@ type
     procedure set_map_size(new_width, new_height: integer);
     procedure shift_map(direction, num_tiles: integer);
     procedure change_structure_owner(player_from, player_to: integer; swap: boolean);
+    function remap_tiles(ini_filename: String): boolean;
     procedure new_map(new_width, new_height: integer);
 
   end;
@@ -135,7 +136,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, Math, _renderer, _mission, _settings, main;
+uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main;
 
 
 // Modify map tile and save old values into undo history.
@@ -866,6 +867,45 @@ begin
       end;
     end;
   calculate_power_and_statistics;
+end;
+
+function TMap.remap_tiles(ini_filename: String): boolean;
+var
+  ini: TMemIniFile;
+  strings: TStringList;
+  from_tiles, to_tiles: array of word;
+  count: integer;
+  i, x, y: integer;
+begin
+  // Load ini file
+  ini := TMemIniFile.Create(ini_filename);
+  strings := TStringList.Create;
+  ini.ReadSection('Remap_Tiles', strings);
+  count := strings.Count;
+  if count = 0 then
+  begin
+    result := false;
+    exit;
+  end;
+  SetLength(from_tiles, count);
+  SetLength(to_tiles, count);
+  for i := 0 to count - 1 do
+  begin
+    from_tiles[i] := strtoint(strings[i]);
+    to_tiles[i] := ini.ReadInteger('Remap_Tiles', strings[i], 0);
+  end;
+  // Remap the tiles
+  for y := 0 to height - 1 do
+    for x := 0 to width - 1 do
+      for i := 0 to count - 1 do
+        if map_data[x, y].tile = from_tiles[i] then
+        begin
+          map_data[x, y].tile := to_tiles[i];
+          break;
+        end;
+  reset_undo_history;
+  map_modified := true;
+  result := true;
 end;
 
 procedure TMap.new_map(new_width, new_height: integer);

@@ -145,6 +145,8 @@ type
     Showunknownspecials1: TMenuItem;
     Missionlauncher1: TMenuItem;
     N13: TMenuItem;
+    RemapTilesOpenDialog: TOpenDialog;
+    Remaptiles1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -187,6 +189,7 @@ type
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
+    procedure Remaptiles1Click(Sender: TObject);
     procedure Showmapstatistics1Click(Sender: TObject);    
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
@@ -1040,6 +1043,21 @@ end;
 procedure TMainWindow.Changestructureowner1Click(Sender: TObject);
 begin
   SetDialog.select_menu(3);
+end;
+
+procedure TMainWindow.Remaptiles1Click(Sender: TObject);
+begin
+  if not Map.loaded then
+    exit;
+  if RemapTilesOpenDialog.Execute then
+  begin
+    if Map.remap_tiles(RemapTilesOpenDialog.FileName) then
+    begin
+      render_map;
+      render_minimap;
+    end else
+      Application.MessageBox('The ini file must contain [Remap_Tiles] section'#13'with key-value pairs in the form'#13'from_tile=to_tile'#13'where key and value is a tile index.', 'Invalid remap tiles ini file', MB_OK or MB_ICONERROR);
+  end;
 end;
 
 procedure TMainWindow.Showmapstatistics1Click(Sender: TObject);

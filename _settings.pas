@@ -160,6 +160,7 @@ begin
   MainWindow.TilesetOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'TilesetOpenDialog', GamePath + '\Data');
   MainWindow.TileatrOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'TileatrOpenDialog', GamePath + '\Data\bin');
   MainWindow.MapImageSaveDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapImageSaveDialog', '');
+  MainWindow.RemapTilesOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'RemapTilesOpenDialog', current_dir);
   MissionDialog.ExportAIDialog.InitialDir := ini.ReadString('FileDialogPaths', 'ExportAIDialog', current_dir + 'AI_templates');
   MissionDialog.ImportAIDialog.InitialDir := ini.ReadString('FileDialogPaths', 'ImportAIDialog', current_dir + 'AI_templates');
   TileAtrEditor.SaveTileAtrDialog.InitialDir := ini.ReadString('FileDialogPaths', 'SaveTileAtrDialog', GamePath + '\Data\bin');
@@ -237,6 +238,8 @@ begin
     ini.WriteString('FileDialogPaths', 'TileatrOpenDialog', ExtractFilePath(MainWindow.TileatrOpenDialog.FileName));
   if MainWindow.MapImageSaveDialog.FileName <> '' then
     ini.WriteString('FileDialogPaths', 'MapImageSaveDialog', ExtractFilePath(MainWindow.MapImageSaveDialog.FileName));
+  if MainWindow.RemapTilesOpenDialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', 'RemapTilesOpenDialog', ExtractFilePath(MainWindow.RemapTilesOpenDialog.FileName));
   if MissionDialog.ExportAIDialog.FileName <> '' then
     ini.WriteString('FileDialogPaths', 'ExportAIDialog', ExtractFilePath(MissionDialog.ExportAIDialog.FileName));
   if MissionDialog.ImportAIDialog.FileName <> '' then
