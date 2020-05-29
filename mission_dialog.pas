@@ -138,7 +138,7 @@ var
 implementation
 
 uses
-  _stringtable, _settings, _tileset, event_dialog, main, tileatr_editor;
+  Math, _stringtable, _settings, _tileset, event_dialog, main, tileatr_editor;
 
 {$R *.dfm}
 
@@ -562,7 +562,7 @@ var
 begin
   i := (Sender as TBitBtn).Tag div cnt_mis_players;
   j := (Sender as TBitBtn).Tag mod cnt_mis_players;
-  new_allegiance := (Mission.mis_data.allegiance[i,j] + 1) mod Length(allegiance_type);
+  new_allegiance := IfThen((Mission.mis_data.allegiance[i,j] - 1) < 0, Length(allegiance_type)-1, Mission.mis_data.allegiance[i,j] - 1);
   Mission.mis_data.allegiance[i,j] := new_allegiance;
   allegiance_btn[i,j].Caption := allegiance_type[new_allegiance];
   allegiance_btn[i,j].Font.Color := allegiance_type_color[new_allegiance];
