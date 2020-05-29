@@ -358,7 +358,7 @@ begin
             Inc(player, 2);
           if (tile_attr and taConcreteOwnerSideBit3) <> 0 then
             Inc(player, 4);
-          cnv_target.Pen.Color := Structures.map_player_info[player].color;
+          cnv_target.Pen.Color := Structures.player_info[player].color;
           cnv_target.Brush.Color := cnv_target.Pen.Color;
           cnv_target.Brush.Style := bsSolid;
           cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
@@ -449,7 +449,7 @@ begin
           // Translate player number according to allocation index
           if o_use_alloc_indexes then
             player := Mission.mis_data.allocation_index[player];
-          if player >= Structures.cnt_map_players then
+          if player >= cnt_players then
             player := 0;
           if index = 0 then
           begin
@@ -516,7 +516,7 @@ begin
           // Draw wall owner side marker
           if o_mark_owner_side and (index = 0) then
           begin
-            cnv_target.Pen.Color := Structures.map_player_info[player].color;
+            cnv_target.Pen.Color := Structures.player_info[player].color;
             cnv_target.Brush.Color := cnv_target.Pen.Color;
             cnv_target.Brush.Style := bsSolid;
             cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
@@ -543,8 +543,8 @@ begin
           player := event_marker.side;
           if player >= cnt_mis_players then
             player := 0;
-          cnv_target.Pen.Color := Structures.map_player_info[player].color;
-          cnv_target.Brush.Color := Structures.map_player_info[player].color;
+          cnv_target.Pen.Color := Structures.player_info[player].color;
+          cnv_target.Brush.Color := Structures.player_info[player].color;
         end else
         begin
           cnv_target.Pen.Color := clGray;
@@ -566,7 +566,7 @@ begin
     for x := 0 to cnt_mis_players - 1 do
       for y := 0 to Mission.mis_data.ai_segments[x,7505] - 1 do
       begin
-        cnv_target.Pen.Color := Structures.map_player_info[x].color;
+        cnv_target.Pen.Color := Structures.player_info[x].color;
         cnv_target.Rectangle(
           (Mission.mis_data.ai_segments[x,7508+y*20] - cnv_left) * 32,
           (Mission.mis_data.ai_segments[x,7510+y*20] - cnv_top) * 32,
@@ -772,9 +772,9 @@ begin
         if player >= cnt_mis_players then
           player := 0;
         // Render structure on map
-        cnv_target.Pen.Color := Structures.map_player_info[player].color;
-        cnv_target.Brush.Color := Structures.map_player_info[player].color;
-        cnv_target.Pixels[x+border_x,y+border_y] := Structures.map_player_info[player].color;
+        cnv_target.Pen.Color := Structures.player_info[player].color;
+        cnv_target.Brush.Color := Structures.player_info[player].color;
+        cnv_target.Pixels[x+border_x,y+border_y] := Structures.player_info[player].color;
         cnv_target.Rectangle(x+border_x, y+border_y, Min(x+border_x+sinfo.size_x, data_width+border_x), Min(y+border_y+sinfo.size_y, data_height+border_y));
       end;
     end;

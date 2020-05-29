@@ -42,7 +42,7 @@ var
 implementation
 
 uses
-  main, _mission, _settings;
+  main, _mission, _settings, _structures;
 
 {$R *.dfm}
 
@@ -51,7 +51,7 @@ var
   i: integer;
 begin
   for i := 0 to cnt_mis_players - 1 do
-    eMySideID.Items.Add(inttostr(i) + ' - ' + player_names[i]);
+    eMySideID.Items.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
   eMySideID.ItemIndex := 0;
 end;
 

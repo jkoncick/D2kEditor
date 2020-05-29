@@ -7,9 +7,6 @@ uses
   Dialogs, ExtCtrls, StdCtrls, Spin,  Buttons, ComCtrls, Grids,
   ValEdit, IniFiles, Clipbrd, _map, _mission;
 
-const player_names_shorter: array[0..7] of string =
-  ('Atreides', 'Harkon.', 'Ordos', 'Emperor', 'Fremen', 'Smuggl.', 'Mercen.', 'Sandworm');
-
 type
   TMisAIProperty = record
     name: String;
@@ -138,7 +135,7 @@ var
 implementation
 
 uses
-  Math, _stringtable, _settings, _tileset, event_dialog, main, tileatr_editor;
+  Math, StrUtils, _structures, _stringtable, _settings, _tileset, event_dialog, main, tileatr_editor;
 
 {$R *.dfm}
 
@@ -156,7 +153,7 @@ begin
     player_label[i] := TLabel.Create(self);
     player_label[i].Left := 8;
     player_label[i].Top := 28 + i * 24;
-    player_label[i].Caption := player_names[i];
+    player_label[i].Caption := Structures.player_info[i].name;
     player_label[i].Parent := PlayerSettingsPanel;
     // Initialize tech levels
     tech_level[i] := TSpinEdit.Create(self);
@@ -196,7 +193,7 @@ begin
     player_label_alleg[i] := TLabel.Create(self);
     player_label_alleg[i].Left := 266 + i * 52;
     player_label_alleg[i].Top := 8;
-    player_label_alleg[i].Caption := player_names_shorter[i];
+    player_label_alleg[i].Caption := IfThen(Length(Structures.player_info[i].name) <= 8, Structures.player_info[i].name, Copy(Structures.player_info[i].name, 0, 6)+'.');
     player_label_alleg[i].Parent := PlayerSettingsPanel;
     // Initialize allegiance buttons
     for j := 0 to cnt_mis_players-1 do
@@ -212,9 +209,9 @@ begin
       allegiance_btn[i,j].OnClick := allegiance_btn_click;
     end;
     // Initialize AI PageControl
-    AITabControl.Tabs.Add(player_names_short[i]);
+    AITabControl.Tabs.Add(Structures.player_info[i].shortname);
     // Initialize Play as list
-    cbMapSideId.Items.Add(inttostr(i) + ' - ' + player_names[i]);
+    cbMapSideId.Items.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
   end;
   // Load rule definitions from ini file
   tmp_strings := TStringList.Create;

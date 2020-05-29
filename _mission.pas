@@ -7,10 +7,6 @@ uses Graphics, IniFiles, Classes, _map;
 // Mis file constants
 const cnt_mis_players = 8;
 
-const player_names: array[0..7] of string =
-  ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
-const player_names_short: array[0..7] of string =
-  ('Atr', 'Hark', 'Ord', 'Emp', 'Fre', 'Smug', 'Merc', 'Sdwm');
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
 
 const flag_value: array[0..1] of string = ('False', 'True');
@@ -231,7 +227,7 @@ var
 
 implementation
 
-uses SysUtils, Math, main, _tileset, _stringtable, _settings;
+uses SysUtils, Math, main, _tileset, _stringtable, _settings, _structures;
 
 procedure TMission.init;
 var
@@ -463,7 +459,7 @@ begin
     end;
   end;
   case event_type of
-    etAllegiance:   contents := player_names[event.player] + ' -> ' + player_names[event.allegiance_target] + ' (' + allegiance_type[event.allegiance_type] + ')';
+    etAllegiance:   contents := Structures.player_info[event.player].name + ' -> ' + Structures.player_info[event.allegiance_target].name + ' (' + allegiance_type[event.allegiance_type] + ')';
     etPlaySound:    contents := inttostr(event.value) + ' - ' + SoundStringTable.get_text(event.value, false, dummy);
     etSetBuildRate: contents := inttostr(event.value);
     etSetAttackBuildingRate: contents := inttostr(event.value);
@@ -520,7 +516,7 @@ begin
   space := '';
   if condition_type_info[cond.condition_type].use_player_index and show_player then
   begin
-    contents := contents + player_names[cond.player];
+    contents := contents + Structures.player_info[cond.player].name;
     space := ' ';
   end;
   case cond_type of
@@ -1037,7 +1033,7 @@ begin
   begin
     if (mis_data.ai_segments[i, 1] = 1) and ((mis_data.tech_level[i] = 0) or (mis_data.starting_money[i] = 0)) then
     begin
-      result := format('Players with active AI must have non-zero tech level and credits. Player ''%s'' does not meet this requirement.', [player_names[i]]);
+      result := format('Players with active AI must have non-zero tech level and credits. Player ''%s'' does not meet this requirement.', [Structures.player_info[i].name]);
       exit;
     end;
   end;

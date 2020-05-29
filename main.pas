@@ -442,8 +442,8 @@ begin
   // Initialize Structures
   for i := 0 to Structures.cnt_misc_objects - 1 do
     MiscObjList.Items.Add(Structures.misc_object_info[i].name);
-  for i := 0 to Structures.cnt_map_players - 1 do
-    PlayerSelect.Items.Add(inttostr(i) + ' - '+ Structures.map_player_info[i].name);
+  for i := 0 to cnt_players - 1 do
+    PlayerSelect.Items.Add(inttostr(i) + ' - '+ Structures.player_info[i].name);
   PlayerSelect.ItemIndex := 0;
   for i := 0 to Structures.cnt_structures - 1 do
     if i < Structures.first_unit_index then
@@ -669,7 +669,7 @@ begin
     104: {Num8} begin CursorImage.Top := CursorImage.Top - 32; resize_cursor_image; end;
     101: {Num5} begin MapCanvasMouseDown(nil, mbLeft, [], CursorImage.Top,CursorImage.Left) end;
     end
-  else if mode(mStructures) and (ActiveControl <> SpecialValue) and (key >= 96) and (key <= 96 + Structures.cnt_map_players) then
+  else if mode(mStructures) and (ActiveControl <> SpecialValue) and (key >= 96) and (key < 96 + cnt_players) then
   begin
     // Select player
     PlayerSelect.ItemIndex := key - 96;

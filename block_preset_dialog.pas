@@ -244,7 +244,7 @@ begin
           Inc(player, 2);
         if (tile_attr and taConcreteOwnerSideBit3) <> 0 then
           Inc(player, 4);
-        BlockPresetImage.Canvas.Pen.Color := Structures.map_player_info[player].color;
+        BlockPresetImage.Canvas.Pen.Color := Structures.player_info[player].color;
         BlockPresetImage.Canvas.Brush.Color := BlockPresetImage.Canvas.Pen.Color;
         BlockPresetImage.Canvas.Brush.Style := bsSolid;
         BlockPresetImage.Canvas.Ellipse(off_x + x*32 + 8, off_y + y*32 + 8, off_x + x*32 + 24, off_y + y*32 + 24);

@@ -277,7 +277,7 @@ var
 
 implementation
 
-uses main, _stringtable, _settings;
+uses main, _stringtable, _settings, _structures;
 
 {$R *.dfm}
 
@@ -337,8 +337,8 @@ begin
   for i:= 0 to Mission.unit_names.Count -1 do
     UnitSelectionList.Items.Add(inttostr(i) + ' - ' + Mission.unit_names[i]);
   // Initialize player list
-  for i:= 0 to Length(player_names)-1 do
-    cbEventPlayer.Items.Add(inttostr(i) + ' - ' + player_names[i]);
+  for i:= 0 to cnt_players-1 do
+    cbEventPlayer.Items.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
   // Initialize deploy action list
   for i:= 0 to Length(deploy_action)-1 do
     cbDeployAction.Items.Add(inttostr(i) + ' - ' + deploy_action[i]);
@@ -448,7 +448,7 @@ begin
     else
       EventGrid.Cells[2,i] := '';
     if et_info.use_player_index then
-      EventGrid.Cells[3,i] := player_names[event.player]
+      EventGrid.Cells[3,i] := Structures.player_info[event.player].name
     else
       EventGrid.Cells[3,i] := '';
     // Contents
@@ -472,7 +472,7 @@ begin
     // Basic information
     ConditionGrid.Cells[1,i] := ct_info.name;
     if ct_info.use_player_index then
-      ConditionGrid.Cells[2,i] := player_names[cond.player]
+      ConditionGrid.Cells[2,i] := Structures.player_info[cond.player].name
     else
       ConditionGrid.Cells[2,i] := '';
     // Contents

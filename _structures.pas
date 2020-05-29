@@ -36,8 +36,9 @@ type
   end;
 
 type
-  TMapPlayerInfo = record
+  TPlayerInfo = record
     name: String;
+    shortname: String;
     color: TColor;
   end;
 
@@ -77,8 +78,7 @@ type
     structure_info: array of TStructureInfo;
     first_unit_index: integer;
 
-    cnt_map_players: integer;
-    map_player_info: array of TMapPlayerInfo;
+    player_info: array[0..cnt_players-1] of TPlayerInfo;
 
     cnt_misc_objects: integer;
     misc_object_info: array of TMiscObjectInfo;
@@ -202,18 +202,15 @@ begin
     end;
   end;
 
-  // Read list of map players
-  ini := TMemIniFile.Create(current_dir + 'config/map_players.ini');
-  ini.ReadSections(tmp_strings);
-  cnt_map_players := IfThen(tmp_strings.Count <= cnt_players, tmp_strings.Count, cnt_players);
-  SetLength(map_player_info, cnt_map_players);
-  for i := 0 to cnt_map_players-1 do
+  // Read list of players
+  ini := TMemIniFile.Create(current_dir + 'config/players.ini');
+  for i := 0 to cnt_players-1 do
   begin
-    sname := tmp_strings[i];
-    with map_player_info[i] do
+    with player_info[i] do
     begin
-      name := sname;
-      color := ini.ReadInteger(sname, 'color', $0);
+      name := ini.ReadString('Player'+inttostr(i+1), 'name', 'Unnamed');
+      shortname := ini.ReadString('Player'+inttostr(i+1), 'short', name);
+      color := ini.ReadInteger('Player'+inttostr(i+1), 'color', $0);
     end;
   end;
   ini.Destroy;

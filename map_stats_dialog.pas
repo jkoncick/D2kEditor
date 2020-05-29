@@ -45,8 +45,8 @@ begin
   StatsGrid.Cells[0,5] := 'Power output';
   StatsGrid.Cells[0,6] := 'Power need';
   StatsGrid.Cells[0,7] := 'Power percent';
-  for i := 0 to Structures.cnt_map_players - 1 do
-    StatsGrid.Cells[i+1,0] := Structures.map_player_info[i].name;
+  for i := 0 to cnt_players - 1 do
+    StatsGrid.Cells[i+1,0] := Structures.player_info[i].name;
   StatsGrid.Cells[9,0] := 'Total';
   StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.cnt_structures;
   SetLength(tmp_stats, cnt_fixed_rows+Structures.cnt_structures);
