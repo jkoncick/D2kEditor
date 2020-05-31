@@ -113,6 +113,9 @@ var
   sname : string;
   i,j,s,e: integer;
   found: boolean;
+  colours_bin_file: file of byte;
+  colours_bin_contents: array[0..127] of word;
+  color: Cardinal;
 begin
   // Read list of structures and their properties from structures.ini
   ini := TMemIniFile.Create(current_dir + 'config/structures.ini');
@@ -206,12 +209,8 @@ begin
   ini := TMemIniFile.Create(current_dir + 'config/players.ini');
   for i := 0 to cnt_players-1 do
   begin
-    with player_info[i] do
-    begin
-      name := ini.ReadString('Player'+inttostr(i+1), 'name', 'Unnamed');
-      shortname := ini.ReadString('Player'+inttostr(i+1), 'short', name);
-      color := ini.ReadInteger('Player'+inttostr(i+1), 'color', $0);
-    end;
+    player_info[i].name := ini.ReadString('Player'+inttostr(i+1), 'name', 'Unnamed');
+    player_info[i].shortname := ini.ReadString('Player'+inttostr(i+1), 'short', player_info[i].name);
   end;
   ini.Destroy;
 
@@ -242,6 +241,21 @@ begin
   limit_structures_total := ini.ReadInteger('Limits', 'structures_total', 1000);
   limit_refineries_per_player := ini.ReadInteger('Limits', 'refineries_per_player', 10);
   ini.Destroy;
+
+  // Read COLOURS.BIN file
+  AssignFile(colours_bin_file, current_dir + 'config/COLOURS.BIN');
+  Reset(colours_bin_file);
+  BlockRead(colours_bin_file, colours_bin_contents[0], 256);
+  CloseFile(colours_bin_file);
+  for i := 0 to cnt_players-1 do
+  begin
+    j := i*16 + 8;
+    color := 0;
+    color := color or (((colours_bin_contents[j] and $7C00) shr 10) shl 3) or (((colours_bin_contents[j] and $7C00) shr 12) shl 0);
+    color := color or (((colours_bin_contents[j] and $03E0) shr 5) shl 11) or (((colours_bin_contents[j] and $03E0) shr 7) shl 8);
+    color := color or (((colours_bin_contents[j] and $001F) shr 0) shl 19) or (((colours_bin_contents[j] and $001F) shr 2) shl 16);
+    player_info[i].color := color;
+  end;
 
   tmp_strings.Destroy;
   decoder.Destroy;
