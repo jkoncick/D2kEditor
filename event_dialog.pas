@@ -882,6 +882,9 @@ end;
 
 procedure TEventDialog.finish_event_position_selection(x, y: integer);
 begin
+  Show;
+  if (x = -1) and (y = -1) then
+    exit;
   if not condition_position then
   begin
     seEventPositionX.Value := x;
@@ -1237,14 +1240,14 @@ end;
 
 procedure TEventDialog.btnEventPositionGotoMapClick(Sender: TObject);
 begin
-  MainWindow.start_event_position_selection(Mission.mis_data.events[selected_event].map_pos_x, Mission.mis_data.events[selected_event].map_pos_y);
+  MainWindow.start_event_position_selection(Mission.mis_data.events[selected_event].map_pos_x, Mission.mis_data.events[selected_event].map_pos_y, epmEventCoordinates);
   condition_position := false;
   close;
 end;
 
 procedure TEventDialog.btnConditionPositionGotoMapClick(Sender: TObject);
 begin
-  MainWindow.start_event_position_selection(Mission.mis_data.conditions[selected_condition].map_pos_x, Mission.mis_data.conditions[selected_condition].map_pos_y);
+  MainWindow.start_event_position_selection(Mission.mis_data.conditions[selected_condition].map_pos_x, Mission.mis_data.conditions[selected_condition].map_pos_y, epmEventCoordinates);
   condition_position := true;
   close;
 end;

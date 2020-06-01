@@ -78,6 +78,8 @@ type
     lblTileatrName: TLabel;
     lblTextUib: TLabel;
     cbTextUib: TComboBox;
+    pnSelectDefenceAreaFromMap: TPanel;
+    btnSelectDefenceAreaFromMap: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -94,6 +96,7 @@ type
     procedure edTileatrNameChange(Sender: TObject);
     procedure AITabControlChange(Sender: TObject);
     procedure AIValueListStringsChange(Sender: TObject);
+    procedure AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure cbUseINIClick(Sender: TObject);
     procedure btnResetToDefaultsClick(Sender: TObject);
     procedure btnRefreshStringsClick(Sender: TObject);
@@ -102,6 +105,7 @@ type
     procedure btnCopyAIClick(Sender: TObject);
     procedure btnPasteAIClick(Sender: TObject);
     procedure cbDiffModeClick(Sender: TObject);
+    procedure btnSelectDefenceAreaFromMapClick(Sender: TObject);
     procedure cbMapSideIdChange(Sender: TObject);
     procedure seMapMissionNumberChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
@@ -115,6 +119,7 @@ type
     rule_definitions: array of TRuleDefinition;
     misai_properties: array of TMisAIProperty;
     ai_clipboard_format: cardinal;
+    defence_area_num: integer;
   public
     procedure fill_data;
     procedure tileset_changed;
@@ -127,6 +132,7 @@ type
     procedure load_ini_fields;
     procedure empty_ini_fields;
     procedure save_ini_fields(map_filename: String);
+    procedure finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);
   end;
 
 var
@@ -621,6 +627,22 @@ begin
     Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position+b] := (i_val shr (8 * b)) and 255;
 end;
 
+procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var
+  prop: ^TMisAIProperty;
+begin
+  prop := Addr(misai_properties[ARow-1]);
+  if (prop.position < 7508) or (prop.position > 7604) then
+  begin
+    pnSelectDefenceAreaFromMap.Visible := false;
+    exit;
+  end;
+  defence_area_num := (prop.position - 7508) div 20;
+  pnSelectDefenceAreaFromMap.Visible := true;
+  btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
+
+end;
+
 procedure TMissionDialog.cbUseINIClick(Sender: TObject);
 var
   ini_filename: string;
@@ -731,6 +753,21 @@ begin
   fill_ai_values;
 end;
 
+procedure TMissionDialog.btnSelectDefenceAreaFromMapClick(Sender: TObject);
+var
+  x, y: integer;
+begin
+  if defence_area_num >= Mission.mis_data.ai_segments[AITabControl.TabIndex, 7505] then
+  begin
+    Application.MessageBox('Increase number of Defence Areas first.', 'Cannot select Defence Area', MB_OK or MB_ICONWARNING);
+    exit;
+  end;
+  x := Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20)];
+  y := Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 2];
+  MainWindow.start_event_position_selection(x, y, epmDefenceArea);
+  close;
+end;
+
 procedure TMissionDialog.cbMapSideIdChange(Sender: TObject);
 begin
   if cbMapSideId.ItemIndex <> -1 then
@@ -755,6 +792,19 @@ begin
     filename := filename + 'TEXT.UIB';
   if StringTable.load_from_file(filename) then
     TileAtrEditor.init_tile_hint_text_list;
+end;
+
+procedure TMissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);
+begin
+  Show;
+  if (min_x = -1) or (min_y = -1) then
+    exit;
+  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20)] := min_x;
+  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 1] := max_x;
+  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 2] := min_y;
+  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 3] := max_y;
+  fill_ai_values;
+  MainWindow.render_map;
 end;
 
 end.

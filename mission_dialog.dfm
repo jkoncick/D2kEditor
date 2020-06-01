@@ -393,6 +393,7 @@ object MissionDialog: TMissionDialog
       TitleCaptions.Strings = (
         'Property'
         'Value')
+      OnSelectCell = AIValueListSelectCell
       OnStringsChange = AIValueListStringsChange
       ColWidths = (
         224
@@ -450,6 +451,25 @@ object MissionDialog: TMissionDialog
         Caption = 'Diff'
         TabOrder = 4
         OnClick = cbDiffModeClick
+      end
+      object pnSelectDefenceAreaFromMap: TPanel
+        Left = 0
+        Top = 0
+        Width = 312
+        Height = 24
+        Align = alClient
+        BevelOuter = bvNone
+        TabOrder = 5
+        Visible = False
+        object btnSelectDefenceAreaFromMap: TButton
+          Left = 64
+          Top = 0
+          Width = 185
+          Height = 25
+          Caption = 'Select defence area # from map'
+          TabOrder = 0
+          OnClick = btnSelectDefenceAreaFromMapClick
+        end
       end
     end
   end

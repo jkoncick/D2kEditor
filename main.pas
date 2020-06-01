@@ -24,6 +24,9 @@ type
   SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
 
 type
+  EventPositionSelectionMode = (epmNone, epmEventCoordinates, epmDefenceArea);
+
+type
   TBlockClipboard = record
     block_width: word;
     block_height: word;
@@ -275,6 +278,9 @@ type
     moving_event: integer;
     moving_condition: integer;
 
+    // Event position selection variables
+    event_position_selection_mode: EventPositionSelectionMode;
+
     // Clipboard variables
     clipboard_format: cardinal;
 
@@ -308,8 +314,8 @@ type
     function mouse_over_map_canvas: boolean;
     procedure apply_key_preset(key: word);
     procedure show_power_and_statistics;
-    procedure start_event_position_selection(x, y: integer);
-    procedure finish_event_position_selection(x, y: integer);
+    procedure start_event_position_selection(x, y: integer; mode: EventPositionSelectionMode);
+    procedure finish_event_position_selection(min_x, max_x, min_y, max_y: integer);
     procedure draw_paint_tile_select_glyph(target: integer; tile_index: integer; source_canvas: TCanvas);
 
     // Procedures related to selecting/placing block
@@ -358,6 +364,7 @@ begin
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
   moving_event := -1;
   moving_condition := -1;
+  event_position_selection_mode := epmNone;
   top := 40;
   CursorImage.Picture.Bitmap.TransparentColor := clBtnFace;
   // Initialize terrain editing controls
@@ -584,7 +591,7 @@ begin
     27:
     begin
       if not EditorPages.Visible then
-        finish_event_position_selection(-1,-1);
+        finish_event_position_selection(-1,-1,-1,-1);
     end;
     // Space: open tileset/preset window
     32:
@@ -1313,9 +1320,9 @@ begin
     exit;
   end;
   // Event position selection mode
-  if (not EditorPages.Visible) and (Button = mbLeft) then
+  if (event_position_selection_mode = epmEventCoordinates) and (Button = mbLeft) then
   begin
-    finish_event_position_selection(map_x, map_y);
+    finish_event_position_selection(map_x, map_x, map_y, map_y);
     exit;
   end;
   // Moving event markers
@@ -1495,6 +1502,11 @@ begin
     max_x := Max(block_select_start_x, block_select_end_x);
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
+    if event_position_selection_mode = epmDefenceArea then
+    begin
+      finish_event_position_selection(min_x, max_x, min_y, max_y);
+      exit;
+    end;
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true, ssShift in Shift, cbSelectAreaType.ItemIndex - 1);
     // Erase copied area
     if ssShift in Shift then
@@ -1998,12 +2010,12 @@ function TMainWindow.mode(m: SelectedMode): boolean;
 begin
   result := false;
   case m of
-    mStructures:      result := EditorPages.TabIndex = 0;
-    mStructuresPaint: result := (EditorPages.TabIndex = 0) and ((strtoint(SpecialValue.Text) <= 2) or (BuildingList.ItemIndex = 0));
+    mStructures:      result := (EditorPages.TabIndex = 0) and (event_position_selection_mode = epmNone);
+    mStructuresPaint: result := (EditorPages.TabIndex = 0) and (event_position_selection_mode = epmNone) and ((strtoint(SpecialValue.Text) <= 2) or (BuildingList.ItemIndex = 0));
     mTerrain:         result := EditorPages.TabIndex = 1;
     mPaintMode:       result := (EditorPages.TabIndex = 1) and RbPaintMode.Checked;
     mBlockMode:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;
-    mSelectMode:      result := (EditorPages.TabIndex = 1) and RbSelectMode.Checked;
+    mSelectMode:      result := ((EditorPages.TabIndex = 1) and RbSelectMode.Checked) or (event_position_selection_mode = epmDefenceArea);
   end;
 end;
 
@@ -2039,14 +2051,15 @@ begin
   StatusBar.Panels[6].Text := 'Power: '+inttostr(Map.stats.players[i].power_percent)+'%   ('+inttostr(Map.stats.players[i].power_output)+'/'+inttostr(Map.stats.players[i].power_need)+')';
 end;
 
-procedure TMainWindow.start_event_position_selection(x, y: integer);
+procedure TMainWindow.start_event_position_selection(x, y: integer; mode: EventPositionSelectionMode);
 begin
   EditorPages.TabIndex := 0;
   if (x <> 0) or (y <> 0) then
   begin
     MapScrollH.Position := x - (map_canvas_width div 2);
     MapScrollV.Position := y - (map_canvas_height div 2);
-    exit;
+    if mode = epmEventCoordinates then
+      exit;
   end;
   EditorPages.Visible := false;
   File1.Enabled := false;
@@ -2056,10 +2069,14 @@ begin
   Mission1.Enabled := false;
   Launchgame1.Enabled := false;
   MapCanvas.Cursor := crHandPoint;
+  event_position_selection_mode := mode;
 end;
 
-procedure TMainWindow.finish_event_position_selection(x, y: integer);
+procedure TMainWindow.finish_event_position_selection(min_x, max_x, min_y, max_y: integer);
+var
+  mode: EventPositionSelectionMode;
 begin
+  mode := event_position_selection_mode;
   EditorPages.Visible := true;
   File1.Enabled := true;
   Edit1.Enabled := true;
@@ -2068,10 +2085,11 @@ begin
   Mission1.Enabled := true;
   Launchgame1.Enabled := true;
   MapCanvas.Cursor := crDefault;
-  EventDialog.Show;
-  if (x = -1) and (y = -1) then
-    exit;
-  EventDialog.finish_event_position_selection(x, y);
+  event_position_selection_mode := epmNone;
+  if mode = epmEventCoordinates then
+    EventDialog.finish_event_position_selection(min_x, min_y)
+  else
+    MissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y);
 end;
 
 procedure TMainWindow.draw_paint_tile_select_glyph(target, tile_index: integer; source_canvas: TCanvas);
