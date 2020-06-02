@@ -313,7 +313,7 @@ begin
       if (pos_x+x < 0) or (pos_x+x >= Map.width) or (pos_y+y < 0) or (pos_y+y >= Map.height) then
         continue;
       map_tile := @Map.data[pos_x+x,pos_y+y];
-      map_tile.tile := Tileset.get_random_paint_tile(base_area_type);
+      map_tile.tile := Tileset.get_random_paint_tile(base_area_type, pos_x+x,pos_y+y);
       map_tile.special := 0;
     end;
   // Remove side constraints around this block
@@ -1318,7 +1318,7 @@ begin
     exit;
   end;
   // Do actual change
-  map_tile.tile := Tileset.get_random_paint_tile(target_area_type);
+  map_tile.tile := Tileset.get_random_paint_tile(target_area_type, pos_x, pos_y);
   map_tile.special := 0;
   // Step to adjacent tile
   result := fill_enclosed_area_step(pos_x, pos_y+1, 0, base_area_type, target_area_type);
@@ -1355,7 +1355,7 @@ begin
   if Tileset.tile_paint_group[map_tile.tile] <> target_area_type then
     exit;
   // Do actual change
-  map_tile.tile := Tileset.get_random_paint_tile(base_area_type);
+  map_tile.tile := Tileset.get_random_paint_tile(base_area_type, pos_x, pos_y);
   map_tile.special := 0;
   // Step to adjacent tile
   undo_fill_enclosed_area_step(pos_x, pos_y+1, base_area_type, target_area_type);

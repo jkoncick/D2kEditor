@@ -28,6 +28,7 @@ type
     ShowEventMarkers: boolean;
     MarkDefenceAreas: boolean;
     ShowUnknownSpecials: boolean;
+    UseRandomPaintMap: boolean;
     GridColor: Cardinal;
 
     // Default values
@@ -104,6 +105,7 @@ begin
   ShowEventMarkers := ini.ReadBool('Preferences', 'ShowEventMarkers', true);
   MarkDefenceAreas := ini.ReadBool('Preferences', 'MarkDefenceAreas', true);
   ShowUnknownSpecials := ini.ReadBool('Preferences', 'ShowUnknownSpecials', false);
+  UseRandomPaintMap := ini.ReadBool('Preferences', 'UseRandomPaintMap', false);
   GridColor := ini.ReadInteger('Preferences', 'GridColor', $000000);
   // Load default values
   DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
@@ -192,6 +194,7 @@ begin
   ini.WriteBool('Preferences', 'ShowEventMarkers', ShowEventMarkers);
   ini.WriteBool('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);
   ini.WriteBool('Preferences', 'ShowUnknownSpecials', ShowUnknownSpecials);
+  ini.WriteBool('Preferences', 'UseRandomPaintMap', UseRandomPaintMap);
   ini.WriteInteger('Preferences', 'Gridcolor', GridColor);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);

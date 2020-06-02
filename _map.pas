@@ -171,7 +171,7 @@ begin
     modify_map_tile(x, y, map_data[x,y].tile, (paint_tile_group+5))
   else
     // Paint sand/rock/dunes etc.
-    modify_map_tile(x, y, Tileset.get_random_paint_tile(paint_tile_group), 0);
+    modify_map_tile(x, y, Tileset.get_random_paint_tile(paint_tile_group, x, y), 0);
 end;
 
 // Set special value of a tile (single undo-operation)
@@ -215,7 +215,7 @@ begin
         if (area_type = -1) or Tileset.check_area_type(value.tile, value.special, area_type) then
         begin
           if erase then
-            modify_map_tile(x + xx, y + yy, IfThen(copy_terrain, Tileset.get_random_paint_tile(Tileset.default_paint_group), 65535), IfThen((not copy_terrain) and (value.special <= 2), 65535, 0));
+            modify_map_tile(x + xx, y + yy, IfThen(copy_terrain, Tileset.get_random_paint_tile(Tileset.default_paint_group, x + xx, y + yy), 65535), IfThen((not copy_terrain) and (value.special <= 2), 65535, 0));
           if (not copy_structures) and (value.special > 2) then
             value.special := 0;
         end else
@@ -754,7 +754,7 @@ begin
     for j := 0 to new_width - 1 do
       if (i >= map_height) or (j >= map_width) then
       begin
-        map_data[j,i].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
+        map_data[j,i].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, j, i);
         map_data[j,i].special := 0;
       end;
   // Set new map size
@@ -782,7 +782,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -797,7 +797,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -812,7 +812,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -827,7 +827,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -925,7 +925,7 @@ begin
   for x := 0 to map_width - 1 do
     for y := 0 to map_height - 1 do
     begin
-      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group);
+      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
       map_data[x,y].special := 0;
     end;
   if Settings.PreplaceWormSpawner then

@@ -614,6 +614,12 @@ object MainWindow: TMainWindow
         Caption = 'Restrict painting'
         OnClick = SettingChange
       end
+      object Userandompaintmap1: TMenuItem
+        Tag = 14
+        AutoCheck = True
+        Caption = 'Use random paint map'
+        OnClick = SettingChange
+      end
       object More1: TMenuItem
         Caption = 'More...'
         OnClick = More1Click

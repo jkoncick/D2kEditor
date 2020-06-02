@@ -92,6 +92,8 @@ type
     paint_tiles_cnt: byte;
     restriction_rule: TTileAtrRule;
     smooth_presets: string;
+    random_map_used: boolean;
+    random_map: array of word;
   end;
 
 type
@@ -230,7 +232,7 @@ type
     function evaluate_rule(attr_value: int64; rule_ptr: TTileAtrRulePtr): boolean;
     function block_key_to_index(key: word): integer;
 
-    function get_random_paint_tile(group: integer): integer;
+    function get_random_paint_tile(group, x, y: integer): integer;
     function get_block_preset(group: integer; key: word; variant: integer): integer;
 
     function get_status: String;
@@ -241,7 +243,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, main, _settings, IniFiles, StrUtils;
+uses Forms, SysUtils, main, _map, _settings, IniFiles, StrUtils;
 
 procedure TTileset.init;
 var
@@ -564,6 +566,8 @@ begin
         attributes_editor[tile] := attributes_editor[tile] or (1 shl i)
     end;
   end;
+  ini.Destroy;
+  decoder.Destroy;
 end;
 
 procedure TTileset.load_config;
@@ -580,6 +584,11 @@ var
   tile, index, width, height, pos_x, pos_y: integer;
   custom_tiles: boolean;
   group_name: String;
+  random_map: String;
+  map_filename: String;
+  map_file: file of word;
+  map_file_buffer: array[0..max_map_width*max_map_height*2-1] of word;
+  map_width, map_height: word;
 begin
   if (config_filename = '') or not FileExists(config_filename) then
     exit;
@@ -641,6 +650,28 @@ begin
     paint_tile_groups[i].smooth_preset_group := ini.ReadInteger('Paint_Tile_Groups', group_name+'.smooth_preset_group', 0) - 1;
     paint_tile_groups[i].smooth_presets := ini.ReadString('Paint_Tile_Groups', group_name+'.smooth_presets', '');
     load_rule(ini.ReadString('Paint_Tile_Groups', group_name+'.restriction_rule', '0'), Addr(paint_tile_groups[i].restriction_rule));
+    // Load random paint background map
+    paint_tile_groups[i].random_map_used := false;
+    random_map := ini.ReadString('Paint_Tile_Groups', group_name+'.random_map', '');
+    map_filename := current_dir + 'tilesets\' + random_map + '.map';
+    if (random_map <> '') and FileExists(map_filename) then
+    begin
+      AssignFile(map_file, map_filename);
+      Reset(map_file);
+      Read(map_file, map_width);
+      Read(map_file, map_height);
+      if (map_width = max_map_width) and (map_height = max_map_height) then
+      begin
+        SetLength(paint_tile_groups[i].random_map, max_map_width * max_map_height);
+        BlockRead(map_file, map_file_buffer[0], Length(map_file_buffer));
+        for j := 0 to max_map_width * max_map_height - 1 do
+          paint_tile_groups[i].random_map[j] := map_file_buffer[j*2];
+        paint_tile_groups[i].random_map_used := true;
+      end;
+      CloseFile(map_file);
+    end;
+    if not paint_tile_groups[i].random_map_used then
+      SetLength(paint_tile_groups[i].random_map, 0);
   end;
   // Load block preset groups
   for i := 0 to cnt_block_preset_groups - 1 do
@@ -908,6 +939,9 @@ begin
         lines_output.Add(line);
     end;
   lines_output.SaveToFile(config_filename);
+  lines_input.Destroy;
+  lines_output.Destroy;
+  encoder.Destroy;
 end;
 
 procedure TTileset.convert_editor_attributes;
@@ -1067,7 +1101,7 @@ begin
     result := -1;
 end;
 
-function TTileset.get_random_paint_tile(group: integer): integer;
+function TTileset.get_random_paint_tile(group, x, y: integer): integer;
 var
   i: integer;
   start_index: integer;
@@ -1075,6 +1109,11 @@ begin
   if group >= cnt_paint_tile_groups then
   begin
     result := 0;
+    exit;
+  end;
+  if Settings.UseRandomPaintMap and paint_tile_groups[group].random_map_used then
+  begin
+    result := paint_tile_groups[group].random_map[x + y * max_map_width];
     exit;
   end;
   if paint_tile_groups[group].paint_tiles_cnt = 0 then

@@ -150,6 +150,7 @@ type
     N13: TMenuItem;
     RemapTilesOpenDialog: TOpenDialog;
     Remaptiles1: TMenuItem;
+    Userandompaintmap1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -476,6 +477,7 @@ begin
   Alwaysaskonquit1.Checked := Settings.AlwaysAskOnQuit;
   Hidepresetwindow1.Checked := Settings.HidePresetWindow;
   Restrictpainting1.Checked := Settings.RestrictPainting;
+  Userandompaintmap1.Checked := Settings.UseRandomPaintMap;
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -1014,6 +1016,7 @@ begin
   11: begin Settings.AlwaysAskOnQuit := (Sender as TMenuItem).Checked end;
   12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
   13: begin Settings.RestrictPainting := (Sender as TMenuItem).Checked end;
+  14: begin Settings.UseRandomPaintMap := (Sender as TMenuItem).Checked end;
   20:
     begin
       if GridColorDialog.Execute then
