@@ -192,7 +192,7 @@ procedure TTilesetDialog.FormKeyDown(Sender: TObject; var Key: Word;
 begin
   case key of
   27: Close;
-  32: begin BlockPresetDialog.Show; Hide; end;
+  32: begin BlockPresetDialog.Show; Hide; key := 0; end;
   71: TilesetGrid.Checked := not TilesetGrid.Checked;
   77: TilesetMarkTiles.Checked := not TilesetMarkTiles.Checked;
   192: sbCustomSize.Down := true;
