@@ -95,7 +95,7 @@ type
   public
     procedure fill_area_start(x,y: integer; paint_tile_group: integer);
   private
-    procedure fill_area_step(x,y: integer; area_type: integer);
+    procedure fill_area_step(x,y: integer; paint_tile_group, area_type: integer);
 
     // Undo & Redo procedures
   public
@@ -281,24 +281,24 @@ begin
   // Fill area
   undo_block_start := true;
   Renderer.invalidate_init;
-  tmp_paint_tile_group := paint_tile_group;
-  fill_area_step(x, y, Tileset.get_fill_area_type(map_data[x, y].tile, map_data[x, y].special));
+  fill_area_step(x, y, paint_tile_group, Tileset.get_fill_area_type(map_data[x, y].tile, map_data[x, y].special));
 end;
 
-procedure TMap.fill_area_step(x, y: integer; area_type: integer);
+procedure TMap.fill_area_step(x, y: integer; paint_tile_group, area_type: integer);
 begin
-  if (not Tileset.check_area_type(map_data[x,y].tile, map_data[x,y].special, area_type)) or tile_dirty[x, y] or ((Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group) and (map_data[x,y].special = 0)) then
-    exit;
-  paint_tile(x, y, tmp_paint_tile_group);
+  with map_data[x,y] do
+    if tile_dirty[x, y] or (not Tileset.check_area_type(tile, special, area_type)) or ((paint_tile_group = Tileset.tile_paint_group[tile]) and (special <> 1) and (special <> 2)) or ((paint_tile_group < -2) and (special >= 1) and (special <= 2)) then
+      exit;
+  paint_tile(x, y, paint_tile_group);
   tile_dirty[x, y] := true;
   if x > 0 then
-    fill_area_step(x-1, y, area_type);
+    fill_area_step(x-1, y, paint_tile_group, area_type);
   if x < (map_width - 1) then
-    fill_area_step(x+1, y, area_type);
+    fill_area_step(x+1, y, paint_tile_group, area_type);
   if y > 0 then
-    fill_area_step(x, y-1, area_type);
+    fill_area_step(x, y-1, paint_tile_group, area_type);
   if y < (map_height - 1) then
-    fill_area_step(x, y+1, area_type);
+    fill_area_step(x, y+1, paint_tile_group, area_type);
 end;
 
 
