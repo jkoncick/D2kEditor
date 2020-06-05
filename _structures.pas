@@ -102,7 +102,7 @@ var
 
 implementation
 
-uses Classes, IniFiles, main;
+uses Classes, IniFiles, main, _settings;
 
 procedure TStructures.init;
 var
@@ -113,6 +113,7 @@ var
   sname : string;
   i,j,s,e: integer;
   found: boolean;
+  colours_bin_filename: String;
   colours_bin_file: file of byte;
   colours_bin_contents: array[0..127] of word;
   color: Cardinal;
@@ -243,7 +244,10 @@ begin
   ini.Destroy;
 
   // Read COLOURS.BIN file
-  AssignFile(colours_bin_file, current_dir + 'config/COLOURS.BIN');
+  colours_bin_filename := Settings.GamePath + '\Data\bin\COLOURS.BIN';
+  if not FileExists(colours_bin_filename) then
+    colours_bin_filename := current_dir + 'config\COLOURS.BIN';
+  AssignFile(colours_bin_file, colours_bin_filename);
   Reset(colours_bin_file);
   BlockRead(colours_bin_file, colours_bin_contents[0], 256);
   CloseFile(colours_bin_file);
