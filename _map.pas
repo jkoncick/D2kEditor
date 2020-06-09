@@ -287,7 +287,12 @@ end;
 procedure TMap.fill_area_step(x, y: integer; paint_tile_group, area_type: integer);
 begin
   with map_data[x,y] do
-    if tile_dirty[x, y] or (not Tileset.check_area_type(tile, special, area_type)) or ((paint_tile_group = Tileset.tile_paint_group[tile]) and (special <> 1) and (special <> 2)) or ((paint_tile_group < -2) and (special >= 1) and (special <= 2)) then
+    if tile_dirty[x, y]
+    or (not Tileset.check_area_type(tile, special, area_type))
+    or ((paint_tile_group = Tileset.tile_paint_group[tile]) and (special <> 1) and (special <> 2))
+    or ((paint_tile_group < -2) and (special >= 1) and (special <= 2))
+    or (Settings.RestrictPainting and (not Tileset.check_paint_tile_restriction(tile, special, paint_tile_group)))
+    then
       exit;
   paint_tile(x, y, paint_tile_group);
   tile_dirty[x, y] := true;

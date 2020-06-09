@@ -168,6 +168,7 @@ object MainWindow: TMainWindow
       OnClick = SettingChange
     end
     object sbMarkOwnerSide: TSpeedButton
+      Tag = 24
       Left = 122
       Top = 140
       Width = 38

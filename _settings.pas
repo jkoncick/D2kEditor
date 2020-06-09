@@ -24,6 +24,7 @@ type
     DrawPaintBrush: boolean;
     LoadR16Image: boolean;
     LoadR8Image: boolean;
+    LoadCustomColoursBin: boolean;
     UseAllocationIndexes: boolean;
     ShowEventMarkers: boolean;
     MarkDefenceAreas: boolean;
@@ -101,6 +102,7 @@ begin
   DrawPaintBrush := ini.ReadBool('Preferences', 'DrawPaintBrush', true);
   LoadR16Image := ini.ReadBool('Preferences', 'LoadR16Image', true);
   LoadR8Image := ini.ReadBool('Preferences', 'LoadR8Image', true);
+  LoadCustomColoursBin := ini.ReadBool('Preferences', 'LoadCustomColoursBin', true);
   UseAllocationIndexes := ini.ReadBool('Preferences', 'UseAllocationIndexes', false);
   ShowEventMarkers := ini.ReadBool('Preferences', 'ShowEventMarkers', true);
   MarkDefenceAreas := ini.ReadBool('Preferences', 'MarkDefenceAreas', true);
@@ -190,6 +192,7 @@ begin
   ini.WriteBool('Preferences', 'DrawPaintBrush', DrawPaintBrush);
   ini.WriteBool('Preferences', 'LoadR16Image', LoadR16Image);
   ini.WriteBool('Preferences', 'LoadR8Image', LoadR8Image);
+  ini.WriteBool('Preferences', 'LoadCustomColoursBin', LoadCustomColoursBin);
   ini.WriteBool('Preferences', 'UseAllocationIndexes', UseAllocationIndexes);
   ini.WriteBool('Preferences', 'ShowEventMarkers', ShowEventMarkers);
   ini.WriteBool('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);

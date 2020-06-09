@@ -1028,6 +1028,12 @@ begin
         TilesetDialog.DrawTileset(nil);
       end;
     end;
+  24:
+    begin
+      render_map;
+      draw_cursor_image;
+      BlockPresetDialog.draw_all;
+    end;
   else render_map;
   end;
 end;

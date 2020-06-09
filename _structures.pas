@@ -245,7 +245,7 @@ begin
 
   // Read COLOURS.BIN file
   colours_bin_filename := Settings.GamePath + '\Data\bin\COLOURS.BIN';
-  if not FileExists(colours_bin_filename) then
+  if (not FileExists(colours_bin_filename)) or (not Settings.LoadCustomColoursBin) then
     colours_bin_filename := current_dir + 'config\COLOURS.BIN';
   AssignFile(colours_bin_file, colours_bin_filename);
   Reset(colours_bin_file);
