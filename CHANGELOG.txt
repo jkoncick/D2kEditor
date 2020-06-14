@@ -1,9 +1,11 @@
 D2kEditor changelog
 
-Version 1.4 (released 2020-04-26)
+Version 1.4 (released 2020-06-14)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
+Added: Mark Wall & Concrete owner side feature. Available as 4th toggle button "Own" below minimap (or Ctrl+W).
+       "Show unknown specials" option was moved under Settings menu.
 Fixed: Outpost and Modified Outpost are visually distinguished by antenna turn direction.
 Fixed: The "Maximized" window property is now preserved for all dialogs when you close and open program again.
 Fixed: The last used directory for various open/save dialogs is preserved independently for each dialog.
@@ -28,11 +30,14 @@ Changed: Editor will ask for saving changes to your map upon closing program ins
          This works for map and events modifications, does not work for mission properties and AI modificatios. 
 Added: When starting editor for first time and it can't detect your game location automatically, it will prompt you to
        navigate to game location manually with a file open dialog
-Added: Editor checks for more map errors that when saving map or launching map. It checks additionally for:
+Added: Editor checks for more map errors when saving map or launching map. It checks additionally for:
        - Spice blooms limit (30 max)
        - Total structures limit (1000 max)
+       - Refineries per player limit (10 max)
        - 0 credits or tech level on player with active AI
        - Reinforcement or Starport delivery events with 0 units
+Added: Total column to map statistics
+Fixed: Map statistics grid scrolling with mouse wheel
 Added: Tile Attribute Editor will warn and ask you when you attempt to save over original game's TILEATRx.BIN file
 Added: Editor will load contents of custom TEXT.UIB file, if it is specified in mission .ini file.
        The "Test map" feature will automatically launch game with custom TEXT.UIB file.
@@ -42,6 +47,17 @@ Fixed: Event and Condition notes will move position accordingly when you reorgan
 Added: Buttons to move units and conditions up and down in event's unit and condition list
 Added: New Deploy action "Stay" for Reinforcement and Unit Spawn events, renamed other deploy actions 
 Added: Show key shortcuts option in Event grid and Condition grid popup menu
+Added: Player names loaded from "config\players.ini" file are used in all places in editor and no longer hardcoded
+Added: Minimap colors for buildings and units are loaded from game's COLOURS.BIN file. Original COLOURS.BIN file
+       is shipped with editor.
+Changed: Allegiance buttons on Mission settings window are changing in this order: Enemy -> Ally -> Neutral
+Added: Defence areas can be selected directly from map. A button will appear when you select a defence area in AI editor.
+Added: Use random paint map feature. Predefined 128*128 background map of clean sand and rock is used for painting.
+       The advantage is better distribution of random sand/rock tiles and more natural look. Can be turned on in Settings.
+Fixed: Spacebar was not always working for switching from block preset window to tileset window
+Added: Remap tiles feature
+Added: A simple mission launcher
+Added: "D2k Mapping Manual" document
 
 Three major new features and changes:
 1) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
