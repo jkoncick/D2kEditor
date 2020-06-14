@@ -20,7 +20,11 @@ type
     edMissionFileName: TEdit;
     btnLaunchGame: TButton;
     btnOpenMissionInEditor: TButton;
+    cbDifficultyLevel: TComboBox;
+    lbDifficultyLevel: TLabel;
     procedure FormShow(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     procedure lbMissionListClick(Sender: TObject);
     procedure btnLaunchGameClick(Sender: TObject);
     procedure btnOpenMissionInEditorClick(Sender: TObject);
@@ -57,8 +61,19 @@ begin
   loaded := True;
 end;
 
+procedure TMissionLauncher.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  case key of
+    27: close;
+    13: btnLaunchGameClick(nil);
+  end;
+end;
+
 procedure TMissionLauncher.lbMissionListClick(Sender: TObject);
 begin
+  if lbMissionList.ItemIndex = -1 then
+    exit;
   mission_index := strtoint(Launcher.mission_list.ValueFromIndex[lbMissionList.ItemIndex]);
   edMissionName.Text := Launcher.mission_data[mission_index].mission_name;
   edMissionAuthor.Text := Launcher.mission_data[mission_index].author;
@@ -69,12 +84,18 @@ end;
 
 procedure TMissionLauncher.btnLaunchGameClick(Sender: TObject);
 begin
-  Launcher.launch_mission(mission_index, 0);
+  if lbMissionList.ItemIndex = -1 then
+    exit;
+  Launcher.launch_mission(mission_index, cbDifficultyLevel.ItemIndex);
 end;
 
 procedure TMissionLauncher.btnOpenMissionInEditorClick(Sender: TObject);
 begin
+  if lbMissionList.ItemIndex = -1 then
+    exit;
   MainWindow.load_map(Settings.MissionsPath + '\' + Launcher.mission_data[mission_index].filename + '.MAP');
+  if sender = btnOpenMissionInEditor then
+    close;
 end;
 
 end.
