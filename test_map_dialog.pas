@@ -42,7 +42,7 @@ var
 implementation
 
 uses
-  main, _mission, _settings, _structures;
+  main, _mission, _structures, _launcher;
 
 {$R *.dfm}
 
@@ -82,7 +82,7 @@ end;
 
 procedure TTestMapDialog.btnLaunchClick(Sender: TObject);
 begin
-  with Settings do
+  with Launcher do
   begin
     MySideId := eMySideID.ItemIndex;
     MissionNumber := eMissionNumber.Value;
@@ -91,13 +91,13 @@ begin
     TextUib := eTextUib.Text;
     TestMapParameters := eParameters.Text;
   end;
-  MainWindow.launch_game;
+  Launcher.launch_current_mission;
   close;
 end;
 
 procedure TTestMapDialog.invoke;
 begin
-  with Settings do
+  with Launcher do
   begin
     eMySideID.ItemIndex := MySideID;
     eMissionNumber.Value := MissionNumber;

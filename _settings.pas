@@ -49,14 +49,6 @@ type
     // Recent files
     RecentFiles: Array[1..cnt_recent_files] of String;
 
-    // Test map settings
-    MySideID: integer;
-    MissionNumber: integer;
-    DifficultyLevel: integer;
-    Seed: integer;
-    TextUib: String;
-    TestMapParameters: String;
-
   private
     tmp_ini: TMemIniFile;
 
@@ -68,8 +60,6 @@ type
     procedure load_window_position(ini: TMemIniFile; window: TForm; window_name: String);
     procedure save_window_position(ini: TMemIniFile; window: TForm; window_name: String);
     procedure update_recent_files(filename: String);
-    procedure get_map_test_settings;
-    procedure save_map_test_settings;
 
   end;
 
@@ -80,7 +70,7 @@ implementation
 
 uses
   SysUtils, StdCtrls, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, _map;
+  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -358,62 +348,6 @@ begin
     RecentFiles[i] := RecentFiles[i-1];
   end;
   RecentFiles[1] := filename;
-end;
-
-procedure TSettings.get_map_test_settings;
-var
-  ini: TIniFile;
-  map_name: String;
-  house, mission: char;
-  house_num, mission_num: integer;
-begin
-  ini := TIniFile.Create(GamePath + '\spawn.ini');
-  // Try to detect MissionNumber and MySideID from map file name
-  if Map.filename <> '' then
-  begin
-    map_name := ChangeFileExt(ExtractFileName(Map.filename),'');
-    house := map_name[Length(map_name)-3];
-    mission := map_name[Length(map_name)-2];
-  end else
-  begin
-    house := 'X';
-    mission := 'X';
-  end;
-  house_num := ini.ReadInteger('Settings', 'MySideID', 0);
-  case house of
-  'A': house_num := 0;
-  'H': house_num := 1;
-  'O': house_num := 2;
-  end;
-  if (ord(mission) >= ord('1')) and (ord(mission) <= ord('9')) then
-    mission_num := strtoint(mission)
-  else
-    mission_num := ini.ReadInteger('Settings', 'MissionNumber', 1);
-  // Fill test map settings
-  MySideID := house_num;
-  MissionNumber := mission_num;
-  DifficultyLevel := ini.ReadInteger('Settings', 'DifficultyLevel', 1);
-  Seed := ini.ReadInteger('Settings', 'Seed', random(2000000000));
-  TextUib := ini.ReadString('Settings', 'TextUib', '');
-  ini.Destroy;
-end;
-
-procedure TSettings.save_map_test_settings;
-var
-  ini: TIniFile;
-begin
-  // Write settings to ini file
-  ini := TIniFile.Create(GamePath + '\spawn.ini');
-  ini.WriteString('Settings', 'Scenario', 'TESTMAP');
-  ini.WriteInteger('Settings', 'MySideID', MySideID);
-  ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);
-  ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
-  ini.WriteInteger('Settings', 'Seed', Seed);
-  if TextUib <> '' then
-    ini.WriteString('Settings', 'TextUib', TextUib)
-  else
-    ini.DeleteKey('Settings', 'TextUib');
-  ini.Destroy;
 end;
 
 end.

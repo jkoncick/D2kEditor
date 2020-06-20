@@ -141,7 +141,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, _structures, _stringtable, _settings, _tileset, event_dialog, main, tileatr_editor;
+  Math, StrUtils, _structures, _stringtable, _settings, _tileset, _launcher, event_dialog, main, tileatr_editor;
 
 {$R *.dfm}
 
@@ -771,23 +771,23 @@ end;
 procedure TMissionDialog.cbMapSideIdChange(Sender: TObject);
 begin
   if cbMapSideId.ItemIndex <> -1 then
-    Settings.MySideID := cbMapSideId.ItemIndex;
+    Launcher.MySideID := cbMapSideId.ItemIndex;
 end;
 
 procedure TMissionDialog.seMapMissionNumberChange(Sender: TObject);
 begin
   if seMapMissionNumber.Value <> 0 then
-    Settings.MissionNumber := seMapMissionNumber.Value;
+    Launcher.MissionNumber := seMapMissionNumber.Value;
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);
 var
   filename: String;
 begin
-  Settings.TextUib := cbTextUib.Text;
+  Launcher.TextUib := cbTextUib.Text;
   filename := Settings.GamePath + '\Data\UI_DATA\';
-  if (Settings.TextUib <> '') and FileExists(filename + Settings.TextUib) then
-    filename := filename + Settings.TextUib
+  if (Launcher.TextUib <> '') and FileExists(filename + Launcher.TextUib) then
+    filename := filename + Launcher.TextUib
   else
     filename := filename + 'TEXT.UIB';
   if StringTable.load_from_file(filename) then

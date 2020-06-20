@@ -29,7 +29,6 @@ type
     procedure btnLaunchGameClick(Sender: TObject);
     procedure btnOpenMissionInEditorClick(Sender: TObject);
   private
-    loaded: boolean;
     mission_index: integer;
   public
     { Public declarations }
@@ -50,7 +49,7 @@ var
   tmp_strings: TStringList;
   i : integer;
 begin
-  if loaded then
+  if Launcher.missions_loaded then
     exit;
   Launcher.load_all_missions;
   tmp_strings := TStringList.Create;
@@ -58,7 +57,6 @@ begin
     tmp_strings.Add(Launcher.mission_list.Names[i]);
   lbMissionList.Items := tmp_strings;
   tmp_strings.Destroy;
-  loaded := True;
 end;
 
 procedure TMissionLauncher.FormKeyDown(Sender: TObject; var Key: Word;

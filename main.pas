@@ -10,7 +10,7 @@ uses
   // Dialogs
   set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher,
   // Units
-  _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen;
+  _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -306,7 +306,6 @@ type
 
     // Map testing procedures
     function check_map_can_be_tested: boolean;
-    procedure launch_game;
 
     // Miscellaneous helper procedures
     procedure tileset_changed;
@@ -1125,7 +1124,7 @@ procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
 begin
   if not check_map_can_be_tested then
     exit;
-  launch_game;
+  Launcher.launch_current_mission;
 end;
 
 procedure TMainWindow.Launchwithsettings1Click(Sender: TObject);
@@ -1844,7 +1843,7 @@ begin
   StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
   // Initialize settings
   Settings.determine_game_paths_from_path(Map.filename);
-  Settings.get_map_test_settings;
+  Launcher.get_map_test_settings(Map.filename);
   // Load mis file
   tmp_mis_filename := Mission.get_mis_filename(Map.filename);
   if FileExists(tmp_mis_filename) then
@@ -1957,34 +1956,15 @@ begin
     result := false;
     exit;
   end;
-  if (Settings.TextUib <> '') and not FileExists(Settings.GamePath + '\Data\UI_DATA\' + Settings.TextUib) then
+  if (Launcher.TextUib <> '') and not FileExists(Settings.GamePath + '\Data\UI_DATA\' + Launcher.TextUib) then
   begin
-    Application.MessageBox(PChar('The custom TEXT.UIB file (' + Settings.TextUib + ') does not exist.'#13'Map will be tested with the game''s default TEXT.UIB file.'), 'Warning', MB_ICONWARNING);
-    Settings.TextUib := '';
+    Application.MessageBox(PChar('The custom TEXT.UIB file (' + Launcher.TextUib + ') does not exist.'#13'Map will be tested with the game''s default TEXT.UIB file.'), 'Warning', MB_ICONWARNING);
+    Launcher.TextUib := '';
   end;
   if Settings.CheckMapErrorsOnTest then
     result := check_map_errors
   else
     result := true;
-end;
-
-procedure TMainWindow.launch_game;
-var
-  temp_map_name: String;
-begin
-  if random(9001) = 1337 then
-  begin
-    ShellExecute(0, 'open', PChar('https://www.youtube.com/watch?v=oHg5SJYRHA0'), nil, nil, SW_SHOWNORMAL);
-    exit;
-  end;
-  Settings.save_map_test_settings;
-  temp_map_name := Missiondialog.edMapName.Text;
-  Missiondialog.edMapName.Text := 'TESTMAP';
-  save_map(Settings.MissionsPath + '\TESTMAP.MAP');
-  Missiondialog.edMapName.Text := temp_map_name;
-  if not MissionDialog.cbUseINI.Checked then
-    DeleteFile(Settings.MissionsPath + '\TESTMAP.INI');
-  ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), PChar('-SPAWN ' + Settings.TestMapParameters), PChar(Settings.GamePath), SW_SHOWNORMAL);
 end;
 
 procedure TMainWindow.tileset_changed;
@@ -2273,7 +2253,7 @@ begin
   // Reset random generator
   //--RandomGen.reset;
   // Get test map settings
-  Settings.get_map_test_settings;
+  Launcher.get_map_test_settings('');
   // Finish it
   if MapStatsDialog.Visible then
     MapStatsDialog.update_stats;
