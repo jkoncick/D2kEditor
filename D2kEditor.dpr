@@ -49,6 +49,8 @@ begin
   Application.CreateForm(TMissionLauncher, MissionLauncher);
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
+
+  Structures.load_colours_bin;
   // Load map given as first parameter
   if ParamCount > 0 then
     MainWindow.load_map(ParamStr(1));

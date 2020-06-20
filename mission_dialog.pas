@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, StdCtrls, Spin,  Buttons, ComCtrls, Grids,
-  ValEdit, IniFiles, Clipbrd, _map, _mission;
+  ValEdit, IniFiles, Clipbrd, _map, _mission, _structures;
 
 type
   TMisAIProperty = record
@@ -117,20 +117,23 @@ type
     procedure cbMapSideIdChange(Sender: TObject);
     procedure seMapMissionNumberChange(Sender: TObject);
     procedure cbCampaignFolderChange(Sender: TObject);
+    procedure cbColoursBinChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
   private
-    player_label: array[0..cnt_mis_players-1] of TLabel;
-    tech_level: array[0..cnt_mis_players-1] of TSpinEdit;
-    starting_money: array[0..cnt_mis_players-1] of TEdit;
-    alloc_index: array[0..cnt_mis_players-1] of TSpinEdit;
-    player_label_alleg: array[0..cnt_mis_players-1] of TLabel;
-    allegiance_btn: array[0..cnt_mis_players-1, 0..cnt_mis_players-1] of TBitBtn;
+    player_label: array[0..cnt_players-1] of TLabel;
+    tech_level: array[0..cnt_players-1] of TSpinEdit;
+    starting_money: array[0..cnt_players-1] of TEdit;
+    alloc_index: array[0..cnt_players-1] of TSpinEdit;
+    color_marker: array[0..cnt_players-1] of TPanel;
+    player_label_alleg: array[0..cnt_players-1] of TLabel;
+    allegiance_btn: array[0..cnt_players-1, 0..cnt_players-1] of TBitBtn;
     rule_definitions: array of TRuleDefinition;
     misai_properties: array of TMisAIProperty;
     ai_clipboard_format: cardinal;
     defence_area_num: integer;
   public
     procedure fill_data;
+    procedure update_player_colors;
     procedure tileset_changed;
 
     function get_integer_value(source: array of byte; pos, bytes: integer): integer;
@@ -150,7 +153,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, _structures, _stringtable, _settings, _tileset, _launcher, event_dialog, main, tileatr_editor;
+  Math, StrUtils, _stringtable, _settings, _tileset, _launcher, event_dialog, main, tileatr_editor;
 
 {$R *.dfm}
 
@@ -162,7 +165,7 @@ var
   SR: TSearchRec;
 begin
   StringTable.init_value_list(StringValueList);
-  for i := 0 to cnt_mis_players-1 do
+  for i := 0 to cnt_players-1 do
   begin
     // Initialize player labels
     player_label[i] := TLabel.Create(self);
@@ -174,7 +177,7 @@ begin
     tech_level[i] := TSpinEdit.Create(self);
     tech_level[i].Left := 72;
     tech_level[i].Top := 24 + i * 24;
-    tech_level[i].Width := 56;
+    tech_level[i].Width := 48;
     tech_level[i].Height := 22;
     tech_level[i].MinValue := 0;
     tech_level[i].MaxValue := 255;
@@ -184,7 +187,7 @@ begin
     tech_level[i].OnChange := tech_level_change;
     // Initialize Starting money
     starting_money[i] := TEdit.Create(self);
-    starting_money[i].Left := 136;
+    starting_money[i].Left := 128;
     starting_money[i].Top := 24 + i * 24;
     starting_money[i].Width := 56;
     starting_money[i].Height := 22;
@@ -194,9 +197,9 @@ begin
     starting_money[i].OnChange := starting_money_change;
     // Initialize allocation indexes
     alloc_index[i] := TSpinEdit.Create(self);
-    alloc_index[i].Left := 200;
+    alloc_index[i].Left := 192;
     alloc_index[i].Top := 24 + i * 24;
-    alloc_index[i].Width := 56;
+    alloc_index[i].Width := 48;
     alloc_index[i].Height := 22;
     alloc_index[i].MinValue := 0;
     alloc_index[i].MaxValue := 255;
@@ -204,6 +207,15 @@ begin
     alloc_index[i].Tag := i;
     alloc_index[i].Parent := PlayerSettingsPanel;
     alloc_index[i].OnChange := alloc_index_change;
+    // Initialize player color markers
+    color_marker[i] := TPanel.Create(self);
+    color_marker[i].Left := 240;
+    color_marker[i].Top := 24 + i * 24;
+    color_marker[i].Width := 16;
+    color_marker[i].Height := 22;
+    color_marker[i].BevelOuter := bvNone;
+    color_marker[i].ParentBackground := False;
+    color_marker[i].Parent := PlayerSettingsPanel;
     // Initialize allegiance labels
     player_label_alleg[i] := TLabel.Create(self);
     player_label_alleg[i].Left := 266 + i * 52;
@@ -211,7 +223,7 @@ begin
     player_label_alleg[i].Caption := IfThen(Length(Structures.player_info[i].name) <= 8, Structures.player_info[i].name, Copy(Structures.player_info[i].name, 0, 6)+'.');
     player_label_alleg[i].Parent := PlayerSettingsPanel;
     // Initialize allegiance buttons
-    for j := 0 to cnt_mis_players-1 do
+    for j := 0 to cnt_players-1 do
     begin
       allegiance_btn[i,j] := TBitBtn.Create(self);
       allegiance_btn[i,j].Left := 264 + j * 52;
@@ -292,12 +304,12 @@ procedure TMissionDialog.fill_data;
 var
   i, j: integer;
 begin
-  for i := 0 to cnt_mis_players-1 do
+  for i := 0 to cnt_players-1 do
   begin
     tech_level[i].Value := Mission.mis_data.tech_level[i];
     starting_money[i].Text := inttostr(Mission.mis_data.starting_money[i]);
     alloc_index[i].Value := Mission.mis_data.allocation_index[i];
-    for j := 0 to cnt_mis_players-1 do
+    for j := 0 to cnt_players-1 do
     begin
       allegiance_btn[i,j].Caption := allegiance_type[Mission.mis_data.allegiance[i,j]];
       allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
@@ -318,6 +330,14 @@ begin
     cbUseINI.Checked := false;
   end;
   cbUseINI.Tag := 0;
+end;
+
+procedure TMissionDialog.update_player_colors;
+var
+  i: integer;
+begin
+  for i := 0 to cnt_players-1 do
+    color_marker[i].Color := Structures.player_info[Mission.mis_data.allocation_index[i]].color;
 end;
 
 procedure TMissionDialog.tileset_changed;
@@ -545,7 +565,7 @@ procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
 var
   i: integer;
 begin
-  for i := 0 to cnt_mis_players-1 do
+  for i := 0 to cnt_players-1 do
     tech_level[i].Value := StrToIntDef(seTechLevelAll.Text,0);
 end;
 
@@ -553,7 +573,7 @@ procedure TMissionDialog.edStartingMoneyAllChange(Sender: TObject);
 var
   i: integer;
 begin
-  for i := 0 to cnt_mis_players-1 do
+  for i := 0 to cnt_players-1 do
     starting_money[i].Text := IntToStr(StrToIntDef(edStartingMoneyAll.Text,0));
 end;
 
@@ -561,7 +581,7 @@ procedure TMissionDialog.btnAllocIndexResetClick(Sender: TObject);
 var
   i: integer;
 begin
-  for i := 0 to cnt_mis_players-1 do
+  for i := 0 to cnt_players-1 do
     alloc_index[i].Value := i;
 end;
 
@@ -569,8 +589,8 @@ procedure TMissionDialog.btnAllegianceResetClick(Sender: TObject);
 var
   i, j: integer;
 begin
-  for i := 0 to cnt_mis_players-1 do
-    for j := 0 to cnt_mis_players-1 do
+  for i := 0 to cnt_players-1 do
+    for j := 0 to cnt_players-1 do
     begin
       if i = j then
         Mission.mis_data.allegiance[i,j] := 0
@@ -594,6 +614,7 @@ end;
 procedure TMissionDialog.alloc_index_change(Sender: TObject);
 begin
   Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
+  color_marker[(Sender as TSpinEdit).Tag].Color := Structures.player_info[Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag]].color;
 end;
 
 procedure TMissionDialog.allegiance_btn_click(Sender: TObject);
@@ -601,8 +622,8 @@ var
   i, j: integer;
   new_allegiance: byte;
 begin
-  i := (Sender as TBitBtn).Tag div cnt_mis_players;
-  j := (Sender as TBitBtn).Tag mod cnt_mis_players;
+  i := (Sender as TBitBtn).Tag div cnt_players;
+  j := (Sender as TBitBtn).Tag mod cnt_players;
   new_allegiance := IfThen((Mission.mis_data.allegiance[i,j] - 1) < 0, Length(allegiance_type)-1, Mission.mis_data.allegiance[i,j] - 1);
   Mission.mis_data.allegiance[i,j] := new_allegiance;
   allegiance_btn[i,j].Caption := allegiance_type[new_allegiance];
@@ -845,6 +866,12 @@ begin
   end;
   cbColoursBin.Items := tmp_strings;
   tmp_strings.Destroy;
+  cbColoursBinChange(nil);
+end;
+
+procedure TMissionDialog.cbColoursBinChange(Sender: TObject);
+begin
+  Structures.load_colours_bin;
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);

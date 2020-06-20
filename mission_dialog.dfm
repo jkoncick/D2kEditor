@@ -39,19 +39,19 @@ object MissionDialog: TMissionDialog
       object lblTechLevel: TLabel
         Left = 72
         Top = 8
-        Width = 50
+        Width = 38
         Height = 13
-        Caption = 'Tech level'
+        Caption = 'Tech lvl'
       end
       object lblStartingMoney: TLabel
-        Left = 136
+        Left = 128
         Top = 8
         Width = 32
         Height = 13
         Caption = 'Credits'
       end
       object lblAllocIndex: TLabel
-        Left = 200
+        Left = 192
         Top = 8
         Width = 54
         Height = 13
@@ -179,7 +179,7 @@ object MissionDialog: TMissionDialog
       object seTechLevelAll: TSpinEdit
         Left = 72
         Top = 224
-        Width = 56
+        Width = 49
         Height = 22
         MaxValue = 255
         MinValue = 0
@@ -188,7 +188,7 @@ object MissionDialog: TMissionDialog
         OnChange = seTechLevelAllChange
       end
       object edStartingMoneyAll: TEdit
-        Left = 136
+        Left = 128
         Top = 224
         Width = 57
         Height = 21
@@ -197,9 +197,9 @@ object MissionDialog: TMissionDialog
         OnChange = edStartingMoneyAllChange
       end
       object btnAllocIndexReset: TButton
-        Left = 200
+        Left = 192
         Top = 224
-        Width = 56
+        Width = 65
         Height = 22
         Caption = 'Reset'
         TabOrder = 3
@@ -344,6 +344,7 @@ object MissionDialog: TMissionDialog
         Height = 21
         ItemHeight = 13
         TabOrder = 18
+        OnChange = cbColoursBinChange
       end
       object cbCampaignFolder: TComboBox
         Left = 520

@@ -5,8 +5,6 @@ interface
 uses Graphics, IniFiles, Classes, _map;
 
 // Mis file constants
-const cnt_mis_players = 8;
-
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
 
 const flag_value: array[0..1] of string = ('False', 'True');
@@ -880,7 +878,7 @@ end;
 
 procedure TMission.create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
 var
-  players: array[0..cnt_mis_players-1] of integer;
+  players: array[0..cnt_players-1] of integer;
   num_players: integer;
   event: ^TEvent;
   cond1_index, cond2_index: integer;
@@ -891,7 +889,7 @@ begin
   if use_alloc_index then
   begin
     // All players having given allocation index
-    for i := 0 to cnt_mis_players-1 do
+    for i := 0 to cnt_players-1 do
       if mis_data.allocation_index[i] = alloc_index then
       begin
         players[num_players] := i;

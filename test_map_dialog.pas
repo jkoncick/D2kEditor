@@ -50,7 +50,7 @@ procedure TTestMapDialog.FormCreate(Sender: TObject);
 var
   i: integer;
 begin
-  for i := 0 to cnt_mis_players - 1 do
+  for i := 0 to cnt_players - 1 do
     eMySideID.Items.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
   eMySideID.ItemIndex := 0;
 end;

@@ -541,7 +541,7 @@ begin
         if event_marker_type_info[ord(event_marker.emtype)].player_related then
         begin
           player := event_marker.side;
-          if player >= cnt_mis_players then
+          if player >= cnt_players then
             player := 0;
           cnv_target.Pen.Color := Structures.player_info[player].color;
           cnv_target.Brush.Color := Structures.player_info[player].color;
@@ -563,7 +563,7 @@ begin
   begin
     cnv_target.Brush.Style := bsClear;
     cnv_target.pen.Width := 2;
-    for x := 0 to cnt_mis_players - 1 do
+    for x := 0 to cnt_players - 1 do
       for y := 0 to Mission.mis_data.ai_segments[x,7505] - 1 do
       begin
         cnv_target.Pen.Color := Structures.player_info[x].color;
@@ -769,7 +769,7 @@ begin
         // Translate player number according to allocation index
         if o_use_alloc_indexes then
           player := Mission.mis_data.allocation_index[player];
-        if player >= cnt_mis_players then
+        if player >= cnt_players then
           player := 0;
         // Render structure on map
         cnv_target.Pen.Color := Structures.player_info[player].color;

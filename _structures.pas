@@ -74,6 +74,8 @@ type
   TStructures = class
 
   public
+    colours_bin_filename: String;
+
     cnt_structures: integer;
     structure_info: array of TStructureInfo;
     first_unit_index: integer;
@@ -91,10 +93,10 @@ type
 
   public
     procedure init;
+    procedure load_colours_bin;
     function special_value_is_valid(special: word): boolean;
     function special_value_to_params(special: word; var player: word; var index: word; var is_misc: boolean): boolean;
     function check_links_with_wall(special: word): boolean;
-
   end;
 
 var
@@ -102,7 +104,7 @@ var
 
 implementation
 
-uses Classes, IniFiles, main, _settings;
+uses Classes, IniFiles, main, mission_dialog, _settings;
 
 procedure TStructures.init;
 var
@@ -113,10 +115,6 @@ var
   sname : string;
   i,j,s,e: integer;
   found: boolean;
-  colours_bin_filename: String;
-  colours_bin_file: file of byte;
-  colours_bin_contents: array[0..127] of word;
-  color: Cardinal;
 begin
   // Read list of structures and their properties from structures.ini
   ini := TMemIniFile.Create(current_dir + 'config/structures.ini');
@@ -243,10 +241,38 @@ begin
   limit_refineries_per_player := ini.ReadInteger('Limits', 'refineries_per_player', 10);
   ini.Destroy;
 
-  // Read COLOURS.BIN file
-  colours_bin_filename := Settings.GamePath + '\Data\bin\COLOURS.BIN';
-  if (not FileExists(colours_bin_filename)) or (not Settings.LoadCustomColoursBin) then
-    colours_bin_filename := current_dir + 'config\COLOURS.BIN';
+  //load_colours_bin;
+
+  tmp_strings.Destroy;
+  decoder.Destroy;
+end;
+
+procedure TStructures.load_colours_bin;
+var
+  tmp_filename, tmp_filename2: String;
+  colours_bin_file: file of byte;
+  colours_bin_contents: array[0..127] of word;
+  color: Cardinal;
+  i, j: integer;
+begin
+  // Step 1 - editor's internal file
+  tmp_filename := current_dir + 'config\COLOURS.BIN';
+  if Settings.LoadCustomColoursBin then
+  begin
+    // Step 2 - game's internal file
+    tmp_filename2 := Settings.GamePath + '\Data\bin\COLOURS.BIN';
+    if FileExists(tmp_filename2) then
+      tmp_filename := tmp_filename2;
+    // Step 3 - file under CustomCampaignData folder
+    tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\Colours\' + MissionDialog.cbColoursBin.Text;
+    if FileExists(tmp_filename2) then
+      tmp_filename := tmp_filename2;
+  end;
+  // This file is already loaded - do not load it again
+  if colours_bin_filename = tmp_filename then
+    exit;
+  colours_bin_filename := tmp_filename;
+  // Load COLOURS.BIN file
   AssignFile(colours_bin_file, colours_bin_filename);
   Reset(colours_bin_file);
   BlockRead(colours_bin_file, colours_bin_contents[0], 256);
@@ -260,9 +286,9 @@ begin
     color := color or (((colours_bin_contents[j] and $001F) shr 0) shl 19) or (((colours_bin_contents[j] and $001F) shr 2) shl 16);
     player_info[i].color := color;
   end;
-
-  tmp_strings.Destroy;
-  decoder.Destroy;
+  // Update all occurences in editor
+  MissionDialog.update_player_colors;
+  MainWindow.render_minimap;
 end;
 
 function TStructures.special_value_is_valid(special: word): boolean;
