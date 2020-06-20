@@ -80,6 +80,14 @@ type
     cbTextUib: TComboBox;
     pnSelectDefenceAreaFromMap: TPanel;
     btnSelectDefenceAreaFromMap: TButton;
+    lblModsFolder: TLabel;
+    cbModsFolder: TComboBox;
+    lblColoursBin: TLabel;
+    cbColoursBin: TComboBox;
+    lblCampaignFolder: TLabel;
+    cbCampaignFolder: TComboBox;
+    lblMapIntelId: TLabel;
+    edMapIntelId: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -108,6 +116,7 @@ type
     procedure btnSelectDefenceAreaFromMapClick(Sender: TObject);
     procedure cbMapSideIdChange(Sender: TObject);
     procedure seMapMissionNumberChange(Sender: TObject);
+    procedure cbCampaignFolderChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
   private
     player_label: array[0..cnt_mis_players-1] of TLabel;
@@ -243,7 +252,7 @@ begin
   end;
   ini.Destroy;
   cbMapMusic.Items := EventDialog.cbMusicName.Items;
-  // Initialize music names
+  // Initialize list of TEXT.UIB files
   tmp_strings.Clear;
   if FindFirst(Settings.GamePath + '\Data\UI_DATA\*.UIB', 0, SR) = 0 then
   begin
@@ -254,7 +263,18 @@ begin
       FindClose(SR);
   end;
   cbTextUib.Items := tmp_strings;
-  tmp_strings.Free;
+  tmp_strings.Clear;
+  // Initialize list of Campaign folders
+  if FindFirst(Settings.GamePath + '\CustomCampaignData\*', faDirectory, SR) = 0 then
+  begin
+    repeat
+      if (SR.Name <> '.') and (SR.Name <> '..') then
+        tmp_strings.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbCampaignFolder.Items := tmp_strings;
+  tmp_strings.Destroy;
   // Register AI clipboard format
   ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
 end;
@@ -384,10 +404,19 @@ begin
   cbMapSideId.ItemIndex := ini.ReadInteger('Basic','SideId',-1);
   seMapMissionNumber.Enabled := true;
   seMapMissionNumber.Value := ini.ReadInteger('Basic','MissionNumber',0);
+  edMapIntelId.Enabled := true;
+  edMapIntelId.Text := ini.ReadString('Data','IntelId','');
+  cbCampaignFolder.Enabled := true;
+  cbCampaignFolder.Text := ini.ReadString('Data','CampaignFolder','');
+  cbModsFolder.Enabled := true;
+  cbModsFolder.Text := ini.ReadString('Data','ModsFolder','');
+  cbColoursBin.Enabled := true;
+  cbColoursBin.Text := ini.ReadString('Data','ColoursFile','');
   cbTextUib.Enabled := true;
   cbTextUib.Text := ini.ReadString('Basic','TextUib','');
   cbMapSideIdChange(nil);
   seMapMissionNumberChange(nil);
+  cbCampaignFolderChange(nil);
   cbTextUibChange(nil);
   // Load rules
   RuleValueList.Enabled := true;
@@ -433,8 +462,17 @@ begin
   cbMapSideId.ItemIndex := -1;
   seMapMissionNumber.Enabled := false;
   seMapMissionNumber.Value := 0;
+  edMapIntelId.Enabled := false;
+  edMapIntelId.Text := '';
+  cbCampaignFolder.Enabled := false;
+  cbCampaignFolder.Text := '';
+  cbModsFolder.Enabled := false;
+  cbModsFolder.Text := '';
+  cbColoursBin.Enabled := false;
+  cbColoursBin.Text := '';
   cbTextUib.Enabled := false;
   cbTextUib.Text := '';
+  cbCampaignFolderChange(nil);
   cbTextUibChange(nil);
   RuleValueList.Enabled := false;
   RuleValueList.Strings.Clear;
@@ -778,6 +816,35 @@ procedure TMissionDialog.seMapMissionNumberChange(Sender: TObject);
 begin
   if seMapMissionNumber.Value <> 0 then
     Launcher.MissionNumber := seMapMissionNumber.Value;
+end;
+
+procedure TMissionDialog.cbCampaignFolderChange(Sender: TObject);
+var
+  tmp_strings: TStringList;
+  SR: TSearchRec;
+begin
+  // Load list of Mods folders
+  tmp_strings := TStringList.Create;
+  if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\*', faDirectory, SR) = 0 then
+  begin
+    repeat
+      if (SR.Name <> '.') and (SR.Name <> '..') and (AnsiCompareText(SR.Name,'colours') <> 0) and (AnsiCompareText(SR.Name,'intel') <> 0) then
+        tmp_strings.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbModsFolder.Items := tmp_strings;
+  // Load list of Colours.bin files
+  tmp_strings.Clear;
+  if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\Colours\*.BIN', 0, SR) = 0 then
+  begin
+    repeat
+      tmp_strings.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbColoursBin.Items := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);

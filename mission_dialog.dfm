@@ -2,7 +2,7 @@ object MissionDialog: TMissionDialog
   Left = 192
   Top = 80
   Width = 1024
-  Height = 640
+  Height = 658
   Caption = 'Mission settings'
   Color = clBtnFace
   Constraints.MaxWidth = 1024
@@ -24,7 +24,7 @@ object MissionDialog: TMissionDialog
     Left = 0
     Top = 0
     Width = 696
-    Height = 606
+    Height = 624
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
@@ -32,7 +32,7 @@ object MissionDialog: TMissionDialog
       Left = 0
       Top = 0
       Width = 696
-      Height = 369
+      Height = 417
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
@@ -79,43 +79,43 @@ object MissionDialog: TMissionDialog
         Shape = bsBottomLine
       end
       object lblMapName: TLabel
-        Left = 280
-        Top = 296
+        Left = 8
+        Top = 320
         Width = 53
         Height = 13
         Caption = 'Map name:'
       end
       object lblMapAuthor: TLabel
-        Left = 280
-        Top = 320
+        Left = 8
+        Top = 344
         Width = 57
         Height = 13
         Caption = 'Map author:'
       end
       object lblMapMusic: TLabel
-        Left = 280
-        Top = 344
+        Left = 8
+        Top = 368
         Width = 31
         Height = 13
         Caption = 'Music:'
       end
       object lblMapSideId: TLabel
-        Left = 528
-        Top = 296
+        Left = 272
+        Top = 320
         Width = 37
         Height = 13
         Caption = 'Play as:'
       end
       object lblMapMissionNumber: TLabel
-        Left = 528
-        Top = 320
+        Left = 272
+        Top = 344
         Width = 76
         Height = 13
         Caption = 'Mission number:'
       end
       object lblMapBriefing: TLabel
-        Left = 528
-        Top = 344
+        Left = 272
+        Top = 392
         Width = 112
         Height = 13
         Caption = 'Mission briefing (below):'
@@ -142,11 +142,39 @@ object MissionDialog: TMissionDialog
         Caption = 'Attributes:'
       end
       object lblTextUib: TLabel
-        Left = 8
-        Top = 320
-        Width = 95
+        Left = 440
+        Top = 392
+        Width = 57
         Height = 13
-        Caption = 'Custom Text.uib file:'
+        Caption = 'Text.uib file:'
+      end
+      object lblModsFolder: TLabel
+        Left = 440
+        Top = 344
+        Width = 58
+        Height = 13
+        Caption = 'Mods folder:'
+      end
+      object lblColoursBin: TLabel
+        Left = 440
+        Top = 368
+        Width = 71
+        Height = 13
+        Caption = 'Colours.bin file:'
+      end
+      object lblCampaignFolder: TLabel
+        Left = 440
+        Top = 320
+        Width = 79
+        Height = 13
+        Caption = 'Campaign folder:'
+      end
+      object lblMapIntelId: TLabel
+        Left = 272
+        Top = 368
+        Width = 37
+        Height = 13
+        Caption = 'Intel ID:'
       end
       object seTechLevelAll: TSpinEdit
         Left = 72
@@ -215,8 +243,8 @@ object MissionDialog: TMissionDialog
         OnClick = cbUseINIClick
       end
       object btnRefreshStrings: TButton
-        Left = 144
-        Top = 342
+        Left = 136
+        Top = 390
         Width = 129
         Height = 22
         Caption = 'Refresh strings in events'
@@ -225,40 +253,40 @@ object MissionDialog: TMissionDialog
       end
       object btnResetToDefaults: TButton
         Left = 8
-        Top = 342
-        Width = 129
+        Top = 390
+        Width = 125
         Height = 22
         Caption = 'Reset values to defaults'
         TabOrder = 8
         OnClick = btnResetToDefaultsClick
       end
       object edMapName: TEdit
-        Left = 344
-        Top = 294
-        Width = 177
+        Left = 72
+        Top = 318
+        Width = 193
         Height = 21
         TabOrder = 9
       end
       object edMapAuthor: TEdit
-        Left = 344
-        Top = 318
-        Width = 177
+        Left = 72
+        Top = 342
+        Width = 193
         Height = 21
         TabOrder = 10
       end
       object cbMapSideId: TComboBox
-        Left = 576
-        Top = 294
-        Width = 105
+        Left = 320
+        Top = 318
+        Width = 113
         Height = 21
         ItemHeight = 13
         TabOrder = 12
         OnChange = cbMapSideIdChange
       end
       object seMapMissionNumber: TSpinEdit
-        Left = 616
-        Top = 318
-        Width = 65
+        Left = 360
+        Top = 342
+        Width = 73
         Height = 22
         MaxValue = 9
         MinValue = 0
@@ -267,9 +295,9 @@ object MissionDialog: TMissionDialog
         OnChange = seMapMissionNumberChange
       end
       object cbMapMusic: TComboBox
-        Left = 344
-        Top = 342
-        Width = 177
+        Left = 72
+        Top = 366
+        Width = 193
         Height = 21
         ItemHeight = 13
         TabOrder = 11
@@ -293,20 +321,52 @@ object MissionDialog: TMissionDialog
         OnChange = edTileatrNameChange
       end
       object cbTextUib: TComboBox
-        Left = 112
-        Top = 318
+        Left = 520
+        Top = 390
         Width = 161
         Height = 21
         ItemHeight = 13
         TabOrder = 16
         OnChange = cbTextUibChange
       end
+      object cbModsFolder: TComboBox
+        Left = 520
+        Top = 342
+        Width = 161
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 17
+      end
+      object cbColoursBin: TComboBox
+        Left = 520
+        Top = 366
+        Width = 161
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 18
+      end
+      object cbCampaignFolder: TComboBox
+        Left = 520
+        Top = 318
+        Width = 161
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 19
+        OnChange = cbCampaignFolderChange
+      end
+      object edMapIntelId: TEdit
+        Left = 320
+        Top = 366
+        Width = 113
+        Height = 21
+        TabOrder = 20
+      end
     end
     object RulesAndStringsPanel: TPanel
       Left = 0
-      Top = 369
+      Top = 417
       Width = 696
-      Height = 237
+      Height = 207
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
@@ -314,7 +374,7 @@ object MissionDialog: TMissionDialog
         Left = 0
         Top = 0
         Width = 272
-        Height = 237
+        Height = 207
         Align = alLeft
         DefaultColWidth = 180
         Enabled = False
@@ -330,13 +390,13 @@ object MissionDialog: TMissionDialog
         Left = 272
         Top = 0
         Width = 424
-        Height = 237
+        Height = 207
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 1
         object StringsSplitter: TSplitter
           Left = 0
-          Top = 114
+          Top = 104
           Width = 424
           Height = 3
           Cursor = crVSplit
@@ -344,9 +404,9 @@ object MissionDialog: TMissionDialog
         end
         object StringValueList: TValueListEditor
           Left = 0
-          Top = 117
+          Top = 107
           Width = 424
-          Height = 120
+          Height = 100
           Align = alBottom
           Constraints.MinHeight = 60
           DefaultColWidth = 50
@@ -364,7 +424,7 @@ object MissionDialog: TMissionDialog
           Left = 0
           Top = 0
           Width = 424
-          Height = 114
+          Height = 104
           Align = alClient
           ScrollBars = ssVertical
           TabOrder = 1
@@ -376,7 +436,7 @@ object MissionDialog: TMissionDialog
     Left = 696
     Top = 0
     Width = 320
-    Height = 606
+    Height = 624
     Align = alRight
     TabOrder = 1
     TabWidth = 39
@@ -385,7 +445,7 @@ object MissionDialog: TMissionDialog
       Left = 4
       Top = 6
       Width = 312
-      Height = 572
+      Height = 590
       Align = alClient
       DefaultColWidth = 224
       ScrollBars = ssVertical
@@ -401,7 +461,7 @@ object MissionDialog: TMissionDialog
     end
     object AIOptionsPanel: TPanel
       Left = 4
-      Top = 578
+      Top = 596
       Width = 312
       Height = 24
       Align = alBottom

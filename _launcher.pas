@@ -14,6 +14,8 @@ type
     text_uib: String;
     mission_number: integer;
     side_id: integer;
+    campaign_folder: String;
+    mods_folder: String;
   end;
 
 type
@@ -81,6 +83,8 @@ begin
     mission_data[i].text_uib := ini.ReadString('Basic', 'TextUib', '');
     mission_data[i].mission_number := ini.ReadInteger('Basic', 'MissionNumber', 0);
     mission_data[i].side_id := ini.ReadInteger('Basic', 'SideId', 0);
+    mission_data[i].campaign_folder := ini.ReadString('Data', 'CampaignFolder', '');
+    mission_data[i].mods_folder := ini.ReadString('Data', 'ModsFolder', '');
     mission_list.Add(mission_data[i].mission_name + '=' + inttostr(i));
     ini.Destroy;
   end;

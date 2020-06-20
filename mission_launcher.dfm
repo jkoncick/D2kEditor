@@ -53,6 +53,20 @@ object MissionLauncher: TMissionLauncher
     Height = 13
     Caption = 'Difficulty:'
   end
+  object lbMissionCampaignFolder: TLabel
+    Left = 272
+    Top = 536
+    Width = 79
+    Height = 13
+    Caption = 'Campaign folder:'
+  end
+  object lbMissionModsFolder: TLabel
+    Left = 544
+    Top = 536
+    Width = 58
+    Height = 13
+    Caption = 'Mods folder:'
+  end
   object lbMissionList: TListBox
     Left = 0
     Top = 0
@@ -115,8 +129,8 @@ object MissionLauncher: TMissionLauncher
     OnClick = btnLaunchGameClick
   end
   object btnOpenMissionInEditor: TButton
-    Left = 400
-    Top = 532
+    Left = 520
+    Top = 504
     Width = 115
     Height = 21
     Caption = 'Open in Editor'
@@ -137,5 +151,39 @@ object MissionLauncher: TMissionLauncher
       'Easy'
       'Normal'
       'Hard')
+  end
+  object edMissionCampaignFolder: TEdit
+    Left = 360
+    Top = 532
+    Width = 129
+    Height = 21
+    ReadOnly = True
+    TabOrder = 9
+  end
+  object edMissionModsFolder: TEdit
+    Left = 608
+    Top = 532
+    Width = 121
+    Height = 21
+    ReadOnly = True
+    TabOrder = 10
+  end
+  object btnOpenCampaignFolder: TButton
+    Left = 496
+    Top = 532
+    Width = 41
+    Height = 21
+    Caption = 'Open'
+    TabOrder = 11
+    OnClick = btnOpenCampaignFolderClick
+  end
+  object btnOpenModsFolder: TButton
+    Left = 736
+    Top = 532
+    Width = 41
+    Height = 21
+    Caption = 'Open'
+    TabOrder = 12
+    OnClick = btnOpenModsFolderClick
   end
 end

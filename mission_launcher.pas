@@ -22,12 +22,20 @@ type
     btnOpenMissionInEditor: TButton;
     cbDifficultyLevel: TComboBox;
     lbDifficultyLevel: TLabel;
+    lbMissionCampaignFolder: TLabel;
+    edMissionCampaignFolder: TEdit;
+    lbMissionModsFolder: TLabel;
+    edMissionModsFolder: TEdit;
+    btnOpenCampaignFolder: TButton;
+    btnOpenModsFolder: TButton;
     procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure lbMissionListClick(Sender: TObject);
     procedure btnLaunchGameClick(Sender: TObject);
     procedure btnOpenMissionInEditorClick(Sender: TObject);
+    procedure btnOpenCampaignFolderClick(Sender: TObject);
+    procedure btnOpenModsFolderClick(Sender: TObject);
   private
     mission_index: integer;
   public
@@ -40,7 +48,7 @@ var
 implementation
 
 uses
-  _launcher, _settings, main;
+  _launcher, _settings, main, ShellApi;
 
 {$R *.dfm}
 
@@ -73,11 +81,24 @@ begin
   if lbMissionList.ItemIndex = -1 then
     exit;
   mission_index := strtoint(Launcher.mission_list.ValueFromIndex[lbMissionList.ItemIndex]);
-  edMissionName.Text := Launcher.mission_data[mission_index].mission_name;
-  edMissionAuthor.Text := Launcher.mission_data[mission_index].author;
-  edMissionNumber.Text := inttostr(Launcher.mission_data[mission_index].mission_number);
-  edMissionFileName.Text := Launcher.mission_data[mission_index].filename;
-  mMissionBriefing.Text := StringReplace(Launcher.mission_data[mission_index].briefing, '_', #13#10, [rfReplaceAll]);
+  with (Launcher.mission_data[mission_index]) do
+  begin
+    edMissionName.Text := mission_name;
+    edMissionAuthor.Text := author;
+    edMissionNumber.Text := inttostr(mission_number);
+    edMissionFileName.Text := filename;
+    edMissionCampaignFolder.Text := campaign_folder;
+    if (campaign_folder <> '') and not DirectoryExists(Settings.GamePath + '\CustomCampaignData\' + campaign_folder) then
+      edMissionCampaignFolder.Color := clRed
+    else
+      edMissionCampaignFolder.Color := clWhite;
+    edMissionModsFolder.Text := mods_folder;
+    if (mods_folder <> '') and not DirectoryExists(Settings.GamePath + '\CustomCampaignData\' + campaign_folder + '\' + mods_folder) then
+      edMissionModsFolder.Color := clRed
+    else
+      edMissionModsFolder.Color := clWhite;
+    mMissionBriefing.Text := StringReplace(briefing, '_', #13#10, [rfReplaceAll]);
+  end;
 end;
 
 procedure TMissionLauncher.btnLaunchGameClick(Sender: TObject);
@@ -94,6 +115,20 @@ begin
   MainWindow.load_map(Settings.MissionsPath + '\' + Launcher.mission_data[mission_index].filename + '.MAP');
   if sender = btnOpenMissionInEditor then
     close;
+end;
+
+procedure TMissionLauncher.btnOpenCampaignFolderClick(Sender: TObject);
+begin
+  if edMissionCampaignFolder.Text = '' then
+    exit;
+  ShellExecute(0, 'open', PChar(Settings.GamePath + '\CustomCampaignData\' + edMissionCampaignFolder.Text), nil, nil, SW_SHOWNORMAL);
+end;
+
+procedure TMissionLauncher.btnOpenModsFolderClick(Sender: TObject);
+begin
+  if (edMissionCampaignFolder.Text = '') or (edMissionModsFolder.Text = '') then
+    exit;
+  ShellExecute(0, 'open', PChar(Settings.GamePath + '\CustomCampaignData\' + edMissionCampaignFolder.Text + '\' + edMissionModsFolder.Text), nil, nil, SW_SHOWNORMAL);
 end;
 
 end.
