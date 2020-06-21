@@ -279,6 +279,7 @@ object MissionDialog: TMissionDialog
         Top = 318
         Width = 113
         Height = 21
+        Style = csDropDownList
         ItemHeight = 13
         TabOrder = 12
         OnChange = cbMapSideIdChange
@@ -336,6 +337,7 @@ object MissionDialog: TMissionDialog
         Height = 21
         ItemHeight = 13
         TabOrder = 17
+        OnChange = cbModsFolderChange
       end
       object cbColoursBin: TComboBox
         Left = 520

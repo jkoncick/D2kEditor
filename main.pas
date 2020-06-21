@@ -288,6 +288,11 @@ type
     // Dynamic menu items
     recent_files_menuitems: array[1..cnt_recent_files] of TMenuItem;
 
+    // Structure editor procedures
+    procedure update_structures_list;
+    procedure update_player_list(player_list: TStringList);
+    procedure update_misc_object_list;
+
     // Rendering procedures
     procedure resize_map_canvas;
     procedure render_map;
@@ -446,17 +451,6 @@ begin
   Tileset.init;
   // Initialize Random Generator
   //--RandomGen.init(Memo1.Lines);
-  // Initialize Structures
-  for i := 0 to Structures.cnt_misc_objects - 1 do
-    MiscObjList.Items.Add(Structures.misc_object_info[i].name);
-  for i := 0 to cnt_players - 1 do
-    PlayerSelect.Items.Add(inttostr(i) + ' - '+ Structures.player_info[i].name);
-  PlayerSelect.ItemIndex := 0;
-  for i := 0 to Structures.cnt_structures - 1 do
-    if i < Structures.first_unit_index then
-      BuildingList.Items.Add(Structures.structure_info[i].name)
-    else
-      UnitList.Items.Add(Structures.structure_info[i].name);
   // Initialize recent files
   for i := 1 to cnt_recent_files do
   begin
@@ -1678,6 +1672,45 @@ begin
   if BlockPresetDialog.Visible then
     BlockPresetDialog.Show;
   BlockPresetDialog.init_presets;
+end;
+
+procedure TMainWindow.update_structures_list;
+var
+  i: integer;
+  tmp_strings_buildings, tmp_strings_units: TStringList;
+begin
+  tmp_strings_buildings := TStringList.Create;
+  tmp_strings_units := TStringList.Create;
+  for i := 0 to Structures.cnt_structures - 1 do
+    if i < Structures.first_unit_index then
+      tmp_strings_buildings.Add(Structures.structure_info[i].name)
+    else
+      tmp_strings_units.Add(Structures.structure_info[i].name);
+  BuildingList.Items := tmp_strings_buildings;
+  UnitList.Items := tmp_strings_units;
+  tmp_strings_buildings.Destroy;
+  tmp_strings_units.Destroy;
+end;
+
+procedure TMainWindow.update_player_list(player_list: TStringList);
+var
+  prev_index: integer;
+begin
+  prev_index := PlayerSelect.ItemIndex;
+  PlayerSelect.Items := player_list;
+  PlayerSelect.ItemIndex := Max(prev_index, 0);
+end;
+
+procedure TMainWindow.update_misc_object_list;
+var
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  for i := 0 to Structures.cnt_misc_objects - 1 do
+    tmp_strings.Add(Structures.misc_object_info[i].name);
+  MiscObjList.Items := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 procedure TMainWindow.resize_map_canvas;

@@ -24,7 +24,6 @@ type
     btnLaunch: TButton;
     btnRandomSeed: TButton;
     btnDefaultTextUib: TButton;
-    procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnRandomSeedClick(Sender: TObject);
     procedure btnDefaultTextUibClick(Sender: TObject);
@@ -34,6 +33,7 @@ type
     { Private declarations }
   public
     procedure invoke;
+    procedure update_player_list(player_list: TStringList);
   end;
 
 var
@@ -45,15 +45,6 @@ uses
   main, _mission, _structures, _launcher;
 
 {$R *.dfm}
-
-procedure TTestMapDialog.FormCreate(Sender: TObject);
-var
-  i: integer;
-begin
-  for i := 0 to cnt_players - 1 do
-    eMySideID.Items.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
-  eMySideID.ItemIndex := 0;
-end;
 
 procedure TTestMapDialog.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
@@ -107,6 +98,13 @@ begin
     eParameters.Text := TestMapParameters;
   end;
   ShowModal;
+end;
+
+procedure TTestMapDialog.update_player_list(player_list: TStringList);
+begin
+  eMySideID.Items := player_list;
+  if eMySideID.ItemIndex = -1 then
+    eMySideID.ItemIndex := 0;
 end;
 
 end.

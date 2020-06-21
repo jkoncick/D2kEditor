@@ -74,6 +74,9 @@ type
   TStructures = class
 
   public
+    structures_ini_filename: String;
+    players_ini_filename: String;
+    misc_objects_ini_filename: String;
     colours_bin_filename: String;
 
     cnt_structures: integer;
@@ -93,6 +96,9 @@ type
 
   public
     procedure init;
+    procedure load_structures_ini;
+    procedure load_players_ini;
+    procedure load_misc_objects_ini;
     procedure load_colours_bin;
     function special_value_is_valid(special: word): boolean;
     function special_value_to_params(special: word; var player: word; var index: word; var is_misc: boolean): boolean;
@@ -104,7 +110,7 @@ var
 
 implementation
 
-uses Classes, IniFiles, main, mission_dialog, _settings;
+uses Classes, IniFiles, main, set_dialog, test_map_dialog, map_stats_dialog, mission_dialog, event_dialog, _settings;
 
 procedure TStructures.init;
 var
@@ -204,15 +210,6 @@ begin
     end;
   end;
 
-  // Read list of players
-  ini := TMemIniFile.Create(current_dir + 'config/players.ini');
-  for i := 0 to cnt_players-1 do
-  begin
-    player_info[i].name := ini.ReadString('Player'+inttostr(i+1), 'name', 'Unnamed');
-    player_info[i].shortname := ini.ReadString('Player'+inttostr(i+1), 'short', player_info[i].name);
-  end;
-  ini.Destroy;
-
   // Read list of miscellaneous objects
   ini := TMemIniFile.Create(current_dir + 'config/misc_objects.ini');
   ini.ReadSections(tmp_strings);
@@ -245,6 +242,53 @@ begin
 
   tmp_strings.Destroy;
   decoder.Destroy;
+end;
+
+procedure TStructures.load_structures_ini;
+begin
+
+end;
+
+procedure TStructures.load_players_ini;
+var
+  tmp_filename, tmp_filename2: String;
+  ini: TMemIniFile;
+  player_list: TStringList;
+  i: integer;
+begin
+  // Step 1 - editor's internal file
+  tmp_filename := current_dir + 'config\players.ini';
+  // Step 2 - file under CustomCampaignData folder
+  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\' + MissionDialog.cbModsFolder.Text + '\config\players.ini';
+  if FileExists(tmp_filename2) then
+    tmp_filename := tmp_filename2;
+  // This file is already loaded - do not load it again
+  if players_ini_filename = tmp_filename then
+    exit;
+  players_ini_filename := tmp_filename;
+  // Read list of players
+  ini := TMemIniFile.Create(players_ini_filename);
+  player_list := TStringList.Create;
+  for i := 0 to cnt_players-1 do
+  begin
+    player_info[i].name := ini.ReadString('Player'+inttostr(i+1), 'name', 'Unnamed');
+    player_info[i].shortname := ini.ReadString('Player'+inttostr(i+1), 'short', player_info[i].name);
+    player_list.Add(inttostr(i) + ' - ' + player_info[i].name);
+  end;
+  ini.Destroy;
+  // Update all occurences in editor
+  MainWindow.update_player_list(player_list);
+  SetDialog.update_player_list(player_list);
+  TestMapDialog.update_player_list(player_list);
+  MapStatsDialog.update_player_list;
+  MissionDialog.update_player_list(player_list);
+  EventDialog.update_player_list(player_list);
+  player_list.Destroy;
+end;
+
+procedure TStructures.load_misc_objects_ini;
+begin
+
 end;
 
 procedure TStructures.load_colours_bin;

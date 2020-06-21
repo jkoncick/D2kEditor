@@ -117,6 +117,7 @@ type
     procedure cbMapSideIdChange(Sender: TObject);
     procedure seMapMissionNumberChange(Sender: TObject);
     procedure cbCampaignFolderChange(Sender: TObject);
+    procedure cbModsFolderChange(Sender: TObject);
     procedure cbColoursBinChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
   private
@@ -133,6 +134,7 @@ type
     defence_area_num: integer;
   public
     procedure fill_data;
+    procedure update_player_list(player_list: TStringList);
     procedure update_player_colors;
     procedure tileset_changed;
 
@@ -171,7 +173,6 @@ begin
     player_label[i] := TLabel.Create(self);
     player_label[i].Left := 8;
     player_label[i].Top := 28 + i * 24;
-    player_label[i].Caption := Structures.player_info[i].name;
     player_label[i].Parent := PlayerSettingsPanel;
     // Initialize tech levels
     tech_level[i] := TSpinEdit.Create(self);
@@ -220,7 +221,6 @@ begin
     player_label_alleg[i] := TLabel.Create(self);
     player_label_alleg[i].Left := 266 + i * 52;
     player_label_alleg[i].Top := 8;
-    player_label_alleg[i].Caption := IfThen(Length(Structures.player_info[i].name) <= 8, Structures.player_info[i].name, Copy(Structures.player_info[i].name, 0, 6)+'.');
     player_label_alleg[i].Parent := PlayerSettingsPanel;
     // Initialize allegiance buttons
     for j := 0 to cnt_players-1 do
@@ -236,9 +236,7 @@ begin
       allegiance_btn[i,j].OnClick := allegiance_btn_click;
     end;
     // Initialize AI PageControl
-    AITabControl.Tabs.Add(Structures.player_info[i].shortname);
-    // Initialize Play as list
-    cbMapSideId.Items.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
+    AITabControl.Tabs.Add('');
   end;
   // Load rule definitions from ini file
   tmp_strings := TStringList.Create;
@@ -330,6 +328,22 @@ begin
     cbUseINI.Checked := false;
   end;
   cbUseINI.Tag := 0;
+end;
+
+procedure TMissionDialog.update_player_list(player_list: TStringList);
+var
+  i: integer;
+  prev_index: integer;
+begin
+  prev_index := cbMapSideId.ItemIndex;
+  cbMapSideId.Items := player_list;
+  cbMapSideId.ItemIndex := Max(prev_index, 0);
+  for i := 0 to cnt_players-1 do
+  begin
+    player_label[i].Caption := Structures.player_info[i].name;
+    player_label_alleg[i].Caption := IfThen(Length(Structures.player_info[i].name) <= 8, Structures.player_info[i].name, Copy(Structures.player_info[i].name, 0, 6)+'.');
+    AITabControl.Tabs[i] := Structures.player_info[i].shortname;
+  end;
 end;
 
 procedure TMissionDialog.update_player_colors;
@@ -866,7 +880,13 @@ begin
   end;
   cbColoursBin.Items := tmp_strings;
   tmp_strings.Destroy;
+  cbModsFolderChange(nil);
   cbColoursBinChange(nil);
+end;
+
+procedure TMissionDialog.cbModsFolderChange(Sender: TObject);
+begin
+  Structures.load_players_ini;
 end;
 
 procedure TMissionDialog.cbColoursBinChange(Sender: TObject);

@@ -253,6 +253,7 @@ type
   public
     procedure update_contents;
     procedure fill_grids;
+    procedure update_player_list(player_list: TStringList);
     // Event-related procedures
     procedure select_event(index: integer);
     procedure fill_event_ui(event_valid: boolean);
@@ -277,7 +278,7 @@ var
 
 implementation
 
-uses main, _stringtable, _settings, _structures;
+uses Math, main, _stringtable, _settings, _structures;
 
 {$R *.dfm}
 
@@ -336,18 +337,12 @@ begin
   // Initialize unit selection list
   for i:= 0 to Mission.unit_names.Count -1 do
     UnitSelectionList.Items.Add(inttostr(i) + ' - ' + Mission.unit_names[i]);
-  // Initialize player list
-  for i:= 0 to cnt_players-1 do
-    cbEventPlayer.Items.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
   // Initialize deploy action list
   for i:= 0 to Length(deploy_action)-1 do
     cbDeployAction.Items.Add(inttostr(i) + ' - ' + deploy_action[i]);
   // Initialize allegiance type list
-  cbAllegianceSource.Items := cbEventPlayer.Items;
-  cbAllegianceTarget.Items := cbEventPlayer.Items;
   for i:= 0 to Length(allegiance_type)-1 do
     cbAllegianceType.Items.Add(inttostr(i) + ' - ' + allegiance_type[i]);
-  cbConditionPlayer.Items := cbEventPlayer.Items;
   // Initialize building types
   for i:= 0 to Mission.building_names.Count -1 do
     cbBuildingType.Items.Add(inttostr(i) + ' - ' + Mission.building_names[i]);
@@ -375,8 +370,6 @@ begin
   end;
   cbMusicName.Items := StringList;
   StringList.Free;
-  cbCreateEventsPlayer.Items := cbEventPlayer.Items;
-  cbCreateEventsPlayer.ItemIndex := 0;
   select_event(0);
   select_condition(0);
 end;
@@ -423,6 +416,8 @@ end;
 
 procedure TEventDialog.update_contents;
 begin
+  if not Mission.mis_assigned then
+    exit;
   fill_grids;
   select_event(selected_event);
   select_condition(selected_condition);
@@ -487,6 +482,20 @@ begin
   // All event grid must be redrawn
   if cbMarkEventsHavingCondition.Checked then
     EventGrid.Invalidate;
+end;
+
+procedure TEventDialog.update_player_list(player_list: TStringList);
+var
+  prev_index: integer;
+begin
+  cbEventPlayer.Items := player_list;
+  cbAllegianceSource.Items := player_list;
+  cbAllegianceTarget.Items := player_list;
+  cbConditionPlayer.Items := player_list;
+  prev_index := cbCreateEventsPlayer.ItemIndex;
+  cbCreateEventsPlayer.Items := player_list;
+  cbCreateEventsPlayer.ItemIndex := Max(prev_index, 0);
+  update_contents;
 end;
 
 procedure TEventDialog.select_event(index: integer);

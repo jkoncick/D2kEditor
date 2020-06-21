@@ -45,6 +45,7 @@ type
   public
     { Public declarations }
     procedure select_menu(menu: integer);
+    procedure update_player_list(player_list: TStringList);
   end;
 
 var
@@ -53,7 +54,7 @@ var
 implementation
 
 uses
-  main, _settings, _map, _tileset;
+  Math, main, _settings, _map, _tileset;
 
 {$R *.dfm}
 
@@ -65,11 +66,6 @@ var
   i: integer;
   default_tileset: integer;
 begin
-  ChStrOwn_PlayerFrom.Items := MainWindow.PlayerSelect.Items;
-  ChStrOwn_PlayerFrom.ItemIndex := 0;
-  ChStrOwn_PlayerTo.Items := MainWindow.PlayerSelect.Items;
-  ChStrOwn_PlayerTo.Items.Add('None (delete)');
-  ChStrOwn_PlayerTo.ItemIndex := 0;
   SetMapSize_Width.MaxValue := max_map_width;
   SetMapSize_Width.Value := Settings.DefaultMapWidth;
   SetMapSize_Height.MaxValue := max_map_height;
@@ -185,6 +181,19 @@ end;
 procedure TSetDialog.ShiftMap_SelectDirection(Sender: TObject);
 begin
   shift_map_direction := (Sender as TRadioButton).Tag;
+end;
+
+procedure TSetDialog.update_player_list(player_list: TStringList);
+var
+  prev_index: integer;
+begin
+  prev_index := ChStrOwn_PlayerFrom.ItemIndex;
+  ChStrOwn_PlayerFrom.Items := player_list;
+  ChStrOwn_PlayerFrom.ItemIndex := Max(prev_index, 0);
+  prev_index := ChStrOwn_PlayerTo.ItemIndex;
+  ChStrOwn_PlayerTo.Items := player_list;
+  ChStrOwn_PlayerTo.Items.Add('None (delete)');
+  ChStrOwn_PlayerTo.ItemIndex := Max(prev_index, 0);
 end;
 
 end.

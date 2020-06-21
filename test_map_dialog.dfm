@@ -15,7 +15,6 @@ object TestMapDialog: TTestMapDialog
   KeyPreview = True
   OldCreateOrder = False
   Scaled = False
-  OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   PixelsPerInch = 96
   TextHeight = 13
