@@ -261,7 +261,7 @@ object EventDialog: TEventDialog
         object cbEventPlayer: TComboBox
           Left = 64
           Top = 4
-          Width = 100
+          Width = 120
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
@@ -935,7 +935,7 @@ object EventDialog: TEventDialog
         object cbConditionPlayer: TComboBox
           Left = 48
           Top = 4
-          Width = 100
+          Width = 120
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
@@ -1234,9 +1234,9 @@ object EventDialog: TEventDialog
       Kind = bkOK
     end
     object cbCreateEventsPlayer: TComboBox
-      Left = 72
+      Left = 64
       Top = 56
-      Width = 113
+      Width = 121
       Height = 21
       Style = csDropDownList
       ItemHeight = 13

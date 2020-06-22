@@ -304,7 +304,7 @@ begin
   EventGrid.Cells[2,0] := 'Position';
   EventGrid.ColWidths[2] := 50;
   EventGrid.Cells[3,0] := 'Player';
-  EventGrid.ColWidths[3] := 64;
+  EventGrid.ColWidths[3] := 72;
   EventGrid.Cells[4,0] := 'Contents';
   EventGrid.ColWidths[4] := 400;
   EventGrid.Cells[5,0] := 'Conditions';
@@ -319,9 +319,9 @@ begin
   ConditionGrid.Cells[0,0] := '#';
   ConditionGrid.ColWidths[0] := 20;
   ConditionGrid.Cells[1,0] := 'Condition type';
-  ConditionGrid.ColWidths[1] := 92;
+  ConditionGrid.ColWidths[1] := 84;
   ConditionGrid.Cells[2,0] := 'Player';
-  ConditionGrid.ColWidths[2] := 64;
+  ConditionGrid.ColWidths[2] := 72;
   ConditionGrid.Cells[3,0] := 'Contents';
   ConditionGrid.ColWidths[3] := 112;
   for i:= 1 to 48 do

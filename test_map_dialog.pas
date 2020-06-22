@@ -103,8 +103,6 @@ end;
 procedure TTestMapDialog.update_player_list(player_list: TStringList);
 begin
   eMySideID.Items := player_list;
-  if eMySideID.ItemIndex = -1 then
-    eMySideID.ItemIndex := 0;
 end;
 
 end.

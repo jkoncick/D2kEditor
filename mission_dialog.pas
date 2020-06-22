@@ -176,7 +176,7 @@ begin
     player_label[i].Parent := PlayerSettingsPanel;
     // Initialize tech levels
     tech_level[i] := TSpinEdit.Create(self);
-    tech_level[i].Left := 72;
+    tech_level[i].Left := 80;
     tech_level[i].Top := 24 + i * 24;
     tech_level[i].Width := 48;
     tech_level[i].Height := 22;
@@ -188,7 +188,7 @@ begin
     tech_level[i].OnChange := tech_level_change;
     // Initialize Starting money
     starting_money[i] := TEdit.Create(self);
-    starting_money[i].Left := 128;
+    starting_money[i].Left := 132;
     starting_money[i].Top := 24 + i * 24;
     starting_money[i].Width := 56;
     starting_money[i].Height := 22;
@@ -891,6 +891,7 @@ end;
 
 procedure TMissionDialog.cbColoursBinChange(Sender: TObject);
 begin
+  Structures.load_players_ini;
   Structures.load_colours_bin;
 end;
 

@@ -37,14 +37,14 @@ object MissionDialog: TMissionDialog
       BevelOuter = bvNone
       TabOrder = 0
       object lblTechLevel: TLabel
-        Left = 72
+        Left = 80
         Top = 8
         Width = 38
         Height = 13
         Caption = 'Tech lvl'
       end
       object lblStartingMoney: TLabel
-        Left = 128
+        Left = 132
         Top = 8
         Width = 32
         Height = 13
@@ -88,9 +88,9 @@ object MissionDialog: TMissionDialog
       object lblMapAuthor: TLabel
         Left = 8
         Top = 344
-        Width = 57
+        Width = 34
         Height = 13
-        Caption = 'Map author:'
+        Caption = 'Author:'
       end
       object lblMapMusic: TLabel
         Left = 8
@@ -177,7 +177,7 @@ object MissionDialog: TMissionDialog
         Caption = 'Intel ID:'
       end
       object seTechLevelAll: TSpinEdit
-        Left = 72
+        Left = 80
         Top = 224
         Width = 49
         Height = 22
@@ -188,7 +188,7 @@ object MissionDialog: TMissionDialog
         OnChange = seTechLevelAllChange
       end
       object edStartingMoneyAll: TEdit
-        Left = 128
+        Left = 132
         Top = 224
         Width = 57
         Height = 21
@@ -215,9 +215,9 @@ object MissionDialog: TMissionDialog
         OnClick = btnAllegianceResetClick
       end
       object edTimeLimit: TEdit
-        Left = 72
+        Left = 80
         Top = 256
-        Width = 97
+        Width = 89
         Height = 21
         TabOrder = 1
         Text = '0'
@@ -261,16 +261,16 @@ object MissionDialog: TMissionDialog
         OnClick = btnResetToDefaultsClick
       end
       object edMapName: TEdit
-        Left = 72
+        Left = 64
         Top = 318
-        Width = 193
+        Width = 201
         Height = 21
         TabOrder = 9
       end
       object edMapAuthor: TEdit
-        Left = 72
+        Left = 64
         Top = 342
-        Width = 193
+        Width = 201
         Height = 21
         TabOrder = 10
       end
@@ -296,9 +296,9 @@ object MissionDialog: TMissionDialog
         OnChange = seMapMissionNumberChange
       end
       object cbMapMusic: TComboBox
-        Left = 72
+        Left = 64
         Top = 366
-        Width = 193
+        Width = 201
         Height = 21
         ItemHeight = 13
         TabOrder = 11

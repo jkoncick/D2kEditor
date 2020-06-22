@@ -262,6 +262,10 @@ begin
   tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\' + MissionDialog.cbModsFolder.Text + '\config\players.ini';
   if FileExists(tmp_filename2) then
     tmp_filename := tmp_filename2;
+  // Step 3 - file under Colours folder
+  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\Colours\' + ChangeFileExt(MissionDialog.cbColoursBin.Text, '.ini');
+  if FileExists(tmp_filename2) then
+    tmp_filename := tmp_filename2;
   // This file is already loaded - do not load it again
   if players_ini_filename = tmp_filename then
     exit;
