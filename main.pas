@@ -435,8 +435,6 @@ begin
       end;
     end;
   end;
-  // Initialize structures
-  Structures.init;
   // Initialize mission
   Mission.init;
   // Load string table
@@ -1246,7 +1244,7 @@ begin
     numunits := Mission.mis_data.events[eventnum].num_units;
     tmp_hint := inttostr(numunits) + ' units:';
     for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + Mission.unit_names[Mission.mis_data.events[eventnum].units[i]];
+      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name(Mission.mis_data.events[eventnum].units[i]);
     MapCanvas.Hint := tmp_hint;
     MapCanvas.ShowHint := true
   end else

@@ -254,6 +254,8 @@ type
     procedure update_contents;
     procedure fill_grids;
     procedure update_player_list(player_list: TStringList);
+    procedure update_building_list;
+    procedure update_unit_list;
     // Event-related procedures
     procedure select_event(index: integer);
     procedure fill_event_ui(event_valid: boolean);
@@ -328,39 +330,38 @@ begin
   begin
     ConditionGrid.Cells[0,i] := inttostr(i-1);
   end;
+  StringList := TStringList.Create;
   // Initialize event type list
   for i:= 0 to Length(event_type_info)-1 do
-    cbEventType.Items.Add(inttostr(i) + ' - ' + event_type_info[i].name);
+    StringList.Add(inttostr(i) + ' - ' + event_type_info[i].name);
+  cbEventType.Items := StringList;
+  StringList.Clear;
   // Initialize condition type list
   for i:= 0 to Length(condition_type_info)-1 do
-    cbConditionType.Items.Add(inttostr(i) + ' - ' + condition_type_info[i].name);
-  // Initialize unit selection list
-  for i:= 0 to Mission.unit_names.Count -1 do
-    UnitSelectionList.Items.Add(inttostr(i) + ' - ' + Mission.unit_names[i]);
+    StringList.Add(inttostr(i) + ' - ' + condition_type_info[i].name);
+  cbConditionType.Items := StringList;
+  StringList.Clear;
   // Initialize deploy action list
   for i:= 0 to Length(deploy_action)-1 do
-    cbDeployAction.Items.Add(inttostr(i) + ' - ' + deploy_action[i]);
+    StringList.Add(inttostr(i) + ' - ' + deploy_action[i]);
+  cbDeployAction.Items := StringList;
+  StringList.Clear;
   // Initialize allegiance type list
   for i:= 0 to Length(allegiance_type)-1 do
-    cbAllegianceType.Items.Add(inttostr(i) + ' - ' + allegiance_type[i]);
-  // Initialize building types
-  for i:= 0 to Mission.building_names.Count -1 do
-    cbBuildingType.Items.Add(inttostr(i) + ' - ' + Mission.building_names[i]);
-  // Initialize unit types
-  for i:= 0 to Mission.unit_names.Count -1 do
-    cbUnitType.Items.Add(inttostr(i) + ' - ' + Mission.unit_names[i]);
+    StringList.Add(inttostr(i) + ' - ' + allegiance_type[i]);
+  cbAllegianceType.Items := StringList;
+  StringList.Clear;
   // Initialize comparison functions
   for i:= 0 to Length(comparison_function)-1 do
-    cbTimerCompareFunc.Items.Add(comparison_function[i]);
-  // Initialize sound names
-  StringList := TStringList.Create;
-  for i := 0 to SoundStringTable.get_table_size - 1 do
-  begin
-    StringList.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, false, dummy));
-  end;
-  cbSoundName.Items := StringList;
-  // Initialize music names
+    StringList.Add(comparison_function[i]);
+  cbTimerCompareFunc.Items := StringList;
   StringList.Clear;
+  // Initialize sound names
+  for i := 0 to SoundStringTable.get_table_size - 1 do
+    StringList.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, false, dummy));
+  cbSoundName.Items := StringList;
+  StringList.Clear;
+  // Initialize music names
   if FindFirst(Settings.GamePath + '\Data\Music\*.AUD', 0, SR) = 0 then
   begin
     repeat
@@ -369,7 +370,7 @@ begin
       FindClose(SR);
   end;
   cbMusicName.Items := StringList;
-  StringList.Free;
+  StringList.Destroy;
   select_event(0);
   select_condition(0);
 end;
@@ -495,7 +496,31 @@ begin
   prev_index := cbCreateEventsPlayer.ItemIndex;
   cbCreateEventsPlayer.Items := player_list;
   cbCreateEventsPlayer.ItemIndex := Max(prev_index, 0);
-  update_contents;
+end;
+
+procedure TEventDialog.update_building_list;
+var
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  for i:= 0 to Structures.building_names.Count -1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + Structures.building_names[i]);
+  cbBuildingType.Items := tmp_strings;
+  tmp_strings.Destroy;
+end;
+
+procedure TEventDialog.update_unit_list;
+var
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  for i:= 0 to Structures.unit_names.Count -1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + Structures.unit_names[i]);
+  UnitSelectionList.Items := tmp_strings;
+  cbUnitType.Items := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 procedure TEventDialog.select_event(index: integer);
@@ -626,7 +651,7 @@ var
 begin
   if event_type_info[Mission.mis_data.events[selected_event].event_type].use_unit_list then
     for i := 0 to tmp_event.num_units - 1 do
-      EventUnitList.Items.Add(Mission.unit_names[tmp_event.units[i]]);
+      EventUnitList.Items.Add(Structures.get_unit_name(tmp_event.units[i]));
 end;
 
 procedure TEventDialog.fill_event_condition_list;
@@ -965,7 +990,7 @@ begin
   end;
   tmp_event.units[tmp_event.num_units] := UnitSelectionList.ItemIndex;
   inc(tmp_event.num_units);
-  EventUnitList.Items.Add(Mission.unit_names[UnitSelectionList.ItemIndex]);
+  EventUnitList.Items.Add(Structures.get_unit_name(UnitSelectionList.ItemIndex));
 end;
 
 procedure TEventDialog.btnDeleteUnitClick(Sender: TObject);

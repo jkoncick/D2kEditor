@@ -150,21 +150,21 @@ object MissionDialog: TMissionDialog
       end
       object lblModsFolder: TLabel
         Left = 440
-        Top = 344
+        Top = 320
         Width = 58
         Height = 13
         Caption = 'Mods folder:'
       end
       object lblColoursBin: TLabel
         Left = 440
-        Top = 368
+        Top = 344
         Width = 71
         Height = 13
         Caption = 'Colours.bin file:'
       end
       object lblCampaignFolder: TLabel
         Left = 440
-        Top = 320
+        Top = 296
         Width = 79
         Height = 13
         Caption = 'Campaign folder:'
@@ -175,6 +175,13 @@ object MissionDialog: TMissionDialog
         Width = 37
         Height = 13
         Caption = 'Intel ID:'
+      end
+      object lblPlayersIni: TLabel
+        Left = 440
+        Top = 368
+        Width = 66
+        Height = 13
+        Caption = 'Players.ini file:'
       end
       object seTechLevelAll: TSpinEdit
         Left = 80
@@ -332,7 +339,7 @@ object MissionDialog: TMissionDialog
       end
       object cbModsFolder: TComboBox
         Left = 520
-        Top = 342
+        Top = 318
         Width = 161
         Height = 21
         ItemHeight = 13
@@ -341,7 +348,7 @@ object MissionDialog: TMissionDialog
       end
       object cbColoursBin: TComboBox
         Left = 520
-        Top = 366
+        Top = 342
         Width = 161
         Height = 21
         ItemHeight = 13
@@ -350,7 +357,7 @@ object MissionDialog: TMissionDialog
       end
       object cbCampaignFolder: TComboBox
         Left = 520
-        Top = 318
+        Top = 294
         Width = 161
         Height = 21
         ItemHeight = 13
@@ -363,6 +370,15 @@ object MissionDialog: TMissionDialog
         Width = 113
         Height = 21
         TabOrder = 20
+      end
+      object cbPlayersIni: TComboBox
+        Left = 520
+        Top = 366
+        Width = 161
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 21
+        OnChange = cbPlayersIniChange
       end
     end
     object RulesAndStringsPanel: TPanel

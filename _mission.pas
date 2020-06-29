@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics, IniFiles, Classes, _map;
+uses Graphics, IniFiles, _map;
 
 // Mis file constants
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
@@ -177,11 +177,9 @@ type
 
     // Configuration variables
     default_ai: array[0..7607] of byte;
-    building_names: TStringList;
-    unit_names: TStringList;
 
     // Temporary variables
-    tmp_unit_count: Array of integer;
+    tmp_unit_count: array[0..59] of integer;
 
   public
     procedure init;
@@ -231,17 +229,11 @@ procedure TMission.init;
 var
   ai_file: file of byte;
 begin
-  unit_names := TStringList.Create;
-  building_names := TStringList.Create;
   // Load default AI
   AssignFile(ai_file, current_dir + 'config/default_ai.misai');
   Reset(ai_file);
   BlockRead(ai_file, default_ai[1], Length(default_ai)-1);
   CloseFile(ai_file);
-  // Load units and building names
-  unit_names.LoadFromFile(current_dir + 'config/mis_units.txt');
-  building_names.LoadFromFile(current_dir + 'config/mis_buildings.txt');
-  SetLength(tmp_unit_count, unit_names.Count);
 end;
 
 function TMission.get_mis_filename(filename: String): String;
@@ -438,20 +430,20 @@ begin
       contents := deploy_action[event.deploy_action] + ' ';
     contents := contents + '(' + inttostr(event.num_units) + '): ';
     dummy := false;
-    for i := 0 to unit_names.Count - 1 do
+    for i := 0 to Length(tmp_unit_count) - 1 do
       tmp_unit_count[i] := 0;
     for i := 0 to event.num_units - 1 do
     begin
-      if event.units[i] < unit_names.Count then
+      if event.units[i] < Length(tmp_unit_count) then
         Inc(tmp_unit_count[event.units[i]]);
     end;
-    for i := 0 to unit_names.Count - 1 do
+    for i := 0 to Length(tmp_unit_count) - 1 do
     begin
       if tmp_unit_count[i] > 0 then
       begin
         if dummy then
           contents := contents + ',  ';
-        contents := contents + inttostr(tmp_unit_count[i]) + 'x ' + unit_names[i];
+        contents := contents + inttostr(tmp_unit_count[i]) + 'x ' + Structures.get_unit_name(i);
         dummy := true;
       end;
     end;
@@ -518,8 +510,8 @@ begin
     space := ' ';
   end;
   case cond_type of
-    ctBuildingExists: contents := contents + space + building_names[cond.building_type];
-    ctUnitExists:     contents := contents + space + unit_names[cond.unit_type_or_comparison_function];
+    ctBuildingExists: contents := contents + space + Structures.get_building_name(cond.building_type);
+    ctUnitExists:     contents := contents + space + Structures.get_unit_name(cond.unit_type_or_comparison_function);
     ctInterval:       contents := contents + inttostr(cond.start_delay) + ' ' + inttostr(cond.time_amount) + ' ' + inttostr(cond.value);
     ctTimer:          contents := contents + comparison_function[cond.unit_type_or_comparison_function] + inttostr(cond.time_amount);
     ctCasualties:     contents := contents + space + inttostr(cond.value) + '  ' + floattostrf(cond.casualties_ratio, ffFixed, 8, 3);

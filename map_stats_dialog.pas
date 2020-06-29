@@ -24,6 +24,7 @@ type
     tmp_stats: Array of Array[0..cnt_players-1] of integer;
   public
     procedure update_stats;
+    procedure update_structures_list;
     procedure update_player_list;
   end;
 
@@ -35,8 +36,6 @@ implementation
 {$R *.dfm}
 
 procedure TMapStatsDialog.FormCreate(Sender: TObject);
-var
-  i: integer;
 begin
   StatsGrid.ColWidths[0] := 128;
   StatsGrid.Cells[0,1] := 'All structures';
@@ -47,10 +46,6 @@ begin
   StatsGrid.Cells[0,6] := 'Power need';
   StatsGrid.Cells[0,7] := 'Power percent';
   StatsGrid.Cells[9,0] := 'Total';
-  StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.cnt_structures;
-  SetLength(tmp_stats, cnt_fixed_rows+Structures.cnt_structures);
-  for i := 0 to Structures.cnt_structures - 1 do
-    StatsGrid.Cells[0,1+i+cnt_fixed_rows] := Structures.structure_info[i].name;
 end;
 
 procedure TMapStatsDialog.FormKeyDown(Sender: TObject; var Key: Word;
@@ -131,6 +126,16 @@ begin
     else
       StatsGrid.Cells[9,i+1] := '';
   end;
+end;
+
+procedure TMapStatsDialog.update_structures_list;
+var
+  i: integer;
+begin
+  StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.cnt_structures;
+  SetLength(tmp_stats, cnt_fixed_rows+Structures.cnt_structures);
+  for i := 0 to Structures.cnt_structures - 1 do
+    StatsGrid.Cells[0,1+i+cnt_fixed_rows] := Structures.structure_info[i].name;
 end;
 
 procedure TMapStatsDialog.update_player_list;

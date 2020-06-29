@@ -58,12 +58,6 @@ type
   TRenderer = class
 
   private
-    // Graphic data
-    graphics_structures: TBitmap;
-    graphics_structures_mask: TBitmap;
-    graphics_misc_objects: TBitmap;
-    graphics_misc_objects_mask: TBitmap;
-
     // Differential rendering variables
     diffrender_old_left: word;
     diffrender_old_top: word;
@@ -80,8 +74,6 @@ type
 
   public
     procedure init;
-
-    procedure load_or_create_mask(graph: TBitmap; mask: TBitmap; filename: String);
 
     procedure invalidate_init;
     procedure invalidate_map_tile(x, y: word);
@@ -114,54 +106,11 @@ implementation
 uses SysUtils, Math, Forms, main, _mission, _tileset, _structures, _settings, Classes, _randomgen;
 
 procedure TRenderer.init;
-var
-  tmp_filename: String;
 begin
-  // Load graphics from files
-  graphics_structures := TBitmap.Create;
-  graphics_structures_mask := TBitmap.Create;
-  graphics_misc_objects := TBitmap.Create;
-  graphics_misc_objects_mask := TBitmap.Create;
-  tmp_filename := current_dir + 'graphics/structures.bmp';
-  if FileExists(tmp_filename) then
-  begin
-    graphics_structures.LoadFromFile(tmp_filename);
-    load_or_create_mask(graphics_structures, graphics_structures_mask, current_dir + 'graphics/structures_mask.bmp');
-  end else
-    Application.MessageBox(PChar('Could not find graphics file ' + tmp_filename), 'Error loading graphics', MB_OK or MB_ICONWARNING);
-  tmp_filename := current_dir + 'graphics/misc_objects.bmp';
-  if FileExists(tmp_filename) then
-  begin
-    graphics_misc_objects.LoadFromFile(tmp_filename);
-    load_or_create_mask(graphics_misc_objects, graphics_misc_objects_mask, current_dir + 'graphics/misc_objects_mask.bmp');
-  end else
-    Application.MessageBox(PChar('Could not find graphics file ' + tmp_filename), 'Error loading graphics', MB_OK or MB_ICONWARNING);
   // Init backup image
   bkup_bitmap := TBitmap.Create;
   bkup_bitmap.Width := 128;
   bkup_bitmap.Height := 128;
-end;
-
-procedure TRenderer.load_or_create_mask(graph, mask: TBitmap; filename: String);
-var
-  x, y: integer;
-  black: TColor;
-begin
-  mask.PixelFormat := pf1bit;
-  if FileExists(filename) then
-    mask.LoadFromFile(filename)
-  else begin
-    mask.Width := graph.Width;
-    mask.Height := graph.Height;
-    black := graph.Canvas.Pixels[0,0];
-    for y := 0 to graph.Height - 1 do
-      for x := 0 to graph.Width - 1 do
-      begin
-        if graph.Canvas.Pixels[x,y] <> black then
-          mask.Canvas.Pixels[x,y] := clBlack;
-      end;
-    mask.SaveToFile(filename);
-  end;
 end;
 
 procedure TRenderer.invalidate_init;
@@ -396,9 +345,9 @@ begin
           src_rect := rect((index-1)*32,0,(index-1)*32+32,32);
           dest_rect := rect(x*32,y*32,x*32+32,y*32+32);
           cnv_target.CopyMode := cmSrcAnd;
-          cnv_target.CopyRect(dest_rect,graphics_misc_objects_mask.Canvas,src_rect);
+          cnv_target.CopyRect(dest_rect,Structures.graphics_misc_objects_mask.Canvas,src_rect);
           cnv_target.CopyMode := cmSrcPaint;
-          cnv_target.CopyRect(dest_rect,graphics_misc_objects.Canvas,src_rect);
+          cnv_target.CopyRect(dest_rect,Structures.graphics_misc_objects.Canvas,src_rect);
           cnv_target.CopyMode := cmSrcCopy;
         end else
         begin
@@ -509,9 +458,9 @@ begin
             continue;
           // Drawing structure
           cnv_target.CopyMode := cmSrcAnd;
-          cnv_target.CopyRect(dest_rect,graphics_structures_mask.Canvas,src_rect);
+          cnv_target.CopyRect(dest_rect,Structures.graphics_structures_mask.Canvas,src_rect);
           cnv_target.CopyMode := cmSrcPaint;
-          cnv_target.CopyRect(dest_rect,graphics_structures.Canvas,src_rect);
+          cnv_target.CopyRect(dest_rect,Structures.graphics_structures.Canvas,src_rect);
           cnv_target.CopyMode := cmSrcCopy;
           // Draw wall owner side marker
           if o_mark_owner_side and (index = 0) then

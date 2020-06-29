@@ -88,6 +88,8 @@ type
     cbCampaignFolder: TComboBox;
     lblMapIntelId: TLabel;
     edMapIntelId: TEdit;
+    lblPlayersIni: TLabel;
+    cbPlayersIni: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -120,6 +122,7 @@ type
     procedure cbModsFolderChange(Sender: TObject);
     procedure cbColoursBinChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
+    procedure cbPlayersIniChange(Sender: TObject);
   private
     player_label: array[0..cnt_players-1] of TLabel;
     tech_level: array[0..cnt_players-1] of TSpinEdit;
@@ -132,6 +135,7 @@ type
     misai_properties: array of TMisAIProperty;
     ai_clipboard_format: cardinal;
     defence_area_num: integer;
+    loading: boolean;
   public
     procedure fill_data;
     procedure update_player_list(player_list: TStringList);
@@ -302,6 +306,7 @@ procedure TMissionDialog.fill_data;
 var
   i, j: integer;
 begin
+  loading := true;
   for i := 0 to cnt_players-1 do
   begin
     tech_level[i].Value := Mission.mis_data.tech_level[i];
@@ -328,6 +333,7 @@ begin
     cbUseINI.Checked := false;
   end;
   cbUseINI.Tag := 0;
+  loading := false;
 end;
 
 procedure TMissionDialog.update_player_list(player_list: TStringList);
@@ -446,6 +452,8 @@ begin
   cbModsFolder.Text := ini.ReadString('Data','ModsFolder','');
   cbColoursBin.Enabled := true;
   cbColoursBin.Text := ini.ReadString('Data','ColoursFile','');
+  cbPlayersIni.Enabled := true;
+  cbPlayersIni.Text := ini.ReadString('Data','PlayersFile','');
   cbTextUib.Enabled := true;
   cbTextUib.Text := ini.ReadString('Basic','TextUib','');
   cbMapSideIdChange(nil);
@@ -504,6 +512,8 @@ begin
   cbModsFolder.Text := '';
   cbColoursBin.Enabled := false;
   cbColoursBin.Text := '';
+  cbPlayersIni.Enabled := false;
+  cbPlayersIni.Text := '';
   cbTextUib.Enabled := false;
   cbTextUib.Text := '';
   cbCampaignFolderChange(nil);
@@ -548,6 +558,26 @@ begin
     ini.DeleteKey('Basic','MissionNumber')
   else
     ini.WriteInteger('Basic','MissionNumber',seMapMissionNumber.Value);
+  if edMapIntelId.Text = '' then
+    ini.DeleteKey('Data','IntelId')
+  else
+    ini.WriteString('Data','IntelId',edMapIntelId.Text);
+  if cbCampaignFolder.Text = '' then
+    ini.DeleteKey('Data','CampaignFolder')
+  else
+    ini.WriteString('Data','CampaignFolder',cbCampaignFolder.Text);
+  if cbModsFolder.Text = '' then
+    ini.DeleteKey('Data','ModsFolder')
+  else
+    ini.WriteString('Data','ModsFolder',cbModsFolder.Text);
+  if cbColoursBin.Text = '' then
+    ini.DeleteKey('Data','ColoursFile')
+  else
+    ini.WriteString('Data','ColoursFile',cbColoursBin.Text);
+  if cbPlayersIni.Text = '' then
+    ini.DeleteKey('Data','PlayersFile')
+  else
+    ini.WriteString('Data','PlayersFile',cbPlayersIni.Text);
   if cbTextUib.Text = '' then
     ini.DeleteKey('Basic','TextUib')
   else
@@ -863,7 +893,7 @@ begin
   if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\*', faDirectory, SR) = 0 then
   begin
     repeat
-      if (SR.Name <> '.') and (SR.Name <> '..') and (AnsiCompareText(SR.Name,'colours') <> 0) and (AnsiCompareText(SR.Name,'intel') <> 0) then
+      if (SR.Name <> '.') and (SR.Name <> '..') and (AnsiCompareText(SR.Name,'colours') <> 0) and (AnsiCompareText(SR.Name,'intel') <> 0) and (AnsiCompareText(SR.Name,'players') <> 0) then
         tmp_strings.Add(SR.Name);
     until FindNext(SR) <> 0;
       FindClose(SR);
@@ -879,20 +909,46 @@ begin
       FindClose(SR);
   end;
   cbColoursBin.Items := tmp_strings;
+  // Load list of Players.ini files
+  tmp_strings.Clear;
+  if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\Players\*.ini', 0, SR) = 0 then
+  begin
+    repeat
+      tmp_strings.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbPlayersIni.Items := tmp_strings;
   tmp_strings.Destroy;
   cbModsFolderChange(nil);
-  cbColoursBinChange(nil);
 end;
 
 procedure TMissionDialog.cbModsFolderChange(Sender: TObject);
 begin
+  // Reload structures data
+  Structures.load_graphics_structures;
+  Structures.load_graphics_misc_objects;
+  Structures.load_structures_ini;
+  Structures.load_tiledata_bin;
   Structures.load_players_ini;
+  Structures.load_misc_objects_ini;
+  Structures.load_mis_buildings_txt;
+  Structures.load_mis_units_txt;
+  Structures.load_colours_bin;
+  Structures.load_limits_ini;
+  Structures.do_pending_actions(loading);
 end;
 
 procedure TMissionDialog.cbColoursBinChange(Sender: TObject);
 begin
-  Structures.load_players_ini;
   Structures.load_colours_bin;
+  Structures.do_pending_actions(loading);
+end;
+
+procedure TMissionDialog.cbPlayersIniChange(Sender: TObject);
+begin
+  Structures.load_players_ini;
+  Structures.do_pending_actions(loading);
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);
