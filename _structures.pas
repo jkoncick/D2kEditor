@@ -10,6 +10,13 @@ const cnt_tiledata_entries = 1000;
 const max_building_width = 3;
 const max_building_height = 4;
 
+type
+  TMisAIProperty = record
+    name: String;
+    data_type: char;
+    position: integer;
+  end;
+
 type StructureType = (stNothing, stMiscObject, stBuilding, stUnit);
 
 type
@@ -80,15 +87,25 @@ type
     tiledata_bin_filename: String;
     players_ini_filename: String;
     misc_objects_ini_filename: String;
-    mis_buildings_txt_filename: String;
-    mis_units_txt_filename: String;
+    buildings_txt_filename: String;
+    buildings2_txt_filename: String;
+    units_txt_filename: String;
     colours_bin_filename: String;
     limits_ini_filename: String;
 
     pending_render_map: boolean;
     pending_render_minimap: boolean;
     pending_fill_events_and_conditions: boolean;
+    pending_update_mis_ai_properties: boolean;
+
+    tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
+
+    mis_ai_properties_template: array of TMisAIProperty;
   public
+    // Mis AI properties data
+    mis_ai_properties: array of TMisAIProperty;
+    cnt_mis_ai_properties: integer;
+
     // Graphic data
     graphics_structures: TBitmap;
     graphics_structures_mask: TBitmap;
@@ -106,28 +123,33 @@ type
     misc_object_info: array of TMiscObjectInfo;
 
     building_names: TStringList;
+    building2_names: TStringList;
     unit_names: TStringList;
 
+    // Limits
     limit_spice_blooms: integer;
     limit_structures_total: integer;
     limit_refineries_per_player: integer;
   private
-    tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
+
 
   public
     procedure init;
     function find_file(pattern: String): String;
+    procedure load_mis_ai_properties_ini;
     procedure load_graphics_structures;
     procedure load_graphics_misc_objects;
     procedure load_structures_ini;
     procedure load_tiledata_bin;
     procedure load_players_ini;
     procedure load_misc_objects_ini;
-    procedure load_mis_buildings_txt;
-    procedure load_mis_units_txt;
+    procedure load_buildings_txt;
+    procedure load_buildings2_txt;
+    procedure load_units_txt;
     procedure load_colours_bin;
     procedure load_limits_ini;
     procedure do_pending_actions(skip: boolean);
+    procedure update_mis_ai_properties;
     function special_value_is_valid(special: word): boolean;
     function special_value_to_params(special: word; var player: word; var index: word; var is_misc: boolean): boolean;
     function check_links_with_wall(special: word): boolean;
@@ -148,16 +170,19 @@ begin
   graphics_structures_mask := TBitmap.Create;
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
-  unit_names := TStringList.Create;
   building_names := TStringList.Create;
+  building2_names := TStringList.Create;
+  unit_names := TStringList.Create;
+  load_mis_ai_properties_ini;
   load_graphics_structures;
   load_graphics_misc_objects;
   load_structures_ini;
   load_tiledata_bin;
   load_players_ini;
   load_misc_objects_ini;
-  load_mis_buildings_txt;
-  load_mis_units_txt;
+  load_buildings_txt;
+  load_buildings2_txt;
+  load_units_txt;
   load_colours_bin;
   load_limits_ini;
   do_pending_actions(true);
@@ -177,6 +202,36 @@ begin
     tmp_filename := '';
   end;
   result := tmp_filename;
+end;
+
+procedure TStructures.load_mis_ai_properties_ini;
+var
+  tmp_filename: String;
+  i: integer;
+  ini: TMemIniFile;
+  tmp_strings: TStringList;
+begin
+  tmp_filename := current_dir + 'config\mis_ai_properties.ini';
+  // Check if file exists
+  if not FileExists(tmp_filename) then
+  begin
+    Application.MessageBox('Could not find file config\mis_ai_properties.ini', 'Error loading configuration file', MB_OK or MB_ICONERROR);
+    exit;
+  end;
+  // Load misai properties from ini file
+  tmp_strings := TStringList.Create;
+  ini := TMemIniFile.Create(tmp_filename);
+  ini.ReadSection('AI',tmp_strings);
+  SetLength(mis_ai_properties_template, tmp_strings.Count);
+  SetLength(mis_ai_properties, tmp_strings.Count);
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    mis_ai_properties_template[i].name := ini.ReadString('AI',tmp_strings[i],'');
+    mis_ai_properties_template[i].data_type := tmp_strings[i][1];
+    mis_ai_properties_template[i].position := strtoint(Copy(tmp_strings[i], 3, Length(tmp_strings[i]) - 2));
+  end;
+  ini.Destroy;
+  tmp_strings.Destroy;
 end;
 
 procedure TStructures.load_graphics_structures;
@@ -463,34 +518,50 @@ begin
   pending_render_minimap := true;
 end;
 
-procedure TStructures.load_mis_buildings_txt;
+procedure TStructures.load_buildings_txt;
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('config\mis_buildings.txt');
-  if (tmp_filename = '') or (tmp_filename = mis_buildings_txt_filename) then
+  tmp_filename := find_file('config\buildings.txt');
+  if (tmp_filename = '') or (tmp_filename = buildings_txt_filename) then
     exit;
-  mis_buildings_txt_filename := tmp_filename;
+  buildings_txt_filename := tmp_filename;
   // Read list of buildings
   building_names.LoadFromFile(tmp_filename);
   // Update all occurences in editor
-  EventDialog.update_building_list;
-  pending_fill_events_and_conditions := true;
+  pending_update_mis_ai_properties := true;
 end;
 
-procedure TStructures.load_mis_units_txt;
+procedure TStructures.load_buildings2_txt;
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('config\mis_units.txt');
-  if (tmp_filename = '') or (tmp_filename = mis_units_txt_filename) then
+  tmp_filename := find_file('config\buildings2.txt');
+  if (tmp_filename = '') or (tmp_filename = buildings2_txt_filename) then
     exit;
-  mis_units_txt_filename := tmp_filename;
+  buildings2_txt_filename := tmp_filename;
+  // Read list of buildings
+  building2_names.LoadFromFile(tmp_filename);
+  // Update all occurences in editor
+  EventDialog.update_building_list;
+  pending_fill_events_and_conditions := true;
+  pending_update_mis_ai_properties := true;
+end;
+
+procedure TStructures.load_units_txt;
+var
+  tmp_filename: String;
+begin
+  tmp_filename := find_file('config\units.txt');
+  if (tmp_filename = '') or (tmp_filename = units_txt_filename) then
+    exit;
+  units_txt_filename := tmp_filename;
   // Read list of units
   unit_names.LoadFromFile(tmp_filename);
   // Update all occurences in editor
   EventDialog.update_unit_list;
   pending_fill_events_and_conditions := true;
+  pending_update_mis_ai_properties := true;
 end;
 
 procedure TStructures.load_colours_bin;
@@ -563,6 +634,8 @@ end;
 
 procedure TStructures.do_pending_actions(skip: boolean);
 begin
+  if pending_update_mis_ai_properties then
+    update_mis_ai_properties;
   if not skip then
   begin
     if pending_render_map then
@@ -571,10 +644,59 @@ begin
       MainWindow.render_minimap;
     if pending_fill_events_and_conditions then
       EventDialog.update_contents;
+    if pending_update_mis_ai_properties then
+      MissionDialog.fill_ai_values;
   end;
   pending_render_map := false;
   pending_render_minimap := false;
   pending_fill_events_and_conditions := false;
+  pending_update_mis_ai_properties := false;
+end;
+
+procedure TStructures.update_mis_ai_properties;
+var
+  i, position, num: integer;
+  name: String;
+begin
+  cnt_mis_ai_properties := 0;
+  for i := 0 to Length(mis_ai_properties_template) - 1 do
+  begin
+    name := mis_ai_properties_template[i].name;
+    // Replace building name
+    position := Pos('B#', name);
+    if position > 0 then
+    begin
+      num := strtointdef(Copy(name, position+2, 2), 100);
+      if num < building_names.Count then
+        name := Copy(name, 0, position-1) + building_names[num]
+      else
+        continue;
+    end;
+    // Replace building2 name
+    position := Pos('B2#', name);
+    if position > 0 then
+    begin
+      num := strtointdef(Copy(name, position+3, 2), 100);
+      if num < building2_names.Count then
+        name := Copy(name, 0, position-1) + building2_names[num]
+      else
+        continue;
+    end;
+    // Replace unit name
+    position := Pos('U#', name);
+    if position > 0 then
+    begin
+      num := strtointdef(Copy(name, position+2, 2), 60);
+      if num < unit_names.Count then
+        name := Copy(name, 0, position-1) + unit_names[num]
+      else
+        continue;
+    end;
+    mis_ai_properties[cnt_mis_ai_properties].name := name;
+    mis_ai_properties[cnt_mis_ai_properties].data_type := mis_ai_properties_template[i].data_type;
+    mis_ai_properties[cnt_mis_ai_properties].position := mis_ai_properties_template[i].position;
+    inc(cnt_mis_ai_properties);
+  end;
 end;
 
 function TStructures.special_value_is_valid(special: word): boolean;
@@ -602,8 +724,8 @@ end;
 
 function TStructures.get_building_name(index: integer): String;
 begin
-  if index < building_names.Count then
-    result := building_names[index]
+  if index < building2_names.Count then
+    result := building2_names[index]
   else
     result := 'UNDEFINED#' + inttostr(index);
 end;

@@ -8,13 +8,6 @@ uses
   ValEdit, IniFiles, Clipbrd, _map, _mission, _structures;
 
 type
-  TMisAIProperty = record
-    name: String;
-    data_type: char;
-    position: integer;
-  end;
-
-type
   TRuleDefinition = record
     name: String;
     default_value: String;
@@ -132,7 +125,6 @@ type
     player_label_alleg: array[0..cnt_players-1] of TLabel;
     allegiance_btn: array[0..cnt_players-1, 0..cnt_players-1] of TBitBtn;
     rule_definitions: array of TRuleDefinition;
-    misai_properties: array of TMisAIProperty;
     ai_clipboard_format: cardinal;
     defence_area_num: integer;
     loading: boolean;
@@ -254,20 +246,8 @@ begin
   end;
   ini.Destroy;
   tmp_strings.Clear;
-  // Load misai properties from ini file
-  ini := TMemIniFile.Create(current_dir + 'config/mis_ai.ini');
-  ini.ReadSection('AI',tmp_strings);
-  SetLength(misai_properties, tmp_strings.Count);
-  for i := 0 to tmp_strings.Count - 1 do
-  begin
-    misai_properties[i].name := ini.ReadString('AI',tmp_strings[i],'');
-    misai_properties[i].data_type := tmp_strings[i][1];
-    misai_properties[i].position := strtoint(Copy(tmp_strings[i], 3, Length(tmp_strings[i]) - 2));
-  end;
-  ini.Destroy;
   cbMapMusic.Items := EventDialog.cbMusicName.Items;
   // Initialize list of TEXT.UIB files
-  tmp_strings.Clear;
   if FindFirst(Settings.GamePath + '\Data\UI_DATA\*.UIB', 0, SR) = 0 then
   begin
     repeat
@@ -321,8 +301,6 @@ begin
   edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
   edTilesetName.Text := Mission.mis_data.tileset;
   edTileatrName.Text := Mission.mis_data.tileatr;
-  fill_ai_values;
-  cbUseINI.Tag := 1;
   if FileExists(get_ini_filename(Map.filename)) then
   begin
     load_ini_fields;
@@ -332,7 +310,7 @@ begin
     empty_ini_fields;
     cbUseINI.Checked := false;
   end;
-  cbUseINI.Tag := 0;
+  fill_ai_values;
   loading := false;
 end;
 
@@ -392,28 +370,28 @@ var
   tmp_strings: TStringList;
 begin
   tmp_strings := TStringList.Create();
-  for i := 0 to Length(misai_properties) -1 do
+  for i := 0 to Structures.cnt_mis_ai_properties -1 do
   begin
     bytes := 1;
-    case misai_properties[i].data_type of
+    case Structures.mis_ai_properties[i].data_type of
       'b': bytes := 1;
       'w': bytes := 2;
       'd': bytes := 4;
       'f':
         begin
-          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], misai_properties[i].position);
-          if cbDiffMode.Checked and (f_val = get_float_value(Mission.default_ai, misai_properties[i].position)) then
-            tmp_strings.Add(misai_properties[i].name + '=')
+          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], Structures.mis_ai_properties[i].position);
+          if cbDiffMode.Checked and (f_val = get_float_value(Mission.default_ai, Structures.mis_ai_properties[i].position)) then
+            tmp_strings.Add(Structures.mis_ai_properties[i].name + '=')
           else
-            tmp_strings.Add(misai_properties[i].name + '=' + floattostrf(f_val, ffFixed, 8, 3));
+            tmp_strings.Add(Structures.mis_ai_properties[i].name + '=' + floattostrf(f_val, ffFixed, 8, 3));
           continue;
         end;
       end;
-    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], misai_properties[i].position, bytes);
-    if cbDiffMode.Checked and (i_val = get_integer_value(Mission.default_ai, misai_properties[i].position, bytes)) then
-      tmp_strings.Add(misai_properties[i].name + '=')
+    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], Structures.mis_ai_properties[i].position, bytes);
+    if cbDiffMode.Checked and (i_val = get_integer_value(Mission.default_ai, Structures.mis_ai_properties[i].position, bytes)) then
+      tmp_strings.Add(Structures.mis_ai_properties[i].name + '=')
     else
-      tmp_strings.Add(misai_properties[i].name + '=' + inttostr(i_val));
+      tmp_strings.Add(Structures.mis_ai_properties[i].name + '=' + inttostr(i_val));
   end;
   AIValueList.Strings := tmp_strings;
   tmp_strings.Destroy;
@@ -711,7 +689,7 @@ var
   bytes: integer;
   b: integer;
 begin
-  prop := Addr(misai_properties[AIValueList.Row-1]);
+  prop := Addr(Structures.mis_ai_properties[AIValueList.Row-1]);
   bytes := 1;
   case prop.data_type of
     'b': bytes := 1;
@@ -734,7 +712,7 @@ procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Inte
 var
   prop: ^TMisAIProperty;
 begin
-  prop := Addr(misai_properties[ARow-1]);
+  prop := Addr(Structures.mis_ai_properties[ARow-1]);
   if (prop.position < 7508) or (prop.position > 7604) then
   begin
     pnSelectDefenceAreaFromMap.Visible := false;
@@ -743,14 +721,13 @@ begin
   defence_area_num := (prop.position - 7508) div 20;
   pnSelectDefenceAreaFromMap.Visible := true;
   btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
-
 end;
 
 procedure TMissionDialog.cbUseINIClick(Sender: TObject);
 var
   ini_filename: string;
 begin
-  if cbUseINI.Tag = 1 then
+  if loading then
     exit;
   if cbUseINI.Checked then
   begin
@@ -932,8 +909,9 @@ begin
   Structures.load_tiledata_bin;
   Structures.load_players_ini;
   Structures.load_misc_objects_ini;
-  Structures.load_mis_buildings_txt;
-  Structures.load_mis_units_txt;
+  Structures.load_buildings_txt;
+  Structures.load_buildings2_txt;
+  Structures.load_units_txt;
   Structures.load_colours_bin;
   Structures.load_limits_ini;
   Structures.do_pending_actions(loading);

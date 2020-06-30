@@ -504,8 +504,8 @@ var
   tmp_strings: TStringList;
 begin
   tmp_strings := TStringList.Create;
-  for i:= 0 to Structures.building_names.Count -1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + Structures.building_names[i]);
+  for i:= 0 to Structures.building2_names.Count -1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + Structures.building2_names[i]);
   cbBuildingType.Items := tmp_strings;
   tmp_strings.Destroy;
 end;
