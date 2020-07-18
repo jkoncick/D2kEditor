@@ -1,12 +1,13 @@
 D2kEditor changelog
 
-Version 1.4 (released 2020-06-14)
+Version 2.0 (released 2020-07-01)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
 Added: Mark Wall & Concrete owner side feature. Available as 4th toggle button "Own" below minimap (or Ctrl+W).
        "Show unknown specials" option was moved under Settings menu.
 Fixed: Outpost and Modified Outpost are visually distinguished by antenna turn direction.
+Changed: Spice Bloom graphics is now transparent
 Fixed: The "Maximized" window property is now preserved for all dialogs when you close and open program again.
 Fixed: The last used directory for various open/save dialogs is preserved independently for each dialog.
 Fixed: Some key shortcuts (i.e. Ctrl+G) will no longer select a preset
@@ -56,19 +57,50 @@ Added: Use random paint map feature. Predefined 128*128 background map of clean 
        The advantage is better distribution of random sand/rock tiles and more natural look. Can be turned on in Settings.
 Fixed: Spacebar was not always working for switching from block preset window to tileset window
 Added: Remap tiles feature
-Added: A simple mission launcher
 Added: "D2k Mapping Manual" document
 
-Three major new features and changes:
-1) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
+Four major new features and changes:
+1) Added support for new Mission Launcher and added a built-in launcher into D2kEditor.
+   Also added support for loading per-mission/per-mod editor configuration, player names and colors.
+2) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
    TileAtrEditor became obsolete and no longer needed.
-2) Significant improvements related to creating maps using custom tilesets. 
+3) Significant improvements related to creating maps using custom tilesets. 
    Creating maps using custom tilesets is now much easier and faster.
-3) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
+4) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
    You will need to update your custom tileset .ini files to make them compatible with this version of program.
 
-
 Ad 1)
+- New fields under additional Mission.ini file settings:
+  "Campaign folder", "Mods folder", "Colours.bin file", "Players.ini file", "Intel ID"
+- Editor can load custom COLOURS.BIN file for individual mission, specified under "Colours.bin file" field
+- Editor can load custom player names from .ini file for individual mission, specified under "Players.ini file" field
+- Editor can load modified buildings&units graphics for individual mission from specified Campaign and Mods folder
+- Editor can load modified buildings&units configuration for individual mission from specified Campaign and Mods folder
+- Last two points are useful for mapping with modded game resources (i.e. new/replaced units)
+- Editor will load following graphics/config files for individual mission from this folder structure:
+
+{Dune2000 root folder}
+|- CustomCampaignData
+  |- {Campaign folder}
+     |- Colours
+        |- {Colours.bin file}
+     |- Players
+        |- {Players.ini file}
+     |- {Mods folder}
+        |- graphics
+           |- structures.bmp
+           |- misc_objects.bmp
+        |- config
+           |- structures.ini
+           |- misc_objects.ini
+           |- buildings.txt
+           |- buildings2.txt
+           |- units.txt
+        |- data
+           |- bin
+              |- TILEDATA.BIN
+
+Ad 2)
 - Tile Attribute editor is now available from main menu under Tileset.
 - You can edit the current tileset used by current map. Swithching tileset would change it for current map too. 
 - You save map and tile attributes independently. When you save attributes, changes will apply immediately to your map.
@@ -94,7 +126,7 @@ Ad 1)
 - Added "Edit tile hint text" mode. Tile hint text is a text that displays in game when you move mouse cursor over that
   tile. In original tilesets this is used only on spice tiles.
 
-Ad 2)
+Ad 3)
 - In Terrain editing mode, there are now 4 common paint groups and 8 tileset-specific paint groups (12 paint groups total).
 - The 4 common pain groups are reserved for Thin Spice, Thick Spice, Concrete and Void. The latter two are not commonly
   used in maps, but are potentially usable for new designs, or in custom tilesets. For example concrete can be used for
@@ -110,7 +142,7 @@ Ad 2)
   dunes can be painted only on sand, concrete can be painted only on rock). This can be turned off in Settings menu.
 - Added support for block presets with "blank" tiles. You can now have presets of any shape (not strictly rectangle shape).
 
-Ad 3)
+Ad 4)
 - Added "name" property under [Basic] section for specification of user-friendly tileset name
 - Changed the way how rules (minimap color rules, fill area rules) are specified. Rules are now specified in this form:
   $attrubites_tile_must_have

@@ -102,7 +102,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v1.4 rc3'
+        Text = 'v2.0 pre1'
         Width = 0
       end>
   end
@@ -397,7 +397,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -406,7 +406,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 6
         end
       end
