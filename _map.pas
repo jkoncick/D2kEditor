@@ -553,7 +553,7 @@ begin
         end else
         begin
           inc(map_stats.num_structures_total);
-          if structures.structure_info[index].tiledataindex = 7 then
+          if (structures.structure_info[index].tiledataindex = 7) and (index < Structures.first_unit_index) then
             inc(map_stats.players[player].num_refineries);
           tmp_power := Structures.structure_info[index].power;
           if tmp_power > 0 then
