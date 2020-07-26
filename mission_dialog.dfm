@@ -467,6 +467,7 @@ object MissionDialog: TMissionDialog
       Height = 590
       Align = alClient
       DefaultColWidth = 224
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing, goAlwaysShowEditor, goThumbTracking]
       ScrollBars = ssVertical
       TabOrder = 0
       TitleCaptions.Strings = (

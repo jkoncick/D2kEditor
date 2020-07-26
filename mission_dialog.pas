@@ -393,7 +393,9 @@ begin
     else
       tmp_strings.Add(Structures.mis_ai_properties[i].name + '=' + inttostr(i_val));
   end;
+  AIValueList.OnStringsChange := nil;
   AIValueList.Strings := tmp_strings;
+  AIValueList.OnStringsChange := AIValueListStringsChange;
   tmp_strings.Destroy;
 end;
 
@@ -682,6 +684,7 @@ end;
 
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
 var
+  i: integer;
   prop: ^TMisAIProperty;
   i_val: integer;
   f_val: single;
@@ -689,23 +692,32 @@ var
   bytes: integer;
   b: integer;
 begin
-  prop := Addr(Structures.mis_ai_properties[AIValueList.Row-1]);
-  bytes := 1;
-  case prop.data_type of
-    'b': bytes := 1;
-    'w': bytes := 2;
-    'd': bytes := 4;
-    'f':
-      begin
-        f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Mission.default_ai, prop.position));
-        f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position]);
-        f_ptr^ := f_val;
-        exit;
-      end;
+  AIValueList.OnStringsChange := nil;
+  // Range selection (if one value selected, loop goes only once)
+  for i := AIValueList.Selection.Top to AIValueList.Selection.Bottom do
+  begin
+    // Set same value to all rows within selected range
+    if i <> AIValueList.Row then
+      AIValueList.Cells[1,i] := AIValueList.Cells[1,AIValueList.Row];
+    prop := Addr(Structures.mis_ai_properties[i-1]);
+    bytes := 1;
+    case prop.data_type of
+      'b': bytes := 1;
+      'w': bytes := 2;
+      'd': bytes := 4;
+      'f':
+        begin
+          f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Mission.default_ai, prop.position));
+          f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position]);
+          f_ptr^ := f_val;
+          continue;
+        end;
+    end;
+    i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Mission.default_ai, prop.position, bytes));
+    for b := 0 to bytes - 1 do
+      Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position+b] := (i_val shr (8 * b)) and 255;
   end;
-  i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Mission.default_ai, prop.position, bytes));
-  for b := 0 to bytes - 1 do
-    Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position+b] := (i_val shr (8 * b)) and 255;
+  AIValueList.OnStringsChange := AIValueListStringsChange;
 end;
 
 procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
