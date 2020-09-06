@@ -768,7 +768,10 @@ begin
         if view_mode = vmDrawMinimapColors then
         begin
           if mark_tile then
+          begin
             color := Tileset.get_tile_color(tile_index, 0);
+            color := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
+          end;
         end else
         if view_mode = vmDrawFillAreaGroups then
         begin

@@ -74,7 +74,7 @@ type
 
 type
   TMinimapColorRule = record
-    color: TColor;
+    color: cardinal;
     rule: TTileAtrRule;
   end;
 
@@ -225,7 +225,7 @@ type
     function get_tile_attributes(tile, special: word; use_internal_attributes: boolean): Int64;
     procedure set_tile_attributes(tile: word; value: Int64);
     function get_tile_type(tile: word): TileType;
-    function get_tile_color(tile, special: word): TColor;
+    function get_tile_color(tile, special: word): Cardinal;
     function get_fill_area_type(tile: word; special: word): integer;
     function check_area_type(tile, special: word; area_type: integer): boolean;
     function check_paint_tile_restriction(tile, special: word; paint_tile_group: integer): boolean;
@@ -1018,7 +1018,7 @@ begin
     result := ttPassable
 end;
 
-function TTileset.get_tile_color(tile, special: word): TColor;
+function TTileset.get_tile_color(tile, special: word): Cardinal;
 var
   i: integer;
   attr_value: int64;
@@ -1180,18 +1180,18 @@ end;
 function TTileset.get_status: String;
 begin
   result :=
-    'Tileset index: '+inttostr(Tileset.current_tileset)+#13+
-    'Tileset name: '+Tileset.tileset_name+#13+
-    'Tileset attributes name: '+Tileset.tileatr_name+#13+
-    'Tileset image file: '+Tileset.tileimage_filename+#13+
-    'Tileset attributes file: '+Tileset.tileatr_filename+#13+
-    'Tileset configuration file: '+Tileset.config_filename+#13+
-    'Minimap color rules used: '+inttostr(Tileset.minimap_color_rules_used)+#13+
-    'Fill area rules used: '+inttostr(Tileset.fill_area_rules_used)+#13+
-    'Paint tiles used: '+inttostr(Tileset.paint_tiles_used)+#13+
-    'Block presets used: '+inttostr(Tileset.block_presets_used)+#13+
-    'Preset tiles used: '+inttostr(Tileset.block_preset_tiles_used)+#13+
-    'Connection points used: '+inttostr(Tileset.connection_points_used);
+    'Tileset index: '+inttostr(current_tileset)+#13+
+    'Tileset name: '+tileset_name+#13+
+    'Tileset attributes name: '+tileatr_name+#13+
+    'Tileset image file: '+tileimage_filename+#13+
+    'Tileset attributes file: '+tileatr_filename+#13+
+    'Tileset configuration file: '+config_filename+#13+
+    'Minimap color rules used: '+inttostr(minimap_color_rules_used)+#13+
+    'Fill area rules used: '+inttostr(fill_area_rules_used)+#13+
+    'Paint tiles used: '+inttostr(paint_tiles_used)+#13+
+    'Block presets used: '+inttostr(block_presets_used)+#13+
+    'Preset tiles used: '+inttostr(block_preset_tiles_used)+#13+
+    'Connection points used: '+inttostr(connection_points_used);
 end;
 
 end.

@@ -250,18 +250,13 @@ end;
 
 function TMap.check_structure_can_be_placed(x, y: integer; special: word): boolean;
 var
-  index, player: word; is_misc: boolean;
+  size_x, size_y: integer;
 begin
   result := true;
   // Check if building exceeds the map bounds
-  if Structures.special_value_to_params(special, player, index, is_misc) then
-  begin
-    if (not is_misc) and ((x + Structures.structure_info[index].size_x > map_width) or (y + Structures.structure_info[index].size_y > map_height)) then
-    begin
-      result := false;
-      exit;
-    end;
-  end;
+  Structures.get_structure_size(special, size_x, size_y);
+  if (x + size_x > map_width) or (y + size_y > map_height) then
+    result := false;
 end;
 
 
@@ -525,8 +520,8 @@ procedure TMap.calculate_power_and_statistics;
 var
   output, need: array[0..cnt_players-1] of integer;
   i, x, y: integer;
-  player, index: word;
-  is_misc: boolean;
+  tiledata_entry: TTileDataEntryPtr;
+  building_template: TBuildingTemplatePtr;
   tmp_power: integer;
   stats_group: integer;
 begin
@@ -543,24 +538,28 @@ begin
   for y := 0 to map_height - 1 do
     for x := 0 to map_width -1 do
     begin
-      if Structures.special_value_to_params(map_data[x,y].special,player,index,is_misc) then
+      tiledata_entry := Structures.get_tiledata_entry(map_data[x,y].special);
+      if tiledata_entry.stype = ST_MISC_OBJECT then
       begin
-        if is_misc then
-        begin
-          stats_group := Structures.misc_object_info[index].stats_group;
-          if stats_group > 0 then
-            inc(map_stats.objects[stats_group]);
-        end else
-        begin
-          inc(map_stats.num_structures_total);
-          if (structures.structure_info[index].tiledataindex = 7) and (index < Structures.first_unit_index) then
-            inc(map_stats.players[player].num_refineries);
-          tmp_power := Structures.structure_info[index].power;
-          if tmp_power > 0 then
-            need[player] := need[player] + tmp_power
-          else if tmp_power < 0 then
-            output[player] := output[player] - tmp_power;
-        end;
+        stats_group := Structures.misc_object_info[tiledata_entry.index].stats_group;
+        if stats_group < Length(map_stats.objects) then
+          inc(map_stats.objects[stats_group]);
+      end else
+      if tiledata_entry.stype = ST_BUILDING then
+      begin
+        inc(map_stats.num_structures_total);
+        building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
+        if building_template = nil then
+          continue;
+        // Building is refinery
+        if building_template.SpecialBehavior = 4 then
+          inc(map_stats.players[tiledata_entry.player].num_refineries);
+        // Sum power consumption
+        tmp_power := building_template.PowerConsumption;
+        if tmp_power > 0 then
+          Inc(need[tiledata_entry.player], tmp_power)
+        else if tmp_power < 0 then
+          Inc(output[tiledata_entry.player], tmp_power * -1);
       end;
     end;
   // Calculate power value from output/need for each player
@@ -581,8 +580,9 @@ end;
 function TMap.check_errors: String;
 var
   x, y: integer;
-  index, player: word;
-  is_misc: boolean;
+  player: integer;
+  tiledata_entry: TTileDataEntryPtr;
+  size_x, size_y: integer;
   num_player_starts: integer;
   num_spice_blooms: integer;
   num_structures_total: integer;
@@ -629,15 +629,16 @@ begin
   for x := 0 to map_width - 1 do
     for y := 0 to map_height - 1 do
     begin
-      if (x < map_width - max_building_width) and (y < map_height - max_building_height) then
+      if (x < map_width - MAX_BUILDING_SIZE) and (y < map_height - MAX_BUILDING_SIZE) then
         continue;
-      if Structures.special_value_to_params(map_data[x, y].special, player, index, is_misc) then
+      tiledata_entry := Structures.get_tiledata_entry(map_data[x, y].special);
+      if tiledata_entry.stype <> ST_BUILDING then
+        continue;
+      Structures.get_structure_size(map_data[x, y].special, size_x, size_y);
+      if (x + size_x > map_width) or (y + size_y > map_height) then
       begin
-        if (not is_misc) and ((x + Structures.structure_info[index].size_x > map_width) or (y + Structures.structure_info[index].size_y > map_height)) then
-        begin
-          result := format('Building at %d,%d (%s) exceeds the map bounds.', [x, y, Structures.structure_info[index].name]);
-          exit;
-        end;
+        result := format('Building at %d,%d (%s) exceeds the map bounds.', [x, y, Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)])]);
+        exit;
       end;
     end;
   if Mission.mis_assigned then
@@ -848,27 +849,49 @@ procedure TMap.change_structure_owner(player_from,
   player_to: integer; swap: boolean);
 var
   x,y: integer;
-  player, index: word;
-  is_misc: boolean;
+  tiledata_entry: TTileDataEntryPtr;
+  i: integer;
+  new_special: word;
 begin
   undo_block_start := true;
   Renderer.invalidate_init;
   for y:= 0 to map_height - 1 do
     for x := 0 to map_width - 1 do
     begin
-      if Structures.special_value_to_params(map_data[x,y].special, player, index, is_misc) and (not is_misc) then
+      tiledata_entry := Structures.get_tiledata_entry(map_data[x,y].special);
+      if (tiledata_entry.stype = ST_BUILDING) or (tiledata_entry.stype = ST_UNIT) then
       begin
         // Change from -> to
-        if player = player_from then
+        if tiledata_entry.player = player_from then
         begin
-          if player_to = cnt_players then
+          if player_to = CNT_PLAYERS then
             modify_map_tile(x, y, map_data[x,y].tile, 0)
           else
-            modify_map_tile(x, y, map_data[x,y].tile, Structures.structure_info[index].values[player_to]);
+          begin
+            new_special := 0;
+            // Find special value for player_to
+            for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+              if (Structures.tiledata[i].stype = tiledata_entry.stype) and (Structures.tiledata[i].index = tiledata_entry.index) and (Structures.tiledata[i].player = player_to) then
+              begin
+                new_special := i;
+                break;
+              end;
+            modify_map_tile(x, y, map_data[x,y].tile, new_special);
+          end;
         end;
         // Swap is checked (change to -> from)
-        if (player = player_to) and swap then
-          modify_map_tile(x, y, map_data[x,y].tile, Structures.structure_info[index].values[player_from]);
+        if (tiledata_entry.player = player_to) and swap then
+        begin
+          new_special := 0;
+          // Find special value for player_from
+          for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+            if (Structures.tiledata[i].stype = tiledata_entry.stype) and (Structures.tiledata[i].index = tiledata_entry.index) and (Structures.tiledata[i].player = player_from) then
+            begin
+              new_special := i;
+              break;
+            end;
+          modify_map_tile(x, y, map_data[x,y].tile, new_special)
+        end;
       end;
     end;
   calculate_power_and_statistics;

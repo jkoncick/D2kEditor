@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Grids, _structures, _map;
 
-const cnt_fixed_rows = 7;
+const CNT_FIXED_ROWS = 7;
 
 type OverallStats = (osAllStructures, osBuildingsNoWalls, osBuildings, osUnits, osPowerOutput, osPowerNeed, osPowerPercent);
 
@@ -21,7 +21,7 @@ type
     procedure StatsGridMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
   private
-    tmp_stats: Array of Array[0..cnt_players-1] of integer;
+    tmp_stats: Array[0..CNT_FIXED_ROWS + MAX_BUILDING_TYPES + MAX_UNIT_TYPES -1, 0..CNT_PLAYERS-1] of integer;
   public
     procedure update_stats;
     procedure update_structures_list;
@@ -32,6 +32,8 @@ var
   MapStatsDialog: TMapStatsDialog;
 
 implementation
+
+uses _mission;
 
 {$R *.dfm}
 
@@ -73,19 +75,20 @@ end;
 
 procedure TMapStatsDialog.update_stats;
 var
-  i,j: integer;
-  is_misc: boolean;
-  player, index: word;
+  i,j,k: integer;
+  index: integer;
+  tiledata_entry: TTileDataEntryPtr;
+  building_template: TBuildingTemplatePtr;
   total_value: integer;
 begin
   if not Map.loaded then
     exit;
   // Reset statistics
-  for i := 0 to cnt_fixed_rows + Structures.cnt_structures - 1 do
-    for j := 0 to cnt_players - 1 do
+  for i := 0 to Length(tmp_stats) - 1 do
+    for j := 0 to CNT_PLAYERS - 1 do
       tmp_stats[i,j] := 0;
   // Copy already computed power statistics
-  for j := 0 to cnt_players - 1 do
+  for j := 0 to CNT_PLAYERS - 1 do
   begin
     tmp_stats[Byte(osPowerOutput),j] := Map.stats.players[j].power_output;
     tmp_stats[Byte(osPowerNeed),j] := Map.stats.players[j].power_need;
@@ -95,22 +98,33 @@ begin
   for i := 0 to Map.width-1 do
     for j := 0 to Map.height-1 do
     begin
-      if not Structures.special_value_to_params(Map.data[i,j].special,player,index,is_misc) then
-        continue;
-      if is_misc then
-        continue;
-      Inc(tmp_stats[index+cnt_fixed_rows,player]);
-      Inc(tmp_stats[Byte(osAllStructures),player]);
-      if index < Structures.first_unit_index then
+      tiledata_entry := Structures.get_tiledata_entry(Map.data[i,j].special);
+      if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.index < MAX_BUILDING_TYPES) then
       begin
-        Inc(tmp_stats[Byte(osBuildings),player]);
-        if index > 0 then
-          Inc(tmp_stats[Byte(osBuildingsNoWalls),player]);
+        index := -1;
+        for k := 0 to MAX_BUILDING_TYPES-1 do
+          if Structures.building_type_mapping[k] = Integer(tiledata_entry.index) then
+          begin
+            index := k;
+            break;
+          end;
+        if index <> -1 then
+          Inc(tmp_stats[CNT_FIXED_ROWS + index, tiledata_entry.player]);
+        Inc(tmp_stats[Byte(osAllStructures), tiledata_entry.player]);
+        Inc(tmp_stats[Byte(osBuildings), tiledata_entry.player]);
+        building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
+        if not ((building_template <> nil) and (building_template.SpecialBehavior = 14)) then
+          Inc(tmp_stats[Byte(osBuildingsNoWalls), tiledata_entry.player]);
       end else
-        Inc(tmp_stats[Byte(osUnits),player]);
+      if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.index < MAX_UNIT_TYPES) then
+      begin
+        Inc(tmp_stats[CNT_FIXED_ROWS + Structures.building_type_mapping_count + tiledata_entry.index, tiledata_entry.player]);
+        Inc(tmp_stats[Byte(osAllStructures), tiledata_entry.player]);
+        Inc(tmp_stats[Byte(osUnits), tiledata_entry.player]);
+      end;
     end;
   // Show statistics on grid
-  for i := 0 to cnt_fixed_rows + Structures.cnt_structures - 1 do
+  for i := 0 to cnt_fixed_rows + Structures.building_type_mapping_count + Structures.templates.UnitTypeCount - 1 do
   begin
     total_value := 0;
     for j := 0 to cnt_players - 1 do
@@ -132,10 +146,11 @@ procedure TMapStatsDialog.update_structures_list;
 var
   i: integer;
 begin
-  StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.cnt_structures;
-  SetLength(tmp_stats, cnt_fixed_rows+Structures.cnt_structures);
-  for i := 0 to Structures.cnt_structures - 1 do
-    StatsGrid.Cells[0,1+i+cnt_fixed_rows] := Structures.structure_info[i].name;
+  StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.building_type_mapping_count + Structures.templates.UnitTypeCount;
+  for i := 0 to Structures.building_type_mapping_count - 1 do
+    StatsGrid.Cells[0,1+cnt_fixed_rows+i] := Structures.get_building_type_str(Structures.building_type_mapping[i]);
+  for i := 0 to Structures.templates.UnitTypeCount - 1 do
+    StatsGrid.Cells[0,1+cnt_fixed_rows+Structures.building_type_mapping_count+i] := Structures.get_unit_type_str(i);
 end;
 
 procedure TMapStatsDialog.update_player_list;

@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
-  Left = 212
-  Top = 7
+  Left = 234
+  Top = 19
   Width = 1280
   Height = 720
   Caption = 'Events and Conditions'
@@ -881,7 +881,7 @@ object EventDialog: TEventDialog
     object ConditionPropertiesPanel: TPanel
       Left = 1060
       Top = 0
-      Width = 200
+      Width = 208
       Height = 255
       Align = alLeft
       BevelOuter = bvNone
@@ -910,7 +910,7 @@ object EventDialog: TEventDialog
       object cbConditionType: TComboBox
         Left = 80
         Top = 24
-        Width = 120
+        Width = 128
         Height = 21
         Style = csDropDownList
         ItemHeight = 13
@@ -921,7 +921,7 @@ object EventDialog: TEventDialog
       object cpConditionPlayer: TPanel
         Left = 0
         Top = 48
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 1
@@ -945,7 +945,7 @@ object EventDialog: TEventDialog
       object cpConditionPosition: TPanel
         Left = 0
         Top = 64
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 2
@@ -979,7 +979,7 @@ object EventDialog: TEventDialog
         object btnConditionPositionGotoMap: TButton
           Left = 156
           Top = 4
-          Width = 44
+          Width = 52
           Height = 22
           Caption = 'To map'
           TabOrder = 2
@@ -989,7 +989,7 @@ object EventDialog: TEventDialog
       object cpBuildingType: TPanel
         Left = 0
         Top = 80
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 3
@@ -1003,7 +1003,7 @@ object EventDialog: TEventDialog
         object cbBuildingType: TComboBox
           Left = 48
           Top = 4
-          Width = 152
+          Width = 160
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
@@ -1013,7 +1013,7 @@ object EventDialog: TEventDialog
       object cpUnitType: TPanel
         Left = 0
         Top = 96
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 4
@@ -1027,7 +1027,7 @@ object EventDialog: TEventDialog
         object cbUnitType: TComboBox
           Left = 48
           Top = 4
-          Width = 152
+          Width = 160
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
@@ -1037,7 +1037,7 @@ object EventDialog: TEventDialog
       object cpTimer: TPanel
         Left = 0
         Top = 112
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 5
@@ -1063,7 +1063,7 @@ object EventDialog: TEventDialog
         object edTimerTime: TEdit
           Left = 104
           Top = 4
-          Width = 96
+          Width = 104
           Height = 21
           Hint = 'Time amount'
           ParentShowHint = False
@@ -1075,7 +1075,7 @@ object EventDialog: TEventDialog
       object cpInterval: TPanel
         Left = 0
         Top = 128
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 6
@@ -1112,7 +1112,7 @@ object EventDialog: TEventDialog
       object cpConditionValue: TPanel
         Left = 0
         Top = 144
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 7
@@ -1137,7 +1137,7 @@ object EventDialog: TEventDialog
       object cpCasualties: TPanel
         Left = 0
         Top = 144
-        Width = 200
+        Width = 208
         Height = 30
         BevelOuter = bvNone
         TabOrder = 8

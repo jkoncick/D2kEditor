@@ -298,6 +298,7 @@ begin
       allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
     end;
   end;
+  update_player_colors;
   edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
   edTilesetName.Text := Mission.mis_data.tileset;
   edTileatrName.Text := Mission.mis_data.tileatr;
@@ -306,6 +307,7 @@ begin
     load_ini_fields;
     cbUseINI.Checked := true;
   end else
+  if cbUseINI.Checked then
   begin
     empty_ini_fields;
     cbUseINI.Checked := false;
@@ -335,7 +337,7 @@ var
   i: integer;
 begin
   for i := 0 to cnt_players-1 do
-    color_marker[i].Color := Structures.player_info[Mission.mis_data.allocation_index[i]].color;
+    color_marker[i].Color := Structures.player_info[Mission.mis_data.allocation_index[i]].color_inv;
 end;
 
 procedure TMissionDialog.tileset_changed;
@@ -637,8 +639,13 @@ end;
 
 procedure TMissionDialog.alloc_index_change(Sender: TObject);
 begin
+  if loading then
+    exit;
   Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
-  color_marker[(Sender as TSpinEdit).Tag].Color := Structures.player_info[Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag]].color;
+  color_marker[(Sender as TSpinEdit).Tag].Color := Structures.player_info[Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag]].color_inv;
+  MainWindow.render_map;
+  MainWindow.render_minimap;
+  MainWindow.draw_cursor_image;
 end;
 
 procedure TMissionDialog.allegiance_btn_click(Sender: TObject);
@@ -915,16 +922,13 @@ end;
 procedure TMissionDialog.cbModsFolderChange(Sender: TObject);
 begin
   // Reload structures data
-  Structures.load_graphics_structures;
-  Structures.load_graphics_misc_objects;
-  Structures.load_structures_ini;
+  Structures.load_templates_bin;
   Structures.load_tiledata_bin;
+  Structures.load_colours_bin;
+  Structures.load_data_r16;
+  Structures.load_graphics_misc_objects;
   Structures.load_players_ini;
   Structures.load_misc_objects_ini;
-  Structures.load_buildings_txt;
-  Structures.load_buildings2_txt;
-  Structures.load_units_txt;
-  Structures.load_colours_bin;
   Structures.load_limits_ini;
   Structures.do_pending_actions(loading);
 end;

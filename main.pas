@@ -151,6 +151,9 @@ type
     RemapTilesOpenDialog: TOpenDialog;
     Remaptiles1: TMenuItem;
     Userandompaintmap1: TMenuItem;
+    LbStructureName: TLabel;
+    Structures1: TMenuItem;
+    Showstatus2: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -188,13 +191,14 @@ type
     procedure Loadtilesetattributes1Click(Sender: TObject);
     procedure TileAttributeseditor1Click(Sender: TObject);
     procedure Showstatus1Click(Sender: TObject);
+    procedure Showstatus2Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure More1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
     procedure Remaptiles1Click(Sender: TObject);
-    procedure Showmapstatistics1Click(Sender: TObject);    
+    procedure Showmapstatistics1Click(Sender: TObject);
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
     procedure Assignmisfile1Click(Sender: TObject);
@@ -224,6 +228,7 @@ type
       Y: Integer);
     // Structure/terrain editor
     procedure EditorPagesChange(Sender: TObject);
+    procedure SpecialValueChange(Sender: TObject);
     procedure btnFindSelectedObjectClick(Sender: TObject);
     procedure BuildingListClick(Sender: TObject);
     procedure UnitListClick(Sender: TObject);
@@ -287,6 +292,9 @@ type
 
     // Dynamic menu items
     recent_files_menuitems: array[1..cnt_recent_files] of TMenuItem;
+
+    // Others
+    special_value_changing: boolean;
 
     // Structure editor procedures
     procedure update_structures_list;
@@ -445,6 +453,7 @@ begin
   minimap_buffer := TBitmap.Create;
   minimap_buffer.Width := MiniMap.Width;
   minimap_buffer.Height := MiniMap.Height;
+  minimap_buffer.PixelFormat := pf32bit;
   // Initialize tilesets
   Tileset.init;
   // Initialize Random Generator
@@ -505,7 +514,7 @@ begin
   resize_map_canvas;
   EditorMenu.Left := ClientWidth - 168;
   EditorMenu.Height := ClientHeight - StatusBar.Height;
-  tmp_height := EditorMenu.Height - 400;
+  tmp_height := EditorMenu.Height - 404;
   BuildingList.Height := tmp_height div 2;
   UnitList.Height := tmp_height div 2;
   LbUnitList.Top := BuildingList.Top + BuildingList.Height + 3;
@@ -612,7 +621,7 @@ begin
         PaintTileSelectClick(paint_tile_select[paint_tile_group]);
       end;
     end;
-    255: TileAttributeseditor1Click(nil);
+    255: Showstatus2Click(nil);
   end;
   if (key >= 37) and (key <= 40) then
   begin
@@ -997,6 +1006,11 @@ begin
   ShowMessage(Tileset.get_status);
 end;
 
+procedure TMainWindow.Showstatus2Click(Sender: TObject);
+begin
+  ShowMessage(Structures.get_status);
+end;
+
 procedure TMainWindow.SettingChange(Sender: TObject);
 begin
   case (Sender as TComponent).Tag of
@@ -1244,7 +1258,7 @@ begin
     numunits := Mission.mis_data.events[eventnum].num_units;
     tmp_hint := inttostr(numunits) + ' units:';
     for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name(Mission.mis_data.events[eventnum].units[i]);
+      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name_str(Mission.mis_data.events[eventnum].units[i]);
     MapCanvas.Hint := tmp_hint;
     MapCanvas.ShowHint := true
   end else
@@ -1297,9 +1311,8 @@ procedure TMainWindow.MapCanvasMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   map_x, map_y: integer;
-  index, player: word;
-  is_misc: boolean;
   special: word;
+  tiledata_entry: TTileDataEntryPtr;
   event_marker: ^TEventMarker;
   cursor_left: integer;
   cursor_top: integer;
@@ -1355,7 +1368,8 @@ begin
       begin
         Map.set_special_value(map_x, map_y, special);
         // After placing building do not draw building marker
-        if BuildingList.ItemIndex <> -1 then
+        tiledata_entry := Structures.get_tiledata_entry(special);
+        if tiledata_entry.stype = ST_BUILDING then
           editing_marker_disabled := true;
       end;
     end else
@@ -1368,35 +1382,6 @@ begin
     begin
       // Get structure parameters on position and set them in menu
       SpecialValue.text := inttostr(Map.data[map_x, map_y].special);
-      if Structures.special_value_to_params(Map.data[map_x, map_y].special, player, index, is_misc) then
-      begin
-        if is_misc then
-        begin
-          MiscObjList.ItemIndex := index;
-          BuildingList.ItemIndex := -1;
-          UnitList.ItemIndex := -1;
-        end else
-        begin
-          MiscObjList.ItemIndex := -1;
-          if index < Structures.first_unit_index then
-          begin
-            BuildingList.ItemIndex := index;
-            UnitList.ItemIndex := -1;
-          end else
-          begin
-            BuildingList.ItemIndex := -1;
-            UnitList.ItemIndex := index - Structures.first_unit_index;
-          end;
-          PlayerSelect.ItemIndex := player;
-          show_power_and_statistics;
-        end;
-      end else
-      begin
-        MiscObjList.ItemIndex := -1;
-        BuildingList.ItemIndex := -1;
-        UnitList.ItemIndex := -1;
-      end;
-      render_editing_marker;
       exit;
     end;
   end else
@@ -1579,6 +1564,65 @@ begin
   render_editing_marker;
 end;
 
+procedure TMainWindow.SpecialValueChange(Sender: TObject);
+var
+  i: integer;
+  special, player: integer;
+  tiledata_entry: TTileDataEntryPtr;
+begin
+  special := StrToIntDef(SpecialValue.Text, 0);
+  tiledata_entry := Structures.get_tiledata_entry(special);
+  if tiledata_entry.stype = ST_MISC_OBJECT then
+  begin
+    MiscObjList.ItemIndex := tiledata_entry.index;
+    BuildingList.ItemIndex := -1;
+    UnitList.ItemIndex := -1;
+    LbStructureName.Caption := Structures.misc_object_info[tiledata_entry.index].name;
+  end else
+  if tiledata_entry.stype = ST_BUILDING then
+  begin
+    MiscObjList.ItemIndex := -1;
+    for i := 0 to Structures.building_type_mapping_count - 1 do
+      if Structures.building_type_mapping[i] = Integer(tiledata_entry.index) then
+      begin
+        BuildingList.ItemIndex := i;
+        break;
+      end;
+    UnitList.ItemIndex := -1;
+    PlayerSelect.ItemIndex := tiledata_entry.player;
+    player := Mission.get_player_alloc_index(tiledata_entry.player);
+    if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_side_versions[tiledata_entry.index, player] <> -1) then
+      LbStructureName.Caption := Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, player])
+    else
+      LbStructureName.Caption := 'INVALID';
+    show_power_and_statistics;
+  end else
+  if tiledata_entry.stype = ST_UNIT then
+  begin
+    MiscObjList.ItemIndex := -1;
+    BuildingList.ItemIndex := -1;
+    UnitList.ItemIndex := tiledata_entry.index;
+    PlayerSelect.ItemIndex := tiledata_entry.player;
+    player := Mission.get_player_alloc_index(tiledata_entry.player);
+    if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_side_versions[tiledata_entry.index, player] <> -1) then
+      LbStructureName.Caption := Structures.get_unit_name_str(Structures.unit_side_versions[tiledata_entry.index, player])
+    else
+      LbStructureName.Caption := 'INVALID';
+    show_power_and_statistics;
+  end else
+  begin
+    if not special_value_changing then
+    begin
+      MiscObjList.ItemIndex := -1;
+      BuildingList.ItemIndex := -1;
+      UnitList.ItemIndex := -1;
+    end;
+    LbStructureName.Caption := '';
+  end;
+  render_editing_marker;
+  special_value_changing := false;
+end;
+
 procedure TMainWindow.btnFindSelectedObjectClick(Sender: TObject);
 var
   pos_x, pos_y: integer;
@@ -1679,15 +1723,15 @@ var
 begin
   tmp_strings_buildings := TStringList.Create;
   tmp_strings_units := TStringList.Create;
-  for i := 0 to Structures.cnt_structures - 1 do
-    if i < Structures.first_unit_index then
-      tmp_strings_buildings.Add(Structures.structure_info[i].name)
-    else
-      tmp_strings_units.Add(Structures.structure_info[i].name);
+  for i := 0 to Structures.building_type_mapping_count - 1 do
+    tmp_strings_buildings.Add(Structures.get_building_type_str(Structures.building_type_mapping[i]));
+  for i := 0 to Structures.templates.UnitTypeCount - 1 do
+    tmp_strings_units.Add(Structures.get_unit_type_str(i));
   BuildingList.Items := tmp_strings_buildings;
   UnitList.Items := tmp_strings_units;
   tmp_strings_buildings.Destroy;
   tmp_strings_units.Destroy;
+  SpecialValueChange(nil);
 end;
 
 procedure TMainWindow.update_player_list(player_list: TStringList);
@@ -1758,7 +1802,7 @@ procedure TMainWindow.render_minimap;
 begin
   if not Map.loaded then
     exit;
-  Renderer.render_minimap_contents(minimap_buffer.Canvas, Addr(Map.data), Map.width, Map.height, Useallocationindexes1.Checked);
+  Renderer.render_minimap_contents(minimap_buffer, Addr(Map.data), Map.width, Map.height, Useallocationindexes1.Checked);
   render_minimap_position_marker;
 end;
 
@@ -1773,7 +1817,8 @@ end;
 
 procedure TMainWindow.render_editing_marker;
 var
-  struct_info: ^TStructureInfo;
+  tiledata_entry: TTileDataEntryPtr;
+  building_template: TBuildingTemplatePtr;
   marker_type: EditingMarkerType;
   min_x, min_y, max_x, max_y: integer;
 begin
@@ -1783,21 +1828,24 @@ begin
     CursorImage.Visible := false;
     exit;
   end;
-  if Settings.DrawBuildingMarker and mode(mStructures) and (BuildingList.ItemIndex <> -1) then
+  tiledata_entry := Structures.get_tiledata_entry(StrToIntDef(SpecialValue.Text, 0));
+  if Settings.DrawBuildingMarker and mode(mStructures) and (tiledata_entry.stype = ST_BUILDING) then
   begin
     // Draw building placement marker
-    struct_info := Addr(Structures.structure_info[BuildingList.ItemIndex]);
+    building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
+    if building_template = nil then
+      exit;
     marker_type := emBuilding;
-    if struct_info.not_on_buildable then
-      marker_type := emBuildingNotOnBuildable;
+    if (building_template.Flags and BF_NO_CONCRETE) <> 0 then
+      marker_type := emBuildingNoConcrete;
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
-      Addr(Map.data), mouse_old_x, mouse_old_y, struct_info.size_x, struct_info.size_y, marker_type);
+      Addr(Map.data), mouse_old_x, mouse_old_y, MAX_BUILDING_SIZE, MAX_BUILDING_SIZE, marker_type, building_template.TilesOccupiedAll);
   end else
-  if Settings.DrawObjectBrush and mode(mStructures) and ((UnitList.ItemIndex <> -1) or (MiscObjList.ItemIndex > 0)) then
+  if Settings.DrawObjectBrush and mode(mStructures) and ((tiledata_entry.stype = ST_UNIT) or (tiledata_entry.stype = ST_MISC_OBJECT)) then
   begin
     // Draw unit / misc object marker
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
-      Addr(Map.data), mouse_old_x, mouse_old_y, 1, 1, emSingleObject);
+      Addr(Map.data), mouse_old_x, mouse_old_y, 1, 1, emSingleObject, 0);
   end else
   if block_select_started then
   begin
@@ -1807,13 +1855,13 @@ begin
     min_y := min(block_select_start_y, block_select_end_y);
     max_y := max(block_select_start_y, block_select_end_y);
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
-      Addr(Map.data), min_x, min_y, max_x-min_x+1, max_y-min_y+1, emSelectionArea);
+      Addr(Map.data), min_x, min_y, max_x-min_x+1, max_y-min_y+1, emSelectionArea, 0);
   end else
   if Settings.DrawPaintBrush and mode(mPaintMode) then
   begin
     // Draw paint brush marker
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
-      Addr(Map.data), mouse_old_x, mouse_old_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], emPaintArea);
+      Addr(Map.data), mouse_old_x, mouse_old_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], emPaintArea, 0);
   end else
   begin
     Renderer.remove_editing_marker(MapCanvas.Canvas);
@@ -2013,25 +2061,65 @@ end;
 
 procedure TMainWindow.set_special_value;
 var
+  tiledata_entry: TTileDataEntryPtr;
   value: word;
+  i: integer;
 begin
   if MiscObjList.ItemIndex > -1 then
     value := Structures.misc_object_info[MiscObjList.ItemIndex].value
   else if BuildingList.ItemIndex > -1 then
-    value := Structures.structure_info[BuildingList.ItemIndex].values[PlayerSelect.ItemIndex]
-  else
-    value := Structures.structure_info[UnitList.ItemIndex + Structures.first_unit_index].values[PlayerSelect.ItemIndex];
+  begin
+    // Find building special value
+    value := 0;
+    for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+    begin
+      tiledata_entry := Structures.get_tiledata_entry(i);
+      if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.player = PlayerSelect.ItemIndex) and (Integer(tiledata_entry.index) = Structures.building_type_mapping[BuildingList.ItemIndex]) then
+      begin
+        value := i;
+        break;
+      end;
+    end;
+  end else
+  begin
+    // Find unit special value
+    value := 0;
+    for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+    begin
+      tiledata_entry := Structures.get_tiledata_entry(i);
+      if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.player = PlayerSelect.ItemIndex) and (tiledata_entry.index = UnitList.ItemIndex) then
+      begin
+        value := i;
+        break;
+      end;
+    end;
+  end;
+  special_value_changing := true;
   SpecialValue.Text := inttostr(value);
-  render_editing_marker;
   mouse_already_clicked := false;
 end;
 
 function TMainWindow.mode(m: SelectedMode): boolean;
+var
+  tiledata_entry: TTileDataEntryPtr;
+  building_template: TBuildingTemplatePtr;
 begin
   result := false;
   case m of
     mStructures:      result := (EditorPages.TabIndex = 0) and (event_position_selection_mode = epmNone);
-    mStructuresPaint: result := (EditorPages.TabIndex = 0) and (event_position_selection_mode = epmNone) and ((strtoint(SpecialValue.Text) <= 2) or (BuildingList.ItemIndex = 0));
+    mStructuresPaint:
+      begin
+        if (EditorPages.TabIndex <> 0) or (event_position_selection_mode <> epmNone) then
+          exit;
+        // Walls can be painted while holding mouse
+        tiledata_entry := Structures.get_tiledata_entry(StrToIntDef(SpecialValue.Text, 0));
+        if tiledata_entry.stype = ST_BUILDING then
+        begin
+          building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
+          // Check if building behavior is wall
+          result := (building_template <> nil) and (building_template.SpecialBehavior = 14);
+        end;
+      end;
     mTerrain:         result := EditorPages.TabIndex = 1;
     mPaintMode:       result := (EditorPages.TabIndex = 1) and RbPaintMode.Checked;
     mBlockMode:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;

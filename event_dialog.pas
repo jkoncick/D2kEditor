@@ -254,8 +254,7 @@ type
     procedure update_contents;
     procedure fill_grids;
     procedure update_player_list(player_list: TStringList);
-    procedure update_building_list;
-    procedure update_unit_list;
+    procedure update_structures_list;
     // Event-related procedures
     procedure select_event(index: integer);
     procedure fill_event_ui(event_valid: boolean);
@@ -498,26 +497,18 @@ begin
   cbCreateEventsPlayer.ItemIndex := Max(prev_index, 0);
 end;
 
-procedure TEventDialog.update_building_list;
+procedure TEventDialog.update_structures_list;
 var
   i: integer;
   tmp_strings: TStringList;
 begin
   tmp_strings := TStringList.Create;
-  for i:= 0 to Structures.building2_names.Count -1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + Structures.building2_names[i]);
+  for i:= 0 to Structures.templates.BuildingCount -1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + Structures.get_building_name_str(i));
   cbBuildingType.Items := tmp_strings;
-  tmp_strings.Destroy;
-end;
-
-procedure TEventDialog.update_unit_list;
-var
-  i: integer;
-  tmp_strings: TStringList;
-begin
-  tmp_strings := TStringList.Create;
-  for i:= 0 to Structures.unit_names.Count -1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + Structures.unit_names[i]);
+  tmp_strings.Clear;
+  for i:= 0 to Structures.templates.UnitCount -1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + Structures.get_unit_name_str(i));
   UnitSelectionList.Items := tmp_strings;
   cbUnitType.Items := tmp_strings;
   tmp_strings.Destroy;
@@ -651,7 +642,7 @@ var
 begin
   if event_type_info[Mission.mis_data.events[selected_event].event_type].use_unit_list then
     for i := 0 to tmp_event.num_units - 1 do
-      EventUnitList.Items.Add(Structures.get_unit_name(tmp_event.units[i]));
+      EventUnitList.Items.Add(Structures.get_unit_name_str(tmp_event.units[i]));
 end;
 
 procedure TEventDialog.fill_event_condition_list;
@@ -990,7 +981,7 @@ begin
   end;
   tmp_event.units[tmp_event.num_units] := UnitSelectionList.ItemIndex;
   inc(tmp_event.num_units);
-  EventUnitList.Items.Add(Structures.get_unit_name(UnitSelectionList.ItemIndex));
+  EventUnitList.Items.Add(Structures.get_unit_name_str(UnitSelectionList.ItemIndex));
 end;
 
 procedure TEventDialog.btnDeleteUnitClick(Sender: TObject);

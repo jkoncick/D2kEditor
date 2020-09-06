@@ -216,6 +216,7 @@ type
     procedure shift_event_positions(shift_x: integer; shift_y: integer);
     procedure adjust_event_positions_on_map_resize;
     function check_errors: String;
+    function get_player_alloc_index(player: integer): integer;
   end;
 
 var
@@ -443,7 +444,7 @@ begin
       begin
         if dummy then
           contents := contents + ',  ';
-        contents := contents + inttostr(tmp_unit_count[i]) + 'x ' + Structures.get_unit_name(i);
+        contents := contents + inttostr(tmp_unit_count[i]) + 'x ' + Structures.get_unit_name_str(i);
         dummy := true;
       end;
     end;
@@ -510,8 +511,8 @@ begin
     space := ' ';
   end;
   case cond_type of
-    ctBuildingExists: contents := contents + space + Structures.get_building_name(cond.building_type);
-    ctUnitExists:     contents := contents + space + Structures.get_unit_name(cond.unit_type_or_comparison_function);
+    ctBuildingExists: contents := contents + space + Structures.get_building_name_str(cond.building_type);
+    ctUnitExists:     contents := contents + space + Structures.get_unit_name_str(cond.unit_type_or_comparison_function);
     ctInterval:       contents := contents + inttostr(cond.start_delay) + ' ' + inttostr(cond.time_amount) + ' ' + inttostr(cond.value);
     ctTimer:          contents := contents + comparison_function[cond.unit_type_or_comparison_function] + inttostr(cond.time_amount);
     ctCasualties:     contents := contents + space + inttostr(cond.value) + '  ' + floattostrf(cond.casualties_ratio, ffFixed, 8, 3);
@@ -1037,6 +1038,14 @@ begin
     end;
   end;
   result := '';
+end;
+
+function TMission.get_player_alloc_index(player: integer): integer;
+begin
+  result := player;
+  if not mis_assigned then
+    exit;
+  result := Min(mis_data.allocation_index[player], CNT_PLAYERS - 1);
 end;
 
 end.

@@ -201,31 +201,42 @@ object MainWindow: TMainWindow
         end
         object LbMiscObjList: TLabel
           Left = 8
-          Top = 24
+          Top = 43
           Width = 59
           Height = 13
           Caption = 'Misc objects'
         end
         object LbPlayerSelect: TLabel
           Left = 8
-          Top = 126
+          Top = 132
           Width = 29
           Height = 13
           Caption = 'Player'
         end
         object LbBuildingList: TLabel
           Left = 8
-          Top = 166
+          Top = 172
           Width = 42
           Height = 13
           Caption = 'Buildings'
         end
         object LbUnitList: TLabel
           Left = 8
-          Top = 270
+          Top = 276
           Width = 24
           Height = 13
           Caption = 'Units'
+        end
+        object LbStructureName: TLabel
+          Left = 8
+          Top = 25
+          Width = 145
+          Height = 15
+          AutoSize = False
+          Color = 4259839
+          ParentColor = False
+          Transparent = False
+          Layout = tlCenter
         end
         object SpecialValue: TEdit
           Left = 80
@@ -234,19 +245,20 @@ object MainWindow: TMainWindow
           Height = 21
           TabOrder = 0
           Text = '0'
+          OnChange = SpecialValueChange
         end
         object MiscObjList: TListBox
           Left = 8
-          Top = 40
+          Top = 59
           Width = 145
-          Height = 83
+          Height = 70
           ItemHeight = 13
           TabOrder = 1
           OnClick = MiscObjListClick
         end
         object PlayerSelect: TComboBox
           Left = 8
-          Top = 142
+          Top = 148
           Width = 145
           Height = 21
           Style = csDropDownList
@@ -256,7 +268,7 @@ object MainWindow: TMainWindow
         end
         object BuildingList: TListBox
           Left = 8
-          Top = 182
+          Top = 188
           Width = 145
           Height = 83
           ItemHeight = 13
@@ -265,7 +277,7 @@ object MainWindow: TMainWindow
         end
         object UnitList: TListBox
           Left = 8
-          Top = 286
+          Top = 292
           Width = 145
           Height = 83
           ItemHeight = 13
@@ -397,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -406,7 +418,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 6
         end
       end
@@ -557,12 +569,19 @@ object MainWindow: TMainWindow
         OnClick = Showstatus1Click
       end
     end
+    object Structures1: TMenuItem
+      Caption = 'Structures'
+      object Showstatus2: TMenuItem
+        Caption = 'Show status (debug)'
+        OnClick = Showstatus2Click
+      end
+    end
     object Settings1: TMenuItem
       Caption = 'Settings'
       object Useallocationindexes1: TMenuItem
         Tag = 1
         AutoCheck = True
-        Caption = 'Use allocation indexes'
+        Caption = 'Use alloc. index colors'
         ShortCut = 16457
         OnClick = SettingChange
       end
