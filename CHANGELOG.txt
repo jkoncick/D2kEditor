@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Version 2.0 (released 2020-07-01)
+Version 2.0 (released 2020-09-06)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
@@ -48,28 +48,49 @@ Fixed: Event and Condition notes will move position accordingly when you reorgan
 Added: Buttons to move units and conditions up and down in event's unit and condition list
 Added: New Deploy action "Stay" for Reinforcement and Unit Spawn events, renamed other deploy actions 
 Added: Show key shortcuts option in Event grid and Condition grid popup menu
+Fixed: Units could not be added to unit list when existing event's type was changed from a different type without units
+Fixed: When changing from Reveal Map event type, there were ghost Light Infantry units added (same amount as Radius)
 Added: Player names loaded from "config\players.ini" file are used in all places in editor and no longer hardcoded
 Added: Minimap colors for buildings and units are loaded from game's COLOURS.BIN file. Original COLOURS.BIN file
        is shipped with editor.
 Changed: Allegiance buttons on Mission settings window are changing in this order: Enemy -> Ally -> Neutral
 Added: Defence areas can be selected directly from map. A button will appear when you select a defence area in AI editor.
+Added: You can select multiple properties in AI editor on Mission dialog and set same value to all of them at once.
+       Hold Shift + Up/Down arrow keys to select a continuous range.
 Added: Use random paint map feature. Predefined 128*128 background map of clean sand and rock is used for painting.
        The advantage is better distribution of random sand/rock tiles and more natural look. Can be turned on in Settings.
 Fixed: Spacebar was not always working for switching from block preset window to tileset window
 Added: Remap tiles feature
 Added: "D2k Mapping Manual" document
 
-Four major new features and changes:
-1) Added support for new Mission Launcher and added a built-in launcher into D2kEditor.
+Major new features and changes:
+1) Editor loads building and unit graphics and configuration from game's files (Templates.bin, DATA.R16).
+   Buildings and units are displayed in exactly same way as shown in-game, supporting mods!
+2) Added support for new Mission Launcher and added a built-in launcher into D2kEditor.
    Also added support for loading per-mission/per-mod editor configuration, player names and colors.
-2) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
+3) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
    TileAtrEditor became obsolete and no longer needed.
-3) Significant improvements related to creating maps using custom tilesets. 
+4) Significant improvements related to creating maps using custom tilesets. 
    Creating maps using custom tilesets is now much easier and faster.
-4) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
+5) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
    You will need to update your custom tileset .ini files to make them compatible with this version of program.
 
 Ad 1)
+- The file "graphics\structures.bmp" is no longer distributed with editor. Instead, editor loads building and unit
+  graphics from game's internal "DATA.R16" file.
+- The files "config\structures.ini", "config\buildings.txt" and "config\units.txt" are no longer distributed with editor.
+  Instead, editor loads building and unit names and configuration from game's internal "Templates.bin" file.
+- Buildings and units should be displayed in exactly same way as shown in game. Editor tries to mimic the game's way
+  of rendering graphics as most faithfully as possible. There's still possibility for minor differences and inaccuracy.
+- The building and unit names in lists and event/condition descriptions are taken directly from "Templates.bin" file
+  and prettified (converted from ugly uppercase to easier-to-look-at lowercase). So instead of for example
+  "Construction Yard (A)" there will be "Atreides Construction Yard".
+- On Structures tab there is a yellow stripe telling which building or unit version will be placed for selected side.
+- The "Use allocation indexes" setting was changed to "Use alloc. index colors". If turned off, players with changed 
+  allocation index will have building versions according to alloc. index, but color according to player index.
+- Full support for modded game's graphics and building/unit configuration, no need to modify any editor's files.
+
+Ad 2)
 - New fields under additional Mission.ini file settings:
   "Campaign folder", "Mods folder", "Colours.bin file", "Players.ini file", "Intel ID"
 - Editor can load custom COLOURS.BIN file for individual mission, specified under "Colours.bin file" field
@@ -88,19 +109,19 @@ Ad 1)
         |- {Players.ini file}
      |- {Mods folder}
         |- graphics
-           |- structures.bmp
            |- misc_objects.bmp
         |- config
-           |- structures.ini
            |- misc_objects.ini
-           |- buildings.txt
-           |- buildings2.txt
-           |- units.txt
+           |- limits.ini
+           |- players.ini
         |- data
            |- bin
+              |- Templates.bin
               |- TILEDATA.BIN
+           |- DATA.R16
 
-Ad 2)
+
+Ad 3)
 - Tile Attribute editor is now available from main menu under Tileset.
 - You can edit the current tileset used by current map. Swithching tileset would change it for current map too. 
 - You save map and tile attributes independently. When you save attributes, changes will apply immediately to your map.
@@ -126,7 +147,7 @@ Ad 2)
 - Added "Edit tile hint text" mode. Tile hint text is a text that displays in game when you move mouse cursor over that
   tile. In original tilesets this is used only on spice tiles.
 
-Ad 3)
+Ad 4)
 - In Terrain editing mode, there are now 4 common paint groups and 8 tileset-specific paint groups (12 paint groups total).
 - The 4 common pain groups are reserved for Thin Spice, Thick Spice, Concrete and Void. The latter two are not commonly
   used in maps, but are potentially usable for new designs, or in custom tilesets. For example concrete can be used for
@@ -142,7 +163,7 @@ Ad 3)
   dunes can be painted only on sand, concrete can be painted only on rock). This can be turned off in Settings menu.
 - Added support for block presets with "blank" tiles. You can now have presets of any shape (not strictly rectangle shape).
 
-Ad 4)
+Ad 5)
 - Added "name" property under [Basic] section for specification of user-friendly tileset name
 - Changed the way how rules (minimap color rules, fill area rules) are specified. Rules are now specified in this form:
   $attrubites_tile_must_have
@@ -150,6 +171,7 @@ Ad 4)
   $attrubites_tile_must_have;$attrubites_tile_must_not_have
   If $attrubites_tile_must_have is negative, it means tile must have ANY of specified attributes.
   To design a rule, you can simply use specific filter on Tile Attributes editor and just copy the rule specification.
+- The minimap colors are now specified in "$RRGGBB" format instead of "$BBGGRR" format.
 - Fill area rules now have names. The names correspond to area types in Select mode.
 - You can specify up to 12 paint groups in [Paint_Tile_Groups] section.
   Groups A,B,C,D are reserved for thin spice, thick spice, concrete and void.

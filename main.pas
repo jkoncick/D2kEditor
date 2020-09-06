@@ -419,20 +419,14 @@ begin
   // Load settings
   Settings.load_precreate_editor_settings;
   // First time run intro message
-  if (Settings.GamePath = '') and (not FileExists(current_dir + 'D2kEditor.ini')) then
+  if (Settings.GamePath = '') then
   begin
     Show;
     if Application.MessageBox(
       'This program requires original Dune 2000 graphics files to work.'#13+
       'It needs to know where Dune 2000 is located on your computer and will load graphics from that location.'#13+
-      'Press YES button if you want to navigate to your Dune 2000 location and configure it now.'#13+
-      'Press NO button if you want to use program without Dune 2000 game or configure it later.'#13#13+
-      'If you choose NO, you will have following options to configure the program:'#13+
-      '- Open any existing Map or Mission file under Dune 2000 game folder and the program will configure automatically.'#13+
-      '- Close the program and configure all paths manually in D2kEditor.ini file under [Paths] section.'#13+
-      '- Delete D2kEditor.ini to make this message appear again.'#13+
-      'In case you do not have Dune 2000 and still want to create maps,'#13+
-      'you can copy tileset .bmp files (i.e. BLOXBGBS.bmp) and .bin files (i.e. TILEATR1.BIN) into Tilesets folder.',
+      'Press YES button if you want to navigate to your Dune 2000 game location and configure it now.'#13+
+      'Press NO button if you want to configure it later. Program will fail with errors and will not be unusable!',
       'First time run', MB_YESNO or MB_ICONINFORMATION) = IDYES then
     begin
       if FindDune2000Dialog.Execute then
@@ -1196,8 +1190,8 @@ begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13+
               'Part of D2K+ Editing tools'#13#13+
               'Made by Klofkac (kozten@seznam.cz)'#13+
-              'Version 2.0 pre1'#13+
-              'Date: 2020-07-01'#13#13+
+              'Version 2.0 pre2'#13+
+              'Date: 2020-09-06'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13+
               'mvi - for making the original Mission editor'#13+
