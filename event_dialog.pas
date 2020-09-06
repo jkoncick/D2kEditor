@@ -662,6 +662,8 @@ procedure TEventDialog.change_event_type(event_type: integer);
 begin
   if tmp_event.event_type = event_type then
     exit;
+  if tmp_event.event_type = Byte(etRevealMap) then
+    tmp_event.num_units := 0;
   tmp_event.event_type := event_type;
   if not event_type_info[event_type].use_player_index then
     tmp_event.player := 0;
@@ -972,7 +974,7 @@ begin
     exit;
   if selected_event >= Mission.mis_data.num_events then
     exit;
-  if not event_type_info[Mission.mis_data.events[selected_event].event_type].use_unit_list then
+  if not event_type_info[tmp_event.event_type].use_unit_list then
     exit;
   if tmp_event.num_units = (Length(tmp_event.units) + 4) then
   begin
