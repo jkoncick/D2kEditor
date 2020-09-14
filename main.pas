@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Dialogs
-  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher,
+  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor,
   // Units
   _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
 
@@ -154,6 +154,8 @@ type
     LbStructureName: TLabel;
     Structures1: TMenuItem;
     Showstatus2: TMenuItem;
+    Structureseditor1: TMenuItem;
+    N14: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -191,6 +193,7 @@ type
     procedure Loadtilesetattributes1Click(Sender: TObject);
     procedure TileAttributeseditor1Click(Sender: TObject);
     procedure Showstatus1Click(Sender: TObject);
+    procedure Structureseditor1Click(Sender: TObject);
     procedure Showstatus2Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure More1Click(Sender: TObject);
@@ -353,8 +356,6 @@ var
   MainWindow: TMainWindow;
 
 implementation
-
-uses tileatr_editor;
 
 {$R *.dfm}
 
@@ -998,6 +999,11 @@ end;
 procedure TMainWindow.Showstatus1Click(Sender: TObject);
 begin
   ShowMessage(Tileset.get_status);
+end;
+
+procedure TMainWindow.Structureseditor1Click(Sender: TObject);
+begin
+  StructuresEditor.Show;
 end;
 
 procedure TMainWindow.Showstatus2Click(Sender: TObject);

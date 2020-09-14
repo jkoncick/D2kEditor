@@ -923,6 +923,7 @@ procedure TMissionDialog.cbModsFolderChange(Sender: TObject);
 begin
   // Reload structures data
   Structures.load_templates_bin;
+  Structures.load_armour_bin;
   Structures.load_tiledata_bin;
   Structures.load_colours_bin;
   Structures.load_data_r16;

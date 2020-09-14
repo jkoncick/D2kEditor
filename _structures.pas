@@ -58,8 +58,17 @@ type
 
   TUnitTemplatePtr = ^TUnitTemplate;
 
-const BF_HAS_SKIRT = $200000;
-const BF_NO_CONCRETE = $400000;
+const BF_AUTOREPAIR     = $00000001;
+const BF_ANIM_PERMANENT = $00000010;
+const BF_HAS_ANIMATION  = $00000040;
+const BF_UNKNOWN9       = $00000100;
+const BF_SELECT_REPAIR  = $00000200;
+const BF_CAN_CAPTURE    = $00000400;
+const BF_ALWAYS_DECAY   = $00008000;
+const BF_HAS_SKIRT      = $00200000;
+const BF_NO_CONCRETE    = $00400000;
+const BF_ANIM_ALPHA     = $00800000;
+const BF_CANNOT_SELL    = $01000000;
 
 type
   TBuildingTemplate = packed record
@@ -177,6 +186,28 @@ const NUM_EMPTY_UNIT_SIDEBAR_ICONS = 10;
 const MAX_BUILDING_SIZE = 4;
 
 // *****************************************************************************
+// ARMOUR.BIN file definitions
+// *****************************************************************************
+
+const MAX_WARHEADS = 30;
+const MAX_ARMOUR_TYPES = 12;
+
+type
+  TWarheadEntry = packed record
+    VersusArmorType: array[0..MAX_ARMOUR_TYPES-1] of byte;
+    Unknown12:       cardinal;
+    Unknown16:       cardinal;
+  end;
+
+  TArmourBinFile = packed record
+    WarheadEntries:     array[0..MAX_WARHEADS-1] of TWarheadEntry;
+    WarheadNameStrings: array[0..MAX_WARHEADS-1,     0..49]  of char;
+    ArmourTypeStrings:  array[0..MAX_ARMOUR_TYPES-1, 0..49]  of char;
+    WarheadCount:       byte;
+    ArmourTypeCount:    byte;
+  end;
+
+// *****************************************************************************
 // TILEDATA.BIN file definitions
 // *****************************************************************************
 
@@ -273,6 +304,8 @@ type
     conc_tile_y: integer;
   end;
 
+const CONCRETE_TILES: array[0..2] of word = (651, 671, 691);
+
 const BUILDING_SKIRT_2x2: TBuildingSkirt = (size_x: 2; size_y: 2; rock_tile_x: 17; rock_tile_y: 30; conc_tile_x:  9; conc_tile_y: 32);
 const BUILDING_SKIRT_3x2: TBuildingSkirt = (size_x: 3; size_y: 2; rock_tile_x: 11; rock_tile_y: 30; conc_tile_x:  3; conc_tile_y: 32);
 
@@ -316,9 +349,10 @@ type
 type
   TStructures = class
 
-  private
+  public
     // General data
     templates_bin_filename: String;
+    armour_bin_filename: String;
     tiledata_bin_filename: String;
     colours_bin_filename: String;
     data_r16_filename: String;
@@ -330,8 +364,9 @@ type
     pending_render_map: boolean;
     pending_render_minimap: boolean;
     pending_fill_events_and_conditions: boolean;
+    pending_fill_structures_editor_data: boolean;
     pending_update_mis_ai_properties: boolean;
-  public
+
     // TEMPLATES.BIN related data
     templates: TTemplatesBinFile;
 
@@ -349,6 +384,9 @@ type
 
     building_type_mapping:  array[0..MAX_BUILDING_TYPES-1] of shortint;
     building_type_mapping_count:      integer;
+
+    // ARMOUR.BIN related data
+    armour: TArmourBinFile;
 
     // TILEDATA.BIN related data
     tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
@@ -408,6 +446,8 @@ type
     function get_building_template(building_type, player: integer): TBuildingTemplatePtr;
     function check_links_with_wall(special: word): boolean;
     procedure get_structure_size(special: word; var size_x, size_y: integer);
+    // ARMOUR.BIN related procedures
+    procedure load_armour_bin;
     // TILEDATA.BIN related procedures
     procedure load_tiledata_bin;
     function get_tiledata_entry(special: integer): TTileDataEntryPtr;
@@ -438,13 +478,14 @@ var
 
 implementation
 
-uses Forms, IniFiles, main, set_dialog, test_map_dialog, map_stats_dialog, mission_dialog, event_dialog, _settings, _mission;
+uses Forms, IniFiles, main, set_dialog, test_map_dialog, map_stats_dialog, mission_dialog, event_dialog, _settings, _mission, structures_editor;
 
 procedure TStructures.init;
 begin
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
   load_templates_bin;
+  load_armour_bin;
   load_tiledata_bin;
   load_colours_bin;
   load_data_r16;
@@ -483,6 +524,8 @@ procedure TStructures.do_pending_actions(skip: boolean);
 begin
   if pending_update_mis_ai_properties then
     update_mis_ai_properties;
+    if pending_fill_structures_editor_data then
+      StructuresEditor.fill_data;
   if not skip then
   begin
     if pending_render_map then
@@ -497,6 +540,7 @@ begin
   pending_render_map := false;
   pending_render_minimap := false;
   pending_fill_events_and_conditions := false;
+  pending_fill_structures_editor_data := false;
   pending_update_mis_ai_properties := false;
 end;
 
@@ -504,6 +548,7 @@ function TStructures.get_status: String;
 begin
   result :=
     'Templates.bin file: '+templates_bin_filename+#13+
+    'ARMOUR.BIN file: '+armour_bin_filename+#13+
     'TILEDATA.BIN file: '+tiledata_bin_filename+#13+
     'COLOURS.BIN file: '+colours_bin_filename+#13+
     'DATA.R16 file: '+data_r16_filename+#13+
@@ -538,6 +583,7 @@ begin
   pending_render_map := true;
   pending_render_minimap := true;
   pending_fill_events_and_conditions := true;
+  pending_fill_structures_editor_data := true;
   pending_update_mis_ai_properties := true;
   MainWindow.update_structures_list;
   MapStatsDialog.update_structures_list;
@@ -771,6 +817,24 @@ begin
   end;
 end;
 
+procedure TStructures.load_armour_bin;
+var
+  tmp_filename: String;
+  armour_bin_file: file of TArmourBinFile;
+begin
+  tmp_filename := find_file('Data\bin\ARMOUR.BIN');
+  if (tmp_filename = '') or (tmp_filename = armour_bin_filename) then
+    exit;
+  armour_bin_filename := tmp_filename;
+  // Read ARMOUR.BIN file
+  AssignFile(armour_bin_file, tmp_filename);
+  Reset(armour_bin_file);
+  Read(armour_bin_file, armour);
+  CloseFile(armour_bin_file);
+  // Update all occurences in editor
+  pending_fill_structures_editor_data := true;
+end;
+
 procedure TStructures.load_tiledata_bin;
 var
   tmp_filename: String;
@@ -780,7 +844,7 @@ begin
   if (tmp_filename = '') or (tmp_filename = tiledata_bin_filename) then
     exit;
   tiledata_bin_filename := tmp_filename;
-  // Read TILEDATA.BIN file and retrieve special values of structures
+  // Read TILEDATA.BIN file
   AssignFile(tiledatafile, tmp_filename);
   Reset(tiledatafile);
   BlockRead(tiledatafile, tiledata, cnt_tiledata_entries);

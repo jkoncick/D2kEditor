@@ -10,8 +10,9 @@ uses
   event_dialog in 'event_dialog.pas' {EventDialog},
   mission_dialog in 'mission_dialog.pas' {MissionDialog},
   map_stats_dialog in 'map_stats_dialog.pas' {MapStatsDialog},
-  tileatr_editor in 'tileatr_editor.pas' {TileAtrEditor},
   mission_launcher in 'mission_launcher.pas' {MissionLauncher},
+  tileatr_editor in 'tileatr_editor.pas' {TileAtrEditor},
+  structures_editor in 'structures_editor.pas' {StructuresEditor},
   _renderer in '_renderer.pas',
   _map in '_map.pas',
   _mission in '_mission.pas',
@@ -21,6 +22,7 @@ uses
   _settings in '_settings.pas',
   _randomgen in '_randomgen.pas',
   _launcher in '_launcher.pas';
+
 
 {$R *.res}
 
@@ -45,8 +47,9 @@ begin
   Application.CreateForm(TEventDialog, EventDialog);
   Application.CreateForm(TMissionDialog, MissionDialog);
   Application.CreateForm(TMapStatsDialog, MapStatsDialog);
-  Application.CreateForm(TTileAtrEditor, TileAtrEditor);
   Application.CreateForm(TMissionLauncher, MissionLauncher);
+  Application.CreateForm(TTileAtrEditor, TileAtrEditor);
+  Application.CreateForm(TStructuresEditor, StructuresEditor);
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
 

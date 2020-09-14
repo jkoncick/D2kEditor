@@ -409,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -418,7 +418,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 6
         end
       end
@@ -571,6 +571,14 @@ object MainWindow: TMainWindow
     end
     object Structures1: TMenuItem
       Caption = 'Structures'
+      object Structureseditor1: TMenuItem
+        Caption = 'Structures editor...'
+        ShortCut = 16472
+        OnClick = Structureseditor1Click
+      end
+      object N14: TMenuItem
+        Caption = '-'
+      end
       object Showstatus2: TMenuItem
         Caption = 'Show status (debug)'
         OnClick = Showstatus2Click

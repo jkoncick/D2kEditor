@@ -50,8 +50,6 @@ const thick_spice_pattern: array[0..7, 0..7] of byte = (
 
 const thick_spice_tiles: array[0..3] of word = (300,301,320,321);
 
-const concrete_tiles: array[0..2] of word = (651, 671, 691);
-
 type EditingMarkerType = (emBuilding, emBuildingNoConcrete, emSingleObject, emSelectionArea, emPaintArea);
 
 type
@@ -445,14 +443,14 @@ begin
             structure_image := Structures.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt] + 1 + wall_frame, player2, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
-              draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, -8, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
+              draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
               inc(house_color_pixels, structure_image.house_color_pixel_count);
             end;
             // Draw base building frame
             structure_image := Structures.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt], player2, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
-              draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, -8, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
+              draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
               inc(house_color_pixels, structure_image.house_color_pixel_count);
             end;
           end;
@@ -463,7 +461,7 @@ begin
             structure_image := Structures.get_structure_image(Structures.building_art_image_indexes[building_template.BarrelArt] + 1, player2, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
-              draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, -8, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
+              draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
               inc(house_color_pixels, structure_image.house_color_pixel_count);
             end;
           end;
