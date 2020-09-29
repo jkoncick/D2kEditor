@@ -1,23 +1,32 @@
 object StructuresEditor: TStructuresEditor
-  Left = 198
-  Top = 12
-  Width = 1024
-  Height = 740
-  Caption = 'StructuresEditor'
+  Left = 187
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Structures Editor'
+  ClientHeight = 684
+  ClientWidth = 1016
   Color = clBtnFace
+  Constraints.MaxHeight = 738
+  Constraints.MaxWidth = 1024
+  Constraints.MinHeight = 738
+  Constraints.MinWidth = 1024
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  KeyPreview = True
   Menu = MainMenu
   OldCreateOrder = False
+  Scaled = False
   OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
   PixelsPerInch = 96
   TextHeight = 13
   object StatusBar: TStatusBar
     Left = 0
-    Top = 667
+    Top = 665
     Width = 1016
     Height = 19
     Panels = <
@@ -29,7 +38,7 @@ object StructuresEditor: TStructuresEditor
     Left = 0
     Top = 0
     Width = 1016
-    Height = 667
+    Height = 665
     ActivePage = PageBuildings
     Align = alClient
     TabOrder = 1
@@ -39,7 +48,7 @@ object StructuresEditor: TStructuresEditor
         Left = 0
         Top = 0
         Width = 161
-        Height = 633
+        Height = 640
         BevelOuter = bvNone
         TabOrder = 0
         object lblBuildingTypeList: TLabel
@@ -53,16 +62,52 @@ object StructuresEditor: TStructuresEditor
           Left = 0
           Top = 16
           Width = 161
-          Height = 529
+          Height = 537
           ItemHeight = 13
           TabOrder = 0
+          OnClick = lbBuildingTypeListClick
+        end
+        object btnBuildingTypeAdd: TButton
+          Left = 0
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Add new'
+          TabOrder = 1
+          OnClick = btnBuildingTypeAddClick
+        end
+        object btnBuildingTypeRemove: TButton
+          Left = 88
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Remove last'
+          TabOrder = 2
+          OnClick = btnBuildingTypeRemoveClick
+        end
+        object edBuildingTypeName: TEdit
+          Left = 0
+          Top = 560
+          Width = 161
+          Height = 21
+          MaxLength = 49
+          TabOrder = 3
+        end
+        object btnBuildingTypeRename: TButton
+          Left = 32
+          Top = 612
+          Width = 97
+          Height = 25
+          Caption = 'Rename selected'
+          TabOrder = 4
+          OnClick = btnBuildingTypeRenameClick
         end
       end
       object pnBuildingList: TPanel
         Left = 168
         Top = 0
         Width = 225
-        Height = 633
+        Height = 640
         BevelOuter = bvNone
         TabOrder = 1
         object lblBuildingList: TLabel
@@ -80,6 +125,42 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbBuildingListClick
+        end
+        object btnBuildingAdd: TButton
+          Left = 0
+          Top = 612
+          Width = 57
+          Height = 25
+          Caption = 'Add new'
+          TabOrder = 1
+          OnClick = btnBuildingAddClick
+        end
+        object btnBuildingRemove: TButton
+          Left = 56
+          Top = 612
+          Width = 73
+          Height = 25
+          Caption = 'Remove last'
+          TabOrder = 2
+          OnClick = btnBuildingRemoveClick
+        end
+        object btnBuildingCopy: TButton
+          Left = 128
+          Top = 612
+          Width = 49
+          Height = 25
+          Caption = 'Copy'
+          TabOrder = 3
+          OnClick = btnBuildingCopyClick
+        end
+        object btnBuildingPaste: TButton
+          Left = 176
+          Top = 612
+          Width = 49
+          Height = 25
+          Caption = 'Paste'
+          TabOrder = 4
+          OnClick = btnBuildingPasteClick
         end
       end
       object gbBuildingBasic: TGroupBox
@@ -132,6 +213,7 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 241
           Height = 21
+          MaxLength = 499
           TabOrder = 1
         end
         object cbxBuildingType: TComboBox
@@ -250,8 +332,8 @@ object StructuresEditor: TStructuresEditor
           Width = 53
           Height = 22
           MaxLength = 3
-          MaxValue = 255
-          MinValue = 0
+          MaxValue = 127
+          MinValue = -128
           TabOrder = 0
           Value = 0
         end
@@ -261,8 +343,8 @@ object StructuresEditor: TStructuresEditor
           Width = 53
           Height = 22
           MaxLength = 3
-          MaxValue = 255
-          MinValue = 0
+          MaxValue = 127
+          MinValue = -128
           TabOrder = 1
           Value = 0
         end
@@ -272,8 +354,8 @@ object StructuresEditor: TStructuresEditor
           Width = 53
           Height = 22
           MaxLength = 3
-          MaxValue = 255
-          MinValue = 0
+          MaxValue = 127
+          MinValue = -128
           TabOrder = 2
           Value = 0
         end
@@ -283,8 +365,8 @@ object StructuresEditor: TStructuresEditor
           Width = 53
           Height = 22
           MaxLength = 3
-          MaxValue = 255
-          MinValue = 0
+          MaxValue = 127
+          MinValue = -128
           TabOrder = 3
           Value = 0
         end
@@ -535,7 +617,7 @@ object StructuresEditor: TStructuresEditor
           Top = 104
           Width = 145
           Height = 17
-          Caption = 'Do not require concrete'
+          Caption = 'Does not require concrete'
           TabOrder = 5
           OnClick = BuildingFlagCheckboxChange
         end
@@ -740,11 +822,11 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Rate of fire:'
         end
         object lblBuildingBarrelRotationSpeed: TLabel
-          Left = 152
+          Left = 144
           Top = 88
-          Width = 71
+          Width = 83
           Height = 13
-          Caption = 'Turning speed:'
+          Caption = 'Barrel turn speed:'
         end
         object cbBuildingActLikeTurret: TCheckBox
           Left = 8
@@ -1019,6 +1101,7 @@ object StructuresEditor: TStructuresEditor
           FixedCols = 0
           RowCount = 4
           FixedRows = 0
+          Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing, goAlwaysShowEditor]
           TabOrder = 12
         end
         object cbBuildingFlagANIM_ALPHA: TCheckBox
@@ -1038,22 +1121,27 @@ object StructuresEditor: TStructuresEditor
           Height = 17
           Caption = 'No directions'
           TabOrder = 14
+          OnClick = btnBuildingDirectionFramesClick
         end
         object btnBuildingDirectionFrames8: TButton
+          Tag = 8
           Left = 8
           Top = 320
           Width = 75
           Height = 17
           Caption = '8 directions'
           TabOrder = 15
+          OnClick = btnBuildingDirectionFramesClick
         end
         object btnBuildingDirectionFrames32: TButton
+          Tag = 32
           Left = 8
           Top = 336
           Width = 75
           Height = 17
           Caption = '32 directions'
           TabOrder = 16
+          OnClick = btnBuildingDirectionFramesClick
         end
         object btnBuildingBuildingAnimationPlay: TButton
           Left = 122
@@ -1098,9 +1186,9 @@ object StructuresEditor: TStructuresEditor
         object lblBuildingUnknown8: TLabel
           Left = 8
           Top = 16
-          Width = 30
+          Width = 33
           Height = 13
-          Caption = 'Byte 8'
+          Caption = 'Byte 8:'
         end
         object seBuildingUnknown93: TSpinEdit
           Left = 64
@@ -1156,11 +1244,864 @@ object StructuresEditor: TStructuresEditor
     object PageUnits: TTabSheet
       Caption = 'Units         '
       ImageIndex = 1
+      object pnUnitTypeList: TPanel
+        Left = 0
+        Top = 0
+        Width = 161
+        Height = 633
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblUnitTypeList: TLabel
+          Left = 0
+          Top = 0
+          Width = 47
+          Height = 13
+          Caption = 'Unit types'
+        end
+        object lbUnitTypeList: TListBox
+          Left = 0
+          Top = 16
+          Width = 161
+          Height = 529
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbUnitTypeListClick
+        end
+      end
+      object pnUnitList: TPanel
+        Left = 168
+        Top = 0
+        Width = 225
+        Height = 633
+        BevelOuter = bvNone
+        TabOrder = 1
+        object lblUnitList: TLabel
+          Left = 0
+          Top = 0
+          Width = 24
+          Height = 13
+          Caption = 'Units'
+        end
+        object lbUnitList: TListBox
+          Left = 0
+          Top = 16
+          Width = 225
+          Height = 593
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbUnitListClick
+        end
+      end
+      object gbUnitBasic: TGroupBox
+        Left = 400
+        Top = 0
+        Width = 289
+        Height = 137
+        Caption = 'Basic'
+        TabOrder = 2
+        object lblUnitOwnerSide: TLabel
+          Left = 80
+          Top = 16
+          Width = 34
+          Height = 26
+          Caption = 'Owner side:'
+          WordWrap = True
+        end
+        object lblUnitName: TLabel
+          Left = 8
+          Top = 80
+          Width = 31
+          Height = 13
+          Caption = 'Name:'
+        end
+        object lblUnitType: TLabel
+          Left = 8
+          Top = 104
+          Width = 27
+          Height = 13
+          Caption = 'Type:'
+        end
+        object imgUnitIcon: TImage
+          Left = 8
+          Top = 16
+          Width = 60
+          Height = 47
+        end
+        object clbUnitOwnerSide: TCheckListBox
+          Left = 120
+          Top = 16
+          Width = 161
+          Height = 57
+          OnClickCheck = RedrawUnitPreview
+          Columns = 2
+          ItemHeight = 13
+          TabOrder = 0
+        end
+        object edUnitName: TEdit
+          Left = 40
+          Top = 80
+          Width = 241
+          Height = 21
+          TabOrder = 1
+          OnChange = RedrawUnitPreview
+        end
+        object cbxUnitType: TComboBox
+          Left = 40
+          Top = 104
+          Width = 241
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 2
+        end
+      end
+      object gbUnitBuildRequirements: TGroupBox
+        Left = 400
+        Top = 144
+        Width = 289
+        Height = 201
+        Caption = 'Build requirements'
+        TabOrder = 3
+        object lblUnitTechLevel: TLabel
+          Left = 8
+          Top = 24
+          Width = 28
+          Height = 13
+          Caption = 'Tech:'
+        end
+        object lblUnitCost: TLabel
+          Left = 96
+          Top = 24
+          Width = 24
+          Height = 13
+          Caption = 'Cost:'
+        end
+        object lblUnitBuildSpeed: TLabel
+          Left = 184
+          Top = 24
+          Width = 32
+          Height = 26
+          Caption = 'Build speed:'
+          WordWrap = True
+        end
+        object lblUnitPrereq1BuildingType: TLabel
+          Left = 8
+          Top = 56
+          Width = 67
+          Height = 13
+          Caption = 'Prerequisite 1:'
+        end
+        object lblUnitPrereq2BuildingType: TLabel
+          Left = 8
+          Top = 144
+          Width = 67
+          Height = 13
+          Caption = 'Prerequisite 2:'
+        end
+        object lblUnitPrereq1UpgradesNeeded: TLabel
+          Left = 8
+          Top = 104
+          Width = 49
+          Height = 26
+          Caption = 'Upgrades needed:'
+          WordWrap = True
+        end
+        object lblUnitPrereq1OwnerSide: TLabel
+          Left = 8
+          Top = 80
+          Width = 95
+          Height = 13
+          Caption = 'Owner side needed:'
+        end
+        object seUnitTechLevel: TSpinEdit
+          Left = 40
+          Top = 24
+          Width = 53
+          Height = 22
+          MaxLength = 3
+          MaxValue = 127
+          MinValue = -128
+          TabOrder = 0
+          Value = 0
+        end
+        object edUnitCost: TEdit
+          Left = 128
+          Top = 24
+          Width = 53
+          Height = 21
+          MaxLength = 10
+          TabOrder = 1
+        end
+        object edUnitBuildSpeed: TEdit
+          Left = 224
+          Top = 24
+          Width = 53
+          Height = 21
+          MaxLength = 10
+          TabOrder = 2
+        end
+        object clbUnitPrereq1OwnerSide: TCheckListBox
+          Left = 120
+          Top = 80
+          Width = 161
+          Height = 57
+          Columns = 2
+          ItemHeight = 13
+          TabOrder = 3
+        end
+        object cbxUnitPrereq1BuildingType: TComboBox
+          Left = 80
+          Top = 56
+          Width = 201
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 4
+        end
+        object cbxUnitPrereq2BuildingType: TComboBox
+          Left = 80
+          Top = 144
+          Width = 201
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 5
+        end
+        object seUnitPrereq1UpgradesNeeded: TSpinEdit
+          Left = 64
+          Top = 104
+          Width = 49
+          Height = 22
+          MaxLength = 1
+          MaxValue = 3
+          MinValue = 0
+          TabOrder = 6
+          Value = 0
+        end
+        object cbUnitAvailableInStarport: TCheckBox
+          Left = 8
+          Top = 176
+          Width = 121
+          Height = 17
+          Caption = 'Available in Starport'
+          TabOrder = 7
+        end
+        object cbUnitMultiplayerOnly: TCheckBox
+          Left = 152
+          Top = 176
+          Width = 97
+          Height = 17
+          Caption = 'Multiplayer only'
+          TabOrder = 8
+        end
+      end
+      object gbUnitVoices: TGroupBox
+        Left = 400
+        Top = 352
+        Width = 289
+        Height = 269
+        Caption = 'Voices'
+        TabOrder = 4
+        object Label1: TLabel
+          Left = 8
+          Top = 16
+          Width = 86
+          Height = 13
+          Caption = 'Reporting sounds:'
+        end
+        object Label2: TLabel
+          Left = 148
+          Top = 16
+          Width = 87
+          Height = 13
+          Caption = 'Confirmed sounds:'
+        end
+      end
+      object gbUnitProperties: TGroupBox
+        Left = 696
+        Top = 0
+        Width = 305
+        Height = 113
+        Caption = 'Properties and behavior'
+        TabOrder = 5
+        object lblUnitHitPoints: TLabel
+          Left = 8
+          Top = 16
+          Width = 34
+          Height = 13
+          Caption = 'Health:'
+        end
+        object lblUnitArmorType: TLabel
+          Left = 120
+          Top = 16
+          Width = 30
+          Height = 13
+          Caption = 'Armor:'
+        end
+        object lblUnitHealthBarSize: TLabel
+          Left = 120
+          Top = 40
+          Width = 73
+          Height = 13
+          Caption = 'Health bar size:'
+        end
+        object lblUnitSpecialBehavior: TLabel
+          Left = 96
+          Top = 64
+          Width = 45
+          Height = 13
+          Caption = 'Behavior:'
+        end
+        object lblUnitSightRadius: TLabel
+          Left = 8
+          Top = 40
+          Width = 27
+          Height = 13
+          Caption = 'Sight:'
+        end
+        object edUnitHitPoints: TEdit
+          Left = 48
+          Top = 16
+          Width = 65
+          Height = 21
+          TabOrder = 0
+        end
+        object cbxUnitArmorType: TComboBox
+          Left = 152
+          Top = 16
+          Width = 145
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 1
+        end
+        object cbxUnitHealthBarSize: TComboBox
+          Left = 200
+          Top = 40
+          Width = 97
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 2
+          Items.Strings = (
+            '0 - 16px'
+            '1 - 24px'
+            '2 - 32px'
+            '3 - 64px'
+            '4 - 96px'
+            '5 - 32px')
+        end
+        object cbxUnitSpecialBehavior: TComboBox
+          Left = 144
+          Top = 64
+          Width = 153
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 3
+          OnChange = RedrawUnitPreview
+          Items.Strings = (
+            '0 - None'
+            '1 - Harvester'
+            '2 - Carryall'
+            '3 - Engineer'
+            '4 - Saboteur'
+            '5 - Sandworm'
+            '6 - MCV'
+            '7 - Devastator'
+            '8 - Frigate'
+            '9 - Ornithopter'
+            '10 - DH missile'
+            '11 - Sardaukar'
+            '12 - Fremen'
+            '13 - (unused?)'
+            '14 - Thumper'
+            '15 - (crash)')
+        end
+        object cbUnitIsInfantry: TCheckBox
+          Tag = 512
+          Left = 8
+          Top = 64
+          Width = 73
+          Height = 17
+          Caption = 'Is Infantry'
+          TabOrder = 4
+        end
+        object cbUnitFlagUF_STEALTH: TCheckBox
+          Tag = 16
+          Left = 112
+          Top = 88
+          Width = 57
+          Height = 17
+          Caption = 'Stealth'
+          TabOrder = 5
+          OnClick = UnitFlagCheckboxChange
+        end
+        object cbUnitFlagUF_SELFHEALING: TCheckBox
+          Tag = 8388608
+          Left = 8
+          Top = 88
+          Width = 81
+          Height = 17
+          Caption = 'Self-healing'
+          TabOrder = 6
+          OnClick = UnitFlagCheckboxChange
+        end
+        object seUnitSightRadius: TSpinEdit
+          Left = 48
+          Top = 40
+          Width = 41
+          Height = 22
+          MaxLength = 1
+          MaxValue = 7
+          MinValue = 0
+          TabOrder = 7
+          Value = 0
+        end
+        object cbUnitFlagUF_NO_AI: TCheckBox
+          Tag = 2048
+          Left = 200
+          Top = 88
+          Width = 57
+          Height = 17
+          Caption = 'No AI'
+          TabOrder = 8
+          OnClick = UnitFlagCheckboxChange
+        end
+      end
+      object gbUnitMovement: TGroupBox
+        Left = 696
+        Top = 120
+        Width = 305
+        Height = 73
+        Caption = 'Movement'
+        TabOrder = 6
+        object lblUnitSpeed: TLabel
+          Left = 8
+          Top = 16
+          Width = 34
+          Height = 13
+          Caption = 'Speed:'
+        end
+        object lblUnitSpeedType: TLabel
+          Left = 120
+          Top = 16
+          Width = 57
+          Height = 13
+          Caption = 'Speed type:'
+        end
+        object lblUnitUnitRotationSpeed: TLabel
+          Left = 8
+          Top = 40
+          Width = 71
+          Height = 13
+          Caption = 'Turning speed:'
+        end
+        object edUnitSpeed: TEdit
+          Left = 48
+          Top = 16
+          Width = 65
+          Height = 21
+          TabOrder = 0
+        end
+        object cbxUnitSpeedType: TComboBox
+          Left = 184
+          Top = 16
+          Width = 113
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 1
+        end
+        object seUnitUnitRotationSpeed: TSpinEdit
+          Left = 88
+          Top = 40
+          Width = 57
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 2
+          Value = 0
+        end
+        object cbUnitCanCrushInfantry: TCheckBox
+          Left = 152
+          Top = 40
+          Width = 113
+          Height = 17
+          Caption = 'Can crush infantry'
+          TabOrder = 3
+        end
+      end
+      object gbUnitWeapons: TGroupBox
+        Left = 696
+        Top = 200
+        Width = 305
+        Height = 121
+        Caption = 'Weapons'
+        TabOrder = 7
+        object lblUnitPrimaryWeapon: TLabel
+          Left = 8
+          Top = 16
+          Width = 78
+          Height = 13
+          Caption = 'Primary weapon:'
+        end
+        object lblUnitSecondaryWeapon: TLabel
+          Left = 8
+          Top = 40
+          Width = 95
+          Height = 13
+          Caption = 'Secondary weapon:'
+        end
+        object lblUnitRateOfFire: TLabel
+          Left = 8
+          Top = 88
+          Width = 55
+          Height = 13
+          Caption = 'Rate of fire:'
+        end
+        object lblUnitBarrelRotationSpeed: TLabel
+          Left = 144
+          Top = 88
+          Width = 83
+          Height = 13
+          Caption = 'Barrel turn speed:'
+        end
+        object cbUnitHasBarrel: TCheckBox
+          Left = 8
+          Top = 64
+          Width = 97
+          Height = 17
+          Caption = 'Has barrel'
+          TabOrder = 0
+        end
+        object cbUnitFlagUF_FIXED_BARREL: TCheckBox
+          Tag = 32768
+          Left = 144
+          Top = 64
+          Width = 137
+          Height = 17
+          Caption = 'Barrel is fixed'
+          TabOrder = 1
+          OnClick = UnitFlagCheckboxChange
+        end
+        object cbxUnitPrimaryWeapon: TComboBox
+          Left = 112
+          Top = 16
+          Width = 185
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 2
+        end
+        object cbxUnitSecondaryWeapon: TComboBox
+          Left = 112
+          Top = 40
+          Width = 185
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 3
+        end
+        object seUnitRateOfFire: TSpinEdit
+          Left = 72
+          Top = 88
+          Width = 65
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+        end
+        object seUnitBarrelRotationSpeed: TSpinEdit
+          Left = 232
+          Top = 88
+          Width = 65
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 5
+          Value = 0
+        end
+      end
+      object gbUnitVisuals: TGroupBox
+        Left = 696
+        Top = 328
+        Width = 305
+        Height = 225
+        Caption = 'Visuals'
+        TabOrder = 8
+        object imgUnitImage: TImage
+          Left = 192
+          Top = 16
+          Width = 80
+          Height = 80
+        end
+        object lblUnitUnitArt: TLabel
+          Left = 8
+          Top = 16
+          Width = 37
+          Height = 13
+          Caption = 'Unit art:'
+        end
+        object lblUnitBarrelArt: TLabel
+          Left = 8
+          Top = 56
+          Width = 45
+          Height = 13
+          Caption = 'Barrel art:'
+        end
+        object lblUnitDeathExplosion: TLabel
+          Left = 8
+          Top = 104
+          Width = 104
+          Height = 13
+          Caption = 'Destruction explosion:'
+        end
+        object lblUnitFiringExplosion: TLabel
+          Left = 160
+          Top = 104
+          Width = 100
+          Height = 13
+          Caption = 'Firing flash explosion:'
+        end
+        object lblUnitDirectionFrames: TLabel
+          Left = 8
+          Top = 144
+          Width = 79
+          Height = 13
+          Caption = 'Direction frames:'
+        end
+        object cbxUnitUnitArt: TComboBox
+          Left = 8
+          Top = 32
+          Width = 153
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 0
+          OnChange = RedrawUnitPreview
+        end
+        object cbxUnitBarrelArt: TComboBox
+          Left = 8
+          Top = 72
+          Width = 153
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 1
+          OnChange = RedrawUnitPreview
+        end
+        object cbxUnitDeathExplosion: TComboBox
+          Left = 8
+          Top = 120
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 2
+        end
+        object cbxUnitFiringExplosion: TComboBox
+          Left = 160
+          Top = 120
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 3
+        end
+        object sgUnitDirectionFrames: TStringGrid
+          Left = 94
+          Top = 146
+          Width = 203
+          Height = 67
+          ColCount = 8
+          DefaultColWidth = 24
+          DefaultRowHeight = 15
+          FixedCols = 0
+          RowCount = 4
+          FixedRows = 0
+          Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing, goAlwaysShowEditor]
+          TabOrder = 4
+        end
+        object btnUnitDirectionFrames0: TButton
+          Left = 8
+          Top = 160
+          Width = 75
+          Height = 17
+          Caption = 'No directions'
+          TabOrder = 5
+          OnClick = btnUnitDirectionFramesClick
+        end
+        object btnUnitDirectionFrames8: TButton
+          Tag = 8
+          Left = 8
+          Top = 176
+          Width = 75
+          Height = 17
+          Caption = '8 directions'
+          TabOrder = 6
+          OnClick = btnUnitDirectionFramesClick
+        end
+        object btnUnitDirectionFrames32: TButton
+          Tag = 32
+          Left = 8
+          Top = 192
+          Width = 75
+          Height = 17
+          Caption = '32 directions'
+          TabOrder = 7
+          OnClick = btnUnitDirectionFramesClick
+        end
+      end
+      object gbUnitOtherUnknown: TGroupBox
+        Left = 696
+        Top = 560
+        Width = 305
+        Height = 61
+        Caption = 'Others and unknown'
+        TabOrder = 9
+        object lblUnitUnknown52: TLabel
+          Left = 62
+          Top = 16
+          Width = 39
+          Height = 13
+          Caption = 'Byte 52:'
+        end
+        object lblUnitFlags: TLabel
+          Left = 224
+          Top = 16
+          Width = 28
+          Height = 13
+          Caption = 'Flags:'
+        end
+        object lblUnitUnknown46: TLabel
+          Left = 8
+          Top = 16
+          Width = 39
+          Height = 13
+          Caption = 'Byte 46:'
+        end
+        object lblUnitUnknown55: TLabel
+          Left = 116
+          Top = 16
+          Width = 39
+          Height = 13
+          Caption = 'Byte 55:'
+        end
+        object lblUnitUnknown164: TLabel
+          Left = 170
+          Top = 16
+          Width = 45
+          Height = 13
+          Caption = 'Byte 164:'
+        end
+        object seUnitUnknown52: TSpinEdit
+          Left = 62
+          Top = 32
+          Width = 49
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 0
+          Value = 0
+        end
+        object edUnitFlags: TEdit
+          Left = 224
+          Top = 32
+          Width = 73
+          Height = 21
+          TabOrder = 1
+          OnChange = edUnitFlagsChange
+        end
+        object seUnitUnknown46: TSpinEdit
+          Left = 8
+          Top = 32
+          Width = 49
+          Height = 22
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 2
+          Value = 0
+        end
+        object seUnitUnknown55: TSpinEdit
+          Left = 116
+          Top = 31
+          Width = 49
+          Height = 22
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 3
+          Value = 0
+        end
+        object seUnitUnknown164: TSpinEdit
+          Left = 170
+          Top = 31
+          Width = 49
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+        end
+      end
+    end
+    object PageWeapons: TTabSheet
+      Caption = 'Weapons  '
+      ImageIndex = 2
+    end
+    object PageExplosions: TTabSheet
+      Caption = 'Explosions '
+      ImageIndex = 3
+    end
+    object PageArmor: TTabSheet
+      Caption = 'Armor        '
+      ImageIndex = 4
+    end
+    object PageSpeed: TTabSheet
+      Caption = 'Speed       '
+      ImageIndex = 5
+      object sgSpeedValues: TStringGrid
+        Left = 56
+        Top = 32
+        Width = 329
+        Height = 193
+        DefaultRowHeight = 20
+        RowCount = 9
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goAlwaysShowEditor]
+        TabOrder = 0
+      end
     end
   end
   object MainMenu: TMainMenu
-    object File1: TMenuItem
-      Caption = 'File'
+    object Applychanges1: TMenuItem
+      Caption = 'Apply changes (Ctrl+A)'
+      ShortCut = 16449
+      OnClick = Applychanges1Click
+    end
+    object Savetofiles1: TMenuItem
+      Caption = 'Save to files (Ctrl+S)'
+      ShortCut = 16467
+      OnClick = Savetofiles1Click
+    end
+    object Saveandtest1: TMenuItem
+      Caption = 'Save and test (F8)'
+      ShortCut = 119
+      OnClick = Saveandtest1Click
+    end
+    object Reloadfiles1: TMenuItem
+      Caption = 'Reload files (Ctrl+R)'
+      ShortCut = 16466
+      OnClick = Reloadfiles1Click
+    end
+    object CopyfilestoModsfolder1: TMenuItem
+      Caption = 'Copy files to Mods folder'
+      OnClick = CopyfilestoModsfolder1Click
     end
   end
   object tmBuildingBuildingAnimation: TTimer

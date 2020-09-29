@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Grids, _structures, _map;
+  Dialogs, Grids, _structures, _map, _utils;
 
 const CNT_FIXED_ROWS = 7;
 

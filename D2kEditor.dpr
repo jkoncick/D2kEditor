@@ -13,6 +13,7 @@ uses
   mission_launcher in 'mission_launcher.pas' {MissionLauncher},
   tileatr_editor in 'tileatr_editor.pas' {TileAtrEditor},
   structures_editor in 'structures_editor.pas' {StructuresEditor},
+  _utils in '_utils.pas',
   _renderer in '_renderer.pas',
   _map in '_map.pas',
   _mission in '_mission.pas',
@@ -22,7 +23,6 @@ uses
   _settings in '_settings.pas',
   _randomgen in '_randomgen.pas',
   _launcher in '_launcher.pas';
-
 
 {$R *.res}
 

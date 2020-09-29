@@ -2,7 +2,7 @@ unit _map;
 
 interface
 
-uses _structures, _tileset;
+uses _structures, _tileset, _utils;
 
 const max_map_width = 128;
 const max_map_height = 128;

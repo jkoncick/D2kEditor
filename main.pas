@@ -7,18 +7,10 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
-  // Dialogs
-  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor,
   // Units
-  _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
+  _utils, _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
-
-type
-  TImage = class(ExtCtrls.TImage)
-    protected
-      procedure CMMouseLeave(var Message: TMessage); message CM_MOUSELEAVE;
-  end;
 
 type
   SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
@@ -357,12 +349,11 @@ var
 
 implementation
 
-{$R *.dfm}
+uses
+  // Dialogs
+  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor;
 
-procedure TImage.CMMouseLeave(var Message: TMessage);
-begin
-  MainWindow.ImageMouseLeave(self);
-end;
+{$R *.dfm}
 
 procedure TMainWindow.FormCreate(Sender: TObject);
 var
@@ -2140,8 +2131,9 @@ begin
   result := result and not (MapStatsDialog.Visible and PtInRect(MapStatsDialog.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = MissionDialog.Handle) and PtInRect(MissionDialog.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = EventDialog.Handle) and PtInRect(EventDialog.BoundsRect, Mouse.CursorPos));
-  result := result and not ((ForegroundWindow = TileAtrEditor.Handle) and PtInRect(TileAtrEditor.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = MissionLauncher.Handle) and PtInRect(MissionLauncher.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = TileAtrEditor.Handle) and PtInRect(TileAtrEditor.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = StructuresEditor.Handle) and PtInRect(StructuresEditor.BoundsRect, Mouse.CursorPos));
   result := result or block_select_started;
 end;
 

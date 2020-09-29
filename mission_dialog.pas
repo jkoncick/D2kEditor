@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, StdCtrls, Spin,  Buttons, ComCtrls, Grids,
-  ValEdit, IniFiles, Clipbrd, _map, _mission, _structures;
+  ValEdit, IniFiles, Clipbrd, _map, _mission, _structures, _utils;
 
 type
   TRuleDefinition = record
@@ -922,8 +922,9 @@ end;
 procedure TMissionDialog.cbModsFolderChange(Sender: TObject);
 begin
   // Reload structures data
-  Structures.load_templates_bin;
-  Structures.load_armour_bin;
+  Structures.load_templates_bin(false);
+  Structures.load_armour_bin(false);
+  Structures.load_speed_bin(false);
   Structures.load_tiledata_bin;
   Structures.load_colours_bin;
   Structures.load_data_r16;

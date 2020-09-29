@@ -2,7 +2,7 @@ unit _renderer;
 
 interface
 
-uses Windows, Graphics, Types, _map, _structures;
+uses Windows, Graphics, Types, _map, _structures, _utils;
 
 const constraint_type_color: array[0..8] of TColor = (clTeal, clOlive, clGray, clPurple, clTeal+$404040, clOlive+$404040, clGray+$404040, clPurple+$404040, clRed);
 const constraint_side_rect: array[0..3, 0..3] of integer = (
@@ -51,10 +51,6 @@ const thick_spice_pattern: array[0..7, 0..7] of byte = (
 const thick_spice_tiles: array[0..3] of word = (300,301,320,321);
 
 type EditingMarkerType = (emBuilding, emBuildingNoConcrete, emSingleObject, emSelectionArea, emPaintArea);
-
-type
-  CardinalArr = array[0..0] of cardinal;
-  PCardinalArr = ^CardinalArr;
 
 type
   TRenderer = class
@@ -754,7 +750,7 @@ var
   player, player2: word;
   tiledata_entry: TTileDataEntryPtr;
   building_template: TBuildingTemplatePtr;
-  bmp_data: PCardinalArr;
+  bmp_data: TCardinalArrayPtr;
 begin
   min_x := 0;
   min_y := 0;

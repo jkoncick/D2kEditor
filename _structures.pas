@@ -2,13 +2,16 @@ unit _structures;
 
 interface
 
-uses Windows, Classes, Graphics, SysUtils, Math, Types;
-
-const CNT_PLAYERS = 8;
+uses Windows, Classes, Graphics, SysUtils, Math, Types, _utils;
 
 // *****************************************************************************
 // TEMPLATES.BIN file definitions
 // *****************************************************************************
+
+const UF_STEALTH      = $00000010;
+const UF_NO_AI        = $00000800;
+const UF_FIXED_BARREL = $00008000;
+const UF_SELFHEALING  = $00800000;
 
 type
   TUnitTemplate = packed record
@@ -17,9 +20,7 @@ type
     ArmorType:             byte;
     UnitRotationSpeed:     byte;
     HitPoints:             cardinal;
-    Unknown8:              byte;
-    Speed:                 word;
-    Unknown11:             byte;
+    Speed:                 cardinal;
     PrimaryWeapon:         shortint;
     SecondaryWeapon:       shortint;
     RateOfFire:            byte;
@@ -82,10 +83,10 @@ type
     SecondaryWeapon:       shortint;
     SightRadius:           byte;
     ActLikeTurret:         byte;
-    TechLevelBuild:        byte;
-    TechLevelUpgrade1:     byte;
-    TechLevelUpgrade2:     byte;
-    TechLevelUpgrade3:     byte;
+    TechLevelBuild:        shortint;
+    TechLevelUpgrade1:     shortint;
+    TechLevelUpgrade2:     shortint;
+    TechLevelUpgrade3:     shortint;
     BuildingArt:           integer;
     BarrelArt:             integer;
     CostBuild:             cardinal;
@@ -208,6 +209,17 @@ type
   end;
 
 // *****************************************************************************
+// SPEED.BIN file definitions
+// *****************************************************************************
+
+type
+  TSpeedBinFile = packed record
+    Values: array[0..7, 0..3] of Single;
+    SpeedNameStrings: array[0..3, 0..31] of char;
+    ZeroBytes: array[0..127] of byte;
+  end;
+
+// *****************************************************************************
 // TILEDATA.BIN file definitions
 // *****************************************************************************
 
@@ -260,11 +272,6 @@ type
 // *****************************************************************************
 // Internal graphical data structure definitions
 // *****************************************************************************
-
-  TByteArray = array[0..0] of byte;
-  TByteArrayPtr = ^TByteArray;
-  TWordArray = array[0..0] of word;
-  TWordArrayPtr = ^TWordArray;
 
 type
   TStructureImage = record
@@ -353,6 +360,7 @@ type
     // General data
     templates_bin_filename: String;
     armour_bin_filename: String;
+    speed_bin_filename: String;
     tiledata_bin_filename: String;
     colours_bin_filename: String;
     data_r16_filename: String;
@@ -387,6 +395,9 @@ type
 
     // ARMOUR.BIN related data
     armour: TArmourBinFile;
+
+    // SPEED.BIN related data
+    speed: TSpeedBinFile;
 
     // TILEDATA.BIN related data
     tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
@@ -433,7 +444,8 @@ type
     function get_status: String;
 
     // TEMPLATES.BIN related procedures
-    procedure load_templates_bin;
+    procedure load_templates_bin(force: boolean);
+    procedure save_templates_bin;
     procedure compute_image_indexes;
     procedure compute_building_and_unit_side_versions;
     procedure compute_building_type_mapping;
@@ -447,7 +459,9 @@ type
     function check_links_with_wall(special: word): boolean;
     procedure get_structure_size(special: word; var size_x, size_y: integer);
     // ARMOUR.BIN related procedures
-    procedure load_armour_bin;
+    procedure load_armour_bin(force: boolean);
+    // SPEED.BIN related procedures
+    procedure load_speed_bin(force: boolean);
     // TILEDATA.BIN related procedures
     procedure load_tiledata_bin;
     function get_tiledata_entry(special: integer): TTileDataEntryPtr;
@@ -484,8 +498,9 @@ procedure TStructures.init;
 begin
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
-  load_templates_bin;
-  load_armour_bin;
+  load_templates_bin(false);
+  load_armour_bin(false);
+  load_speed_bin(false);
   load_tiledata_bin;
   load_colours_bin;
   load_data_r16;
@@ -549,6 +564,7 @@ begin
   result :=
     'Templates.bin file: '+templates_bin_filename+#13+
     'ARMOUR.BIN file: '+armour_bin_filename+#13+
+    'SPEED.BIN file: '+speed_bin_filename+#13+
     'TILEDATA.BIN file: '+tiledata_bin_filename+#13+
     'COLOURS.BIN file: '+colours_bin_filename+#13+
     'DATA.R16 file: '+data_r16_filename+#13+
@@ -560,13 +576,13 @@ begin
     'House color pixel count: '+inttostr(house_color_pixel_count_total);
 end;
 
-procedure TStructures.load_templates_bin;
+procedure TStructures.load_templates_bin(force: boolean);
 var
   tmp_filename: String;
   templates_bin_file: file of TTemplatesBinFile;
 begin
   tmp_filename := find_file('Data\bin\Templates.bin');
-  if (tmp_filename = '') or (tmp_filename = templates_bin_filename) then
+  if (tmp_filename = '') or ((tmp_filename = templates_bin_filename) and not force) then
     exit;
   templates_bin_filename := tmp_filename;
 
@@ -588,6 +604,18 @@ begin
   MainWindow.update_structures_list;
   MapStatsDialog.update_structures_list;
   EventDialog.update_structures_list;
+end;
+
+procedure TStructures.save_templates_bin;
+var
+  templates_bin_file: file of TTemplatesBinFile;
+begin
+  if templates_bin_filename = '' then
+    exit;
+  AssignFile(templates_bin_file, templates_bin_filename);
+  Rewrite(templates_bin_file);
+  Write(templates_bin_file, templates);
+  CloseFile(templates_bin_file);
 end;
 
 procedure TStructures.compute_image_indexes;
@@ -817,13 +845,13 @@ begin
   end;
 end;
 
-procedure TStructures.load_armour_bin;
+procedure TStructures.load_armour_bin(force: boolean);
 var
   tmp_filename: String;
   armour_bin_file: file of TArmourBinFile;
 begin
   tmp_filename := find_file('Data\bin\ARMOUR.BIN');
-  if (tmp_filename = '') or (tmp_filename = armour_bin_filename) then
+  if (tmp_filename = '') or ((tmp_filename = armour_bin_filename) and not force) then
     exit;
   armour_bin_filename := tmp_filename;
   // Read ARMOUR.BIN file
@@ -831,6 +859,24 @@ begin
   Reset(armour_bin_file);
   Read(armour_bin_file, armour);
   CloseFile(armour_bin_file);
+  // Update all occurences in editor
+  pending_fill_structures_editor_data := true;
+end;
+
+procedure TStructures.load_speed_bin(force: boolean);
+var
+  tmp_filename: String;
+  speed_bin_file: file of TSpeedBinFile;
+begin
+  tmp_filename := find_file('Data\bin\SPEED.BIN');
+  if (tmp_filename = '') or ((tmp_filename = speed_bin_filename) and not force) then
+    exit;
+  speed_bin_filename := tmp_filename;
+  // Read SPEED.BIN file
+  AssignFile(speed_bin_file, tmp_filename);
+  Reset(speed_bin_file);
+  Read(speed_bin_file, speed);
+  CloseFile(speed_bin_file);
   // Update all occurences in editor
   pending_fill_structures_editor_data := true;
 end;

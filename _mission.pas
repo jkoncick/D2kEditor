@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics, IniFiles, _map;
+uses Graphics, IniFiles, _map, _utils;
 
 // Mis file constants
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);

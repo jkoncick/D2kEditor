@@ -2,7 +2,7 @@ unit _tileset;
 
 interface
 
-uses Windows, Graphics, Classes;
+uses Windows, Graphics, Classes, _utils;
 
 // Tileset constants
 const cnt_tileset_tiles = 800;
@@ -31,12 +31,6 @@ const r16_tile_data_size = 32 * 32 * 2;
 const r8_file_size = 842400;
 const r8_tile_header_size = 29;
 const r8_tile_data_size = 32 * 32;
-
-type
-  WordArr = array[0..0] of word;
-  PWordArr = ^WordArr;
-  ByteArr = array[0..0] of byte;
-  PByteArr = ^ByteArr;
 
 // Tileset attributes (game)
 const taConcrete = $800;
@@ -421,8 +415,8 @@ procedure TTileset.load_r16_image(filename: String);
 var
   f: file of byte;
   r16_file_buffer: array of byte;
-  r16_tile_data_buffer: PWordArr;
-  r16_tileset_data_buffer: PWordArr;
+  r16_tile_data_buffer: TWordArrayPtr;
+  r16_tileset_data_buffer: TWordArrayPtr;
   i, x, y, offset: integer;
 begin
   // Load file into buffer
@@ -461,8 +455,8 @@ procedure TTileset.load_r8_image(filename: String);
 var
   f: file of byte;
   r8_file_buffer: array of byte;
-  r8_tile_data_buffer: PByteArr;
-  r8_tileset_data_buffer: PByteArr;
+  r8_tile_data_buffer: TByteArrayPtr;
+  r8_tileset_data_buffer: TByteArrayPtr;
   i, x, y, offset: integer;
 begin
   // Load file into buffer
