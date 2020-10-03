@@ -48,7 +48,7 @@ object StructuresEditor: TStructuresEditor
         Left = 0
         Top = 0
         Width = 161
-        Height = 640
+        Height = 637
         BevelOuter = bvNone
         TabOrder = 0
         object lblBuildingTypeList: TLabel
@@ -107,7 +107,7 @@ object StructuresEditor: TStructuresEditor
         Left = 168
         Top = 0
         Width = 225
-        Height = 640
+        Height = 637
         BevelOuter = bvNone
         TabOrder = 1
         object lblBuildingList: TLabel
@@ -1248,7 +1248,7 @@ object StructuresEditor: TStructuresEditor
         Left = 0
         Top = 0
         Width = 161
-        Height = 633
+        Height = 637
         BevelOuter = bvNone
         TabOrder = 0
         object lblUnitTypeList: TLabel
@@ -1272,7 +1272,7 @@ object StructuresEditor: TStructuresEditor
         Left = 168
         Top = 0
         Width = 225
-        Height = 633
+        Height = 637
         BevelOuter = bvNone
         TabOrder = 1
         object lblUnitList: TLabel
@@ -1502,14 +1502,14 @@ object StructuresEditor: TStructuresEditor
         Height = 269
         Caption = 'Voices'
         TabOrder = 4
-        object Label1: TLabel
+        object lblUnitReportingSounds: TLabel
           Left = 8
           Top = 16
           Width = 86
           Height = 13
           Caption = 'Reporting sounds:'
         end
-        object Label2: TLabel
+        object lblUnitConfirmedSounds: TLabel
           Left = 148
           Top = 16
           Width = 87
@@ -2051,24 +2051,553 @@ object StructuresEditor: TStructuresEditor
         end
       end
     end
+    object PageBuildingArt: TTabSheet
+      Caption = 'Building Art'
+      ImageIndex = 6
+      object pnBuildingArtList: TPanel
+        Left = 0
+        Top = 0
+        Width = 161
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblBuildingArtList: TLabel
+          Left = 0
+          Top = 0
+          Width = 52
+          Height = 13
+          Caption = 'Building art'
+        end
+        object lblBuildingArtDirections: TLabel
+          Left = 0
+          Top = 560
+          Width = 79
+          Height = 13
+          Caption = 'Direction frames:'
+        end
+        object lbBuildingArtList: TListBox
+          Left = 0
+          Top = 16
+          Width = 161
+          Height = 537
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbBuildingArtListClick
+        end
+        object btnBuildingArtAdd: TButton
+          Left = 0
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Add new'
+          TabOrder = 1
+        end
+        object btnBuildingArtRemove: TButton
+          Left = 88
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Remove last'
+          TabOrder = 2
+        end
+        object btnBuildingArtModify: TButton
+          Left = 32
+          Top = 612
+          Width = 97
+          Height = 25
+          Caption = 'Modify selected'
+          TabOrder = 3
+        end
+        object seBuildingArtDirections: TSpinEdit
+          Left = 88
+          Top = 560
+          Width = 73
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+        end
+      end
+      object pnBuildingArtControlGroup: TPanel
+        Left = 176
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 1
+      end
+      object pnBuildingAnimationArtList: TPanel
+        Left = 360
+        Top = 0
+        Width = 273
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 2
+        object lblBuildingAnimationArtList: TLabel
+          Left = 0
+          Top = 0
+          Width = 201
+          Height = 13
+          Caption = 'Building animations and buildup animations'
+        end
+        object lblBuildingAnimationFrames: TLabel
+          Left = 0
+          Top = 596
+          Width = 83
+          Height = 13
+          Caption = 'Animation frames:'
+        end
+        object lblBuildupArtFrames: TLabel
+          Left = 144
+          Top = 596
+          Width = 72
+          Height = 13
+          Caption = 'Buildup frames:'
+        end
+        object lbBuildingAnimationArtList: TListBox
+          Left = 0
+          Top = 16
+          Width = 273
+          Height = 577
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbBuildingAnimationArtListClick
+        end
+        object btnBuildupArtFramesModify: TButton
+          Left = 216
+          Top = 612
+          Width = 57
+          Height = 25
+          Caption = 'Change'
+          TabOrder = 1
+        end
+        object seBuildingAnimationFrames: TSpinEdit
+          Left = 0
+          Top = 612
+          Width = 65
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 2
+          Value = 0
+        end
+        object seBuildupArtFrames: TSpinEdit
+          Left = 144
+          Top = 612
+          Width = 65
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 3
+          Value = 0
+        end
+        object btnBuildingAnimationFramesModify: TButton
+          Left = 72
+          Top = 612
+          Width = 57
+          Height = 25
+          Caption = 'Change'
+          TabOrder = 4
+        end
+      end
+      object pnBuildingAnimationControlGroup: TPanel
+        Left = 648
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 3
+      end
+      object pnBuildupArtControlGroup: TPanel
+        Left = 832
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 4
+      end
+    end
+    object PageUnitArt: TTabSheet
+      Caption = 'Unit Art     '
+      ImageIndex = 7
+      object pnUnitArtList: TPanel
+        Left = 0
+        Top = 0
+        Width = 161
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblUnitArtList: TLabel
+          Left = 0
+          Top = 0
+          Width = 34
+          Height = 13
+          Caption = 'Unit art'
+        end
+        object lblUnitArtAnimationFrames: TLabel
+          Left = 0
+          Top = 536
+          Width = 83
+          Height = 13
+          Caption = 'Animation frames:'
+        end
+        object lblUnitArtDirectionFrames: TLabel
+          Left = 0
+          Top = 560
+          Width = 79
+          Height = 13
+          Caption = 'Direction frames:'
+        end
+        object lbUnitArtList: TListBox
+          Left = 0
+          Top = 16
+          Width = 161
+          Height = 513
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbUnitArtListClick
+        end
+        object btnUnitArtAdd: TButton
+          Left = 0
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Add new'
+          TabOrder = 1
+        end
+        object btnUnitArtRemove: TButton
+          Left = 88
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Remove last'
+          TabOrder = 2
+        end
+        object btnUnitArtModify: TButton
+          Left = 32
+          Top = 612
+          Width = 97
+          Height = 25
+          Caption = 'Modify selected'
+          TabOrder = 3
+        end
+        object seUnitArtAnimationFrames: TSpinEdit
+          Left = 88
+          Top = 536
+          Width = 73
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+        end
+        object seUnitArtDirectionFrames: TSpinEdit
+          Left = 88
+          Top = 560
+          Width = 73
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 5
+          Value = 0
+        end
+      end
+      object pnUnitArtControlGroup: TPanel
+        Left = 176
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 1
+      end
+    end
     object PageWeapons: TTabSheet
       Caption = 'Weapons  '
       ImageIndex = 2
+      object pnProjectileArtList: TPanel
+        Left = 496
+        Top = 0
+        Width = 161
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblProjectileArtList: TLabel
+          Left = 0
+          Top = 0
+          Width = 58
+          Height = 13
+          Caption = 'Projectile art'
+        end
+        object lblProjectileArtDirections: TLabel
+          Left = 0
+          Top = 560
+          Width = 79
+          Height = 13
+          Caption = 'Direction frames:'
+        end
+        object lbProjectileArtList: TListBox
+          Left = 0
+          Top = 16
+          Width = 161
+          Height = 537
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbProjectileArtListClick
+        end
+        object btnProjectileArtAdd: TButton
+          Left = 0
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Add new'
+          TabOrder = 1
+        end
+        object btnProjectileArtRemove: TButton
+          Left = 88
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Remove last'
+          TabOrder = 2
+        end
+        object btnProjectileArtModify: TButton
+          Left = 32
+          Top = 612
+          Width = 97
+          Height = 25
+          Caption = 'Modify selected'
+          TabOrder = 3
+        end
+        object seProjectileArtDirections: TSpinEdit
+          Left = 88
+          Top = 560
+          Width = 73
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+        end
+      end
+      object pnProjectileArtControlGroup: TPanel
+        Left = 672
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 1
+      end
+      object pnWeaponList: TPanel
+        Left = 0
+        Top = 0
+        Width = 161
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 2
+        object lblWeaponList: TLabel
+          Left = 0
+          Top = 0
+          Width = 46
+          Height = 13
+          Caption = 'Weapons'
+        end
+        object lbWeaponList: TListBox
+          Left = 0
+          Top = 16
+          Width = 161
+          Height = 529
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbUnitTypeListClick
+        end
+      end
     end
     object PageExplosions: TTabSheet
       Caption = 'Explosions '
       ImageIndex = 3
+      object pnAnimationArtList: TPanel
+        Left = 496
+        Top = 0
+        Width = 161
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblAnimationArtList: TLabel
+          Left = 0
+          Top = 0
+          Width = 61
+          Height = 13
+          Caption = 'Animation art'
+        end
+        object lblAnimationArtFrames: TLabel
+          Left = 0
+          Top = 560
+          Width = 79
+          Height = 13
+          Caption = 'Direction frames:'
+        end
+        object lblAnimationArtFlags: TLabel
+          Left = 0
+          Top = 536
+          Width = 28
+          Height = 13
+          Caption = 'Flags:'
+        end
+        object lbAnimationArtList: TListBox
+          Left = 0
+          Top = 16
+          Width = 161
+          Height = 513
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbAnimationArtListClick
+        end
+        object btnAnimationArtAdd: TButton
+          Left = 0
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Add new'
+          TabOrder = 1
+        end
+        object btnAnimationArtRemove: TButton
+          Left = 88
+          Top = 584
+          Width = 73
+          Height = 25
+          Caption = 'Remove last'
+          TabOrder = 2
+        end
+        object btnAnimationArtModify: TButton
+          Left = 32
+          Top = 612
+          Width = 97
+          Height = 25
+          Caption = 'Modify selected'
+          TabOrder = 3
+        end
+        object seAnimationArtFrames: TSpinEdit
+          Left = 88
+          Top = 560
+          Width = 73
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+        end
+        object edAnimationArtFlags: TEdit
+          Left = 88
+          Top = 536
+          Width = 73
+          Height = 21
+          TabOrder = 5
+        end
+      end
+      object pnAnimationArtControlGroup: TPanel
+        Left = 672
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 1
+      end
+      object pnExplosionList: TPanel
+        Left = 0
+        Top = 0
+        Width = 161
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 2
+        object lblExplosionList: TLabel
+          Left = 0
+          Top = 0
+          Width = 50
+          Height = 13
+          Caption = 'Explosions'
+        end
+        object lbExplosionList: TListBox
+          Left = 0
+          Top = 16
+          Width = 161
+          Height = 529
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbUnitTypeListClick
+        end
+      end
     end
-    object PageArmor: TTabSheet
-      Caption = 'Armor        '
+    object PageArmour: TTabSheet
+      Caption = 'Armour       '
       ImageIndex = 4
+      object pnArmourTypeList: TPanel
+        Left = 0
+        Top = 0
+        Width = 145
+        Height = 249
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblArmourTypeList: TLabel
+          Left = 0
+          Top = 0
+          Width = 61
+          Height = 13
+          Caption = 'Armour types'
+        end
+        object lbArmourTypeList: TListBox
+          Left = 0
+          Top = 16
+          Width = 145
+          Height = 169
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbUnitTypeListClick
+        end
+      end
+      object pnWarheadList: TPanel
+        Left = 0
+        Top = 248
+        Width = 145
+        Height = 385
+        BevelOuter = bvNone
+        TabOrder = 1
+        object lblWarheadList: TLabel
+          Left = 0
+          Top = 0
+          Width = 49
+          Height = 13
+          Caption = 'Warheads'
+        end
+        object lbWarheadList: TListBox
+          Left = 0
+          Top = 16
+          Width = 145
+          Height = 305
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbUnitTypeListClick
+        end
+      end
+      object sgArmourValues: TStringGrid
+        Left = 152
+        Top = 0
+        Width = 857
+        Height = 633
+        ColCount = 15
+        DefaultColWidth = 52
+        DefaultRowHeight = 20
+        RowCount = 2
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goAlwaysShowEditor]
+        TabOrder = 2
+      end
     end
     object PageSpeed: TTabSheet
       Caption = 'Speed       '
       ImageIndex = 5
       object sgSpeedValues: TStringGrid
-        Left = 56
-        Top = 32
+        Left = 152
+        Top = 0
         Width = 329
         Height = 193
         DefaultRowHeight = 20

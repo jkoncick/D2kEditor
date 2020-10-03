@@ -474,6 +474,7 @@ type
     procedure load_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean);
     procedure recolor_structure_image(image_index, house_index: integer);
     function get_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean; var was_already_loaded: boolean): TStructureImagePtr;
+    function get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
     // Mis AI properties related procedures
     procedure load_mis_ai_properties_ini;
     procedure update_mis_ai_properties;
@@ -1266,6 +1267,10 @@ begin
   result := Addr(structure_images[image_index]);
 end;
 
+function TStructures.get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
+begin
+  result := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]]);
+end;
 
 procedure TStructures.load_mis_ai_properties_ini;
 var
