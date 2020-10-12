@@ -134,13 +134,45 @@ type
 
   TBuildingTemplatePtr = ^TBuildingTemplate;
 
+const WF_ARC_TRAJECTORY    = $00000001;
+const WF_DEBRIS            = $00000002;
+const WF_MAKE_TRAIL        = $00000010;
+const WF_CURVED_TRAJECTORY = $00000020;
+const WF_DEVIATOR          = $00000040;
+const WF_ANIM_PROJECTILE   = $00000080;
+const WF_FALLING           = $00000100;
+const WF_PROJECTILE_ALPHA  = $00000200;
+const WF_SONIC             = $00000800;
+const WF_BLOCKED_BY_WALL   = $00001000;
+
+type
   TWeaponTemplate = packed record
-    data: array[0..27] of byte;
+    ProjectileSpeed:       cardinal;
+    Damage:                cardinal;
+    Flags:                 cardinal;
+    FiringSound:           integer;
+    ProjectileArt:         byte;
+    HitExplosion:          shortint;
+    TrailExplosion:        shortint;
+    Unknown19:             byte;
+    AntiAircraft:          byte;
+    Warhead:               byte;
+    Unknown22:             byte;
+    Unknown23:             byte;
+    Range:                 cardinal;
   end;
 
+  TWeaponTemplatePtr = ^TWeaponTemplate;
+
   TExplosionTemplate = packed record
-    data: array[0..7] of byte;
+    MyIndex:               byte;
+    FiringPattern:         byte;
+    Unknown2:              byte;
+    Unknown3:              byte;
+    Sound:                 integer;
   end;
+
+  TExplosionTemplatePtr = ^TExplosionTemplate;
 
 const MAX_UNIT_TYPES = 60;
 const MAX_BUILDING_TYPES = 100;
@@ -185,6 +217,23 @@ type
 const NUM_TECHNICAL_GRAPHICAL_ENTRIES = 206;
 const NUM_EMPTY_UNIT_SIDEBAR_ICONS = 10;
 const MAX_BUILDING_SIZE = 4;
+
+// *****************************************************************************
+// BUILEXP.BIN file definitions
+// *****************************************************************************
+
+const MAX_BUILEXP_ANIMATIONS = 8;
+
+type
+  TBuilExpEntry = packed record
+    NumAnimations: byte;
+    AnimOffsetX: array[0..MAX_BUILEXP_ANIMATIONS-1] of Shortint;
+    AnimOffsetY: array[0..MAX_BUILEXP_ANIMATIONS-1] of Shortint;
+    AnimExplosion: array[0..MAX_BUILEXP_ANIMATIONS-1] of byte;
+    AnimNumFrames: array[0..MAX_BUILEXP_ANIMATIONS-1] of byte;
+  end;
+
+  TBuilExpEntryPtr = ^TBuilExpEntry;
 
 // *****************************************************************************
 // ARMOUR.BIN file definitions
@@ -359,6 +408,7 @@ type
   public
     // General data
     templates_bin_filename: String;
+    builexp_bin_filename: String;
     armour_bin_filename: String;
     speed_bin_filename: String;
     tiledata_bin_filename: String;
@@ -393,6 +443,9 @@ type
     building_type_mapping:  array[0..MAX_BUILDING_TYPES-1] of shortint;
     building_type_mapping_count:      integer;
 
+    // BUILEXP.BIN related data
+    builexp: array[0..MAX_BUILDING_TYPES-1] of TBuilExpEntry;
+
     // ARMOUR.BIN related data
     armour: TArmourBinFile;
 
@@ -400,7 +453,7 @@ type
     speed: TSpeedBinFile;
 
     // TILEDATA.BIN related data
-    tiledata: array[0..cnt_tiledata_entries-1] of TTileDataEntry;
+    tiledata: array[0..CNT_TILEDATA_ENTRIES-1] of TTileDataEntry;
 
     // COLOURS.BIN related data
     colours: array[0..7,0..15] of word;
@@ -458,10 +511,15 @@ type
     function get_building_template(building_type, player: integer): TBuildingTemplatePtr;
     function check_links_with_wall(special: word): boolean;
     procedure get_structure_size(special: word; var size_x, size_y: integer);
+    // BUILEXP.BIN related procedures
+    procedure load_builexp_bin(force: boolean);
+    procedure save_builexp_bin;
     // ARMOUR.BIN related procedures
     procedure load_armour_bin(force: boolean);
+    procedure save_armour_bin;
     // SPEED.BIN related procedures
     procedure load_speed_bin(force: boolean);
+    procedure save_speed_bin;
     // TILEDATA.BIN related procedures
     procedure load_tiledata_bin;
     function get_tiledata_entry(special: integer): TTileDataEntryPtr;
@@ -500,6 +558,7 @@ begin
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
   load_templates_bin(false);
+  load_builexp_bin(false);
   load_armour_bin(false);
   load_speed_bin(false);
   load_tiledata_bin;
@@ -846,6 +905,37 @@ begin
   end;
 end;
 
+procedure TStructures.load_builexp_bin(force: boolean);
+var
+  tmp_filename: String;
+  builexp_bin_file: file of TBuilExpEntry;
+begin
+  tmp_filename := find_file('Data\bin\BUILEXP.BIN');
+  if (tmp_filename = '') or (tmp_filename = builexp_bin_filename) then
+    exit;
+  builexp_bin_filename := tmp_filename;
+  // Read BUILEXP.BIN file
+  AssignFile(builexp_bin_file, tmp_filename);
+  Reset(builexp_bin_file);
+  BlockRead(builexp_bin_file, builexp, MAX_BUILDING_TYPES);
+  CloseFile(builexp_bin_file);
+
+  // Update all occurences in editor
+  pending_fill_structures_editor_data := true;
+end;
+
+procedure TStructures.save_builexp_bin;
+var
+  builexp_bin_file: file of TBuilExpEntry;
+begin
+  if builexp_bin_filename = '' then
+    exit;
+  AssignFile(builexp_bin_file, builexp_bin_filename);
+  Rewrite(builexp_bin_file);
+  BlockWrite(builexp_bin_file, builexp, MAX_BUILDING_TYPES);
+  CloseFile(builexp_bin_file);
+end;
+
 procedure TStructures.load_armour_bin(force: boolean);
 var
   tmp_filename: String;
@@ -864,6 +954,19 @@ begin
   pending_fill_structures_editor_data := true;
 end;
 
+
+procedure TStructures.save_armour_bin;
+var
+  armour_bin_file: file of TArmourBinFile;
+begin
+  if armour_bin_filename = '' then
+    exit;
+  AssignFile(armour_bin_file, armour_bin_filename);
+  Rewrite(armour_bin_file);
+  Write(armour_bin_file, armour);
+  CloseFile(armour_bin_file);
+end;
+
 procedure TStructures.load_speed_bin(force: boolean);
 var
   tmp_filename: String;
@@ -880,6 +983,18 @@ begin
   CloseFile(speed_bin_file);
   // Update all occurences in editor
   pending_fill_structures_editor_data := true;
+end;
+
+procedure TStructures.save_speed_bin;
+var
+  speed_bin_file: file of TSpeedBinFile;
+begin
+  if speed_bin_filename = '' then
+    exit;
+  AssignFile(speed_bin_file, speed_bin_filename);
+  Rewrite(speed_bin_file);
+  Write(speed_bin_file, speed);
+  CloseFile(speed_bin_file);
 end;
 
 procedure TStructures.load_tiledata_bin;

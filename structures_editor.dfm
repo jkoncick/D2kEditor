@@ -1,5 +1,5 @@
 object StructuresEditor: TStructuresEditor
-  Left = 187
+  Left = 342
   Top = 0
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
@@ -1342,6 +1342,7 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 241
           Height = 21
+          MaxLength = 499
           TabOrder = 1
           OnChange = RedrawUnitPreview
         end
@@ -2084,30 +2085,6 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
           OnClick = lbBuildingArtListClick
         end
-        object btnBuildingArtAdd: TButton
-          Left = 0
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Add new'
-          TabOrder = 1
-        end
-        object btnBuildingArtRemove: TButton
-          Left = 88
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Remove last'
-          TabOrder = 2
-        end
-        object btnBuildingArtModify: TButton
-          Left = 32
-          Top = 612
-          Width = 97
-          Height = 25
-          Caption = 'Modify selected'
-          TabOrder = 3
-        end
         object seBuildingArtDirections: TSpinEdit
           Left = 88
           Top = 560
@@ -2115,7 +2092,7 @@ object StructuresEditor: TStructuresEditor
           Height = 22
           MaxValue = 0
           MinValue = 0
-          TabOrder = 4
+          TabOrder = 1
           Value = 0
         end
       end
@@ -2218,6 +2195,95 @@ object StructuresEditor: TStructuresEditor
         TabOrder = 4
       end
     end
+    object PageBuilExp: TTabSheet
+      Caption = 'BuilExp     '
+      ImageIndex = 8
+      object lblBuilExpNumAnimations: TLabel
+        Left = 272
+        Top = 184
+        Width = 105
+        Height = 13
+        Caption = 'Number of animations:'
+      end
+      object imgBuilExpImage: TImage
+        Left = 272
+        Top = 16
+        Width = 128
+        Height = 160
+      end
+      object pnBuilExpBuildingList: TPanel
+        Left = 0
+        Top = 0
+        Width = 257
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblBuilExpBuildingList: TLabel
+          Left = 0
+          Top = 0
+          Width = 42
+          Height = 13
+          Caption = 'Buildings'
+        end
+        object lbBuilExpBuildingList: TListBox
+          Left = 0
+          Top = 16
+          Width = 257
+          Height = 617
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = lbBuilExpBuildingListClick
+        end
+      end
+      object seBuilExpNumAnimations: TSpinEdit
+        Left = 384
+        Top = 184
+        Width = 49
+        Height = 22
+        MaxValue = 8
+        MinValue = 0
+        TabOrder = 1
+        Value = 0
+        OnChange = seBuilExpNumAnimationsChange
+      end
+      object pnBuilExpAnimations: TPanel
+        Left = 272
+        Top = 208
+        Width = 409
+        Height = 241
+        BevelOuter = bvNone
+        TabOrder = 2
+        Visible = False
+        object lblBuilExpAnimOffsetX: TLabel
+          Left = 64
+          Top = 8
+          Width = 38
+          Height = 13
+          Caption = 'Offset X'
+        end
+        object lblBuilExpAnimOffsetY: TLabel
+          Left = 128
+          Top = 8
+          Width = 38
+          Height = 13
+          Caption = 'Offset Y'
+        end
+        object lblBuilExpAnimExplosion: TLabel
+          Left = 192
+          Top = 8
+          Width = 45
+          Height = 13
+          Caption = 'Explosion'
+        end
+        object lblBuilExpAnimNumFrames: TLabel
+          Left = 336
+          Top = 8
+          Width = 34
+          Height = 13
+          Caption = 'Frames'
+        end
+      end
+    end
     object PageUnitArt: TTabSheet
       Caption = 'Unit Art     '
       ImageIndex = 7
@@ -2258,30 +2324,6 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
           OnClick = lbUnitArtListClick
         end
-        object btnUnitArtAdd: TButton
-          Left = 0
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Add new'
-          TabOrder = 1
-        end
-        object btnUnitArtRemove: TButton
-          Left = 88
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Remove last'
-          TabOrder = 2
-        end
-        object btnUnitArtModify: TButton
-          Left = 32
-          Top = 612
-          Width = 97
-          Height = 25
-          Caption = 'Modify selected'
-          TabOrder = 3
-        end
         object seUnitArtAnimationFrames: TSpinEdit
           Left = 88
           Top = 536
@@ -2289,7 +2331,7 @@ object StructuresEditor: TStructuresEditor
           Height = 22
           MaxValue = 0
           MinValue = 0
-          TabOrder = 4
+          TabOrder = 1
           Value = 0
         end
         object seUnitArtDirectionFrames: TSpinEdit
@@ -2299,7 +2341,7 @@ object StructuresEditor: TStructuresEditor
           Height = 22
           MaxValue = 0
           MinValue = 0
-          TabOrder = 5
+          TabOrder = 2
           Value = 0
         end
       end
@@ -2315,8 +2357,23 @@ object StructuresEditor: TStructuresEditor
     object PageWeapons: TTabSheet
       Caption = 'Weapons  '
       ImageIndex = 2
+      object lblWeaponName: TLabel
+        Left = 168
+        Top = 16
+        Width = 31
+        Height = 13
+        Caption = 'Name:'
+      end
+      object lblWeaponUsedBy: TLabel
+        Left = 168
+        Top = 416
+        Width = 337
+        Height = 65
+        AutoSize = False
+        WordWrap = True
+      end
       object pnProjectileArtList: TPanel
-        Left = 496
+        Left = 512
         Top = 0
         Width = 161
         Height = 637
@@ -2345,30 +2402,6 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
           OnClick = lbProjectileArtListClick
         end
-        object btnProjectileArtAdd: TButton
-          Left = 0
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Add new'
-          TabOrder = 1
-        end
-        object btnProjectileArtRemove: TButton
-          Left = 88
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Remove last'
-          TabOrder = 2
-        end
-        object btnProjectileArtModify: TButton
-          Left = 32
-          Top = 612
-          Width = 97
-          Height = 25
-          Caption = 'Modify selected'
-          TabOrder = 3
-        end
         object seProjectileArtDirections: TSpinEdit
           Left = 88
           Top = 560
@@ -2376,12 +2409,12 @@ object StructuresEditor: TStructuresEditor
           Height = 22
           MaxValue = 0
           MinValue = 0
-          TabOrder = 4
+          TabOrder = 1
           Value = 0
         end
       end
       object pnProjectileArtControlGroup: TPanel
-        Left = 672
+        Left = 688
         Top = 0
         Width = 169
         Height = 637
@@ -2409,15 +2442,355 @@ object StructuresEditor: TStructuresEditor
           Height = 529
           ItemHeight = 13
           TabOrder = 0
-          OnClick = lbUnitTypeListClick
+          OnClick = lbWeaponListClick
+        end
+      end
+      object edWeaponName: TEdit
+        Left = 208
+        Top = 16
+        Width = 169
+        Height = 21
+        MaxLength = 49
+        TabOrder = 3
+      end
+      object gbWeaponProperties: TGroupBox
+        Left = 168
+        Top = 48
+        Width = 337
+        Height = 97
+        Caption = 'Properties and behavior'
+        TabOrder = 4
+        object lblWeaponDamage: TLabel
+          Left = 8
+          Top = 24
+          Width = 43
+          Height = 13
+          Caption = 'Damage:'
+        end
+        object lblWeaponWarhead: TLabel
+          Left = 136
+          Top = 24
+          Width = 47
+          Height = 13
+          Caption = 'Warhead:'
+        end
+        object lblWeaponRange: TLabel
+          Left = 8
+          Top = 48
+          Width = 35
+          Height = 13
+          Caption = 'Range:'
+        end
+        object edWeaponDamage: TEdit
+          Left = 56
+          Top = 24
+          Width = 73
+          Height = 21
+          TabOrder = 0
+        end
+        object cbxWeaponWarhead: TComboBox
+          Left = 192
+          Top = 24
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 1
+        end
+        object edWeaponRange: TEdit
+          Left = 56
+          Top = 48
+          Width = 73
+          Height = 21
+          TabOrder = 2
+        end
+        object cbWeaponAntiAircraft: TCheckBox
+          Left = 136
+          Top = 48
+          Width = 97
+          Height = 17
+          Caption = 'Anti-aircraft'
+          TabOrder = 3
+        end
+        object cbWeaponFlagWF_BLOCKED_BY_WALL: TCheckBox
+          Tag = 4096
+          Left = 224
+          Top = 48
+          Width = 97
+          Height = 17
+          Caption = 'Blocked by wall'
+          TabOrder = 4
+          OnClick = WeaponFlagCheckboxChange
+        end
+        object cbWeaponFlagWF_DEVIATOR: TCheckBox
+          Tag = 64
+          Left = 136
+          Top = 72
+          Width = 81
+          Height = 17
+          Caption = 'Deviator'
+          TabOrder = 5
+          OnClick = WeaponFlagCheckboxChange
+        end
+        object cbWeaponFlagWF_SONIC: TCheckBox
+          Tag = 2048
+          Left = 224
+          Top = 72
+          Width = 65
+          Height = 17
+          Caption = 'Sonic'
+          TabOrder = 6
+          OnClick = WeaponFlagCheckboxChange
+        end
+        object cbWeaponFlagWF_FALLING: TCheckBox
+          Tag = 256
+          Left = 8
+          Top = 72
+          Width = 57
+          Height = 17
+          Caption = 'Falling'
+          TabOrder = 7
+          OnClick = WeaponFlagCheckboxChange
+        end
+        object cbWeaponFlagWF_DEBRIS: TCheckBox
+          Tag = 2
+          Left = 72
+          Top = 72
+          Width = 57
+          Height = 17
+          Caption = 'Debris'
+          TabOrder = 8
+          OnClick = WeaponFlagCheckboxChange
+        end
+      end
+      object dbWeaponMovement: TGroupBox
+        Left = 168
+        Top = 152
+        Width = 337
+        Height = 57
+        Caption = 'Projectile movement'
+        TabOrder = 5
+        object lblWeaponProjectileSpeed: TLabel
+          Left = 8
+          Top = 24
+          Width = 34
+          Height = 13
+          Caption = 'Speed:'
+        end
+        object edWeaponProjectileSpeed: TEdit
+          Left = 48
+          Top = 24
+          Width = 73
+          Height = 21
+          TabOrder = 0
+        end
+        object cbWeaponFlagWF_ARC_TRAJECTORY: TCheckBox
+          Tag = 1
+          Left = 128
+          Top = 24
+          Width = 81
+          Height = 17
+          Caption = 'Arc trajectory'
+          TabOrder = 1
+          OnClick = WeaponFlagCheckboxChange
+        end
+        object cbWeaponFlagWF_CURVED_TRAJECTORY: TCheckBox
+          Tag = 32
+          Left = 224
+          Top = 24
+          Width = 105
+          Height = 17
+          Caption = 'Curved trajectory'
+          TabOrder = 2
+          OnClick = WeaponFlagCheckboxChange
+        end
+      end
+      object gbWeaponVisuals: TGroupBox
+        Left = 168
+        Top = 216
+        Width = 337
+        Height = 129
+        Caption = 'Visuals and sounds'
+        TabOrder = 6
+        object lblWeaponProjectileArt: TLabel
+          Left = 8
+          Top = 24
+          Width = 61
+          Height = 13
+          Caption = 'Projectile art:'
+        end
+        object lblWeaponFiringSound: TLabel
+          Left = 8
+          Top = 48
+          Width = 60
+          Height = 13
+          Caption = 'Firing sound:'
+        end
+        object lblWeaponTrailExplosion: TLabel
+          Left = 8
+          Top = 96
+          Width = 70
+          Height = 13
+          Caption = 'Trail explosion:'
+        end
+        object lblWeaponHitExplosion: TLabel
+          Left = 8
+          Top = 72
+          Width = 63
+          Height = 13
+          Caption = 'Hit explosion:'
+        end
+        object cbxWeaponProjectileArt: TComboBox
+          Left = 80
+          Top = 24
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 0
+          OnChange = cbxWeaponProjectileArtChange
+        end
+        object cbxWeaponFiringSound: TComboBox
+          Left = 80
+          Top = 48
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 1
+        end
+        object cbxWeaponHitExplosion: TComboBox
+          Left = 80
+          Top = 72
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 2
+        end
+        object cbxWeaponTrailExplosion: TComboBox
+          Left = 80
+          Top = 96
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 3
+        end
+        object cbWeaponFlagWF_PROJECTILE_ALPHA: TCheckBox
+          Tag = 512
+          Left = 224
+          Top = 24
+          Width = 105
+          Height = 17
+          Caption = 'Projectile art alpha'
+          TabOrder = 4
+          OnClick = WeaponFlagCheckboxChange
+        end
+        object cbWeaponFlagWF_ANIM_PROJECTILE: TCheckBox
+          Tag = 128
+          Left = 224
+          Top = 48
+          Width = 109
+          Height = 25
+          Caption = 'Animated (rotating) projectile'
+          TabOrder = 5
+          WordWrap = True
+          OnClick = WeaponFlagCheckboxChange
+        end
+        object cbWeaponFlagWF_MAKE_TRAIL: TCheckBox
+          Tag = 16
+          Left = 224
+          Top = 80
+          Width = 97
+          Height = 17
+          Caption = 'Makes trail'
+          TabOrder = 6
+          OnClick = WeaponFlagCheckboxChange
+        end
+      end
+      object gbWeaponOtherUnknown: TGroupBox
+        Left = 168
+        Top = 352
+        Width = 337
+        Height = 57
+        Caption = 'Others and unknown'
+        TabOrder = 7
+        object lblWeaponFlags: TLabel
+          Left = 8
+          Top = 24
+          Width = 28
+          Height = 13
+          Caption = 'Flags:'
+        end
+        object lblWeaponUnknown19: TLabel
+          Left = 124
+          Top = 24
+          Width = 39
+          Height = 13
+          Caption = 'Byte 19:'
+        end
+        object edWeaponFlags: TEdit
+          Left = 40
+          Top = 24
+          Width = 73
+          Height = 21
+          TabOrder = 0
+          OnChange = edWeaponFlagsChange
+        end
+        object seWeaponUnknown19: TSpinEdit
+          Left = 172
+          Top = 23
+          Width = 53
+          Height = 22
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 1
+          Value = 0
         end
       end
     end
     object PageExplosions: TTabSheet
       Caption = 'Explosions '
       ImageIndex = 3
+      object lblExplosionName: TLabel
+        Left = 168
+        Top = 16
+        Width = 31
+        Height = 13
+        Caption = 'Name:'
+      end
+      object lblExplosionMyIndex: TLabel
+        Left = 384
+        Top = 16
+        Width = 45
+        Height = 13
+        Caption = 'My index:'
+      end
+      object lblExplosionSound: TLabel
+        Left = 168
+        Top = 48
+        Width = 34
+        Height = 13
+        Caption = 'Sound:'
+      end
+      object lblExplosionFiringPattern: TLabel
+        Left = 344
+        Top = 48
+        Width = 89
+        Height = 13
+        Caption = 'Firing flash pattern:'
+      end
+      object lblExplosionUsedBy: TLabel
+        Left = 168
+        Top = 80
+        Width = 337
+        Height = 465
+        AutoSize = False
+        WordWrap = True
+      end
       object pnAnimationArtList: TPanel
-        Left = 496
+        Left = 512
         Top = 0
         Width = 161
         Height = 637
@@ -2433,9 +2806,9 @@ object StructuresEditor: TStructuresEditor
         object lblAnimationArtFrames: TLabel
           Left = 0
           Top = 560
-          Width = 79
+          Width = 37
           Height = 13
-          Caption = 'Direction frames:'
+          Caption = 'Frames:'
         end
         object lblAnimationArtFlags: TLabel
           Left = 0
@@ -2453,30 +2826,6 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
           OnClick = lbAnimationArtListClick
         end
-        object btnAnimationArtAdd: TButton
-          Left = 0
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Add new'
-          TabOrder = 1
-        end
-        object btnAnimationArtRemove: TButton
-          Left = 88
-          Top = 584
-          Width = 73
-          Height = 25
-          Caption = 'Remove last'
-          TabOrder = 2
-        end
-        object btnAnimationArtModify: TButton
-          Left = 32
-          Top = 612
-          Width = 97
-          Height = 25
-          Caption = 'Modify selected'
-          TabOrder = 3
-        end
         object seAnimationArtFrames: TSpinEdit
           Left = 88
           Top = 560
@@ -2484,7 +2833,7 @@ object StructuresEditor: TStructuresEditor
           Height = 22
           MaxValue = 0
           MinValue = 0
-          TabOrder = 4
+          TabOrder = 1
           Value = 0
         end
         object edAnimationArtFlags: TEdit
@@ -2492,11 +2841,11 @@ object StructuresEditor: TStructuresEditor
           Top = 536
           Width = 73
           Height = 21
-          TabOrder = 5
+          TabOrder = 2
         end
       end
       object pnAnimationArtControlGroup: TPanel
-        Left = 672
+        Left = 688
         Top = 0
         Width = 169
         Height = 637
@@ -2524,8 +2873,41 @@ object StructuresEditor: TStructuresEditor
           Height = 529
           ItemHeight = 13
           TabOrder = 0
-          OnClick = lbUnitTypeListClick
+          OnClick = lbExplosionListClick
         end
+      end
+      object edExplosionName: TEdit
+        Left = 208
+        Top = 16
+        Width = 169
+        Height = 21
+        MaxLength = 49
+        TabOrder = 3
+      end
+      object cbxExplosionSound: TComboBox
+        Left = 208
+        Top = 48
+        Width = 129
+        Height = 21
+        Style = csDropDownList
+        ItemHeight = 13
+        TabOrder = 4
+      end
+      object edExplosionFiringPattern: TEdit
+        Left = 440
+        Top = 48
+        Width = 65
+        Height = 21
+        MaxLength = 7
+        TabOrder = 5
+      end
+      object edExplosionMyIndex: TEdit
+        Left = 440
+        Top = 16
+        Width = 65
+        Height = 21
+        MaxLength = 3
+        TabOrder = 6
       end
     end
     object PageArmour: TTabSheet

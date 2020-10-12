@@ -28,6 +28,9 @@ type
     edit_image_height: TEdit;
     edit_image_offset_x: TEdit;
     edit_image_offset_y: TEdit;
+    btn_art_add: TButton;
+    btn_art_remove: TButton;
+    btn_art_modify: TButton;
   end;
 
   TArtControlGroupPtr = ^TArtControlGroup;
@@ -295,9 +298,6 @@ type
     pnBuildingArtList: TPanel;
     lblBuildingArtList: TLabel;
     lbBuildingArtList: TListBox;
-    btnBuildingArtAdd: TButton;
-    btnBuildingArtRemove: TButton;
-    btnBuildingArtModify: TButton;
     seBuildingArtDirections: TSpinEdit;
     lblBuildingArtDirections: TLabel;
     pnBuildingArtControlGroup: TPanel;
@@ -316,9 +316,6 @@ type
     lblUnitArtList: TLabel;
     lblUnitArtAnimationFrames: TLabel;
     lbUnitArtList: TListBox;
-    btnUnitArtAdd: TButton;
-    btnUnitArtRemove: TButton;
-    btnUnitArtModify: TButton;
     seUnitArtAnimationFrames: TSpinEdit;
     lblUnitArtDirectionFrames: TLabel;
     seUnitArtDirectionFrames: TSpinEdit;
@@ -327,18 +324,12 @@ type
     lblProjectileArtList: TLabel;
     lblProjectileArtDirections: TLabel;
     lbProjectileArtList: TListBox;
-    btnProjectileArtAdd: TButton;
-    btnProjectileArtRemove: TButton;
-    btnProjectileArtModify: TButton;
     seProjectileArtDirections: TSpinEdit;
     pnProjectileArtControlGroup: TPanel;
     pnAnimationArtList: TPanel;
     lblAnimationArtList: TLabel;
     lblAnimationArtFrames: TLabel;
     lbAnimationArtList: TListBox;
-    btnAnimationArtAdd: TButton;
-    btnAnimationArtRemove: TButton;
-    btnAnimationArtModify: TButton;
     seAnimationArtFrames: TSpinEdit;
     pnAnimationArtControlGroup: TPanel;
     pnWeaponList: TPanel;
@@ -356,6 +347,65 @@ type
     lblWarheadList: TLabel;
     lbWarheadList: TListBox;
     sgArmourValues: TStringGrid;
+    PageBuilExp: TTabSheet;
+    pnBuilExpBuildingList: TPanel;
+    lblBuilExpBuildingList: TLabel;
+    lbBuilExpBuildingList: TListBox;
+    seBuilExpNumAnimations: TSpinEdit;
+    lblBuilExpNumAnimations: TLabel;
+    imgBuilExpImage: TImage;
+    pnBuilExpAnimations: TPanel;
+    lblBuilExpAnimOffsetX: TLabel;
+    lblBuilExpAnimOffsetY: TLabel;
+    lblBuilExpAnimExplosion: TLabel;
+    lblBuilExpAnimNumFrames: TLabel;
+    edWeaponName: TEdit;
+    lblWeaponName: TLabel;
+    gbWeaponProperties: TGroupBox;
+    lblWeaponDamage: TLabel;
+    lblWeaponWarhead: TLabel;
+    edWeaponDamage: TEdit;
+    cbxWeaponWarhead: TComboBox;
+    lblWeaponRange: TLabel;
+    edWeaponRange: TEdit;
+    cbWeaponAntiAircraft: TCheckBox;
+    cbWeaponFlagWF_BLOCKED_BY_WALL: TCheckBox;
+    cbWeaponFlagWF_DEVIATOR: TCheckBox;
+    cbWeaponFlagWF_SONIC: TCheckBox;
+    cbWeaponFlagWF_FALLING: TCheckBox;
+    dbWeaponMovement: TGroupBox;
+    lblWeaponProjectileSpeed: TLabel;
+    edWeaponProjectileSpeed: TEdit;
+    cbWeaponFlagWF_ARC_TRAJECTORY: TCheckBox;
+    cbWeaponFlagWF_CURVED_TRAJECTORY: TCheckBox;
+    gbWeaponVisuals: TGroupBox;
+    lblWeaponProjectileArt: TLabel;
+    cbxWeaponProjectileArt: TComboBox;
+    lblWeaponFiringSound: TLabel;
+    cbxWeaponFiringSound: TComboBox;
+    lblWeaponTrailExplosion: TLabel;
+    lblWeaponHitExplosion: TLabel;
+    cbxWeaponHitExplosion: TComboBox;
+    cbxWeaponTrailExplosion: TComboBox;
+    cbWeaponFlagWF_PROJECTILE_ALPHA: TCheckBox;
+    cbWeaponFlagWF_ANIM_PROJECTILE: TCheckBox;
+    cbWeaponFlagWF_MAKE_TRAIL: TCheckBox;
+    gbWeaponOtherUnknown: TGroupBox;
+    lblWeaponFlags: TLabel;
+    edWeaponFlags: TEdit;
+    lblWeaponUnknown19: TLabel;
+    seWeaponUnknown19: TSpinEdit;
+    cbWeaponFlagWF_DEBRIS: TCheckBox;
+    lblExplosionName: TLabel;
+    edExplosionName: TEdit;
+    lblExplosionMyIndex: TLabel;
+    lblExplosionSound: TLabel;
+    cbxExplosionSound: TComboBox;
+    lblExplosionFiringPattern: TLabel;
+    lblWeaponUsedBy: TLabel;
+    edExplosionFiringPattern: TEdit;
+    lblExplosionUsedBy: TLabel;
+    edExplosionMyIndex: TEdit;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -395,11 +445,20 @@ type
     // Building Art tab events
     procedure lbBuildingArtListClick(Sender: TObject);
     procedure lbBuildingAnimationArtListClick(Sender: TObject);
+    // BuilExp tab events
+    procedure lbBuilExpBuildingListClick(Sender: TObject);
+    procedure seBuilExpNumAnimationsChange(Sender: TObject);
+    procedure RedrawBuilExpPreview(Sender: TObject);
     // Unit Art tab events
     procedure lbUnitArtListClick(Sender: TObject);
     // Weapons tab events
+    procedure lbWeaponListClick(Sender: TObject);
+    procedure edWeaponFlagsChange(Sender: TObject);
+    procedure WeaponFlagCheckboxChange(Sender: TObject);
+    procedure cbxWeaponProjectileArtChange(Sender: TObject);
     procedure lbProjectileArtListClick(Sender: TObject);
     // Explosions tab events
+    procedure lbExplosionListClick(Sender: TObject);
     procedure lbAnimationArtListClick(Sender: TObject);
     // Art control group events
     procedure ArtControlGroupFrameListClick(Sender: TObject);
@@ -407,6 +466,11 @@ type
     // Dynamic controls
     cbxUnitVoices: array[0..17] of TComboBox;
     lblUnitVoices: array[0..17] of TLabel;
+    lblBuilExpAnimIndex: array[0..MAX_BUILEXP_ANIMATIONS-1] of TLabel;
+    seBuilExpAnimOffsetX: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
+    seBuilExpAnimOffsetY: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
+    cbxBuilExpAnimExplosion: array[0..MAX_BUILEXP_ANIMATIONS-1] of TComboBox;
+    seBuilExpAnimNumFrames: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
     art_control_groups: array[0..5] of TArtControlGroup;
     // Clipboard formats
     clipboard_format_building: cardinal;
@@ -418,6 +482,7 @@ type
     last_unit_index: integer;
     last_building_art_index: integer;
     last_building_animation_art_index: integer;
+    last_builexp_building_index: integer;
     last_unit_art_index: integer;
     last_weapon_index: integer;
     last_projectile_art_index: integer;
@@ -435,14 +500,20 @@ type
     procedure fill_data;
     procedure fill_building_data;
     procedure fill_unit_data;
+    procedure fill_builexp_data;
+    procedure fill_weapon_data;
+    procedure fill_explosion_data;
     procedure set_owner_side_field_value(control: TCheckListBox; value: byte);
     // Store data procedures
     procedure store_data;
     procedure store_building_data;
     procedure store_unit_data;
+    procedure store_builexp_data;
+    procedure store_weapon_data;
+    procedure store_explosion_data;
     function get_owner_side_field_value(control: TCheckListBox): byte;
     // Art control group procedures
-    procedure create_art_control_group(group_index: integer; is_unit: boolean; container: TPanel);
+    procedure create_art_control_group(group_index: integer; is_unit: boolean; container, container2: TPanel);
     procedure fill_art_control_group_frame_list(group_index: integer; first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
     // Drawing procedures
     procedure draw_no_image_sign(img_target: TImage);
@@ -451,8 +522,9 @@ type
     procedure draw_building_frame(image_index: integer; alpha, animation: boolean);
     procedure draw_unit_preview;
     procedure draw_unit_frame(image_index, side: integer; is_stealth: boolean);
-    procedure draw_building_art_frame(img_target: TImage; structure_image: TStructureImagePtr; header: TR16EntryHeaderPtr);
-    procedure draw_unit_art_frame(img_target: TImage; structure_image: TStructureImagePtr; header: TR16EntryHeaderPtr);
+    procedure draw_builexp_preview;
+    procedure draw_building_art_frame(img_target: TImage; image_index: integer; draw_background: boolean);
+    procedure draw_unit_art_frame(img_target: TImage; image_index: integer);
     // General procedures
     procedure apply_changes;
     procedure save_to_files;
@@ -509,25 +581,67 @@ begin
     lblUnitVoices[i].Top := 36 + 24 * (i mod 9);
     lblUnitVoices[i].Caption := unit_voices[i mod 9] + ':';
   end;
-
+  tmp_strings.Insert(0, '(none)');
+  cbxWeaponFiringSound.Items := tmp_strings;
+  cbxExplosionSound.Items := tmp_strings;
   tmp_strings.Destroy;
+  // BuilExp controls
+  for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
+  begin
+    lblBuilExpAnimIndex[i] := TLabel.Create(self);
+    lblBuilExpAnimIndex[i].Top := i * 24 + 24;
+    lblBuilExpAnimIndex[i].Caption := 'Animation ' + inttostr(i);
+    lblBuilExpAnimIndex[i].Parent := pnBuilExpAnimations;
+    seBuilExpAnimOffsetX[i] := TSpinEdit.Create(self);
+    seBuilExpAnimOffsetX[i].Top := i * 24 + 24;
+    seBuilExpAnimOffsetX[i].Left := 64;
+    seBuilExpAnimOffsetX[i].Width := 57;
+    seBuilExpAnimOffsetX[i].MinValue := -128;
+    seBuilExpAnimOffsetX[i].MaxValue := 127;
+    seBuilExpAnimOffsetX[i].Parent := pnBuilExpAnimations;
+    seBuilExpAnimOffsetX[i].OnChange := RedrawBuilExpPreview;
+    seBuilExpAnimOffsetY[i] := TSpinEdit.Create(self);
+    seBuilExpAnimOffsetY[i].Top := i * 24 + 24;
+    seBuilExpAnimOffsetY[i].Left := 128;
+    seBuilExpAnimOffsetY[i].Width := 57;
+    seBuilExpAnimOffsetY[i].MinValue := -128;
+    seBuilExpAnimOffsetY[i].MaxValue := 127;
+    seBuilExpAnimOffsetY[i].Parent := pnBuilExpAnimations;
+    seBuilExpAnimOffsetY[i].OnChange := RedrawBuilExpPreview;
+    cbxBuilExpAnimExplosion[i] := TComboBox.Create(self);
+    cbxBuilExpAnimExplosion[i].Style := csDropDownList;
+    cbxBuilExpAnimExplosion[i].Top := i * 24 + 24;
+    cbxBuilExpAnimExplosion[i].Left := 192;
+    cbxBuilExpAnimExplosion[i].Width := 137;
+    cbxBuilExpAnimExplosion[i].Parent := pnBuilExpAnimations;
+    cbxBuilExpAnimExplosion[i].OnChange := RedrawBuilExpPreview;
+    seBuilExpAnimNumFrames[i] := TSpinEdit.Create(self);
+    seBuilExpAnimNumFrames[i].Top := i * 24 + 24;
+    seBuilExpAnimNumFrames[i].Left := 336;
+    seBuilExpAnimNumFrames[i].Width := 57;
+    seBuilExpAnimNumFrames[i].MinValue := 0;
+    seBuilExpAnimNumFrames[i].MaxValue := 255;
+    seBuilExpAnimNumFrames[i].Parent := pnBuilExpAnimations;
+    seBuilExpAnimNumFrames[i].OnChange := RedrawBuilExpPreview;
+  end;
+
   QueryPerformanceCounter(c2);
   //Caption := floattostr((c2-c1)/f);
   // Armour
   sgArmourValues.ColWidths[0] := 96;
-  sgArmourValues.Cells[13, 0] := 'Unkn1';
-  sgArmourValues.Cells[14, 0] := 'Unkn2';
+  sgArmourValues.Cells[13, 0] := 'Radius';
+  sgArmourValues.Cells[14, 0] := 'Inf. death';
   // Speed modifier values
   sgSpeedValues.Cells[0, 0] := 'Modifier val.';
   for i := 0 to Length(Structures.speed.Values) - 1 do
     sgSpeedValues.Cells[0, i+1] := inttostr(i);
   // Art control groups
-  create_art_control_group(ACG_BUIDING_ART,       false, pnBuildingArtControlGroup);
-  create_art_control_group(ACG_BUIDING_ANIMATION, false, pnBuildingAnimationControlGroup);
-  create_art_control_group(ACG_BUIDUP_ART,        false, pnBuildupArtControlGroup);
-  create_art_control_group(ACG_UNIT_ART,          true,  pnUnitArtControlGroup);
-  create_art_control_group(ACG_PROJECTILE_ART,    true,  pnProjectileArtControlGroup);
-  create_art_control_group(ACG_ANIMATION_ART,     true, pnAnimationArtControlGroup);
+  create_art_control_group(ACG_BUIDING_ART,       false, pnBuildingArtControlGroup,       pnBuildingArtList);
+  create_art_control_group(ACG_BUIDING_ANIMATION, false, pnBuildingAnimationControlGroup, nil);
+  create_art_control_group(ACG_BUIDUP_ART,        false, pnBuildupArtControlGroup,        nil);
+  create_art_control_group(ACG_UNIT_ART,          true,  pnUnitArtControlGroup,           pnUnitArtList);
+  create_art_control_group(ACG_PROJECTILE_ART,    true,  pnProjectileArtControlGroup,     pnProjectileArtList);
+  create_art_control_group(ACG_ANIMATION_ART,     true,  pnAnimationArtControlGroup,      pnAnimationArtList);
 end;
 
 procedure TStructuresEditor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -559,6 +673,7 @@ end;
 procedure TStructuresEditor.Reloadfiles1Click(Sender: TObject);
 begin
   Structures.load_templates_bin(true);
+  Structures.load_builexp_bin(true);
   Structures.load_armour_bin(true);
   Structures.load_speed_bin(true);
   fill_data;
@@ -618,8 +733,7 @@ end;
 
 procedure TStructuresEditor.lbBuildingListClick(Sender: TObject);
 begin
-  if not loading then
-    store_building_data;
+  store_building_data;
   fill_building_data;
 end;
 
@@ -849,8 +963,7 @@ end;
 
 procedure TStructuresEditor.lbUnitListClick(Sender: TObject);
 begin
-  if not loading then
-    store_unit_data;
+  store_unit_data;
   fill_unit_data;
 end;
 
@@ -975,6 +1088,52 @@ begin
   seBuildupArtFrames.Value := num_frames;
 end;
 
+procedure TStructuresEditor.lbBuilExpBuildingListClick(Sender: TObject);
+begin
+  store_builexp_data;
+  fill_builexp_data;
+end;
+
+procedure TStructuresEditor.seBuilExpNumAnimationsChange(Sender: TObject);
+var
+  i: integer;
+  value: integer;
+  show: boolean;
+begin
+  if seBuilExpNumAnimations.Text = '' then
+    exit;
+  value := seBuilExpNumAnimations.Value;
+  pnBuilExpAnimations.Visible := value > 0;
+  for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
+  begin
+    show := i < value;
+    lblBuilExpAnimIndex[i].Visible := show;
+    seBuilExpAnimOffsetX[i].Visible := show;
+    seBuilExpAnimOffsetY[i].Visible := show;
+    cbxBuilExpAnimExplosion[i].Visible := show;
+    seBuilExpAnimNumFrames[i].Visible := show;
+  end;
+  RedrawBuilExpPreview(nil);
+end;
+
+procedure TStructuresEditor.RedrawBuilExpPreview(Sender: TObject);
+var
+  i: integer;
+begin
+  if loading then
+    exit;
+  for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
+  begin
+    if seBuilExpAnimOffsetX[i].Text = '' then
+      exit;
+    if seBuilExpAnimOffsetY[i].Text = '' then
+      exit;
+    if seBuilExpAnimNumFrames[i].Text = '' then
+      exit;
+  end;
+  draw_builexp_preview;
+end;
+
 procedure TStructuresEditor.lbUnitArtListClick(Sender: TObject);
 var
   index: integer;
@@ -1002,6 +1161,56 @@ begin
   seUnitArtDirectionFrames.Value := directions;
 end;
 
+procedure TStructuresEditor.lbWeaponListClick(Sender: TObject);
+begin
+  store_weapon_data;
+  fill_weapon_data;
+  cbxWeaponProjectileArtChange(nil);
+end;
+
+procedure TStructuresEditor.edWeaponFlagsChange(Sender: TObject);
+var
+  value: cardinal;
+begin
+  if loading then
+    exit;
+  value := strtoint('$' + edWeaponFlags.Text);
+  loading := true;
+  cbWeaponFlagWF_BLOCKED_BY_WALL.Checked := (value and WF_BLOCKED_BY_WALL) <> 0;
+  cbWeaponFlagWF_DEVIATOR.Checked := (value and WF_DEVIATOR) <> 0;
+  cbWeaponFlagWF_SONIC.Checked := (value and WF_SONIC) <> 0;
+  cbWeaponFlagWF_FALLING.Checked := (value and WF_FALLING) <> 0;
+  cbWeaponFlagWF_ARC_TRAJECTORY.Checked := (value and WF_ARC_TRAJECTORY) <> 0;
+  cbWeaponFlagWF_CURVED_TRAJECTORY.Checked := (value and WF_CURVED_TRAJECTORY) <> 0;
+  cbWeaponFlagWF_PROJECTILE_ALPHA.Checked := (value and WF_PROJECTILE_ALPHA) <> 0;
+  cbWeaponFlagWF_ANIM_PROJECTILE.Checked := (value and WF_ANIM_PROJECTILE) <> 0;
+  cbWeaponFlagWF_MAKE_TRAIL.Checked := (value and WF_MAKE_TRAIL) <> 0;
+  cbWeaponFlagWF_DEBRIS.Checked := (value and WF_DEBRIS) <> 0;
+  loading := false;
+end;
+
+procedure TStructuresEditor.WeaponFlagCheckboxChange(Sender: TObject);
+var
+  value: cardinal;
+begin
+  if loading then
+    exit;
+  value := strtoint('$' + edWeaponFlags.Text);
+  if (Sender as TCheckBox).Checked then
+    value := value or  Cardinal((Sender as TCheckBox).Tag)
+  else
+    value := value and (not Cardinal((Sender as TCheckBox).Tag));
+  loading := true;
+  edWeaponFlags.Text := IntToHex(value, 8);
+  loading := false;
+end;
+
+procedure TStructuresEditor.cbxWeaponProjectileArtChange(Sender: TObject);
+begin
+  lbProjectileArtList.ItemIndex := cbxWeaponProjectileArt.ItemIndex;
+  lbProjectileArtListClick(nil);
+end;
+
 procedure TStructuresEditor.lbProjectileArtListClick(Sender: TObject);
 var
   index: integer;
@@ -1013,6 +1222,14 @@ begin
 
   fill_art_control_group_frame_list(ACG_PROJECTILE_ART, Structures.projectile_art_image_indexes[index], Structures.templates.ProjectileArtDirections[index], nil, 0);
   seProjectileArtDirections.Value := Structures.templates.ProjectileArtDirections[index];
+end;
+
+procedure TStructuresEditor.lbExplosionListClick(Sender: TObject);
+begin
+  store_explosion_data;
+  fill_explosion_data;
+  lbAnimationArtList.ItemIndex := lbExplosionList.ItemIndex;
+  lbAnimationArtListClick(nil);
 end;
 
 procedure TStructuresEditor.lbAnimationArtListClick(Sender: TObject);
@@ -1034,28 +1251,23 @@ var
   group_index: integer;
   acg: TArtControlGroupPtr;
   image_index: integer;
-  structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
-  was_already_loaded: boolean;
 begin
   group_index := (Sender as TListBox).Tag;
   acg := Addr(art_control_groups[group_index]);
   image_index := 0;
-  structure_image := nil;
+  header := nil;
   if acg.frame_list.ItemIndex <> -1 then
   begin
     image_index := acg.first_image_index + acg.frame_list.ItemIndex;
-    structure_image := Structures.get_structure_image(image_index, 0, acg.is_unit, false, was_already_loaded);
-  end;
-  if structure_image <> nil then
-  begin
     header := Structures.get_structure_image_header(image_index);
+  end;
+  if (header <> nil) and (header.EntryType <> 0) then
+  begin
     if acg.is_unit then
-      draw_unit_art_frame(acg.view_image, structure_image, header)
+      draw_unit_art_frame(acg.view_image, image_index)
     else
-      draw_building_art_frame(acg.view_image, structure_image, header);
-    if not was_already_loaded then
-      Structures.clear_last_structure_image(image_index, false);
+      draw_building_art_frame(acg.view_image, image_index, true);
     acg.edit_frame_width.Text := inttostr(header.FrameWidth);
     acg.edit_frame_height.Text := inttostr(header.FrameHeight);
     acg.edit_image_width.Text := inttostr(header.ImageWidth);
@@ -1149,6 +1361,13 @@ begin
     tmp_strings.Add(Format('%.*d - %4d (%df)', [2, i, Structures.buildup_art_image_indexes[i], Structures.templates.BuildupArtFrames[i]]));
   cbxBuildingBuildupArt.Items := tmp_strings;
 
+  // BuilExp building list
+  tmp_strings.Clear;
+  for i := 0 to Structures.templates.BuildingCount - 1 do
+    tmp_strings.Add(Format('[ %d ] %.*d %s', [Structures.builexp[i].NumAnimations, 2, i, Structures.templates.BuildingNameStrings[i]]));
+  lbBuilExpBuildingList.Items := tmp_strings;
+  lbBuilExpBuildingList.ItemIndex := last_builexp_building_index;
+
   // Unit art list
   tmp_strings.Clear;
   for i := 0 to Structures.templates.UnitArtCount - 1 do
@@ -1177,6 +1396,7 @@ begin
   for i := 0 to Structures.templates.ProjectileArtCount - 1 do
     tmp_strings.Add(Format('%.*d - %4d (%dd)', [2, i, Structures.projectile_art_image_indexes[i], Structures.templates.ProjectileArtDirections[i]]));
   lbProjectileArtList.Items := tmp_strings;
+  cbxWeaponProjectileArt.Items := tmp_strings;
   lbProjectileArtList.ItemIndex := last_projectile_art_index;
   lbProjectileArtListClick(nil);
 
@@ -1185,11 +1405,15 @@ begin
   for i := 0 to Structures.templates.ExplosionCount - 1 do
     tmp_strings.Add(Format('%.*d - %s', [2, i, Structures.templates.ExplosionStrings[i]]));
   lbExplosionList.Items := tmp_strings;
+  for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
+    cbxBuilExpAnimExplosion[i].Items := tmp_strings;
   tmp_strings.Insert(0, '(none)');
   cbxBuildingDeathExplosion.Items := tmp_strings;
   cbxBuildingFiringExplosion.Items := tmp_strings;
   cbxUnitDeathExplosion.Items := tmp_strings;
   cbxUnitFiringExplosion.Items := tmp_strings;
+  cbxWeaponHitExplosion.Items := tmp_strings;
+  cbxWeaponTrailExplosion.Items := tmp_strings;
   lbExplosionList.ItemIndex := last_explosion_index;
 
   // Animation art list
@@ -1214,6 +1438,7 @@ begin
   for i := 0 to Structures.armour.WarheadCount - 1 do
     tmp_strings.Add(Format('%.*d - %s', [2, i, Structures.armour.WarheadNameStrings[i]]));
   lbWarheadList.Items := tmp_strings;
+  cbxWeaponWarhead.Items := tmp_strings;
   lbWarheadList.ItemIndex := last_warhead_type_index;
 
   // Speed type list
@@ -1223,6 +1448,13 @@ begin
   cbxUnitSpeedType.Items := tmp_strings;
 
   tmp_strings.Destroy;
+
+  // Fill template data
+  fill_building_data;
+  fill_unit_data;
+  fill_builexp_data;
+  fill_weapon_data;
+  fill_explosion_data;
 
   // Armour
   sgArmourValues.RowCount := Structures.armour.WarheadCount + 1;
@@ -1237,16 +1469,12 @@ begin
     sgArmourValues.Cells[13, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown12);
     sgArmourValues.Cells[14, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown16);
   end;
-  // Speeds
+  // Speed
   for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
     sgSpeedValues.Cells[i+1, 0] := Structures.speed.SpeedNameStrings[i];
   for i := 0 to Length(Structures.speed.Values) - 1 do
     for j := 0 to Length(Structures.speed.Values[i]) - 1 do
       sgSpeedValues.Cells[j+1, i+1] := floattostr(Round(Structures.speed.Values[i, j] * 100)/100);
-
-  // Fill template data
-  fill_building_data;
-  fill_unit_data;
 
   // Status bar
   StatusBar.Panels[0].Text := Structures.templates_bin_filename;
@@ -1415,6 +1643,130 @@ begin
   edUnitFlagsChange(nil);
 end;
 
+procedure TStructuresEditor.fill_builexp_data;
+var
+  index: integer;
+  i: integer;
+  bxp: TBuilExpEntryPtr;
+begin
+  index := lbBuilExpBuildingList.ItemIndex;
+  if index < 0 then
+    exit;
+  last_builexp_building_index := index;
+  loading := true;
+  bxp := Addr(Structures.builexp[index]);
+
+  seBuilExpNumAnimations.Value := bxp.NumAnimations;
+  for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
+  begin
+    seBuilExpAnimOffsetX[i].Value := bxp.AnimOffsetX[i];
+    seBuilExpAnimOffsetY[i].Value := bxp.AnimOffsetY[i];
+    cbxBuilExpAnimExplosion[i].ItemIndex := bxp.AnimExplosion[i];
+    seBuilExpAnimNumFrames[i].Value := bxp.AnimNumFrames[i];
+  end;
+
+  loading := false;
+  draw_builexp_preview;
+end;
+
+procedure TStructuresEditor.fill_weapon_data;
+var
+  index: integer;
+  wpn: TWeaponTemplatePtr;
+  str: String;
+  i: integer;
+begin
+  index := lbWeaponList.ItemIndex;
+  if index < 0 then
+    exit;
+  last_weapon_index := index;
+  loading := true;
+  wpn := Addr(Structures.templates.WeaponDefinitions[index]);
+
+  edWeaponName.Text := Structures.templates.WeaponStrings[index];
+  // Properties and behavior tab
+  edWeaponDamage.Text := IntToStr(wpn.Damage);
+  cbxWeaponWarhead.ItemIndex := wpn.Warhead;
+  edWeaponRange.Text := IntToStr(wpn.Range);
+  cbWeaponAntiAircraft.Checked := wpn.AntiAircraft <> 0;
+  // Projectile movement tab
+  edWeaponProjectileSpeed.Text := IntToStr(wpn.ProjectileSpeed shr 10);
+  // Visuals and sounds tab
+  cbxWeaponProjectileArt.ItemIndex := wpn.ProjectileArt;
+  cbxWeaponFiringSound.ItemIndex := wpn.FiringSound + 1;
+  cbxWeaponHitExplosion.ItemIndex := wpn.HitExplosion + 1;
+  cbxWeaponTrailExplosion.ItemIndex := wpn.TrailExplosion + 1;
+  // Others and unknown tab
+  seWeaponUnknown19.Value := wpn.Unknown19;
+  edWeaponFlags.Text := IntToHex(wpn.Flags, 8);
+  // Used by label
+  str := 'Used by: ';
+  for i := 0 to Structures.templates.BuildingCount - 1 do
+  begin
+    if Structures.templates.BuildingDefinitions[i].PrimaryWeapon = index then
+      str := str + Structures.templates.BuildingNameStrings[i] + ' (pri) ';
+    if Structures.templates.BuildingDefinitions[i].SecondaryWeapon = index then
+      str := str + Structures.templates.BuildingNameStrings[i] + ' (sec) ';
+  end;
+  for i := 0 to Structures.templates.UnitCount - 1 do
+  begin
+    if Structures.templates.UnitDefinitions[i].PrimaryWeapon = index then
+      str := str + Structures.templates.UnitNameStrings[i] + ' (pri) ';
+    if Structures.templates.UnitDefinitions[i].SecondaryWeapon = index then
+      str := str + Structures.templates.UnitNameStrings[i] + ' (sec) ';
+  end;
+  lblWeaponUsedBy.Caption := str;
+
+  loading := false;
+  edWeaponFlagsChange(nil);
+end;
+
+procedure TStructuresEditor.fill_explosion_data;
+var
+  index: integer;
+  exp: TExplosionTemplatePtr;
+  str: String;
+  i: integer;
+begin
+  index := lbExplosionList.ItemIndex;
+  if index < 0 then
+    exit;
+  last_explosion_index := index;
+  loading := true;
+  exp := Addr(Structures.templates.ExplosionDefinitions[index]);
+
+  edExplosionName.Text := Structures.templates.ExplosionStrings[index];
+  edExplosionMyIndex.Text := IntToStr(exp.MyIndex);
+  edExplosionFiringPattern.Text := IntToBin(exp.FiringPattern, 7);
+  cbxExplosionSound.ItemIndex := exp.Sound + 1;
+  // Used by label
+  str := 'Used by: ';
+  for i := 0 to Structures.templates.BuildingCount - 1 do
+  begin
+    if Structures.templates.BuildingDefinitions[i].DeathExplosion = index then
+      str := str + Structures.templates.BuildingNameStrings[i] + ' (death) ';
+    if Structures.templates.BuildingDefinitions[i].FiringExplosion = index then
+      str := str + Structures.templates.BuildingNameStrings[i] + ' (firing) ';
+  end;
+  for i := 0 to Structures.templates.UnitCount - 1 do
+  begin
+    if Structures.templates.UnitDefinitions[i].DeathExplosion = index then
+      str := str + Structures.templates.UnitNameStrings[i] + ' (death) ';
+    if Structures.templates.UnitDefinitions[i].FiringExplosion = index then
+      str := str + Structures.templates.UnitNameStrings[i] + ' (firing) ';
+  end;
+  for i := 0 to Structures.templates.WeaponCount - 1 do
+  begin
+    if Structures.templates.WeaponDefinitions[i].HitExplosion = index then
+      str := str + Structures.templates.WeaponStrings[i] + ' (hit) ';
+    if Structures.templates.WeaponDefinitions[i].TrailExplosion = index then
+      str := str + Structures.templates.WeaponStrings[i] + ' (trail) ';
+  end;
+  lblExplosionUsedBy.Caption := str;
+
+  loading := false;
+end;
+
 procedure TStructuresEditor.set_owner_side_field_value(control: TCheckListBox; value: byte);
 var
   i: integer;
@@ -1424,9 +1776,27 @@ begin
 end;
 
 procedure TStructuresEditor.store_data;
+var
+  i, j: integer;
 begin
   store_building_data;
   store_unit_data;
+  store_builexp_data;
+  store_weapon_data;
+  store_explosion_data;
+
+  // Armour
+  for i := 0 to Structures.armour.WarheadCount - 1 do
+  begin
+    for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
+      Structures.armour.WarheadEntries[i].VersusArmorType[j] := StrToIntDef(sgArmourValues.Cells[j + 1, i + 1], 0);
+    Structures.armour.WarheadEntries[i].Unknown12 := StrToIntDef(sgArmourValues.Cells[13, i + 1], 0);
+    Structures.armour.WarheadEntries[i].Unknown16 := StrToIntDef(sgArmourValues.Cells[14, i + 1], 0);
+  end;
+  // Speed
+  for i := 0 to Length(Structures.speed.Values) - 1 do
+    for j := 0 to Length(Structures.speed.Values[i]) - 1 do
+      Structures.speed.Values[i, j] := StrToFloatDef(sgSpeedValues.Cells[j+1, i+1], 1.0);
 end;
 
 procedure TStructuresEditor.store_building_data;
@@ -1570,6 +1940,72 @@ begin
   unt.Flags := strtointdef('$' + edUnitFlags.Text, 0);
 end;
 
+procedure TStructuresEditor.store_builexp_data;
+var
+  index: integer;
+  i: integer;
+  bxp: TBuilExpEntryPtr;
+begin
+  index := last_builexp_building_index;
+  if index < 0 then
+    exit;
+  bxp := Addr(Structures.builexp[index]);
+  bxp.NumAnimations := seBuilExpNumAnimations.Value;
+  for i := 0 to bxp.NumAnimations - 1 do
+  begin
+    bxp.AnimOffsetX[i] := seBuilExpAnimOffsetX[i].Value;
+    bxp.AnimOffsetY[i] := seBuilExpAnimOffsetY[i].Value;
+    bxp.AnimExplosion[i] := cbxBuilExpAnimExplosion[i].ItemIndex;
+    bxp.AnimNumFrames[i] := seBuilExpAnimNumFrames[i].Value;
+  end;
+end;
+
+procedure TStructuresEditor.store_weapon_data;
+var
+  index: integer;
+  wpn: TWeaponTemplatePtr;
+  str: string;
+begin
+  index := last_weapon_index;
+  if index < 0 then
+    exit;
+  wpn := Addr(Structures.templates.WeaponDefinitions[index]);
+
+  store_c_string(edWeaponName.Text, Addr(Structures.templates.WeaponStrings[index]), Length(Structures.templates.WeaponStrings[index]));
+  // Properties and behavior tab
+  wpn.Damage := StrToIntDef(edWeaponDamage.Text, 0);
+  wpn.Warhead := cbxWeaponWarhead.ItemIndex;
+  wpn.Range := StrToIntDef(edWeaponRange.Text, 0);
+  wpn.AntiAircraft := IfThen(cbWeaponAntiAircraft.Checked, 1, 0);
+  // Projectile movement tab
+  wpn.ProjectileSpeed := StrToIntDef(edWeaponProjectileSpeed.Text, 0) shl 10;
+  // Visuals and sounds tab
+  wpn.ProjectileArt := cbxWeaponProjectileArt.ItemIndex;
+  wpn.FiringSound := cbxWeaponFiringSound.ItemIndex - 1;
+  wpn.HitExplosion := cbxWeaponHitExplosion.ItemIndex - 1;
+  wpn.TrailExplosion := cbxWeaponTrailExplosion.ItemIndex - 1;
+  // Others and unknown tab
+  wpn.Unknown19 := seWeaponUnknown19.Value;
+  wpn.Flags := StrToIntDef('$' + edWeaponFlags.Text, 0);
+end;
+
+procedure TStructuresEditor.store_explosion_data;
+var
+  index: integer;
+  exp: TExplosionTemplatePtr;
+  str: string;
+begin
+  index := last_explosion_index;
+  if index < 0 then
+    exit;
+  exp := Addr(Structures.templates.ExplosionDefinitions[index]);
+
+  store_c_string(edExplosionName.Text, Addr(Structures.templates.ExplosionStrings[index]), Length(Structures.templates.ExplosionStrings[index]));
+  exp.MyIndex := StrToIntDef(edExplosionMyIndex.Text, 0);
+  exp.FiringPattern := BinToInt(edExplosionFiringPattern.Text);
+  exp.Sound := cbxExplosionSound.ItemIndex - 1;
+end;
+
 function TStructuresEditor.get_owner_side_field_value(control: TCheckListBox): byte;
 var
   i: integer;
@@ -1580,7 +2016,7 @@ begin
       result := result or (1 shl i);
 end;
 
-procedure TStructuresEditor.create_art_control_group(group_index: integer; is_unit: boolean; container: TPanel);
+procedure TStructuresEditor.create_art_control_group(group_index: integer; is_unit: boolean; container, container2: TPanel);
 var
   acg: TArtControlGroupPtr;
 begin
@@ -1661,6 +2097,28 @@ begin
   acg.edit_image_offset_y.Width := 33;
   acg.edit_image_offset_y.Top := 232;
   acg.edit_image_offset_y.Left := 136;
+  if container2 = nil then
+    exit;
+  acg.btn_art_add := TButton.Create(self);
+  acg.btn_art_add.Top := 584;
+  acg.btn_art_add.Width := 73;
+  acg.btn_art_add.Caption := 'Add new';
+  acg.btn_art_add.Tag := group_index;
+  acg.btn_art_add.Parent := container2;
+  acg.btn_art_remove := TButton.Create(self);
+  acg.btn_art_remove.Top := 584;
+  acg.btn_art_remove.Left := 88;
+  acg.btn_art_remove.Width := 73;
+  acg.btn_art_remove.Caption := 'Remove last';
+  acg.btn_art_remove.Tag := group_index;
+  acg.btn_art_remove.Parent := container2;
+  acg.btn_art_modify := TButton.Create(self);
+  acg.btn_art_modify.Top := 612;
+  acg.btn_art_modify.Left := 32;
+  acg.btn_art_modify.Width := 97;
+  acg.btn_art_modify.Caption := 'Modify selected';
+  acg.btn_art_modify.Tag := group_index;
+  acg.btn_art_modify.Parent := container2;
 end;
 
 procedure TStructuresEditor.fill_art_control_group_frame_list(group_index, first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
@@ -1911,14 +2369,81 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; structure_image: TStructureImagePtr; header: TR16EntryHeaderPtr);
+procedure TStructuresEditor.draw_builexp_preview;
 var
+  building_template: TBuildingTemplatePtr;
+  structure_image: TStructureImagePtr;
+  header: TR16EntryHeaderPtr;
+  image_index: integer;
+  was_already_loaded: boolean;
+  i: integer;
+  off_x, off_y: integer;
   src_rect, dest_rect: TRect;
 begin
-  img_target.Canvas.Pen.Color := clAqua;
-  img_target.Canvas.Brush.Color := clAqua;
-  img_target.Canvas.Brush.Style := bsSolid;
-  img_target.Canvas.Rectangle(0, 0, img_target.Width, img_target.Height);
+  imgBuilExpImage.Canvas.Pen.Color := clAqua;
+  imgBuilExpImage.Canvas.Brush.Color := clAqua;
+  imgBuilExpImage.Canvas.Brush.Style := bsSolid;
+  imgBuilExpImage.Canvas.Rectangle(0, 0, 128, 160);
+  imgBuilExpImage.Canvas.Brush.Color := clWhite;
+  // Draw building frames
+  building_template := Addr(Structures.templates.BuildingDefinitions[lbBuilExpBuildingList.ItemIndex]);
+  if building_template.BuildingArt <> -1 then
+  begin
+    // Base frame
+    image_index := Structures.building_art_image_indexes[building_template.BuildingArt];
+    draw_building_art_frame(imgBuilExpImage, image_index, false);
+    // Damaged frame
+    image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + Structures.templates.BuildingArtDirections[building_template.BuildingArt] + 1;
+    header := Structures.get_structure_image_header(image_index);
+    if header.EntryType = 0 then
+      // If damaged frame does not exist, use healthy frame
+      image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + 1;
+    draw_building_art_frame(imgBuilExpImage, image_index, false);
+  end;
+  if building_template.BarrelArt <> -1 then
+  begin
+    draw_building_art_frame(imgBuilExpImage, Structures.building_art_image_indexes[building_template.BarrelArt] + 1, false);
+  end;
+  // Draw animations
+  for i := 0 to seBuilExpNumAnimations.Value - 1 do
+  begin
+    image_index := Structures.animation_art_image_indexes[cbxBuilExpAnimExplosion[i].ItemIndex] + seBuilExpAnimNumFrames[i].Value;
+    structure_image := Structures.get_structure_image(image_index, 0, false, false, was_already_loaded);
+    if structure_image <> nil then
+    begin
+      header := Structures.get_structure_image_header(image_index);
+      src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
+      off_x := seBuilExpAnimOffsetX[i].Value - header.ImageOffsetX;
+      off_y := seBuilExpAnimOffsetY[i].Value - header.ImageOffsetY;
+      dest_rect := Rect(off_x, off_y, off_x + structure_image.bitmap.Width, off_y + structure_image.bitmap.Height);
+      imgBuilExpImage.Canvas.CopyMode := cmSrcAnd;
+      imgBuilExpImage.Canvas.CopyRect(dest_rect, structure_image.bitmap_mask.Canvas, src_rect);
+      imgBuilExpImage.Canvas.CopyMode := cmSrcPaint;
+      imgBuilExpImage.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
+      if not was_already_loaded then
+        Structures.clear_last_structure_image(image_index, false);
+    end;
+  end;
+end;
+
+procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index: integer; draw_background: boolean);
+var
+  structure_image: TStructureImagePtr;
+  header: TR16EntryHeaderPtr;
+  was_already_loaded: boolean;
+  src_rect, dest_rect: TRect;
+begin
+  structure_image := Structures.get_structure_image(image_index, 0, false, false, was_already_loaded);
+  if structure_image = nil then
+    exit;
+  header := Structures.get_structure_image_header(image_index);
+  if draw_background then
+  begin
+    img_target.Canvas.Pen.Color := clAqua;
+    img_target.Canvas.Brush.Color := clAqua;
+    img_target.Canvas.Brush.Style := bsSolid;
+    img_target.Canvas.Rectangle(0, 0, img_target.Width, img_target.Height);
+  end;
   img_target.Canvas.Pen.Color := clGray;
   img_target.Canvas.Brush.Style := bsClear;
   img_target.Canvas.Rectangle(0, 0, header.FrameWidth, header.FrameHeight);
@@ -1929,12 +2454,21 @@ begin
   img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap_mask.Canvas, src_rect);
   img_target.Canvas.CopyMode := cmSrcPaint;
   img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
+  if not was_already_loaded then
+    Structures.clear_last_structure_image(image_index, false);
 end;
 
-procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; structure_image: TStructureImagePtr; header: TR16EntryHeaderPtr);
+procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index: integer);
 var
+  structure_image: TStructureImagePtr;
+  header: TR16EntryHeaderPtr;
+  was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
 begin
+  structure_image := Structures.get_structure_image(image_index, 0, true, false, was_already_loaded);
+  if structure_image = nil then
+    exit;
+  header := Structures.get_structure_image_header(image_index);
   img_target.Canvas.Pen.Color := clAqua;
   img_target.Canvas.Brush.Color := clAqua;
   img_target.Canvas.Brush.Style := bsSolid;
@@ -1952,6 +2486,8 @@ begin
   img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap_mask.Canvas, src_rect);
   img_target.Canvas.CopyMode := cmSrcPaint;
   img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
+  if not was_already_loaded then
+    Structures.clear_last_structure_image(image_index, false);
 end;
 
 procedure TStructuresEditor.apply_changes;
@@ -1972,6 +2508,9 @@ end;
 procedure TStructuresEditor.save_to_files;
 begin
   Structures.save_templates_bin;
+  Structures.save_builexp_bin;
+  Structures.save_armour_bin;
+  Structures.save_speed_bin;
 end;
 
 end.
