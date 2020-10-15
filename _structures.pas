@@ -137,7 +137,7 @@ type
 const WF_ARC_TRAJECTORY    = $00000001;
 const WF_DEBRIS            = $00000002;
 const WF_MAKE_TRAIL        = $00000010;
-const WF_CURVED_TRAJECTORY = $00000020;
+const WF_HOMING            = $00000020;
 const WF_DEVIATOR          = $00000040;
 const WF_ANIM_PROJECTILE   = $00000080;
 const WF_FALLING           = $00000100;
@@ -164,6 +164,18 @@ type
 
   TWeaponTemplatePtr = ^TWeaponTemplate;
 
+const EF_RISE_UP           = $00000001;
+const EF_SUBSTRACTIVE_ALPA = $00000002;
+const EF_OR_OPERATION      = $00000004;
+const EF_HOUSE_COLORED     = $00000008;
+const EF_SEMI_TRANSPARENCY = $00000010;
+const EF_RED               = $00000040;
+const EF_GREEN             = $00000080;
+const EF_ADDITIVE_ALPHA    = $00000200;
+const EF_FIRING_FLASH      = $00000400;
+const EF_INVISIBLE         = $00000800;
+
+type
   TExplosionTemplate = packed record
     MyIndex:               byte;
     FiringPattern:         byte;
@@ -251,7 +263,7 @@ type
 
   TArmourBinFile = packed record
     WarheadEntries:     array[0..MAX_WARHEADS-1] of TWarheadEntry;
-    WarheadNameStrings: array[0..MAX_WARHEADS-1,     0..49]  of char;
+    WarheadStrings:     array[0..MAX_WARHEADS-1,     0..49]  of char;
     ArmourTypeStrings:  array[0..MAX_ARMOUR_TYPES-1, 0..49]  of char;
     WarheadCount:       byte;
     ArmourTypeCount:    byte;
@@ -1353,6 +1365,8 @@ begin
   result := nil;
   if data_r16_filename = '' then
     exit;
+  if entry_index >= data_r16_file_entry_count then
+    exit;
   // Check if image is already preloaded
   if not is_stealth then
     image_index := structure_image_entry_mapping[entry_index].normal_index
@@ -1384,7 +1398,10 @@ end;
 
 function TStructures.get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
 begin
-  result := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]]);
+  if entry_index < data_r16_file_entry_count then
+    result := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]])
+  else
+    result := nil;
 end;
 
 procedure TStructures.load_mis_ai_properties_ini;
