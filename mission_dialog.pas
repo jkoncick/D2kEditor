@@ -933,6 +933,7 @@ begin
   Structures.load_players_ini;
   Structures.load_misc_objects_ini;
   Structures.load_limits_ini;
+  Structures.load_templates_other_txt;
   Structures.do_pending_actions(loading);
 end;
 

@@ -3077,6 +3077,49 @@ object StructuresEditor: TStructuresEditor
         end
       end
     end
+    object PageOther: TTabSheet
+      Caption = 'Other         '
+      ImageIndex = 9
+      object vleTemplatesOther: TValueListEditor
+        Left = 0
+        Top = 0
+        Width = 425
+        Height = 624
+        DefaultColWidth = 210
+        DefaultRowHeight = 19
+        TabOrder = 0
+        TitleCaptions.Strings = (
+          'Byte'
+          'Value')
+        OnSelectCell = vleTemplatesOtherSelectCell
+        OnTopLeftChanged = vleTemplatesOtherTopLeftChanged
+        ColWidths = (
+          210
+          209)
+      end
+      object cbxTemplatesOtherSelect: TComboBox
+        Tag = 1
+        Left = 212
+        Top = 21
+        Width = 194
+        Height = 21
+        Style = csDropDownList
+        ItemHeight = 13
+        TabOrder = 1
+        Visible = False
+        OnChange = cbxTemplatesOtherSelectChange
+      end
+      object cbxTemplatesOtherUnitSelect: TComboBox
+        Left = 424
+        Top = 0
+        Width = 145
+        Height = 21
+        Style = csDropDownList
+        ItemHeight = 13
+        TabOrder = 2
+        Visible = False
+      end
+    end
   end
   object MainMenu: TMainMenu
     object Applychanges1: TMenuItem

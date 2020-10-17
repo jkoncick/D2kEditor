@@ -218,7 +218,7 @@ type
     UnitNameStrings:         array[0..MAX_UNIT_TYPES-1,     0..449] of char;
     UnitTypeStrings:         array[0..MAX_UNIT_TYPES-1,     0..49]  of char;
     BuildingTypeStrings:     array[0..MAX_BUILDING_TYPES-1, 0..49]  of char;
-    Unknown1:                array[0..85]                   of byte;
+    Other:                   array[0..85]                   of shortint;
     AnimationArtFlags:       array[0..MAX_EXPLOSIONS-1]     of cardinal;
     BuildingAnimationFrames: array[0..MAX_BUILDING_TYPES-1] of byte;
     BuildupArtFrames:        array[0..MAX_BUILDING_TYPES-1] of byte;
@@ -414,6 +414,17 @@ type
     color_inv: Cardinal;
   end;
 
+// *****************************************************************************
+// Templates other definitions
+// *****************************************************************************
+
+type
+  TTemplatesOtherByteType = (tobtNone, tobtBuilding, tobtUnit, tobtWeapon, tobtExplosion);
+
+// *****************************************************************************
+// TStructures class
+// *****************************************************************************
+
 type
   TStructures = class
 
@@ -430,6 +441,7 @@ type
     players_ini_filename: String;
     misc_objects_ini_filename: String;
     limits_ini_filename: String;
+    templates_other_txt_filename: String;
 
     pending_render_map: boolean;
     pending_render_minimap: boolean;
@@ -501,6 +513,10 @@ type
     limit_structures_total: integer;
     limit_refineries_per_player: integer;
 
+    // Templates other related data
+    templates_other: TStringList;
+    templates_other_byte_types: array[0..85] of TTemplatesOtherByteType;
+
   public
     // General procedures
     procedure init;
@@ -556,6 +572,8 @@ type
     procedure load_players_ini;
     // Limits related procedures
     procedure load_limits_ini;
+    // Templates other related procedures
+    procedure load_templates_other_txt;
   end;
 
 var
@@ -569,6 +587,7 @@ procedure TStructures.init;
 begin
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
+  templates_other := TStringList.Create;
   load_templates_bin(false);
   load_builexp_bin(false);
   load_armour_bin(false);
@@ -581,6 +600,7 @@ begin
   load_misc_objects_ini;
   load_players_ini;
   load_limits_ini;
+  load_templates_other_txt;
   do_pending_actions(true);
 end;
 
@@ -635,6 +655,7 @@ function TStructures.get_status: String;
 begin
   result :=
     'Templates.bin file: '+templates_bin_filename+#13+
+    'BUILEXP.BIN file: '+builexp_bin_filename+#13+
     'ARMOUR.BIN file: '+armour_bin_filename+#13+
     'SPEED.BIN file: '+speed_bin_filename+#13+
     'TILEDATA.BIN file: '+tiledata_bin_filename+#13+
@@ -644,6 +665,7 @@ begin
     'misc_objects.ini file: '+misc_objects_ini_filename+#13+
     'players.ini file: '+players_ini_filename+#13+
     'limits.ini file: '+limits_ini_filename+#13+
+    'templates_other.txt file: '+templates_other_txt_filename+#13+
     'Structure images loaded: '+inttostr(structure_images_count)+#13+
     'House color pixel count: '+inttostr(house_color_pixel_count_total);
 end;
@@ -1609,6 +1631,33 @@ begin
   limit_structures_total := ini.ReadInteger('Limits', 'structures_total', 1000);
   limit_refineries_per_player := ini.ReadInteger('Limits', 'refineries_per_player', 10);
   ini.Destroy;
+end;
+
+procedure TStructures.load_templates_other_txt;
+var
+  tmp_filename: String;
+  i: integer;
+  prefix: string;
+begin
+  tmp_filename := find_file('config\templates_other.txt');
+  if (tmp_filename = '') or (tmp_filename = templates_other_txt_filename) then
+    exit;
+  templates_other_txt_filename := tmp_filename;
+  templates_other.LoadFromFile(tmp_filename);
+  for i := 0 to Length(templates_other_byte_types) - 1 do
+  begin
+    prefix := Copy(templates_other[i], 1, 2);
+    if prefix = 'B ' then
+      templates_other_byte_types[i] := tobtBuilding
+    else if prefix = 'U ' then
+      templates_other_byte_types[i] := tobtUnit
+    else if prefix = 'W ' then
+      templates_other_byte_types[i] := tobtWeapon
+    else if prefix = 'E ' then
+      templates_other_byte_types[i] := tobtExplosion
+    else
+      templates_other_byte_types[i] := tobtNone
+  end;
 end;
 
 end.

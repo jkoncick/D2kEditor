@@ -458,6 +458,10 @@ type
     btnUnitRemove: TButton;
     btnUnitCopy: TButton;
     btnUnitPaste: TButton;
+    PageOther: TTabSheet;
+    vleTemplatesOther: TValueListEditor;
+    cbxTemplatesOtherSelect: TComboBox;
+    cbxTemplatesOtherUnitSelect: TComboBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -522,6 +526,10 @@ type
     // Speed tab events
     procedure lbSpeedTypeListClick(Sender: TObject);
     procedure btnSpeedTypeRenameClick(Sender: TObject);
+    // Other tab events
+    procedure vleTemplatesOtherSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure vleTemplatesOtherTopLeftChanged(Sender: TObject);
+    procedure cbxTemplatesOtherSelectChange(Sender: TObject);
     // List control group events
     procedure ListControlGroupAddClick(Sender: TObject);
     procedure ListControlGroupRemoveClick(Sender: TObject);
@@ -583,6 +591,8 @@ type
     procedure store_weapon_data;
     procedure store_explosion_data;
     function get_owner_side_field_value(control: TCheckListBox): byte;
+    // Templates other procedures
+    function get_templates_other_cell_text(index: integer; value: shortint): string;
     // List control group procedures
     procedure create_list_control_group(group_index: integer; item_count_byte_ptr: PByte; item_name_list_ptr: TItemNameListPtr; max_item_count: integer; last_item_index_ptr: PInteger; list_control: TListBox; container: TPanel);
     // Art control group procedures
@@ -1473,6 +1483,41 @@ begin
   fill_data;
 end;
 
+procedure TStructuresEditor.vleTemplatesOtherSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var
+  index: integer;
+  item_name_list_combo: TComboBox;
+begin
+  index := ARow - 1;
+  item_name_list_combo := nil;
+  case Structures.templates_other_byte_types[index] of
+    tobtBuilding:  item_name_list_combo := cbxBuildingPrereq1BuildingType;
+    tobtUnit:      item_name_list_combo := cbxTemplatesOtherUnitSelect;
+    tobtWeapon:    item_name_list_combo := cbxBuildingPrimaryWeapon;
+    tobtExplosion: item_name_list_combo := cbxBuildingDeathExplosion;
+  end;
+  cbxTemplatesOtherSelect.Visible := Structures.templates_other_byte_types[index] <> tobtNone;
+  cbxTemplatesOtherSelect.Tag := index;
+  if Structures.templates_other_byte_types[index] <> tobtNone then
+  begin
+    cbxTemplatesOtherSelect.Items := item_name_list_combo.Items;
+    cbxTemplatesOtherSelect.ItemIndex := Structures.templates.Other[index] + 1;
+    cbxTemplatesOtherSelect.Top := (ARow - vleTemplatesOther.TopRow + 1) * 20 + 1;
+  end;
+end;
+
+procedure TStructuresEditor.vleTemplatesOtherTopLeftChanged(Sender: TObject);
+begin
+  cbxTemplatesOtherSelect.Visible := (Structures.templates_other_byte_types[cbxTemplatesOtherSelect.Tag] <> tobtNone) and (vleTemplatesOther.Row >= vleTemplatesOther.TopRow) and (vleTemplatesOther.Row < vleTemplatesOther.TopRow + vleTemplatesOther.VisibleRowCount);
+  cbxTemplatesOtherSelect.Top := (vleTemplatesOther.Row - vleTemplatesOther.TopRow + 1) * 20 + 1;
+end;
+
+procedure TStructuresEditor.cbxTemplatesOtherSelectChange(Sender: TObject);
+begin
+  Structures.templates.Other[cbxTemplatesOtherSelect.Tag] := cbxTemplatesOtherSelect.ItemIndex - 1;
+  vleTemplatesOther.Cells[1, cbxTemplatesOtherSelect.Tag + 1] := get_templates_other_cell_text(cbxTemplatesOtherSelect.Tag, cbxTemplatesOtherSelect.ItemIndex - 1);
+end;
+
 procedure TStructuresEditor.ListControlGroupAddClick(Sender: TObject);
 var
   group_index: integer;
@@ -1730,6 +1775,8 @@ begin
   for i := 0 to Structures.templates.UnitCount - 1 do
     tmp_strings.Add(Format('%.*d %s', [2, i, Structures.templates.UnitNameStrings[i]]));
   lbUnitList.Items := tmp_strings;
+  tmp_strings.Insert(0, '(none)');
+  cbxTemplatesOtherUnitSelect.Items := tmp_strings;
   lbUnitList.ItemIndex := last_unit_index;
 
   // Building art list
@@ -1854,8 +1901,6 @@ begin
   lbSpeedTypeList.ItemIndex := last_speed_type_index;
   lbSpeedTypeListClick(nil);
 
-  tmp_strings.Destroy;
-
   // Fill template data
   fill_building_data;
   fill_unit_data;
@@ -1882,6 +1927,14 @@ begin
   for i := 0 to Length(Structures.speed.Values) - 1 do
     for j := 0 to Length(Structures.speed.Values[i]) - 1 do
       sgSpeedValues.Cells[j+1, i+1] := floattostr(Round(Structures.speed.Values[i, j] * 100)/100);
+  // Other
+  tmp_strings.Clear;
+  for i := 0 to Length(Structures.templates.Other) - 1 do
+    tmp_strings.Add(Format('%s=%s', [Structures.templates_other[i], get_templates_other_cell_text(i, Structures.templates.Other[i])]));
+  vleTemplatesOther.Strings := tmp_strings;
+  vleTemplatesOther.Col := 0;
+
+  tmp_strings.Destroy;
 
   // Status bar
   StatusBar.Panels[0].Text := Structures.templates_bin_filename;
@@ -2122,6 +2175,9 @@ begin
     if Structures.templates.UnitDefinitions[i].SecondaryWeapon = index then
       str := str + Structures.templates.UnitNameStrings[i] + ' (sec) ';
   end;
+  for i := 0 to Length(Structures.templates.Other) - 1 do
+    if (Structures.templates_other_byte_types[i] = tobtWeapon) and ((i < 25) or (i > 48) or ((i - 25) < Structures.templates.Other[49])) and (Structures.templates.Other[i] = index) then
+      str := str + Copy(Structures.templates_other[i], 2, 100) + ' (special) ';
   lblWeaponUsedBy.Caption := str;
 
   loading := false;
@@ -2133,7 +2189,8 @@ var
   index: integer;
   exp: TExplosionTemplatePtr;
   str: String;
-  i: integer;
+  i, j: integer;
+  used_builexp: boolean;
 begin
   index := lbExplosionList.ItemIndex;
   if index < 0 then
@@ -2170,6 +2227,16 @@ begin
     if Structures.templates.WeaponDefinitions[i].TrailExplosion = index then
       str := str + Structures.templates.WeaponStrings[i] + ' (trail) ';
   end;
+  for i := 0 to Length(Structures.templates.Other) - 1 do
+    if (Structures.templates_other_byte_types[i] = tobtExplosion) and (Structures.templates.Other[i] = index) then
+      str := str + Copy(Structures.templates_other[i], 2, 100) + ' (special) ';
+  used_builexp := false;
+  for i := 0 to Structures.templates.BuildingCount - 1 do
+    for j := 0 to Structures.builexp[i].NumAnimations - 1 do
+      if Structures.builexp[i].AnimExplosion[j] = index then
+        used_builexp := true;
+  if used_builexp then
+    str := str + 'BUILEXP';
   lblExplosionUsedBy.Caption := str;
 
   loading := false;
@@ -2206,6 +2273,11 @@ begin
   for i := 0 to Length(Structures.speed.Values) - 1 do
     for j := 0 to Length(Structures.speed.Values[i]) - 1 do
       Structures.speed.Values[i, j] := StrToFloatDef(sgSpeedValues.Cells[j+1, i+1], 1.0);
+  // Other
+  for i := 0 to Length(Structures.templates.Other) - 1 do
+    if Structures.templates_other_byte_types[i] = tobtNone then
+      Structures.templates.Other[i] := StrToIntDef(vleTemplatesOther.Cells[1, i+1], 0);
+
 end;
 
 procedure TStructuresEditor.store_building_data;
@@ -2428,6 +2500,23 @@ begin
   for i := 0 to CNT_PLAYERS - 1 do
     if control.Checked[i] then
       result := result or (1 shl i);
+end;
+
+function TStructuresEditor.get_templates_other_cell_text(index: integer; value: shortint): string;
+var
+  item_name_list_combo: TComboBox;
+begin
+  item_name_list_combo := nil;
+  case Structures.templates_other_byte_types[index] of
+    tobtBuilding:  item_name_list_combo := cbxBuildingPrereq1BuildingType;
+    tobtUnit:      item_name_list_combo := cbxTemplatesOtherUnitSelect;
+    tobtWeapon:    item_name_list_combo := cbxBuildingPrimaryWeapon;
+    tobtExplosion: item_name_list_combo := cbxBuildingDeathExplosion;
+  end;
+  if item_name_list_combo <> nil then
+    result := item_name_list_combo.Items[value + 1]
+  else
+    result := inttostr(value);
 end;
 
 procedure TStructuresEditor.create_list_control_group(group_index: integer; item_count_byte_ptr: PByte; item_name_list_ptr: TItemNameListPtr; max_item_count: integer; last_item_index_ptr: PInteger; list_control: TListBox; container: TPanel);
