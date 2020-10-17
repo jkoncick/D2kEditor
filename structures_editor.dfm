@@ -3120,6 +3120,98 @@ object StructuresEditor: TStructuresEditor
         Visible = False
       end
     end
+    object PageTechpos: TTabSheet
+      Caption = 'Techpos   '
+      ImageIndex = 10
+      object imgTechposPreview: TImage
+        Left = 120
+        Top = 40
+        Width = 224
+        Height = 224
+        OnMouseDown = imgTechposPreviewMouseDown
+      end
+      object sbTechposAtreides: TSpeedButton
+        Left = 120
+        Top = 8
+        Width = 73
+        Height = 22
+        GroupIndex = 1
+        Down = True
+        Caption = 'Atreides'
+        OnClick = TechposPreviewChange
+      end
+      object sbTechposHarkonnen: TSpeedButton
+        Tag = 1
+        Left = 196
+        Top = 8
+        Width = 73
+        Height = 22
+        GroupIndex = 1
+        Caption = 'Harkonnen'
+        OnClick = TechposPreviewChange
+      end
+      object sbTechposOrdos: TSpeedButton
+        Tag = 2
+        Left = 272
+        Top = 8
+        Width = 73
+        Height = 22
+        GroupIndex = 1
+        Caption = 'Ordos'
+        OnClick = TechposPreviewChange
+      end
+      object lblTechposNumUnits: TLabel
+        Left = 360
+        Top = 216
+        Width = 132
+        Height = 13
+        Caption = 'Number of units to show: 10'
+      end
+      object rgTechposTechLevel: TRadioGroup
+        Left = 0
+        Top = 40
+        Width = 105
+        Height = 225
+        Caption = 'Tech level'
+        TabOrder = 0
+        OnClick = rgTechposTechLevelClick
+      end
+      object sgTechposData: TStringGrid
+        Left = 0
+        Top = 280
+        Width = 529
+        Height = 225
+        ColCount = 6
+        DefaultColWidth = 40
+        DefaultRowHeight = 19
+        RowCount = 11
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
+        TabOrder = 1
+        OnSelectCell = sgTechposDataSelectCell
+        OnSetEditText = sgTechposDataSetEditText
+      end
+      object cbxTechposUnitType: TComboBox
+        Left = 124
+        Top = 301
+        Width = 135
+        Height = 21
+        Style = csDropDownList
+        ItemHeight = 13
+        TabOrder = 2
+        Visible = False
+        OnChange = cbxTechposUnitTypeChange
+      end
+      object tbTechposNumUnits: TTrackBar
+        Left = 352
+        Top = 232
+        Width = 177
+        Height = 33
+        Min = 1
+        Position = 10
+        TabOrder = 3
+        OnChange = TechposPreviewChange
+      end
+    end
   end
   object MainMenu: TMainMenu
     object Applychanges1: TMenuItem

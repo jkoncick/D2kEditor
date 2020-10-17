@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ComCtrls, ExtCtrls, StdCtrls, CheckLst, Spin, _structures,
-  Grids, ValEdit, _utils;
+  Grids, ValEdit, _utils, Buttons;
 
 const side_names: array[0..CNT_PLAYERS-1] of string = ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
 const unit_voices: array[0..8] of string = ('A1', 'A2', 'A3', 'H1', 'H2', 'H3', 'O1', 'O2', 'O3');
@@ -26,6 +26,8 @@ type
   end;
 
   TUnitClipboardPtr = ^TUnitClipboard;
+
+const TECHPOS_PREVIEW_SIZE = 7;
 
 type
   TItemNameList = array[0..0, 0..49] of char;
@@ -462,6 +464,16 @@ type
     vleTemplatesOther: TValueListEditor;
     cbxTemplatesOtherSelect: TComboBox;
     cbxTemplatesOtherUnitSelect: TComboBox;
+    PageTechpos: TTabSheet;
+    imgTechposPreview: TImage;
+    rgTechposTechLevel: TRadioGroup;
+    sbTechposAtreides: TSpeedButton;
+    sbTechposHarkonnen: TSpeedButton;
+    sbTechposOrdos: TSpeedButton;
+    sgTechposData: TStringGrid;
+    cbxTechposUnitType: TComboBox;
+    tbTechposNumUnits: TTrackBar;
+    lblTechposNumUnits: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -530,6 +542,13 @@ type
     procedure vleTemplatesOtherSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure vleTemplatesOtherTopLeftChanged(Sender: TObject);
     procedure cbxTemplatesOtherSelectChange(Sender: TObject);
+    // Techpos tab events
+    procedure rgTechposTechLevelClick(Sender: TObject);
+    procedure sgTechposDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure sgTechposDataSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+    procedure cbxTechposUnitTypeChange(Sender: TObject);
+    procedure TechposPreviewChange(Sender: TObject);
+    procedure imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     // List control group events
     procedure ListControlGroupAddClick(Sender: TObject);
     procedure ListControlGroupRemoveClick(Sender: TObject);
@@ -608,6 +627,7 @@ type
     procedure draw_builexp_preview;
     procedure draw_building_art_frame(img_target: TImage; image_index: integer; draw_background: boolean);
     procedure draw_unit_art_frame(img_target: TImage; image_index: integer);
+    procedure draw_techpos_preview;
     // General procedures
     procedure apply_changes;
     procedure save_to_files;
@@ -619,7 +639,7 @@ var
 implementation
 
 uses _tileset, _stringtable, Clipbrd, map_stats_dialog, event_dialog,
-  mission_dialog, main, _launcher, Math;
+  mission_dialog, main, _launcher, _renderer, Math;
 
 {$R *.dfm}
 
@@ -667,7 +687,6 @@ begin
   tmp_strings.Insert(0, '(none)');
   cbxWeaponFiringSound.Items := tmp_strings;
   cbxExplosionSound.Items := tmp_strings;
-  tmp_strings.Destroy;
   // BuilExp controls
   for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
   begin
@@ -718,6 +737,25 @@ begin
   sgSpeedValues.Cells[0, 0] := 'Modifier val.';
   for i := 0 to Length(Structures.speed.Values) - 1 do
     sgSpeedValues.Cells[0, i+1] := inttostr(i);
+  // Techpos
+  tmp_strings.Clear;
+  for i := 0 to 9 do
+  begin
+    tmp_strings.Add('Tech level ' + inttostr(i));
+    sgTechposData.Cells[0, i + 1] := inttostr(i + 1);
+  end;
+  rgTechposTechLevel.Items := tmp_strings;
+  rgTechposTechLevel.ItemIndex := 1;
+  tmp_strings.Destroy;
+  sgTechposData.Cells[0, 0] := 'Unit #';
+  sgTechposData.Cells[1, 0] := 'Pos X';
+  sgTechposData.Cells[2, 0] := 'Pos Y';
+  sgTechposData.Cells[3, 0] := 'Atreides unit';
+  sgTechposData.Cells[4, 0] := 'Harkonnen unit';
+  sgTechposData.Cells[5, 0] := 'Ordos unit';
+  sgTechposData.ColWidths[3] := 133;
+  sgTechposData.ColWidths[4] := 133;
+  sgTechposData.ColWidths[5] := 133;
   // List control groups
   create_list_control_group(LCG_BUILDING_TYPES, Addr(Structures.templates.BuildingTypeCount), Addr(Structures.templates.BuildingTypeStrings), MAX_BUILDING_TYPES, Addr(last_building_type_index), lbBuildingTypeList, pnBuildingTypeList);
   create_list_control_group(LCG_UNIT_TYPES,     Addr(Structures.templates.UnitTypeCount),     Addr(Structures.templates.UnitTypeStrings),     MAX_UNIT_TYPES,     Addr(last_unit_type_index),     lbUnitTypeList,     pnUnitTypeList);
@@ -765,6 +803,7 @@ begin
   Structures.load_templates_bin(true);
   Structures.load_builexp_bin(true);
   Structures.load_armour_bin(true);
+  Structures.load_techpos_bin(true);
   Structures.load_speed_bin(true);
   fill_data;
   apply_changes;
@@ -1518,6 +1557,103 @@ begin
   vleTemplatesOther.Cells[1, cbxTemplatesOtherSelect.Tag + 1] := get_templates_other_cell_text(cbxTemplatesOtherSelect.Tag, cbxTemplatesOtherSelect.ItemIndex - 1);
 end;
 
+procedure TStructuresEditor.rgTechposTechLevelClick(Sender: TObject);
+var
+  tech: integer;
+  i: integer;
+  dummy: boolean;
+begin
+  tech := rgTechposTechLevel.ItemIndex;
+  for i := 0 to 9 do
+  begin
+    sgTechposData.Cells[1, i + 1] := inttostr(Structures.techpos[tech, i].PosX);
+    sgTechposData.Cells[2, i + 1] := inttostr(Structures.techpos[tech, i].PosY);
+    sgTechposData.Cells[3, i + 1] := cbxTechposUnitType.Items[Structures.techpos[tech, i].Units[0] + 1];
+    sgTechposData.Cells[4, i + 1] := cbxTechposUnitType.Items[Structures.techpos[tech, i].Units[1] + 1];
+    sgTechposData.Cells[5, i + 1] := cbxTechposUnitType.Items[Structures.techpos[tech, i].Units[2] + 1];
+  end;
+  sgTechposDataSelectCell(nil, sgTechposData.Col, sgTechposData.Row, dummy);
+  draw_techpos_preview;
+end;
+
+procedure TStructuresEditor.sgTechposDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var
+  side, unitnum, tech: integer;
+begin
+  cbxTechposUnitType.Visible := ACol >= 3;
+  if ACol < 3 then
+    exit;
+  side := ACol - 3;
+  unitnum := ARow - 1;
+  tech := rgTechposTechLevel.ItemIndex;
+  cbxTechposUnitType.Left := 124 + side * 134;
+  cbxTechposUnitType.Top := 301 + unitnum * 20;
+  cbxTechposUnitType.ItemIndex := Structures.techpos[tech, unitnum].Units[side] + 1;
+  cbxTechposUnitType.Tag := side * 10 + unitnum;
+end;
+
+procedure TStructuresEditor.sgTechposDataSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+var
+  tech, unitnum: integer;
+  int_value: Shortint;
+begin
+  if ACol >= 3 then
+    exit;
+  int_value := StrToIntDef(Value, 0);
+  tech := rgTechposTechLevel.ItemIndex;
+  unitnum := ARow - 1;
+  if ACol = 1 then
+    Structures.techpos[tech, unitnum].PosX := int_value
+  else
+    Structures.techpos[tech, unitnum].PosY := int_value;
+  draw_techpos_preview;
+end;
+
+procedure TStructuresEditor.cbxTechposUnitTypeChange(Sender: TObject);
+var
+  side, unitnum, tech: integer;
+begin
+  side := cbxTechposUnitType.Tag div 10;
+  unitnum := cbxTechposUnitType.Tag mod 10;
+  tech := rgTechposTechLevel.ItemIndex;
+  Structures.techpos[tech, unitnum].Units[side] := cbxTechposUnitType.ItemIndex - 1;
+  sgTechposData.Cells[3 + side, 1 + unitnum] := cbxTechposUnitType.Items[Structures.techpos[tech, unitnum].Units[side] + 1];
+  draw_techpos_preview;
+end;
+
+procedure TStructuresEditor.TechposPreviewChange(Sender: TObject);
+begin
+  lblTechposNumUnits.Caption := 'Number of units to show: ' + inttostr(tbTechposNumUnits.Position);
+  draw_techpos_preview;
+end;
+
+procedure TStructuresEditor.imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  pos_x, pos_y: integer;
+  i: integer;
+  side, unitnum, tech: integer;
+begin
+  pos_x := (X div 32) - (TECHPOS_PREVIEW_SIZE div 2);
+  pos_y := (Y div 32) - (TECHPOS_PREVIEW_SIZE div 2);
+  if sbTechposAtreides.Down then
+    side := 0
+  else if sbTechposHarkonnen.Down then
+    side := 1
+  else
+    side := 2;
+  tech := rgTechposTechLevel.ItemIndex;
+  unitnum := cbxTechposUnitType.Tag mod 10;
+  for i := 0 to 9 do
+    if (Structures.techpos[tech, i].PosX = pos_x) and (Structures.techpos[tech, i].PosY = pos_y) then
+    begin
+      unitnum := i;
+      break;
+    end;
+  sgTechposData.Col := 3 + side;
+  sgTechposData.Row := 1 + unitnum;
+  cbxTechposUnitType.SetFocus;
+end;
+
 procedure TStructuresEditor.ListControlGroupAddClick(Sender: TObject);
 var
   group_index: integer;
@@ -1767,6 +1903,8 @@ begin
     tmp_strings.Add(Format('%.*d %s', [2, i, Structures.templates.UnitTypeStrings[i]]));
   lbUnitTypeList.Items := tmp_strings;
   cbxUnitType.Items := tmp_strings;
+  tmp_strings.Insert(0, '(none)');
+  cbxTechposUnitType.Items := tmp_strings;
   lbUnitTypeList.ItemIndex := last_unit_type_index;
   lbUnitTypeListClick(nil);
 
@@ -1933,6 +2071,8 @@ begin
     tmp_strings.Add(Format('%s=%s', [Structures.templates_other[i], get_templates_other_cell_text(i, Structures.templates.Other[i])]));
   vleTemplatesOther.Strings := tmp_strings;
   vleTemplatesOther.Col := 0;
+  // Techpos
+  rgTechposTechLevelClick(nil);
 
   tmp_strings.Destroy;
 
@@ -3036,6 +3176,59 @@ begin
     Structures.clear_last_structure_image(image_index, false);
 end;
 
+procedure TStructuresEditor.draw_techpos_preview;
+var
+  i: integer;
+  tech, side: integer;
+  unit_type: integer;
+  unit_template: TUnitTemplatePtr;
+  is_stealth: boolean;
+  structure_image: TStructureImagePtr;
+  was_already_loaded: boolean;
+  pos_x, pos_y: integer;
+begin
+  if Structures.techpos_bin_filename = '' then
+    exit;
+  imgTechposPreview.Canvas.Pen.Color := clBlack;
+  imgTechposPreview.Canvas.Brush.Color := clCream;
+  imgTechposPreview.Canvas.Brush.Style := bsSolid;
+  imgTechposPreview.Canvas.Rectangle(0, 0, imgTechposPreview.Width, imgTechposPreview.Height);
+  tech := rgTechposTechLevel.ItemIndex;
+  if sbTechposAtreides.Down then
+    side := 0
+  else if sbTechposHarkonnen.Down then
+    side := 1
+  else
+    side := 2;
+  for i := 0 to tbTechposNumUnits.Position - 1 do
+  begin
+    unit_type := Structures.techpos[tech, i].Units[side];
+    pos_x := ((TECHPOS_PREVIEW_SIZE div 2) + Structures.techpos[tech, i].PosX) * 32;
+    pos_y := ((TECHPOS_PREVIEW_SIZE div 2) + Structures.techpos[tech, i].PosY) * 32;
+    if unit_type = -1 then
+      continue;
+    unit_template := Structures.get_unit_template(unit_type, side);
+    if (unit_template = nil) or (unit_template.SpecialBehavior = 5) then
+      continue;
+    // Check if unit is stealth
+    is_stealth := ((unit_template.Flags and $10) <> 0) or (unit_template.SpecialBehavior = 12) or (Structures.templates.UnitNameStrings[Structures.unit_side_versions[unit_type, side]] = 'STEALTH RAIDER');
+    // Draw unit
+    if unit_template.UnitArt <> -1 then
+    begin
+      structure_image := Structures.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], side, true, is_stealth, was_already_loaded);
+      if structure_image <> nil then
+        Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
+    end;
+    // Draw barrel
+    if unit_template.BarrelArt <> -1 then
+    begin
+      structure_image := Structures.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], side, true, is_stealth, was_already_loaded);
+      if structure_image <> nil then
+        Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
+    end;
+  end;
+end;
+
 procedure TStructuresEditor.apply_changes;
 begin
   store_data;
@@ -3057,6 +3250,7 @@ begin
   Structures.save_builexp_bin;
   Structures.save_armour_bin;
   Structures.save_speed_bin;
+  Structures.save_techpos_bin;
 end;
 
 end.

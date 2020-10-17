@@ -281,6 +281,17 @@ type
   end;
 
 // *****************************************************************************
+// TECHPOS.BIN file definitions
+// *****************************************************************************
+
+type
+  TTechposUnitEntry = packed record
+    Units: array[0..2] of shortint;
+    PosX: shortint;
+    PosY: shortint;
+  end;
+
+// *****************************************************************************
 // TILEDATA.BIN file definitions
 // *****************************************************************************
 
@@ -434,6 +445,7 @@ type
     builexp_bin_filename: String;
     armour_bin_filename: String;
     speed_bin_filename: String;
+    techpos_bin_filename: String;
     tiledata_bin_filename: String;
     colours_bin_filename: String;
     data_r16_filename: String;
@@ -475,6 +487,9 @@ type
 
     // SPEED.BIN related data
     speed: TSpeedBinFile;
+
+    // TECHPOS.BIN related data
+    techpos: array[0..9,0..9] of TTechposUnitEntry;
 
     // TILEDATA.BIN related data
     tiledata: array[0..CNT_TILEDATA_ENTRIES-1] of TTileDataEntry;
@@ -548,6 +563,9 @@ type
     // SPEED.BIN related procedures
     procedure load_speed_bin(force: boolean);
     procedure save_speed_bin;
+    // TECHPOS.BIN related procedures
+    procedure load_techpos_bin(force: boolean);
+    procedure save_techpos_bin;
     // TILEDATA.BIN related procedures
     procedure load_tiledata_bin;
     function get_tiledata_entry(special: integer): TTileDataEntryPtr;
@@ -592,6 +610,7 @@ begin
   load_builexp_bin(false);
   load_armour_bin(false);
   load_speed_bin(false);
+  load_techpos_bin(false);
   load_tiledata_bin;
   load_colours_bin;
   load_data_r16;
@@ -1029,6 +1048,36 @@ begin
   Rewrite(speed_bin_file);
   Write(speed_bin_file, speed);
   CloseFile(speed_bin_file);
+end;
+
+procedure TStructures.load_techpos_bin(force: boolean);
+var
+  tmp_filename: String;
+  techpos_bin_file: file of byte;
+begin
+  tmp_filename := find_file('Data\bin\TECHPOS.BIN');
+  if (tmp_filename = '') or ((tmp_filename = techpos_bin_filename) and not force) then
+    exit;
+  techpos_bin_filename := tmp_filename;
+  // Read TECHPOS.BIN file
+  AssignFile(techpos_bin_file, tmp_filename);
+  Reset(techpos_bin_file);
+  BlockRead(techpos_bin_file, techpos, sizeof(techpos));
+  CloseFile(techpos_bin_file);
+  // Update all occurences in editor
+  pending_fill_structures_editor_data := true;
+end;
+
+procedure TStructures.save_techpos_bin;
+var
+  techpos_bin_file: file of byte;
+begin
+  if techpos_bin_filename = '' then
+    exit;
+  AssignFile(techpos_bin_file, techpos_bin_filename);
+  Rewrite(techpos_bin_file);
+  BlockWrite(techpos_bin_file, techpos, sizeof(techpos));
+  CloseFile(techpos_bin_file);
 end;
 
 procedure TStructures.load_tiledata_bin;

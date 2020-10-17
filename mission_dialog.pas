@@ -926,6 +926,7 @@ begin
   Structures.load_builexp_bin(false);
   Structures.load_armour_bin(false);
   Structures.load_speed_bin(false);
+  Structures.load_techpos_bin(false);
   Structures.load_tiledata_bin;
   Structures.load_colours_bin;
   Structures.load_data_r16;
