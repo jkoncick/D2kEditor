@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Version 2.0 (released 2020-09-06)
+Version 2.0 (released 2020-10-18)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
@@ -66,13 +66,15 @@ Added: "D2k Mapping Manual" document
 Major new features and changes:
 1) Editor loads building and unit graphics and configuration from game's files (Templates.bin, DATA.R16).
    Buildings and units are displayed in exactly same way as shown in-game, supporting mods!
-2) Added support for new Mission Launcher and added a built-in launcher into D2kEditor.
+2) Added Structures Editor where you can edit buildings, units, weapons, armour and much more.
+   This is going to be a better replacement of TibEd, having much more features!
+3) Added support for new Mission Launcher and added a built-in launcher into D2kEditor.
    Also added support for loading per-mission/per-mod editor configuration, player names and colors.
-3) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
+4) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
    TileAtrEditor became obsolete and no longer needed.
-4) Significant improvements related to creating maps using custom tilesets. 
+5) Significant improvements related to creating maps using custom tilesets. 
    Creating maps using custom tilesets is now much easier and faster.
-5) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
+6) Major changes in tileset configurations (tileset .ini files) related to new features and improvements.
    You will need to update your custom tileset .ini files to make them compatible with this version of program.
 
 Ad 1)
@@ -91,6 +93,17 @@ Ad 1)
 - Full support for modded game's graphics and building/unit configuration, no need to modify any editor's files.
 
 Ad 2)
+- Available from main menu under "Structures" -> "Structures editor", or Ctrl+X shortcut
+- Support for editing Templates.bin, BUILEXP.BIN, ARMOUR.BIN, SPEED.BIN, TECHPOS.BIN files
+- More user-friendly user interface than TibEd, many unknown bytes were given corrent meaning
+- Live preview of building and unit appearance
+- Support for adding, removing and renaming of buildings, units, weapons, explosions, armour types, warheads...
+- Support for editing building/unit/projectile/animation art count and direction/frame count 
+  (DATA.R16 needs to be edited separately to match proper frame count!)
+- Use "Apply changes" to see changes in map and misssion editor
+- Use "Save and test" to immediately test your changes in currently loaded map
+
+Ad 3)
 - New fields under additional Mission.ini file settings:
   "Campaign folder", "Mods folder", "Colours.bin file", "Players.ini file", "Intel ID"
 - Editor can load custom COLOURS.BIN file for individual mission, specified under "Colours.bin file" field
@@ -121,8 +134,8 @@ Ad 2)
            |- DATA.R16
 
 
-Ad 3)
-- Tile Attribute editor is now available from main menu under Tileset.
+Ad 4)
+- Tile Attribute editor is now available from main menu under "Tileset" -> "Tile attributes editor", or Ctrl+A shortcut
 - You can edit the current tileset used by current map. Swithching tileset would change it for current map too. 
 - You save map and tile attributes independently. When you save attributes, changes will apply immediately to your map.
 - There is "Test in-game" feature (F8) that would save attributes and launch current map in game.
@@ -147,7 +160,7 @@ Ad 3)
 - Added "Edit tile hint text" mode. Tile hint text is a text that displays in game when you move mouse cursor over that
   tile. In original tilesets this is used only on spice tiles.
 
-Ad 4)
+Ad 5)
 - In Terrain editing mode, there are now 4 common paint groups and 8 tileset-specific paint groups (12 paint groups total).
 - The 4 common pain groups are reserved for Thin Spice, Thick Spice, Concrete and Void. The latter two are not commonly
   used in maps, but are potentially usable for new designs, or in custom tilesets. For example concrete can be used for
@@ -163,7 +176,7 @@ Ad 4)
   dunes can be painted only on sand, concrete can be painted only on rock). This can be turned off in Settings menu.
 - Added support for block presets with "blank" tiles. You can now have presets of any shape (not strictly rectangle shape).
 
-Ad 5)
+Ad 6)
 - Added "name" property under [Basic] section for specification of user-friendly tileset name
 - Changed the way how rules (minimap color rules, fill area rules) are specified. Rules are now specified in this form:
   $attrubites_tile_must_have
