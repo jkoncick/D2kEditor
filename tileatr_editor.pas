@@ -141,6 +141,8 @@ type
     edRule: TEdit;
     lbRule: TLabel;
     cbAnyOf: TCheckBox;
+    stSideBitValues: TStaticText;
+    stSpeedModifier: TStaticText;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -235,7 +237,7 @@ var
 
 implementation
 
-uses main, _stringtable, _settings;
+uses main, _stringtable, _settings, _structures;
 
 {$R *.dfm}
 
@@ -927,6 +929,9 @@ end;
 procedure TTileAtrEditor.set_tile_attribute_value(value, not_value: int64);
 var
   color, color_editor: cardinal;
+  i: integer;
+  building_unit_owner, concrete_owner, spice_amount, unknown_owner, speed_modifier: integer;
+  str: string;
 begin
   TileAtrValue.Text := IntToHex(value, 10);
   TileAtrNotValue.Text := IntToHex(not_value, 10);
@@ -936,6 +941,18 @@ begin
     TileAtrColorEditor.Color := color
   else
     TileAtrColorEditor.Color := color_editor;
+  // Set side bit values label
+  building_unit_owner := value and 7;
+  concrete_owner := (value shr 17) and 7;
+  spice_amount := (value shr 20) and 7;
+  unknown_owner := (value shr 25) and 7;
+  stSideBitValues.Caption := Format('Building/Unit owner = %d  Concrete owner = %d  Spice amount = %d  Unknown owner = %d', [building_unit_owner, concrete_owner, spice_amount, unknown_owner]);
+  // Set speed modifier label
+  speed_modifier := (value shr 29) and 7;
+  str := 'Speed modifier ' + inttostr(speed_modifier) + ': ';
+  for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
+    str := str + Format('%s = %.3f  ', [Structures.speed.SpeedNameStrings[i], Round(Structures.speed.values[speed_modifier, i] * 100)/100]);
+  stSpeedModifier.Caption := str;
 end;
 
 procedure TTileAtrEditor.set_tile_attribute_rule(value, not_value: int64);

@@ -1,12 +1,12 @@
 object TileAtrEditor: TTileAtrEditor
   Left = 192
-  Top = 65
+  Top = 46
   Width = 1112
-  Height = 664
+  Height = 696
   Caption = 'Tile Attributes Editor'
   Color = clBtnFace
   Constraints.MaxWidth = 1112
-  Constraints.MinHeight = 664
+  Constraints.MinHeight = 696
   Constraints.MinWidth = 1112
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -28,7 +28,7 @@ object TileAtrEditor: TTileAtrEditor
     Left = 8
     Top = 8
     Width = 640
-    Height = 576
+    Height = 608
     OnMouseDown = TilesetImageMouseDown
     OnMouseMove = TilesetImageMouseMove
     OnMouseUp = TilesetImageMouseUp
@@ -57,7 +57,7 @@ object TileAtrEditor: TTileAtrEditor
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 591
+    Top = 623
     Width = 1104
     Height = 19
     Panels = <
@@ -86,7 +86,7 @@ object TileAtrEditor: TTileAtrEditor
     Left = 656
     Top = 8
     Width = 17
-    Height = 576
+    Height = 608
     Kind = sbVertical
     Max = 39
     PageSize = 0
@@ -154,9 +154,9 @@ object TileAtrEditor: TTileAtrEditor
       'Unknown (side bit 2)'
       'Unknown (side bit 3)'
       'Unknown/Unused'
-      'Rock (wheeled +10% speed)'
-      'Dunes (wheeled -50%, other -20% sp.)'
-      'Rough Rock (all -50% speed)')
+      'Speed modifier (bit1)'
+      'Speed modifier (bit2)'
+      'Speed modifier (bit3)')
     ParentFont = False
     Style = lbOwnerDrawFixed
     TabOrder = 3
@@ -366,6 +366,22 @@ object TileAtrEditor: TTileAtrEditor
     ShowHint = True
     TabOrder = 20
     OnClick = cbAnyOfClick
+  end
+  object stSideBitValues: TStaticText
+    Left = 680
+    Top = 588
+    Width = 409
+    Height = 17
+    AutoSize = False
+    TabOrder = 21
+  end
+  object stSpeedModifier: TStaticText
+    Left = 680
+    Top = 604
+    Width = 409
+    Height = 13
+    AutoSize = False
+    TabOrder = 22
   end
   object MainMenu: TMainMenu
     object File1: TMenuItem

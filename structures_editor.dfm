@@ -42,6 +42,8 @@ object StructuresEditor: TStructuresEditor
     ActivePage = PageBuildings
     Align = alClient
     TabOrder = 1
+    OnChange = PageControlChange
+    OnChanging = PageControlChanging
     object PageBuildings: TTabSheet
       Caption = 'Buildings   '
       object pnBuildingTypeList: TPanel
@@ -2355,7 +2357,7 @@ object StructuresEditor: TStructuresEditor
         Left = 168
         Top = 384
         Width = 337
-        Height = 65
+        Height = 97
         AutoSize = False
         WordWrap = True
       end

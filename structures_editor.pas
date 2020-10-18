@@ -483,6 +483,9 @@ type
     procedure Saveandtest1Click(Sender: TObject);
     procedure Reloadfiles1Click(Sender: TObject);
     procedure CopyfilestoModsfolder1Click(Sender: TObject);
+    // Page control events
+    procedure PageControlChanging(Sender: TObject; var AllowChange: Boolean);
+    procedure PageControlChange(Sender: TObject);
     // Buildings tab events
     procedure lbBuildingTypeListClick(Sender: TObject);
     procedure lbBuildingListClick(Sender: TObject);
@@ -594,8 +597,11 @@ type
     // Loading flag
     loading: boolean;
   public
+    // Dispatcher procedures
+    procedure update_sound_names;
     // Fill data procedures
     procedure fill_data;
+    procedure fill_page_data;
     procedure fill_building_data;
     procedure fill_unit_data;
     procedure fill_builexp_data;
@@ -648,14 +654,10 @@ uses _tileset, _stringtable, Clipbrd, map_stats_dialog, event_dialog,
 procedure TStructuresEditor.FormCreate(Sender: TObject);
 var
   tmp_strings: TStringList;
-  dummy: boolean;
   i: integer;
-  c1, c2, f: Int64;
 begin
   clipboard_format_building := RegisterClipboardFormat('D2kEditorBuildingTemplate');
   clipboard_format_unit := RegisterClipboardFormat('D2kEditorUnitTemplate');
-  QueryPerformanceFrequency(f);
-  QueryPerformanceCounter(c1);
   tmp_strings := TStringList.Create;
   // Side names
   for i := 0 to CNT_PLAYERS - 1 do
@@ -665,28 +667,6 @@ begin
   clbBuildingPrereq2OwnerSide.Items := tmp_strings;
   clbUnitOwnerSide.Items := tmp_strings;
   clbUnitPrereq1OwnerSide.Items := tmp_strings;
-  // Unit voices combo boxes
-  tmp_strings.Clear;
-  for i := 0 to SoundStringTable.get_table_size - 1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, false, dummy));
-  for i := 0 to 17 do
-  begin
-    cbxUnitVoices[i] := TComboBox.Create(self);
-    cbxUnitVoices[i].Style := csDropDownList;
-    cbxUnitVoices[i].Parent := gbUnitVoices;
-    cbxUnitVoices[i].Width := 109;
-    cbxUnitVoices[i].Left := 32 + 140 * (i div 9);
-    cbxUnitVoices[i].Top := 36 + 24 * (i mod 9);
-    cbxUnitVoices[i].Items := tmp_strings;
-    lblUnitVoices[i] := TLabel.Create(self);
-    lblUnitVoices[i].Parent := gbUnitVoices;
-    lblUnitVoices[i].Left := 8 + 140 * (i div 9);
-    lblUnitVoices[i].Top := 36 + 24 * (i mod 9);
-    lblUnitVoices[i].Caption := unit_voices[i mod 9] + ':';
-  end;
-  tmp_strings.Insert(0, '(none)');
-  cbxWeaponFiringSound.Items := tmp_strings;
-  cbxExplosionSound.Items := tmp_strings;
   // BuilExp controls
   for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
   begin
@@ -726,9 +706,6 @@ begin
     seBuilExpAnimNumFrames[i].Parent := pnBuilExpAnimations;
     seBuilExpAnimNumFrames[i].OnChange := RedrawBuilExpPreview;
   end;
-
-  QueryPerformanceCounter(c2);
-  //Caption := floattostr((c2-c1)/f);
   // Armour
   sgArmourValues.ColWidths[0] := 98;
   sgArmourValues.Cells[13, 0] := 'Radius';
@@ -746,7 +723,6 @@ begin
   end;
   rgTechposTechLevel.Items := tmp_strings;
   rgTechposTechLevel.ItemIndex := 1;
-  tmp_strings.Destroy;
   sgTechposData.Cells[0, 0] := 'Unit #';
   sgTechposData.Cells[1, 0] := 'Pos X';
   sgTechposData.Cells[2, 0] := 'Pos Y';
@@ -770,6 +746,10 @@ begin
   create_art_control_group(ACG_UNIT_ART,          true,  pnUnitArtControlGroup,           pnUnitArtList);
   create_art_control_group(ACG_PROJECTILE_ART,    true,  pnProjectileArtControlGroup,     pnProjectileArtList);
   create_art_control_group(ACG_ANIMATION_ART,     true,  pnAnimationArtControlGroup,      pnAnimationArtList);
+
+  tmp_strings.Destroy;
+
+  update_sound_names;
 end;
 
 procedure TStructuresEditor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -811,7 +791,17 @@ end;
 
 procedure TStructuresEditor.CopyfilestoModsfolder1Click(Sender: TObject);
 begin
-  beep;
+  ShowMessage('Not implemented.');
+end;
+
+procedure TStructuresEditor.PageControlChanging(Sender: TObject; var AllowChange: Boolean);
+begin
+  store_data;
+end;
+
+procedure TStructuresEditor.PageControlChange(Sender: TObject);
+begin
+  fill_page_data;
 end;
 
 procedure TStructuresEditor.lbBuildingTypeListClick(Sender: TObject);
@@ -1696,14 +1686,18 @@ begin
   // If this item was selected last time in the list box, move to the previous item
   if lcg.last_item_index_ptr^ = lcg.item_count_byte_ptr^ then
     Dec(lcg.last_item_index_ptr^);
-  // Erase weapon or explosion data
+  // Erase weapon data
   if group_index = LCG_WEAPONS then
     FillChar(Structures.templates.WeaponDefinitions[lcg.item_count_byte_ptr^], sizeof(TWeaponTemplate), 0);
+  // Erase explosion data
   if group_index = LCG_EXPLOSIONS then
   begin
     FillChar(Structures.templates.ExplosionDefinitions[lcg.item_count_byte_ptr^], sizeof(TExplosionTemplate), 0);
     Structures.templates.AnimationArtFlags[lcg.item_count_byte_ptr^] := 0;
   end;
+  // Erase warhead data
+  if group_index = LCG_WARHEADS then
+    FillChar(Structures.armour.WarheadEntries[lcg.item_count_byte_ptr^], sizeof(TWarheadEntry), 0);
   fill_data;
 end;
 
@@ -1869,11 +1863,41 @@ begin
   fill_data;
 end;
 
+procedure TStructuresEditor.update_sound_names;
+var
+  tmp_strings: TStringList;
+  dummy: boolean;
+  i: integer;
+begin
+  tmp_strings := TStringList.Create;
+  for i := 0 to SoundStringTable.get_table_size - 1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, false, dummy));
+  // Unit voices combo boxes
+  for i := 0 to 17 do
+  begin
+    cbxUnitVoices[i] := TComboBox.Create(self);
+    cbxUnitVoices[i].Style := csDropDownList;
+    cbxUnitVoices[i].Parent := gbUnitVoices;
+    cbxUnitVoices[i].Width := 109;
+    cbxUnitVoices[i].Left := 32 + 140 * (i div 9);
+    cbxUnitVoices[i].Top := 36 + 24 * (i mod 9);
+    cbxUnitVoices[i].Items := tmp_strings;
+    lblUnitVoices[i] := TLabel.Create(self);
+    lblUnitVoices[i].Parent := gbUnitVoices;
+    lblUnitVoices[i].Left := 8 + 140 * (i div 9);
+    lblUnitVoices[i].Top := 36 + 24 * (i mod 9);
+    lblUnitVoices[i].Caption := unit_voices[i mod 9] + ':';
+  end;
+  tmp_strings.Insert(0, '(none)');
+  cbxWeaponFiringSound.Items := tmp_strings;
+  cbxExplosionSound.Items := tmp_strings;
+  tmp_strings.Destroy;
+end;
+
 procedure TStructuresEditor.fill_data;
 var
   tmp_strings: TStringList;
   i: integer;
-  j: integer;
 begin
   tmp_strings := TStringList.Create;
 
@@ -2039,45 +2063,78 @@ begin
   lbSpeedTypeList.ItemIndex := last_speed_type_index;
   lbSpeedTypeListClick(nil);
 
-  // Fill template data
-  fill_building_data;
-  fill_unit_data;
-  fill_builexp_data;
-  fill_weapon_data;
-  fill_explosion_data;
-
-  // Armour
-  sgArmourValues.RowCount := Structures.armour.WarheadCount + 1;
-  for i := 0 to Length(Structures.armour.ArmourTypeStrings) - 1 do
-    sgArmourValues.Cells[i+1, 0] := Structures.prettify_structure_name(Structures.armour.ArmourTypeStrings[i]);
-  for i := 0 to Structures.armour.WarheadCount - 1 do
-    sgArmourValues.Cells[0, i+1] := Structures.armour.WarheadStrings[i];
-  for i := 0 to Structures.armour.WarheadCount - 1 do
-  begin
-    for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
-      sgArmourValues.Cells[j + 1, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].VersusArmorType[j]);
-    sgArmourValues.Cells[13, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown12);
-    sgArmourValues.Cells[14, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown16);
-  end;
-  // Speed
-  for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
-    sgSpeedValues.Cells[i+1, 0] := Structures.speed.SpeedNameStrings[i];
-  for i := 0 to Length(Structures.speed.Values) - 1 do
-    for j := 0 to Length(Structures.speed.Values[i]) - 1 do
-      sgSpeedValues.Cells[j+1, i+1] := floattostr(Round(Structures.speed.Values[i, j] * 100)/100);
-  // Other
-  tmp_strings.Clear;
-  for i := 0 to Length(Structures.templates.Other) - 1 do
-    tmp_strings.Add(Format('%s=%s', [Structures.templates_other[i], get_templates_other_cell_text(i, Structures.templates.Other[i])]));
-  vleTemplatesOther.Strings := tmp_strings;
-  vleTemplatesOther.Col := 0;
-  // Techpos
-  rgTechposTechLevelClick(nil);
-
   tmp_strings.Destroy;
 
+  // Fill specific page data
+  fill_page_data;
+end;
+
+procedure TStructuresEditor.fill_page_data;
+var
+  tmp_strings: TStringList;
+  i, j: integer;
+  statusbar_text: string;
+begin
+  statusbar_text := Structures.templates_bin_filename;
+  if PageControl.ActivePage = PageBuildings then
+    fill_building_data
+  else if PageControl.ActivePage = PageUnits then
+    fill_unit_data
+  else if PageControl.ActivePage = PageWeapons then
+    fill_weapon_data
+  else if PageControl.ActivePage = PageExplosions then
+    fill_explosion_data
+  else if PageControl.ActivePage = PageBuilExp then
+  begin
+    fill_builexp_data;
+    statusbar_text := Structures.builexp_bin_filename;
+  end
+  else if PageControl.ActivePage = PageArmour then
+  begin
+    // Armour
+    sgArmourValues.RowCount := Structures.armour.WarheadCount + 1;
+    for i := 0 to Length(Structures.armour.ArmourTypeStrings) - 1 do
+      sgArmourValues.Cells[i+1, 0] := Structures.prettify_structure_name(Structures.armour.ArmourTypeStrings[i]);
+    for i := 0 to Structures.armour.WarheadCount - 1 do
+      sgArmourValues.Cells[0, i+1] := Structures.armour.WarheadStrings[i];
+    for i := 0 to Structures.armour.WarheadCount - 1 do
+    begin
+      for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
+        sgArmourValues.Cells[j + 1, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].VersusArmorType[j]);
+      sgArmourValues.Cells[13, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown12);
+      sgArmourValues.Cells[14, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown16);
+    end;
+    statusbar_text := Structures.armour_bin_filename;
+  end else
+  if PageControl.ActivePage = PageSpeed then
+  begin
+    // Speed
+    for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
+      sgSpeedValues.Cells[i+1, 0] := Structures.speed.SpeedNameStrings[i];
+    for i := 0 to Length(Structures.speed.Values) - 1 do
+      for j := 0 to Length(Structures.speed.Values[i]) - 1 do
+        sgSpeedValues.Cells[j+1, i+1] := floattostr(Round(Structures.speed.Values[i, j] * 100)/100);
+    statusbar_text := Structures.speed_bin_filename;
+  end else
+  if PageControl.ActivePage = PageOther then
+  begin
+    // Other
+    tmp_strings := TStringList.Create;
+    for i := 0 to Length(Structures.templates.Other) - 1 do
+      tmp_strings.Add(Format('%s=%s', [Structures.templates_other[i], get_templates_other_cell_text(i, Structures.templates.Other[i])]));
+    vleTemplatesOther.Strings := tmp_strings;
+    vleTemplatesOther.Col := 0;
+    tmp_strings.Destroy;
+  end else
+  if PageControl.ActivePage = PageTechpos then
+  begin
+    // Techpos
+    rgTechposTechLevelClick(nil);
+    statusbar_text := Structures.techpos_bin_filename;
+  end;
+
   // Status bar
-  StatusBar.Panels[0].Text := Structures.templates_bin_filename;
+  StatusBar.Panels[0].Text := statusbar_text;
 end;
 
 procedure TStructuresEditor.fill_building_data;
@@ -2395,29 +2452,41 @@ procedure TStructuresEditor.store_data;
 var
   i, j: integer;
 begin
-  store_building_data;
-  store_unit_data;
-  store_builexp_data;
-  store_weapon_data;
-  store_explosion_data;
-
-  // Armour
-  for i := 0 to Structures.armour.WarheadCount - 1 do
+  if PageControl.ActivePage = PageBuildings then
+    store_building_data
+  else if PageControl.ActivePage = PageUnits then
+    store_unit_data
+  else if PageControl.ActivePage = PageBuilExp then
+    store_builexp_data
+  else if PageControl.ActivePage = PageWeapons then
+    store_weapon_data
+  else if PageControl.ActivePage = PageExplosions then
+    store_explosion_data
+  else if PageControl.ActivePage = PageArmour then
   begin
-    for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
-      Structures.armour.WarheadEntries[i].VersusArmorType[j] := StrToIntDef(sgArmourValues.Cells[j + 1, i + 1], 0);
-    Structures.armour.WarheadEntries[i].Unknown12 := StrToIntDef(sgArmourValues.Cells[13, i + 1], 0);
-    Structures.armour.WarheadEntries[i].Unknown16 := StrToIntDef(sgArmourValues.Cells[14, i + 1], 0);
+    // Armour
+    for i := 0 to Structures.armour.WarheadCount - 1 do
+    begin
+      for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
+        Structures.armour.WarheadEntries[i].VersusArmorType[j] := StrToIntDef(sgArmourValues.Cells[j + 1, i + 1], 0);
+      Structures.armour.WarheadEntries[i].Unknown12 := StrToIntDef(sgArmourValues.Cells[13, i + 1], 0);
+      Structures.armour.WarheadEntries[i].Unknown16 := StrToIntDef(sgArmourValues.Cells[14, i + 1], 0);
+    end;
+  end else
+  if PageControl.ActivePage = PageSpeed then
+  begin
+    // Speed
+    for i := 0 to Length(Structures.speed.Values) - 1 do
+      for j := 0 to Length(Structures.speed.Values[i]) - 1 do
+        Structures.speed.Values[i, j] := StrToFloatDef(sgSpeedValues.Cells[j+1, i+1], 1.0);
+  end else
+  if PageControl.ActivePage = PageOther then
+  begin
+    // Other
+    for i := 0 to Length(Structures.templates.Other) - 1 do
+      if Structures.templates_other_byte_types[i] = tobtNone then
+        Structures.templates.Other[i] := StrToIntDef(vleTemplatesOther.Cells[1, i+1], 0);
   end;
-  // Speed
-  for i := 0 to Length(Structures.speed.Values) - 1 do
-    for j := 0 to Length(Structures.speed.Values[i]) - 1 do
-      Structures.speed.Values[i, j] := StrToFloatDef(sgSpeedValues.Cells[j+1, i+1], 1.0);
-  // Other
-  for i := 0 to Length(Structures.templates.Other) - 1 do
-    if Structures.templates_other_byte_types[i] = tobtNone then
-      Structures.templates.Other[i] := StrToIntDef(vleTemplatesOther.Cells[1, i+1], 0);
-
 end;
 
 procedure TStructuresEditor.store_building_data;
@@ -2493,7 +2562,6 @@ begin
   // Store building name
   if edBuildingName.Text <> Structures.templates.BuildingNameStrings[index] then
   begin
-    beep;
     store_c_string(edBuildingName.Text, Addr(Structures.templates.BuildingNameStrings[index]), Length(Structures.templates.BuildingNameStrings[index]));
     store_data;
     last_building_index := lbBuildingList.ItemIndex;
@@ -2561,7 +2629,6 @@ begin
   // Store unit name
   if edUnitName.Text <> Structures.templates.UnitNameStrings[index] then
   begin
-    beep;
     store_c_string(edUnitName.Text, Addr(Structures.templates.UnitNameStrings[index]), Length(Structures.templates.UnitNameStrings[index]));
     store_data;
     last_unit_index := lbUnitList.ItemIndex;
@@ -2882,6 +2949,11 @@ begin
   art_width := strtointdef(edBuildingArtWidth.Text, 0);
   art_height := strtointdef(edBuildingArtHeight.Text, 0);
   imgBuildingImage.Canvas.CopyMode := cmSrcCopy;
+  // Fill image with background color
+  imgBuildingImage.Canvas.Pen.Color := clCream;
+  imgBuildingImage.Canvas.Brush.Color := clCream;
+  imgBuildingImage.Canvas.Brush.Style := bsSolid;
+  imgBuildingImage.Canvas.Rectangle(0, 0, imgBuildingImage.Width, imgBuildingImage.Height);
   // Find proper paint tile group with buildable tiles
   paint_tile_group := 0;
   for i := 0 to cnt_paint_tile_groups - 1 do
@@ -3016,8 +3088,8 @@ begin
     end;
   // Draw background
   imgUnitImage.Canvas.Brush.Style := bsSolid;
-  imgUnitImage.Canvas.Pen.Color := clWhite;
-  imgUnitImage.Canvas.Brush.Color := clWhite;
+  imgUnitImage.Canvas.Pen.Color := clCream;
+  imgUnitImage.Canvas.Brush.Color := clCream;
   imgUnitImage.Canvas.Rectangle(0, 0, 80, 80);
   imgUnitImage.Canvas.Pen.Color := $E0E0E0;
   imgUnitImage.Canvas.Brush.Color := $E0E0E0;
