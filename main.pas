@@ -344,7 +344,6 @@ type
   end;
 
 var
-  current_dir: String;
   MainWindow: TMainWindow;
 
 implementation

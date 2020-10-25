@@ -227,14 +227,9 @@ implementation
 uses SysUtils, Math, main, _tileset, _stringtable, _settings, _structures;
 
 procedure TMission.init;
-var
-  ai_file: file of byte;
 begin
   // Load default AI
-  AssignFile(ai_file, current_dir + 'config/default_ai.misai');
-  Reset(ai_file);
-  BlockRead(ai_file, default_ai[1], Length(default_ai)-1);
-  CloseFile(ai_file);
+  load_binary_file(current_dir + 'config/default_ai.misai', default_ai[1], Length(default_ai)-1);
 end;
 
 function TMission.get_mis_filename(filename: String): String;
@@ -249,13 +244,9 @@ end;
 
 procedure TMission.load_mis_file(filename: String);
 var
-  mis_file: file of TMisFile;
   tileset_name: String;
 begin
-  AssignFile(mis_file, filename);
-  Reset(mis_file);
-  Read(mis_file, mis_data);
-  CloseFile(mis_file);
+  load_binary_file(filename, mis_data, sizeof(mis_data));
   mis_filename := filename;
   mis_modified := false;
 
@@ -265,13 +256,8 @@ begin
 end;
 
 procedure TMission.save_mis_file(filename: String);
-var
-  mis_file: file of TMisFile;
 begin
-  AssignFile(mis_file, filename);
-  ReWrite(mis_file);
-  Write(mis_file, mis_data);
-  CloseFile(mis_file);
+  save_binary_file(filename, mis_data, sizeof(mis_data));
 
   if ExtractFileName(filename) <> '_TESTMAP.MIS' then
     mis_modified := false;

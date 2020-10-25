@@ -70,7 +70,7 @@ implementation
 
 uses
   SysUtils, StdCtrls, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, structures_editor;
+  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, structures_editor, _utils;
 
 procedure TSettings.load_precreate_editor_settings;
 var

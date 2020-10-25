@@ -784,28 +784,16 @@ begin
 end;
 
 procedure TMissionDialog.btnExportAIClick(Sender: TObject);
-var
-  ai_file: file of byte;
 begin
   if ExportAIDialog.Execute then
-  begin
-    AssignFile(ai_file, ExportAIDialog.FileName);
-    ReWrite(ai_file);
-    BlockWrite(ai_file, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
-    CloseFile(ai_file);
-  end;
+    save_binary_file(ExportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
 end;
 
 procedure TMissionDialog.btnImportAIClick(Sender: TObject);
-var
-  ai_file: file of byte;
 begin
   if ImportAIDialog.Execute then
   begin
-    AssignFile(ai_file, ImportAIDialog.FileName);
-    Reset(ai_file);
-    BlockRead(ai_file, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
-    CloseFile(ai_file);
+    load_binary_file(ImportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
     fill_ai_values;
   end;
 end;

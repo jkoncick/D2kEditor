@@ -535,7 +535,6 @@ type
   public
     // General procedures
     procedure init;
-    function find_file(pattern: String): String;
     procedure do_pending_actions(skip: boolean);
     function get_status: String;
 
@@ -623,29 +622,6 @@ begin
   do_pending_actions(true);
 end;
 
-function TStructures.find_file(pattern: String): String;
-var
-  tmp_filename, tmp_filename2: String;
-begin
-  // 1st try: editor's folder
-  tmp_filename := current_dir + pattern;
-  // 2nd try: game's folder
-  tmp_filename2 := Settings.GamePath + '\' + pattern;
-  if FileExists(tmp_filename2) then
-    tmp_filename := tmp_filename2;
-  // 3rd try: CustomCampaignData folder
-  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\' + MissionDialog.cbModsFolder.Text + '\' + pattern;
-  if FileExists(tmp_filename2) then
-    tmp_filename := tmp_filename2;
-  // Check if file exists
-  if not FileExists(tmp_filename) then
-  begin
-    Application.MessageBox(PChar('Could not find file ' + pattern), 'Error loading configuration or graphics file', MB_OK or MB_ICONERROR);
-    tmp_filename := '';
-  end;
-  result := tmp_filename;
-end;
-
 procedure TStructures.do_pending_actions(skip: boolean);
 begin
   if pending_update_mis_ai_properties then
@@ -692,17 +668,13 @@ end;
 procedure TStructures.load_templates_bin(force: boolean);
 var
   tmp_filename: String;
-  templates_bin_file: file of TTemplatesBinFile;
 begin
   tmp_filename := find_file('Data\bin\Templates.bin');
   if (tmp_filename = '') or ((tmp_filename = templates_bin_filename) and not force) then
     exit;
   templates_bin_filename := tmp_filename;
 
-  AssignFile(templates_bin_file, tmp_filename);
-  Reset(templates_bin_file);
-  Read(templates_bin_file, templates);
-  CloseFile(templates_bin_file);
+  load_binary_file(tmp_filename, templates, sizeof(templates));
 
   compute_image_indexes;
   compute_building_and_unit_side_versions;
@@ -720,15 +692,10 @@ begin
 end;
 
 procedure TStructures.save_templates_bin;
-var
-  templates_bin_file: file of TTemplatesBinFile;
 begin
   if templates_bin_filename = '' then
     exit;
-  AssignFile(templates_bin_file, templates_bin_filename);
-  Rewrite(templates_bin_file);
-  Write(templates_bin_file, templates);
-  CloseFile(templates_bin_file);
+  save_binary_file(templates_bin_filename, templates, sizeof(templates));
 end;
 
 procedure TStructures.compute_image_indexes;
@@ -961,139 +928,98 @@ end;
 procedure TStructures.load_builexp_bin(force: boolean);
 var
   tmp_filename: String;
-  builexp_bin_file: file of TBuilExpEntry;
 begin
   tmp_filename := find_file('Data\bin\BUILEXP.BIN');
   if (tmp_filename = '') or (tmp_filename = builexp_bin_filename) then
     exit;
   builexp_bin_filename := tmp_filename;
   // Read BUILEXP.BIN file
-  AssignFile(builexp_bin_file, tmp_filename);
-  Reset(builexp_bin_file);
-  BlockRead(builexp_bin_file, builexp, MAX_BUILDING_TYPES);
-  CloseFile(builexp_bin_file);
-
+  load_binary_file(tmp_filename, builexp, sizeof(builexp));
   // Update all occurences in editor
   pending_fill_structures_editor_data := true;
 end;
 
 procedure TStructures.save_builexp_bin;
-var
-  builexp_bin_file: file of TBuilExpEntry;
 begin
   if builexp_bin_filename = '' then
     exit;
-  AssignFile(builexp_bin_file, builexp_bin_filename);
-  Rewrite(builexp_bin_file);
-  BlockWrite(builexp_bin_file, builexp, MAX_BUILDING_TYPES);
-  CloseFile(builexp_bin_file);
+  save_binary_file(builexp_bin_filename, builexp, sizeof(builexp));
 end;
 
 procedure TStructures.load_armour_bin(force: boolean);
 var
   tmp_filename: String;
-  armour_bin_file: file of TArmourBinFile;
 begin
   tmp_filename := find_file('Data\bin\ARMOUR.BIN');
   if (tmp_filename = '') or ((tmp_filename = armour_bin_filename) and not force) then
     exit;
   armour_bin_filename := tmp_filename;
   // Read ARMOUR.BIN file
-  AssignFile(armour_bin_file, tmp_filename);
-  Reset(armour_bin_file);
-  Read(armour_bin_file, armour);
-  CloseFile(armour_bin_file);
+  load_binary_file(tmp_filename, armour, sizeof(armour));
   // Update all occurences in editor
   pending_fill_structures_editor_data := true;
 end;
 
 
 procedure TStructures.save_armour_bin;
-var
-  armour_bin_file: file of TArmourBinFile;
 begin
   if armour_bin_filename = '' then
     exit;
-  AssignFile(armour_bin_file, armour_bin_filename);
-  Rewrite(armour_bin_file);
-  Write(armour_bin_file, armour);
-  CloseFile(armour_bin_file);
+  save_binary_file(armour_bin_filename, armour, sizeof(armour));
 end;
 
 procedure TStructures.load_speed_bin(force: boolean);
 var
   tmp_filename: String;
-  speed_bin_file: file of TSpeedBinFile;
 begin
   tmp_filename := find_file('Data\bin\SPEED.BIN');
   if (tmp_filename = '') or ((tmp_filename = speed_bin_filename) and not force) then
     exit;
   speed_bin_filename := tmp_filename;
   // Read SPEED.BIN file
-  AssignFile(speed_bin_file, tmp_filename);
-  Reset(speed_bin_file);
-  Read(speed_bin_file, speed);
-  CloseFile(speed_bin_file);
+  load_binary_file(tmp_filename, speed, sizeof(speed));
   // Update all occurences in editor
   pending_fill_structures_editor_data := true;
 end;
 
 procedure TStructures.save_speed_bin;
-var
-  speed_bin_file: file of TSpeedBinFile;
 begin
   if speed_bin_filename = '' then
     exit;
-  AssignFile(speed_bin_file, speed_bin_filename);
-  Rewrite(speed_bin_file);
-  Write(speed_bin_file, speed);
-  CloseFile(speed_bin_file);
+  save_binary_file(speed_bin_filename, speed, sizeof(speed));
 end;
 
 procedure TStructures.load_techpos_bin(force: boolean);
 var
   tmp_filename: String;
-  techpos_bin_file: file of byte;
 begin
   tmp_filename := find_file('Data\bin\TECHPOS.BIN');
   if (tmp_filename = '') or ((tmp_filename = techpos_bin_filename) and not force) then
     exit;
   techpos_bin_filename := tmp_filename;
   // Read TECHPOS.BIN file
-  AssignFile(techpos_bin_file, tmp_filename);
-  Reset(techpos_bin_file);
-  BlockRead(techpos_bin_file, techpos, sizeof(techpos));
-  CloseFile(techpos_bin_file);
+  load_binary_file(tmp_filename, techpos, sizeof(techpos));
   // Update all occurences in editor
   pending_fill_structures_editor_data := true;
 end;
 
 procedure TStructures.save_techpos_bin;
-var
-  techpos_bin_file: file of byte;
 begin
   if techpos_bin_filename = '' then
     exit;
-  AssignFile(techpos_bin_file, techpos_bin_filename);
-  Rewrite(techpos_bin_file);
-  BlockWrite(techpos_bin_file, techpos, sizeof(techpos));
-  CloseFile(techpos_bin_file);
+  save_binary_file(techpos_bin_filename, techpos, sizeof(techpos));
 end;
 
 procedure TStructures.load_tiledata_bin;
 var
   tmp_filename: String;
-  tiledatafile: file of TTileDataEntry;
 begin
   tmp_filename := find_file('Data\bin\TILEDATA.BIN');
   if (tmp_filename = '') or (tmp_filename = tiledata_bin_filename) then
     exit;
   tiledata_bin_filename := tmp_filename;
   // Read TILEDATA.BIN file
-  AssignFile(tiledatafile, tmp_filename);
-  Reset(tiledatafile);
-  BlockRead(tiledatafile, tiledata, cnt_tiledata_entries);
-  CloseFile(tiledatafile);
+  load_binary_file(tmp_filename, tiledata, sizeof(tiledata));
 
   // Add misc objects into TILEDATA.BIN
   register_misc_objects_in_tiledata;
@@ -1113,7 +1039,6 @@ end;
 procedure TStructures.load_colours_bin;
 var
   tmp_filename, tmp_filename2: String;
-  colours_bin_file: file of byte;
   color: Cardinal;
   i: integer;
 begin
@@ -1141,10 +1066,7 @@ begin
     exit;
   colours_bin_filename := tmp_filename;
   // Load COLOURS.BIN file
-  AssignFile(colours_bin_file, tmp_filename);
-  Reset(colours_bin_file);
-  BlockRead(colours_bin_file, colours[0,0], sizeof(colours));
-  CloseFile(colours_bin_file);
+  load_binary_file(tmp_filename, colours, sizeof(colours));
   for i := 0 to CNT_PLAYERS - 1 do
   begin
     color := 0;
