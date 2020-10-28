@@ -255,6 +255,7 @@ type
     procedure fill_grids;
     procedure update_player_list(player_list: TStringList);
     procedure update_structures_list;
+    procedure update_sound_names;
     // Event-related procedures
     procedure select_event(index: integer);
     procedure fill_event_ui(event_valid: boolean);
@@ -290,7 +291,6 @@ var
   i: integer;
   SR: TSearchRec;
   StringList: TStrings;
-  dummy: boolean;
 begin
   // Initialize window size and position
   Left := 0;
@@ -354,11 +354,6 @@ begin
   for i:= 0 to Length(comparison_function)-1 do
     StringList.Add(comparison_function[i]);
   cbTimerCompareFunc.Items := StringList;
-  StringList.Clear;
-  // Initialize sound names
-  for i := 0 to SoundStringTable.get_table_size - 1 do
-    StringList.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, false, dummy));
-  cbSoundName.Items := StringList;
   StringList.Clear;
   // Initialize music names
   if FindFirst(Settings.GamePath + '\Data\Music\*.AUD', 0, SR) = 0 then
@@ -511,6 +506,18 @@ begin
     tmp_strings.Add(inttostr(i) + ' - ' + Structures.get_unit_name_str(i));
   UnitSelectionList.Items := tmp_strings;
   cbUnitType.Items := tmp_strings;
+  tmp_strings.Destroy;
+end;
+
+procedure TEventDialog.update_sound_names;
+var
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  for i := 0 to StringTable.samples_uib.Count - 1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
+  cbSoundName.Items := tmp_strings;
   tmp_strings.Destroy;
 end;
 

@@ -148,6 +148,7 @@ type
     Showstatus2: TMenuItem;
     Structureseditor1: TMenuItem;
     N14: TMenuItem;
+    Translatestructurenames1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -430,9 +431,6 @@ begin
   end;
   // Initialize mission
   Mission.init;
-  // Load string table
-  StringTable.load_from_file(Settings.GamePath + '\Data\UI_DATA\TEXT.UIB');
-  SoundStringTable.load_from_file(Settings.GamePath + '\Data\UI_DATA\samples.uib');
   // Load and initialize graphics
   Renderer.init;
   minimap_buffer := TBitmap.Create;
@@ -463,6 +461,7 @@ begin
   Hidepresetwindow1.Checked := Settings.HidePresetWindow;
   Restrictpainting1.Checked := Settings.RestrictPainting;
   Userandompaintmap1.Checked := Settings.UseRandomPaintMap;
+  Translatestructurenames1.Checked := Settings.TranslateStructureNames;
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -1012,6 +1011,7 @@ begin
   12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
   13: begin Settings.RestrictPainting := (Sender as TMenuItem).Checked end;
   14: begin Settings.UseRandomPaintMap := (Sender as TMenuItem).Checked end;
+  15: begin Settings.TranslateStructureNames := (Sender as TMenuItem).Checked; update_structures_list; end;
   20:
     begin
       if GridColorDialog.Execute then

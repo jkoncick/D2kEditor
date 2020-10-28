@@ -667,6 +667,21 @@ begin
   clbBuildingPrereq2OwnerSide.Items := tmp_strings;
   clbUnitOwnerSide.Items := tmp_strings;
   clbUnitPrereq1OwnerSide.Items := tmp_strings;
+  // Unit voices combo boxes
+  for i := 0 to 17 do
+  begin
+    cbxUnitVoices[i] := TComboBox.Create(self);
+    cbxUnitVoices[i].Style := csDropDownList;
+    cbxUnitVoices[i].Width := 109;
+    cbxUnitVoices[i].Left := 32 + 140 * (i div 9);
+    cbxUnitVoices[i].Top := 36 + 24 * (i mod 9);
+    cbxUnitVoices[i].Parent := gbUnitVoices;
+    lblUnitVoices[i] := TLabel.Create(self);
+    lblUnitVoices[i].Left := 8 + 140 * (i div 9);
+    lblUnitVoices[i].Top := 36 + 24 * (i mod 9);
+    lblUnitVoices[i].Caption := unit_voices[i mod 9] + ':';
+    lblUnitVoices[i].Parent := gbUnitVoices;
+  end;
   // BuilExp controls
   for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
   begin
@@ -748,8 +763,6 @@ begin
   create_art_control_group(ACG_ANIMATION_ART,     true,  pnAnimationArtControlGroup,      pnAnimationArtList);
 
   tmp_strings.Destroy;
-
-  update_sound_names;
 end;
 
 procedure TStructuresEditor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1866,28 +1879,14 @@ end;
 procedure TStructuresEditor.update_sound_names;
 var
   tmp_strings: TStringList;
-  dummy: boolean;
   i: integer;
 begin
   tmp_strings := TStringList.Create;
-  for i := 0 to SoundStringTable.get_table_size - 1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + SoundStringTable.get_text(i, false, dummy));
+  for i := 0 to StringTable.samples_uib.Count - 1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
   // Unit voices combo boxes
   for i := 0 to 17 do
-  begin
-    cbxUnitVoices[i] := TComboBox.Create(self);
-    cbxUnitVoices[i].Style := csDropDownList;
-    cbxUnitVoices[i].Parent := gbUnitVoices;
-    cbxUnitVoices[i].Width := 109;
-    cbxUnitVoices[i].Left := 32 + 140 * (i div 9);
-    cbxUnitVoices[i].Top := 36 + 24 * (i mod 9);
     cbxUnitVoices[i].Items := tmp_strings;
-    lblUnitVoices[i] := TLabel.Create(self);
-    lblUnitVoices[i].Parent := gbUnitVoices;
-    lblUnitVoices[i].Left := 8 + 140 * (i div 9);
-    lblUnitVoices[i].Top := 36 + 24 * (i mod 9);
-    lblUnitVoices[i].Caption := unit_voices[i mod 9] + ':';
-  end;
   tmp_strings.Insert(0, '(none)');
   cbxWeaponFiringSound.Items := tmp_strings;
   cbxExplosionSound.Items := tmp_strings;

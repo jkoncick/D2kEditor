@@ -6,24 +6,22 @@ uses
   ValEdit, IniFiles, Classes;
 
 type
-  TStringTableEntry = record
-    key: String;
-    text: String;
-  end;
-
-type
   TStringTable = class
 
-  private
-    file_name: String;
-    entries: array of TStringTableEntry;
-    num_entries: integer;
+  public
+    text_uib_filename: string;
+    samples_uib_filename: string;
+
+    text_uib: TStringList;
+    samples_uib: TStringList;
     custom_text_value_list: TValueListEditor;
 
   public
+    procedure init;
     procedure init_value_list(value_list: TValueListEditor);
-    function load_from_file(filename: String): boolean;
-    function get_table_size: integer;
+    procedure load_text_uib(text_uib_name: string);
+    procedure load_samples_uib;
+    procedure load_uib_file(filename: String; storage: TStringList);
     function get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
     procedure set_custom_text(index: integer; text: String);
     procedure remove_custom_text(index: integer);
@@ -36,58 +34,91 @@ type
 
 var
   StringTable: TStringTable;
-  SoundStringTable: TStringTable;
 
 implementation
 
-uses SysUtils;
+uses SysUtils, _utils, event_dialog, tileatr_editor, structures_editor;
+
+procedure TStringTable.init;
+begin
+  text_uib := TStringList.Create;
+  samples_uib := TStringList.Create;
+  load_text_uib('');
+  load_samples_uib;
+end;
 
 procedure TStringTable.init_value_list(value_list: TValueListEditor);
 begin
   custom_text_value_list := value_list;
 end;
 
-function TStringTable.load_from_file(filename: String): boolean;
+procedure TStringTable.load_text_uib(text_uib_name: string);
 var
-  string_table_file: file of byte;
+  tmp_filename: String;
+begin
+  // Find TEXT.UIB file
+  if text_uib_name = '' then
+    text_uib_name := 'text.uib';
+  tmp_filename := find_file('Data\UI_DATA\' + text_uib_name, '');
+  if tmp_filename = '' then
+    tmp_filename := find_file('Data\UI_DATA\text.uib', 'string table');
+  if (tmp_filename = '') or (tmp_filename = text_uib_filename) then
+    exit;
+  text_uib_filename := tmp_filename;
+  // Load TEXT.UIB file
+  load_uib_file(tmp_filename, text_uib);
+  // Update all occurences
+  TileAtrEditor.update_tile_hint_text_list;
+end;
+
+procedure TStringTable.load_samples_uib;
+var
+  tmp_filename: String;
+begin
+  // Find SAMPLES.UIB file
+  tmp_filename := find_file('Data\UI_DATA\samples.uib', 'sound string table');
+  if (tmp_filename = '') or (tmp_filename = samples_uib_filename) then
+    exit;
+  samples_uib_filename := tmp_filename;
+  // Load SAMPLES.UIB file
+  load_uib_file(tmp_filename, samples_uib);
+  // Update all occurences
+  EventDialog.update_sound_names;
+  StructuresEditor.update_sound_names;
+end;
+
+procedure TStringTable.load_uib_file(filename: String; storage: TStringList);
+var
+  uib_file: file of byte;
   buffer: array of byte;
   file_size: integer;
+  num_entries: integer;
   pos: integer;
   len: integer;
   index: integer;
+  key, value: string;
 begin
-  result := false;
-  if not FileExists(filename) then
-    exit;
-  if filename = file_name then
-    exit;
-  AssignFile(string_table_file, filename);
-  Reset(string_table_file);
-  file_size := FileSize(string_table_file);
+  AssignFile(uib_file, filename);
+  Reset(uib_file);
+  file_size := FileSize(uib_file);
   SetLength(buffer, file_size);
-  BlockRead(string_table_file, buffer[0], file_size);
-  CloseFile(string_table_file);
-  file_name := filename;
+  BlockRead(uib_file, buffer[0], file_size);
+  CloseFile(uib_file);
+  storage.Clear;
   num_entries := buffer[0] + buffer[1] * 256;
-  SetLength(entries, num_entries);
   pos := 4;
   index := 0;
   while (pos < file_size) and (index < num_entries) do
   begin
     len := buffer[pos] + buffer[pos+1] * 256;
-    SetString(entries[index].key, PChar(Addr(buffer[pos+2])), len-1);
+    SetString(key, PChar(Addr(buffer[pos+2])), len-1);
     pos := pos + len + 2;
     len := buffer[pos] + buffer[pos+1] * 256;
-    SetString(entries[index].text, PChar(Addr(buffer[pos+2])), len-1);
+    SetString(value, PChar(Addr(buffer[pos+2])), len-1);
     pos := pos + len + 2;
     inc(index);
+    storage.Add(Format('%s=%s', [key, value]));
   end;
-  result := true;
-end;
-
-function TStringTable.get_table_size: integer;
-begin
-  result := num_entries;
 end;
 
 function TStringTable.get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
@@ -100,10 +131,10 @@ begin
     result := custom_text_value_list.Cells[1,row];
     is_custom := true;
   end else
-  if (index >= num_entries) or (index < 0) then
+  if (index >= text_uib.Count) or (index < 0) then
     result := '(undefined)'
   else
-    result := entries[index].text;
+    result := text_uib.ValueFromIndex[index];
 end;
 
 procedure TStringTable.set_custom_text(index: integer; text: String);

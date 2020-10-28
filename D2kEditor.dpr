@@ -35,7 +35,6 @@ begin
   Mission := TMission.Create;
   Tileset := TTileset.Create;
   StringTable := TStringTable.Create;
-  SoundStringTable := TStringTable.Create;
   Settings := TSettings.Create;
   //--RandomGen := TRandomGen.Create;
   Launcher := TLauncher.Create;
@@ -53,6 +52,7 @@ begin
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
 
+  StringTable.init;
   Structures.init;
   // Load map given as first parameter
   if ParamCount > 0 then

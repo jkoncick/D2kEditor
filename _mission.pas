@@ -437,7 +437,7 @@ begin
   end;
   case event_type of
     etAllegiance:   contents := Structures.player_info[event.player].name + ' -> ' + Structures.player_info[event.allegiance_target].name + ' (' + allegiance_type[event.allegiance_type] + ')';
-    etPlaySound:    contents := inttostr(event.value) + ' - ' + SoundStringTable.get_text(event.value, false, dummy);
+    etPlaySound:    contents := inttostr(event.value) + ' - ' + StringTable.samples_uib.ValueFromIndex[event.value];
     etSetBuildRate: contents := inttostr(event.value);
     etSetAttackBuildingRate: contents := inttostr(event.value);
     etSetCash:      contents := inttostr(event.value);

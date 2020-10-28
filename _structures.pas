@@ -598,7 +598,7 @@ var
 
 implementation
 
-uses Forms, IniFiles, main, set_dialog, test_map_dialog, map_stats_dialog, mission_dialog, event_dialog, _settings, _mission, structures_editor;
+uses Forms, IniFiles, main, set_dialog, test_map_dialog, map_stats_dialog, mission_dialog, event_dialog, _settings, _mission, _stringtable, structures_editor;
 
 procedure TStructures.init;
 begin
@@ -669,7 +669,7 @@ procedure TStructures.load_templates_bin(force: boolean);
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('Data\bin\Templates.bin');
+  tmp_filename := find_file('Data\bin\Templates.bin', 'game');
   if (tmp_filename = '') or ((tmp_filename = templates_bin_filename) and not force) then
     exit;
   templates_bin_filename := tmp_filename;
@@ -835,10 +835,19 @@ begin
 end;
 
 function TStructures.get_unit_type_str(index: integer): String;
+var
+  row: integer;
 begin
   if index < templates.UnitTypeCount then
-    result := prettify_structure_name(templates.UnitTypeStrings[index])
-  else
+  begin
+    row := -1;
+    if settings.TranslateStructureNames then
+      row := StringTable.text_uib.IndexOfName(templates.UnitTypeStrings[index]);
+    if row <> -1 then
+      result := StringTable.text_uib.ValueFromIndex[row]
+    else
+      result := prettify_structure_name(templates.UnitTypeStrings[index])
+  end else
     result := 'UNDEFINED#' + inttostr(index);
 end;
 
@@ -851,10 +860,19 @@ begin
 end;
 
 function TStructures.get_building_type_str(index: integer): String;
+var
+  row: integer;
 begin
   if index < templates.BuildingTypeCount then
-    result := prettify_structure_name(templates.BuildingTypeStrings[index])
-  else
+  begin
+    row := -1;
+    if settings.TranslateStructureNames then
+      row := StringTable.text_uib.IndexOfName(templates.BuildingTypeStrings[index]);
+    if row <> -1 then
+      result := StringTable.text_uib.ValueFromIndex[row]
+    else
+      result := prettify_structure_name(templates.BuildingTypeStrings[index]);
+  end else
     result := 'UNDEFINED#' + inttostr(index);
 end;
 
@@ -929,7 +947,7 @@ procedure TStructures.load_builexp_bin(force: boolean);
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('Data\bin\BUILEXP.BIN');
+  tmp_filename := find_file('Data\bin\BUILEXP.BIN', 'game');
   if (tmp_filename = '') or (tmp_filename = builexp_bin_filename) then
     exit;
   builexp_bin_filename := tmp_filename;
@@ -950,7 +968,7 @@ procedure TStructures.load_armour_bin(force: boolean);
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('Data\bin\ARMOUR.BIN');
+  tmp_filename := find_file('Data\bin\ARMOUR.BIN', 'game');
   if (tmp_filename = '') or ((tmp_filename = armour_bin_filename) and not force) then
     exit;
   armour_bin_filename := tmp_filename;
@@ -972,7 +990,7 @@ procedure TStructures.load_speed_bin(force: boolean);
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('Data\bin\SPEED.BIN');
+  tmp_filename := find_file('Data\bin\SPEED.BIN', 'game');
   if (tmp_filename = '') or ((tmp_filename = speed_bin_filename) and not force) then
     exit;
   speed_bin_filename := tmp_filename;
@@ -993,7 +1011,7 @@ procedure TStructures.load_techpos_bin(force: boolean);
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('Data\bin\TECHPOS.BIN');
+  tmp_filename := find_file('Data\bin\TECHPOS.BIN', 'game');
   if (tmp_filename = '') or ((tmp_filename = techpos_bin_filename) and not force) then
     exit;
   techpos_bin_filename := tmp_filename;
@@ -1014,7 +1032,7 @@ procedure TStructures.load_tiledata_bin;
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('Data\bin\TILEDATA.BIN');
+  tmp_filename := find_file('Data\bin\TILEDATA.BIN', 'game');
   if (tmp_filename = '') or (tmp_filename = tiledata_bin_filename) then
     exit;
   tiledata_bin_filename := tmp_filename;
@@ -1097,7 +1115,7 @@ var
   image_data_size: integer;
   total_entry_size: integer;
 begin
-  tmp_filename := find_file('Data\DATA.R16');
+  tmp_filename := find_file('Data\DATA.R16', 'graphics');
   if (tmp_filename = '') or (tmp_filename = data_r16_filename) then
     exit;
   data_r16_filename := tmp_filename;
@@ -1404,7 +1422,7 @@ var
   ini: TMemIniFile;
   tmp_strings: TStringList;
 begin
-  tmp_filename := find_file('config\mis_ai_properties.ini');
+  tmp_filename := find_file('config\mis_ai_properties.ini', 'configuration');
   if tmp_filename = '' then
     exit;
   // Load misai properties from ini file
@@ -1473,7 +1491,7 @@ procedure TStructures.load_graphics_misc_objects;
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('graphics\misc_objects.bmp');
+  tmp_filename := find_file('graphics\misc_objects.bmp', 'graphics');
   if (tmp_filename = '') or (tmp_filename = graphics_misc_objects_filename) then
     exit;
   graphics_misc_objects_filename := tmp_filename;
@@ -1494,7 +1512,7 @@ var
   i: integer;
   sname : string;
 begin
-  tmp_filename := find_file('config\misc_objects.ini');
+  tmp_filename := find_file('config\misc_objects.ini', 'configuration');
   if (tmp_filename = '') or (tmp_filename = misc_objects_ini_filename) then
     exit;
   misc_objects_ini_filename := tmp_filename;
@@ -1592,7 +1610,7 @@ var
   tmp_filename: String;
   ini: TMemIniFile;
 begin
-  tmp_filename := find_file('config\limits.ini');
+  tmp_filename := find_file('config\limits.ini', 'configuration');
   if (tmp_filename = '') or (tmp_filename = limits_ini_filename) then
     exit;
   limits_ini_filename := tmp_filename;
@@ -1610,7 +1628,7 @@ var
   i: integer;
   prefix: string;
 begin
-  tmp_filename := find_file('config\templates_other.txt');
+  tmp_filename := find_file('config\templates_other.txt', 'configuration');
   if (tmp_filename = '') or (tmp_filename = templates_other_txt_filename) then
     exit;
   templates_other_txt_filename := tmp_filename;

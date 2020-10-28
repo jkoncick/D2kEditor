@@ -648,6 +648,12 @@ object MainWindow: TMainWindow
         Caption = 'Use random paint map'
         OnClick = SettingChange
       end
+      object Translatestructurenames1: TMenuItem
+        Tag = 15
+        AutoCheck = True
+        Caption = 'Translate structure names'
+        OnClick = SettingChange
+      end
       object More1: TMenuItem
         Caption = 'More...'
         OnClick = More1Click

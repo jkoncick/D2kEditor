@@ -24,7 +24,7 @@ type
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);
 function IntToBin(val: integer; width: integer): string;
 function BinToInt(bin: string): integer;
-function find_file(pattern: String): String;
+function find_file(name_pattern: String; description: String): String;
 procedure load_binary_file(filename: String; var data; size: integer);
 procedure save_binary_file(filename: String; var data; size: integer);
 
@@ -71,24 +71,25 @@ begin
     end;
 end;
 
-function find_file(pattern: String): String;
+function find_file(name_pattern: String; description: String): String;
 var
   tmp_filename, tmp_filename2: String;
 begin
   // 1st try: editor's folder
-  tmp_filename := current_dir + pattern;
+  tmp_filename := current_dir + name_pattern;
   // 2nd try: game's folder
-  tmp_filename2 := Settings.GamePath + '\' + pattern;
+  tmp_filename2 := Settings.GamePath + '\' + name_pattern;
   if FileExists(tmp_filename2) then
     tmp_filename := tmp_filename2;
   // 3rd try: CustomCampaignData folder
-  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\' + MissionDialog.cbModsFolder.Text + '\' + pattern;
+  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\' + MissionDialog.cbModsFolder.Text + '\' + name_pattern;
   if FileExists(tmp_filename2) then
     tmp_filename := tmp_filename2;
   // Check if file exists
   if not FileExists(tmp_filename) then
   begin
-    Application.MessageBox(PChar('Could not find file ' + pattern), 'Error loading configuration or graphics file', MB_OK or MB_ICONERROR);
+    if description <> '' then
+      Application.MessageBox(PChar('Could not find file ' + name_pattern), PChar('Error loading ' + description + ' file'), MB_OK or MB_ICONERROR);
     tmp_filename := '';
   end;
   result := tmp_filename;

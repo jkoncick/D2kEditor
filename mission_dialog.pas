@@ -939,17 +939,9 @@ begin
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);
-var
-  filename: String;
 begin
   Launcher.TextUib := cbTextUib.Text;
-  filename := Settings.GamePath + '\Data\UI_DATA\';
-  if (Launcher.TextUib <> '') and FileExists(filename + Launcher.TextUib) then
-    filename := filename + Launcher.TextUib
-  else
-    filename := filename + 'TEXT.UIB';
-  if StringTable.load_from_file(filename) then
-    TileAtrEditor.init_tile_hint_text_list;
+  StringTable.load_text_uib(cbTextUib.Text);
 end;
 
 procedure TMissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);

@@ -215,7 +215,7 @@ type
 
     procedure init_tilesets;
   public
-    procedure init_tile_hint_text_list;
+    procedure update_tile_hint_text_list;
     procedure render_tileset;
   private
     procedure do_undo;
@@ -245,7 +245,6 @@ procedure TTileAtrEditor.FormCreate(Sender: TObject);
 begin
   TilesetImage.Picture.Bitmap.Width := 640;
   init_tilesets;
-  init_tile_hint_text_list;
 end;
 
 procedure TTileAtrEditor.FormResize(Sender: TObject);
@@ -682,7 +681,7 @@ begin
   end;
 end;
 
-procedure TTileAtrEditor.init_tile_hint_text_list;
+procedure TTileAtrEditor.update_tile_hint_text_list;
 var
   string_list: TStringList;
   i: integer;
@@ -690,7 +689,7 @@ var
   str: String;
 begin
   string_list := TStringList.Create;
-  for i := 0 to StringTable.get_table_size-1 do
+  for i := 0 to StringTable.text_uib.Count-1 do
   begin
     str := inttostr(i) + ' - ' + StringTable.get_text(i, false, is_custom);
     if is_custom then
