@@ -145,6 +145,7 @@ type
     stSpeedModifier: TStaticText;
     // Form actions
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -186,8 +187,6 @@ type
     procedure edRuleChange(Sender: TObject);
 
   private
-    { Private declarations }
-
     // Configutarion variables
     menuitems: array of TMenuItem;
 
@@ -213,11 +212,19 @@ type
     select_end_x: integer;
     select_end_y: integer;
 
-    procedure init_tilesets;
+    // Pending action flags
+    pending_update_contents: boolean;
+    pending_update_text_list: boolean;
+
   public
-    procedure update_tile_hint_text_list;
-    procedure render_tileset;
+    // Dispatcher procedures
+    procedure update_tileset_list;
+    procedure update_contents;
+    procedure update_grid_color;
+    procedure update_text_list;
+    procedure update_speed_modifiers;
   private
+    procedure render_tileset;
     procedure do_undo;
     procedure do_redo;
     procedure reset_undo_history;
@@ -226,9 +233,6 @@ type
     procedure set_tile_attribute_rule(value, not_value: int64);
     procedure get_tile_attribute_color(value: int64; var color, color_editor: cardinal);
     procedure set_tile_attributes(tile_index: integer; single_op: boolean);
-  public
-    procedure tileset_changed;
-  private
     function confirm_overwrite_original_file(filename: string): boolean;
   end;
 
@@ -237,14 +241,21 @@ var
 
 implementation
 
-uses main, _stringtable, _settings, _structures;
+uses main, _stringtable, _settings, _structures, _dispatcher;
 
 {$R *.dfm}
 
 procedure TTileAtrEditor.FormCreate(Sender: TObject);
 begin
   TilesetImage.Picture.Bitmap.Width := 640;
-  init_tilesets;
+end;
+
+procedure TTileAtrEditor.FormShow(Sender: TObject);
+begin
+  if pending_update_contents then
+    update_contents;
+  if pending_update_text_list then
+    update_text_list;
 end;
 
 procedure TTileAtrEditor.FormResize(Sender: TObject);
@@ -319,7 +330,7 @@ end;
 
 procedure TTileAtrEditor.ReloadTileatr1Click(Sender: TObject);
 begin
-  MainWindow.Reloadtileset1Click(nil);
+  Tileset.reload_tileset;
 end;
 
 procedure TTileAtrEditor.SaveTileAtr1Click(Sender: TObject);
@@ -327,8 +338,7 @@ begin
   if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
   begin
     Tileset.save_attributes;
-    MainWindow.render_map;
-    MainWindow.render_minimap;
+    Dispatcher.register_event(evACTileAtrEditor);
   end;
 end;
 
@@ -337,8 +347,7 @@ begin
   if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
   begin
     Tileset.save_attributes;
-    MainWindow.render_map;
-    MainWindow.render_minimap;
+    Dispatcher.register_event(evACTileAtrEditor);
     MainWindow.Quicklaunch1Click(Sender);
   end;
 end;
@@ -350,9 +359,7 @@ begin
     if SaveTileAtrDialog.Execute and confirm_overwrite_original_file(SaveTileAtrDialog.FileName) then
     begin
       Tileset.save_attributes_to_file(SaveTileAtrDialog.FileName);
-      MainWindow.tileset_changed;
-      MainWindow.render_map;
-      MainWindow.render_minimap;
+      Dispatcher.register_event(evACTileAtrEditor);
     end;
   end;
 end;
@@ -364,7 +371,7 @@ end;
 
 procedure TTileAtrEditor.QuickOpenClick(Sender: TObject);
 begin
-  MainWindow.change_tileset((Sender as TMenuItem).Tag);
+  Tileset.change_tileset((Sender as TMenuItem).Tag);
 end;
 
 procedure TTileAtrEditor.Undo1Click(Sender: TObject);
@@ -663,7 +670,7 @@ begin
     edRule.Font.Color := clRed;
 end;
 
-procedure TTileAtrEditor.init_tilesets;
+procedure TTileAtrEditor.update_tileset_list;
 var
   i: integer;
 begin
@@ -681,13 +688,61 @@ begin
   end;
 end;
 
-procedure TTileAtrEditor.update_tile_hint_text_list;
+procedure TTileAtrEditor.update_contents;
+var
+  i: integer;
+begin
+  if not Visible then
+  begin
+    pending_update_contents := true;
+    exit;
+  end;
+  pending_update_contents := false;
+  StatusBar.Panels[2].Text := Tileset.tileimage_filename;
+  StatusBar.Panels[3].Text := Tileset.tileatr_filename;
+  StatusBar.Panels[4].Text := Tileset.config_filename;
+  if Tileset.current_tileset <> -1 then
+  begin
+    menuitems[Tileset.current_tileset].Checked := true;
+    StatusBar.Panels[1].Text := Tileset.tileset_name;
+  end else
+  begin
+    StatusBar.Panels[1].Text := 'Custom files';
+    for i := 0 to Length(menuitems) -1 do
+      menuitems[i].Checked := false;
+  end;
+  TileAtrListEditor.Enabled := Tileset.config_filename <> '';
+  if not TileAtrListEditor.Enabled then
+  begin
+    for i := 0 to 7 do
+      TileAtrListEditor.State[i] := cbUnchecked;
+    TileAtrListClickCheck(nil);
+  end;
+  btnConvertEditorAttributes.Enabled := Tileset.config_filename <> '';
+  active_tile := -1;
+  reset_undo_history;
+  render_tileset;
+end;
+
+procedure TTileAtrEditor.update_grid_color;
+begin
+  render_tileset;
+end;
+
+procedure TTileAtrEditor.update_text_list;
 var
   string_list: TStringList;
   i: integer;
   is_custom: boolean;
   str: String;
 begin
+  if not Visible then
+  begin
+    pending_update_text_list := true;
+    exit;
+  end;
+  pending_update_text_list := false;
+  // Update tile hint selection list
   string_list := TStringList.Create;
   for i := 0 to StringTable.text_uib.Count-1 do
   begin
@@ -697,6 +752,22 @@ begin
     string_list.Add(str);
   end;
   lbTileHintText.Items := string_list;
+  string_list.Destroy;
+end;
+
+procedure TTileAtrEditor.update_speed_modifiers;
+var
+  value: int64;
+  speed_modifier: integer;
+  str: string;
+  i: integer;
+begin
+  value := StrToInt64('$' + TileAtrValue.Text);
+  speed_modifier := (value shr 29) and 7;
+  str := 'Speed modifier ' + inttostr(speed_modifier) + ': ';
+  for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
+    str := str + Format('%s = %.3f  ', [Structures.speed.SpeedNameStrings[i], Round(Structures.speed.values[speed_modifier, i] * 100)/100]);
+  stSpeedModifier.Caption := str;
 end;
 
 procedure TTileAtrEditor.render_tileset;
@@ -928,9 +999,7 @@ end;
 procedure TTileAtrEditor.set_tile_attribute_value(value, not_value: int64);
 var
   color, color_editor: cardinal;
-  i: integer;
-  building_unit_owner, concrete_owner, spice_amount, unknown_owner, speed_modifier: integer;
-  str: string;
+  building_unit_owner, concrete_owner, spice_amount, unknown_owner: integer;
 begin
   TileAtrValue.Text := IntToHex(value, 10);
   TileAtrNotValue.Text := IntToHex(not_value, 10);
@@ -947,11 +1016,7 @@ begin
   unknown_owner := (value shr 25) and 7;
   stSideBitValues.Caption := Format('Building/Unit owner = %d  Concrete owner = %d  Spice amount = %d  Unknown owner = %d', [building_unit_owner, concrete_owner, spice_amount, unknown_owner]);
   // Set speed modifier label
-  speed_modifier := (value shr 29) and 7;
-  str := 'Speed modifier ' + inttostr(speed_modifier) + ': ';
-  for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
-    str := str + Format('%s = %.3f  ', [Structures.speed.SpeedNameStrings[i], Round(Structures.speed.values[speed_modifier, i] * 100)/100]);
-  stSpeedModifier.Caption := str;
+  update_speed_modifiers;
 end;
 
 procedure TTileAtrEditor.set_tile_attribute_rule(value, not_value: int64);
@@ -1028,36 +1093,6 @@ begin
   Redo1.Enabled := false;
   // Save new tileatr value
   Tileset.set_tile_attributes(tile_index, target_value);
-end;
-
-procedure TTileAtrEditor.tileset_changed;
-var
-  i: integer;
-begin
-  StatusBar.Panels[2].Text := Tileset.tileimage_filename;
-  StatusBar.Panels[3].Text := Tileset.tileatr_filename;
-  StatusBar.Panels[4].Text := Tileset.config_filename;
-  if Tileset.current_tileset <> -1 then
-  begin
-    menuitems[Tileset.current_tileset].Checked := true;
-    StatusBar.Panels[1].Text := Tileset.tileset_name;
-  end else
-  begin
-    StatusBar.Panels[1].Text := 'Custom files';
-    for i := 0 to Length(menuitems) -1 do
-      menuitems[i].Checked := false;
-  end;
-  TileAtrListEditor.Enabled := Tileset.config_filename <> '';
-  if not TileAtrListEditor.Enabled then
-  begin
-    for i := 0 to 7 do
-      TileAtrListEditor.State[i] := cbUnchecked;
-    TileAtrListClickCheck(nil);
-  end;
-  btnConvertEditorAttributes.Enabled := Tileset.config_filename <> '';
-  active_tile := -1;
-  reset_undo_history;
-  render_tileset;
 end;
 
 function TTileAtrEditor.confirm_overwrite_original_file(filename: string): boolean;

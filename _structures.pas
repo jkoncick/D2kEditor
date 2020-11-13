@@ -440,7 +440,7 @@ type
   TStructures = class
 
   public
-    // General data
+    // File names
     templates_bin_filename: String;
     builexp_bin_filename: String;
     armour_bin_filename: String;
@@ -454,12 +454,6 @@ type
     misc_objects_ini_filename: String;
     limits_ini_filename: String;
     templates_other_txt_filename: String;
-
-    pending_render_map: boolean;
-    pending_render_minimap: boolean;
-    pending_fill_events_and_conditions: boolean;
-    pending_fill_structures_editor_data: boolean;
-    pending_update_mis_ai_properties: boolean;
 
     // TEMPLATES.BIN related data
     templates: TTemplatesBinFile;
@@ -535,7 +529,6 @@ type
   public
     // General procedures
     procedure init;
-    procedure do_pending_actions(skip: boolean);
     function get_status: String;
 
     // TEMPLATES.BIN related procedures
@@ -580,7 +573,7 @@ type
     function get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
     // Mis AI properties related procedures
     procedure load_mis_ai_properties_ini;
-    procedure update_mis_ai_properties;
+    procedure cache_mis_ai_properties;
     // Misc. objects related procedures
     procedure load_graphics_misc_objects;
     procedure load_misc_objects_ini;
@@ -598,7 +591,7 @@ var
 
 implementation
 
-uses Forms, IniFiles, main, set_dialog, test_map_dialog, map_stats_dialog, mission_dialog, event_dialog, _settings, _mission, _stringtable, structures_editor;
+uses Forms, IniFiles, mission_dialog, _settings, _mission, _stringtable, _dispatcher;
 
 procedure TStructures.init;
 begin
@@ -619,31 +612,6 @@ begin
   load_players_ini;
   load_limits_ini;
   load_templates_other_txt;
-  do_pending_actions(true);
-end;
-
-procedure TStructures.do_pending_actions(skip: boolean);
-begin
-  if pending_update_mis_ai_properties then
-    update_mis_ai_properties;
-    if pending_fill_structures_editor_data then
-      StructuresEditor.fill_data;
-  if not skip then
-  begin
-    if pending_render_map then
-      MainWindow.render_map;
-    if pending_render_minimap then
-      MainWindow.render_minimap;
-    if pending_fill_events_and_conditions then
-      EventDialog.update_contents;
-    if pending_update_mis_ai_properties then
-      MissionDialog.fill_ai_values;
-  end;
-  pending_render_map := false;
-  pending_render_minimap := false;
-  pending_fill_events_and_conditions := false;
-  pending_fill_structures_editor_data := false;
-  pending_update_mis_ai_properties := false;
 end;
 
 function TStructures.get_status: String;
@@ -680,15 +648,8 @@ begin
   compute_building_and_unit_side_versions;
   compute_building_type_mapping;
 
-  // Update all occurences in editor
-  pending_render_map := true;
-  pending_render_minimap := true;
-  pending_fill_events_and_conditions := true;
-  pending_fill_structures_editor_data := true;
-  pending_update_mis_ai_properties := true;
-  MainWindow.update_structures_list;
-  MapStatsDialog.update_structures_list;
-  EventDialog.update_structures_list;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTemplatesBin);
 end;
 
 procedure TStructures.save_templates_bin;
@@ -953,8 +914,8 @@ begin
   builexp_bin_filename := tmp_filename;
   // Read BUILEXP.BIN file
   load_binary_file(tmp_filename, builexp, sizeof(builexp));
-  // Update all occurences in editor
-  pending_fill_structures_editor_data := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLBuilexpBin);
 end;
 
 procedure TStructures.save_builexp_bin;
@@ -974,8 +935,8 @@ begin
   armour_bin_filename := tmp_filename;
   // Read ARMOUR.BIN file
   load_binary_file(tmp_filename, armour, sizeof(armour));
-  // Update all occurences in editor
-  pending_fill_structures_editor_data := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLArmourBin);
 end;
 
 
@@ -996,8 +957,8 @@ begin
   speed_bin_filename := tmp_filename;
   // Read SPEED.BIN file
   load_binary_file(tmp_filename, speed, sizeof(speed));
-  // Update all occurences in editor
-  pending_fill_structures_editor_data := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLSpeedBin);
 end;
 
 procedure TStructures.save_speed_bin;
@@ -1017,8 +978,8 @@ begin
   techpos_bin_filename := tmp_filename;
   // Read TECHPOS.BIN file
   load_binary_file(tmp_filename, techpos, sizeof(techpos));
-  // Update all occurences in editor
-  pending_fill_structures_editor_data := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTechposBin);
 end;
 
 procedure TStructures.save_techpos_bin;
@@ -1041,9 +1002,8 @@ begin
 
   // Add misc objects into TILEDATA.BIN
   register_misc_objects_in_tiledata;
-  // Update all occurences in editor
-  pending_render_map := true;
-  pending_render_minimap := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTiledataBin);
 end;
 
 function TStructures.get_tiledata_entry(special: integer): TTileDataEntryPtr;
@@ -1097,10 +1057,8 @@ begin
   // Invalidate all preloaded structure images
   for i := 0 to structure_images_count - 1 do
     structure_images[i].current_house_color := -1;
-  // Update all occurences in editor
-  MissionDialog.update_player_colors;
-  pending_render_map := true;
-  pending_render_minimap := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLColoursBin);
 end;
 
 procedure TStructures.load_data_r16;
@@ -1161,6 +1119,8 @@ begin
     structure_image_entry_mapping[index].normal_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
     structure_image_entry_mapping[index].stealth_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
   end;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLDataR16);
 end;
 
 procedure TStructures.clear_structure_image_data;
@@ -1441,7 +1401,7 @@ begin
   tmp_strings.Destroy;
 end;
 
-procedure TStructures.update_mis_ai_properties;
+procedure TStructures.cache_mis_ai_properties;
 var
   i, position, num: integer;
   name: String;
@@ -1500,8 +1460,8 @@ begin
   // Create mask
   graphics_misc_objects_mask.Assign(graphics_misc_objects);
   graphics_misc_objects_mask.Mask(clBlack);
-  // Update all occurences in editor
-  pending_render_map := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLMiscObjectsBmp);
 end;
 
 procedure TStructures.load_misc_objects_ini;
@@ -1536,10 +1496,8 @@ begin
   register_misc_objects_in_tiledata;
   ini.Destroy;
   tmp_strings.Destroy;
-  // Update all occurences in editor
-  MainWindow.update_misc_object_list;
-  pending_render_map := true;
-  pending_render_minimap := true;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLMiscObjectsIni);
 end;
 
 procedure TStructures.register_misc_objects_in_tiledata;
@@ -1561,7 +1519,6 @@ procedure TStructures.load_players_ini;
 var
   tmp_filename, tmp_filename2: String;
   ini: TMemIniFile;
-  player_list: TStringList;
   i: integer;
 begin
   // Step 1 - editor's internal file
@@ -1586,23 +1543,14 @@ begin
   players_ini_filename := tmp_filename;
   // Read list of players
   ini := TMemIniFile.Create(tmp_filename);
-  player_list := TStringList.Create;
   for i := 0 to cnt_players-1 do
   begin
     player_info[i].name := ini.ReadString('Player'+inttostr(i), 'name', 'Unnamed');
     player_info[i].shortname := ini.ReadString('Player'+inttostr(i), 'short', player_info[i].name);
-    player_list.Add(inttostr(i) + ' - ' + player_info[i].name);
   end;
   ini.Destroy;
-  // Update all occurences in editor
-  MainWindow.update_player_list(player_list);
-  SetDialog.update_player_list(player_list);
-  TestMapDialog.update_player_list(player_list);
-  MapStatsDialog.update_player_list;
-  MissionDialog.update_player_list(player_list);
-  EventDialog.update_player_list(player_list);
-  pending_fill_events_and_conditions := true;
-  player_list.Destroy;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLPlayersIni);
 end;
 
 procedure TStructures.load_limits_ini;

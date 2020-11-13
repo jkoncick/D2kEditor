@@ -22,6 +22,7 @@ object StructuresEditor: TStructuresEditor
   Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object StatusBar: TStatusBar
@@ -1355,7 +1356,7 @@ object StructuresEditor: TStructuresEditor
           Width = 241
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 2
         end
       end
@@ -1459,7 +1460,7 @@ object StructuresEditor: TStructuresEditor
           Width = 201
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 4
         end
         object cbxUnitPrereq2BuildingType: TComboBox
@@ -1468,7 +1469,7 @@ object StructuresEditor: TStructuresEditor
           Width = 201
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
         object seUnitPrereq1UpgradesNeeded: TSpinEdit
@@ -1576,7 +1577,7 @@ object StructuresEditor: TStructuresEditor
           Width = 145
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 1
         end
         object cbxUnitHealthBarSize: TComboBox
@@ -1714,7 +1715,7 @@ object StructuresEditor: TStructuresEditor
           Width = 113
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 1
         end
         object seUnitUnitRotationSpeed: TSpinEdit
@@ -1796,7 +1797,7 @@ object StructuresEditor: TStructuresEditor
           Width = 185
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 2
         end
         object cbxUnitSecondaryWeapon: TComboBox
@@ -1805,7 +1806,7 @@ object StructuresEditor: TStructuresEditor
           Width = 185
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 3
         end
         object seUnitRateOfFire: TSpinEdit
@@ -1885,7 +1886,7 @@ object StructuresEditor: TStructuresEditor
           Width = 153
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 0
           OnChange = RedrawUnitPreview
         end
@@ -1895,7 +1896,7 @@ object StructuresEditor: TStructuresEditor
           Width = 153
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 1
           OnChange = RedrawUnitPreview
         end
@@ -1905,7 +1906,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 2
         end
         object cbxUnitFiringExplosion: TComboBox
@@ -1914,7 +1915,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 3
         end
         object sgUnitDirectionFrames: TStringGrid
@@ -2475,7 +2476,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 1
         end
         object edWeaponRange: TEdit
@@ -2627,7 +2628,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 0
           OnChange = cbxWeaponProjectileArtChange
         end
@@ -2637,7 +2638,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 1
         end
         object cbxWeaponHitExplosion: TComboBox
@@ -2646,7 +2647,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 2
         end
         object cbxWeaponTrailExplosion: TComboBox
@@ -2655,7 +2656,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 3
         end
         object cbWeaponFlagWF_PROJECTILE_ALPHA: TCheckBox
@@ -2849,7 +2850,7 @@ object StructuresEditor: TStructuresEditor
         Width = 129
         Height = 21
         Style = csDropDownList
-        ItemHeight = 13
+        ItemHeight = 0
         TabOrder = 3
       end
       object edExplosionFiringPattern: TEdit
@@ -3106,7 +3107,7 @@ object StructuresEditor: TStructuresEditor
         Width = 194
         Height = 21
         Style = csDropDownList
-        ItemHeight = 13
+        ItemHeight = 0
         TabOrder = 1
         Visible = False
         OnChange = cbxTemplatesOtherSelectChange
@@ -3117,7 +3118,7 @@ object StructuresEditor: TStructuresEditor
         Width = 145
         Height = 21
         Style = csDropDownList
-        ItemHeight = 13
+        ItemHeight = 0
         TabOrder = 2
         Visible = False
       end
@@ -3198,7 +3199,7 @@ object StructuresEditor: TStructuresEditor
         Width = 135
         Height = 21
         Style = csDropDownList
-        ItemHeight = 13
+        ItemHeight = 0
         TabOrder = 2
         Visible = False
         OnChange = cbxTechposUnitTypeChange

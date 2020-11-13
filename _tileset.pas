@@ -237,7 +237,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, main, _map, _settings, IniFiles, StrUtils;
+uses Forms, SysUtils, StrUtils, IniFiles, _map, _settings, _dispatcher;
 
 procedure TTileset.init;
 var
@@ -271,6 +271,7 @@ begin
   end;
   tmp_strings.Destroy;
   tileset_list.Sort;
+  Dispatcher.register_event(evInitTilesets);
   // Initialize empty block preset
   block_presets[0].width := 0;
   block_presets[0].height := 0;
@@ -305,9 +306,6 @@ begin
     Application.MessageBox(PChar('Could not find tileset attributes file ' + tileatr_name + '.BIN'), 'Error loading tileset attributes', MB_OK or MB_ICONWARNING);
   // Load tileset image
   load_tileimage;
-  // Redraw terrain editing GUI and dialogs
-  MainWindow.tileset_changed;
-  MainWindow.render_tileset;
 end;
 
 procedure TTileset.change_tileset_by_name(name: String);
@@ -449,6 +447,8 @@ begin
   end;
   tileimage.PixelFormat := pf32bit;
   tileimage_filename := filename;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTilesetImage);
 end;
 
 procedure TTileset.load_r8_image(filename: String);
@@ -492,6 +492,8 @@ begin
   end;
   tileimage.PixelFormat := pf32bit;
   tileimage_filename := filename;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTilesetImage);
 end;
 
 procedure TTileset.load_palette;
@@ -562,6 +564,8 @@ begin
   end;
   ini.Destroy;
   decoder.Destroy;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTileatrBin);
 end;
 
 procedure TTileset.load_config;
@@ -842,6 +846,9 @@ begin
   tmp_strings.Destroy;
   decoder.Destroy;
   decoder2.Destroy;
+
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTilesetIni);
 end;
 
 function TTileset.load_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;

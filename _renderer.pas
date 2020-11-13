@@ -2,7 +2,7 @@ unit _renderer;
 
 interface
 
-uses Windows, Graphics, Types, _map, _structures, _utils;
+uses Graphics, Types, _map, _structures, _utils;
 
 const constraint_type_color: array[0..8] of TColor = (clTeal, clOlive, clGray, clPurple, clTeal+$404040, clOlive+$404040, clGray+$404040, clPurple+$404040, clRed);
 const constraint_side_rect: array[0..3, 0..3] of integer = (
@@ -102,7 +102,7 @@ var
 
 implementation
 
-uses SysUtils, Math, Forms, main, _mission, _tileset, _settings, Classes, _randomgen;
+uses SysUtils, Math, _mission, _tileset, _settings, _randomgen;
 
 procedure TRenderer.init;
 begin
@@ -172,6 +172,10 @@ begin
   min_y := 0;
   max_x := cnv_width - 1;
   max_y := cnv_height - 1;
+  {cnv_target.Pen.Color := clBlack;
+  cnv_target.Brush.Color := clBlack;
+  cnv_target.Brush.Style := bsSolid;
+  cnv_target.Rectangle(0, 0, cnv_width * 32, cnv_height * 32);}
   // Rendering optimization
   if o_rendering_optimization then
   begin

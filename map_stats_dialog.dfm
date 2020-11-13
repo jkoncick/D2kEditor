@@ -19,6 +19,7 @@ object MapStatsDialog: TMapStatsDialog
   Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object StatsGrid: TStringGrid

@@ -32,6 +32,9 @@ type
     render_letters: boolean;
 
   public
+    // Dispatcher procedures
+    procedure update_tileset;
+    // Other procedures
     procedure init_presets;
     procedure next_variant_all;
     procedure next_variant(row, col: integer);
@@ -128,6 +131,11 @@ begin
     render_letters := not render_letters;
     draw_all;
   end;
+end;
+
+procedure TBlockPresetDialog.update_tileset;
+begin
+  init_presets;
 end;
 
 procedure TBlockPresetDialog.init_presets;

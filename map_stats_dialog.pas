@@ -14,6 +14,7 @@ type
   TMapStatsDialog = class(TForm)
     StatsGrid: TStringGrid;
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure StatsGridMouseWheelDown(Sender: TObject; Shift: TShiftState;
@@ -22,9 +23,11 @@ type
       MousePos: TPoint; var Handled: Boolean);
   private
     tmp_stats: Array[0..CNT_FIXED_ROWS + MAX_BUILDING_TYPES + MAX_UNIT_TYPES -1, 0..CNT_PLAYERS-1] of integer;
+    pending_update_map_stats: boolean;
   public
-    procedure update_stats;
-    procedure update_structures_list;
+    // Dispatcher procedures
+    procedure update_map_stats;
+    procedure update_structures_list(building_list, unit_list: TStringList);
     procedure update_player_list;
   end;
 
@@ -50,6 +53,12 @@ begin
   StatsGrid.Cells[9,0] := 'Total';
 end;
 
+procedure TMapStatsDialog.FormShow(Sender: TObject);
+begin
+  if pending_update_map_stats then
+    update_map_stats;
+end;
+
 procedure TMapStatsDialog.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
@@ -73,7 +82,7 @@ begin
   Handled := true;
 end;
 
-procedure TMapStatsDialog.update_stats;
+procedure TMapStatsDialog.update_map_stats;
 var
   i,j,k: integer;
   index: integer;
@@ -81,6 +90,12 @@ var
   building_template: TBuildingTemplatePtr;
   total_value: integer;
 begin
+  if not Visible then
+  begin
+    pending_update_map_stats := true;
+    exit;
+  end;
+  pending_update_map_stats := false;
   if not Map.loaded then
     exit;
   // Reset statistics
@@ -142,15 +157,15 @@ begin
   end;
 end;
 
-procedure TMapStatsDialog.update_structures_list;
+procedure TMapStatsDialog.update_structures_list(building_list, unit_list: TStringList);
 var
   i: integer;
 begin
   StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.building_type_mapping_count + Structures.templates.UnitTypeCount;
   for i := 0 to Structures.building_type_mapping_count - 1 do
-    StatsGrid.Cells[0,1+cnt_fixed_rows+i] := Structures.get_building_type_str(Structures.building_type_mapping[i]);
+    StatsGrid.Cells[0,1+cnt_fixed_rows+i] := building_list[i];
   for i := 0 to Structures.templates.UnitTypeCount - 1 do
-    StatsGrid.Cells[0,1+cnt_fixed_rows+Structures.building_type_mapping_count+i] := Structures.get_unit_type_str(i);
+    StatsGrid.Cells[0,1+cnt_fixed_rows+Structures.building_type_mapping_count+i] := unit_list[i];
 end;
 
 procedure TMapStatsDialog.update_player_list;

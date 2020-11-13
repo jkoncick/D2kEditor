@@ -111,8 +111,10 @@ type
   public
     procedure smooth_edges(x, y: integer; paint_tile_group: integer);
 
+    // Dispatcher procedures
+    procedure cache_map_stats;
+
     // Miscellaneous procedures
-    procedure calculate_power_and_statistics;
     function check_errors: String;
     function check_map_modified: boolean;
     function search_special(special: word; var result_x, result_y: integer): boolean;
@@ -120,13 +122,13 @@ type
     // Load & Save procedures
     procedure load_map_file(filename: String);
     procedure save_map_file(filename: String);
+    procedure new_map(new_width, new_height: integer);
 
     // Map actions
     procedure set_map_size(new_width, new_height: integer);
     procedure shift_map(direction, num_tiles: integer);
     procedure change_structure_owner(player_from, player_to: integer; swap: boolean);
     function remap_tiles(ini_filename: String): boolean;
-    procedure new_map(new_width, new_height: integer);
 
   end;
 
@@ -136,7 +138,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main;
+uses SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main, _launcher, _dispatcher;
 
 
 // Modify map tile and save old values into undo history.
@@ -159,6 +161,7 @@ begin
   if special <> 65535 then
     map_data[x,y].special := special;
   Renderer.invalidate_map_tile(x, y);
+  Dispatcher.register_event(evMapTilesModify);
 end;
 
 // Apply "paint" operation to a single tile
@@ -321,7 +324,7 @@ begin
   if undo_pos = undo_start then
     MainWindow.Undo1.Enabled := false;
   MainWindow.Redo1.Enabled := true;
-  calculate_power_and_statistics;
+  Dispatcher.register_event(evMapTilesModify);
 end;
 
 procedure TMap.do_redo;
@@ -343,7 +346,7 @@ begin
   if undo_pos = undo_max then
     MainWindow.Redo1.Enabled := false;
   MainWindow.Undo1.Enabled := true;
-  calculate_power_and_statistics;
+  Dispatcher.register_event(evMapTilesModify);
 end;
 
 procedure TMap.reset_undo_history;
@@ -516,7 +519,7 @@ begin
 end;
 
 
-procedure TMap.calculate_power_and_statistics;
+procedure TMap.cache_map_stats;
 var
   output, need: array[0..cnt_players-1] of integer;
   i, x, y: integer;
@@ -525,6 +528,9 @@ var
   tmp_power: integer;
   stats_group: integer;
 begin
+  if not map_loaded then
+    exit;
+  // Reset values
   for i := 0 to Length(map_stats.objects) - 1 do
     map_stats.objects[i] := 0;
   for x := 0 to cnt_players - 1 do
@@ -574,7 +580,6 @@ begin
     map_stats.players[x].power_output := output[x];
     map_stats.players[x].power_need := need[x];
   end;
-  MainWindow.show_power_and_statistics;
 end;
 
 function TMap.check_errors: String;
@@ -718,11 +723,18 @@ begin
       Read(map_file, map_data[x,y].special);
     end;
   CloseFile(map_file);
+  // Update internal variables
   map_loaded := true;
   map_filename := filename;
   map_modified := false;
   reset_undo_history;
-  calculate_power_and_statistics;
+  // Update recent files list
+  Settings.update_recent_files(map_filename);
+  Settings.determine_game_paths_from_path(map_filename);
+  // Get test map settings
+  Launcher.get_map_test_settings(map_filename);
+  // Register event in dispatcher
+  Dispatcher.register_event(evMapLoad);
 end;
 
 procedure TMap.save_map_file(filename: String);
@@ -745,9 +757,49 @@ begin
   begin
     map_modified := false;
     undo_pos_last_saved := undo_pos;
+    // Map file name has changed
+    if filename <> map_filename then
+    begin
+      map_filename := filename;
+      // Update recent files list
+      Settings.update_recent_files(map_filename);
+      Settings.determine_game_paths_from_path(map_filename);
+      // Get test map settings
+      Launcher.get_map_test_settings(map_filename);
+      // Register event in dispatcher
+      Dispatcher.register_event(evMapFilenameChange);
+    end;
   end;
 end;
 
+procedure TMap.new_map(new_width, new_height: integer);
+var
+  x, y: integer;
+begin
+  // Reset map data
+  for x := 0 to max_map_width-1 do
+    for y := 0 to max_map_height-1 do
+    begin
+      map_data[x,y].tile := 0;
+      map_data[x,y].special := 0;
+    end;
+  // Initialize map
+  map_width := new_width;
+  map_height := new_height;
+  for x := 0 to map_width - 1 do
+    for y := 0 to map_height - 1 do
+      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
+  if Settings.PreplaceWormSpawner then
+    map_data[0,0].special := Structures.misc_object_info[1].value;
+  map_filename := '';
+  map_loaded := true;
+  map_modified := false;
+  reset_undo_history;
+  // Get test map settings
+  Launcher.get_map_test_settings(map_filename);
+  // Register event in dispatcher
+  Dispatcher.register_event(evMapLoad);
+end;
 
 procedure TMap.set_map_size(new_width, new_height: integer);
 var
@@ -770,7 +822,7 @@ begin
   Mission.adjust_event_positions_on_map_resize;
   reset_undo_history;
   map_modified := true;
-  calculate_power_and_statistics;
+  Dispatcher.register_event(evMapResize);
 end;
 
 procedure TMap.shift_map(direction, num_tiles: integer);
@@ -842,7 +894,7 @@ begin
   end;
   reset_undo_history;
   map_modified := true;
-  calculate_power_and_statistics;
+  Dispatcher.register_event(evMapShift);
 end;
 
 procedure TMap.change_structure_owner(player_from,
@@ -894,7 +946,6 @@ begin
         end;
       end;
     end;
-  calculate_power_and_statistics;
 end;
 
 function TMap.remap_tiles(ini_filename: String): boolean;
@@ -934,35 +985,7 @@ begin
   reset_undo_history;
   map_modified := true;
   result := true;
-end;
-
-procedure TMap.new_map(new_width, new_height: integer);
-var
-  x, y: integer;
-begin
-  // Reset map data
-  for x := 0 to max_map_width-1 do
-    for y := 0 to max_map_height-1 do
-    begin
-      map_data[x,y].tile := 0;
-      map_data[x,y].special := 0;
-    end;
-  // Initialize map
-  map_width := new_width;
-  map_height := new_height;
-  for x := 0 to map_width - 1 do
-    for y := 0 to map_height - 1 do
-    begin
-      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
-      map_data[x,y].special := 0;
-    end;
-  if Settings.PreplaceWormSpawner then
-    map_data[0,0].special := Structures.misc_object_info[1].value;
-  map_filename := '';
-  map_loaded := true;
-  map_modified := false;
-  reset_undo_history;
-  calculate_power_and_statistics;
+  Dispatcher.register_event(evMapTilesModify);
 end;
 
 end.

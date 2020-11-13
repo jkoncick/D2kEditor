@@ -476,6 +476,7 @@ type
     lblTechposNumUnits: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     // Main menu events
     procedure Applychanges1Click(Sender: TObject);
@@ -596,9 +597,16 @@ type
     tmp_building_tiles_occupied_solid: cardinal;
     // Loading flag
     loading: boolean;
+    // Pending action flags
+    pending_update_contents: boolean;
+    pending_update_sound_list: boolean;
+    pending_update_tileset: boolean;
   public
     // Dispatcher procedures
-    procedure update_sound_names;
+    procedure update_contents;
+    procedure update_sound_list;
+    procedure update_tileset;
+  private
     // Fill data procedures
     procedure fill_data;
     procedure fill_page_data;
@@ -644,8 +652,7 @@ var
 
 implementation
 
-uses _tileset, _stringtable, Clipbrd, map_stats_dialog, event_dialog,
-  mission_dialog, main, _launcher, _renderer, Math;
+uses _tileset, _stringtable, _dispatcher, Clipbrd, _launcher, _renderer, Math, main;
 
 {$R *.dfm}
 
@@ -765,6 +772,16 @@ begin
   tmp_strings.Destroy;
 end;
 
+procedure TStructuresEditor.FormShow(Sender: TObject);
+begin
+  if pending_update_contents then
+    update_contents;
+  if pending_update_sound_list then
+    update_sound_list;
+  if pending_update_tileset then
+    update_tileset;
+end;
+
 procedure TStructuresEditor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if key = 27 then
@@ -798,7 +815,6 @@ begin
   Structures.load_armour_bin(true);
   Structures.load_techpos_bin(true);
   Structures.load_speed_bin(true);
-  fill_data;
   apply_changes;
 end;
 
@@ -1876,11 +1892,28 @@ begin
   fill_data;
 end;
 
-procedure TStructuresEditor.update_sound_names;
+procedure TStructuresEditor.update_contents;
+begin
+  if not Visible then
+  begin
+    pending_update_contents := true;
+    exit;
+  end;
+  pending_update_contents := false;
+  fill_data;
+end;
+
+procedure TStructuresEditor.update_sound_list;
 var
   tmp_strings: TStringList;
   i: integer;
 begin
+  if not Visible then
+  begin
+    pending_update_sound_list := true;
+    exit;
+  end;
+  pending_update_sound_list := false;
   tmp_strings := TStringList.Create;
   for i := 0 to StringTable.samples_uib.Count - 1 do
     tmp_strings.Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
@@ -1893,13 +1926,23 @@ begin
   tmp_strings.Destroy;
 end;
 
+procedure TStructuresEditor.update_tileset;
+begin
+  if not Visible then
+  begin
+    pending_update_tileset := true;
+    exit;
+  end;
+  pending_update_tileset := false;
+  draw_building_preview(true);
+end;
+
 procedure TStructuresEditor.fill_data;
 var
   tmp_strings: TStringList;
   i: integer;
 begin
   tmp_strings := TStringList.Create;
-
   // Building type list
   for i := 0 to Structures.templates.BuildingTypeCount - 1 do
     tmp_strings.Add(Format('%.*d %s', [2, i, Structures.templates.BuildingTypeStrings[i]]));
@@ -3305,14 +3348,7 @@ begin
   store_data;
   Structures.compute_building_and_unit_side_versions;
   Structures.compute_building_type_mapping;
-  MainWindow.update_structures_list;
-  MapStatsDialog.update_structures_list;
-  EventDialog.update_structures_list;
-  Structures.update_mis_ai_properties;
-  MainWindow.render_map;
-  MainWindow.render_minimap;
-  EventDialog.update_contents;
-  MissionDialog.fill_ai_values;
+  Dispatcher.register_event(evACStructuresEditor);
 end;
 
 procedure TStructuresEditor.save_to_files;

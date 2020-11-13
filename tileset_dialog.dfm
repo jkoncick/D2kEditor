@@ -25,7 +25,7 @@ object TilesetDialog: TTilesetDialog
   OnMouseWheelDown = FormMouseWheelDown
   OnMouseWheelUp = FormMouseWheelUp
   OnResize = FormResize
-  OnShow = DrawTileset
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object TilesetImage: TImage

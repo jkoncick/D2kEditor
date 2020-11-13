@@ -22,6 +22,7 @@ object TileAtrEditor: TTileAtrEditor
   OnMouseWheelDown = FormMouseWheelDown
   OnMouseWheelUp = FormMouseWheelUp
   OnResize = FormResize
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object TilesetImage: TImage

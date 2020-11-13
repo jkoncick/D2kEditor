@@ -39,13 +39,16 @@ type
     procedure BtnOKClick(Sender: TObject);
     procedure ShiftMap_SelectDirection(Sender: TObject);
   private
-    { Private declarations }
     current_menu: integer;
     shift_map_direction: integer;
   public
-    { Public declarations }
-    procedure select_menu(menu: integer);
+    function select_menu(menu: integer): integer;
+    // Dispatcher procedures
+    procedure update_tileset_list;
     procedure update_player_list(player_list: TStringList);
+    procedure update_tileset;
+  private
+    function check_map_dimensions: boolean;
   end;
 
 var
@@ -61,26 +64,11 @@ uses
 { TSetDialog }
 
 procedure TSetDialog.FormCreate(Sender: TObject);
-var
-  tilesets: TStringList;
-  i: integer;
-  default_tileset: integer;
 begin
   SetMapSize_Width.MaxValue := max_map_width;
   SetMapSize_Width.Value := Settings.DefaultMapWidth;
   SetMapSize_Height.MaxValue := max_map_height;
   SetMapSize_Height.Value := Settings.DefaultMapHeight;
-  tilesets := TStringList.Create;
-  default_tileset := 0;
-  for i := 0 to Tileset.cnt_tilesets - 1 do
-  begin
-    tilesets.Add(Tileset.tileset_list.Names[i]);
-    if Tileset.tileset_list.ValueFromIndex[i] = Settings.DefaultTilesetName then
-      default_tileset := i;
-  end;
-  Tileset_List.Items := tilesets;
-  tilesets.Destroy;
-  Tileset_List.ItemIndex := default_tileset;
 end;
 
 procedure TSetDialog.FormKeyDown(Sender: TObject; var Key: Word;
@@ -100,7 +88,7 @@ begin
     BtnOK.SetFocus;
 end;
 
-procedure TSetDialog.select_menu(menu: integer);
+function TSetDialog.select_menu(menu: integer): integer;
 begin
   SetMapSize_Menu.Visible := False;
   ShiftMap_Menu.Visible := False;
@@ -131,49 +119,45 @@ begin
         end;
   end;
   current_menu := menu;
-  ShowModal;
+  result := ShowModal;
 end;
 
 procedure TSetDialog.BtnCancelClick(Sender: TObject);
 begin
-  Close;
+  ModalResult := mrCancel;
 end;
 
 procedure TSetDialog.BtnOKClick(Sender: TObject);
 begin
   case current_menu of
     1:  begin
-          if ((SetMapSize_Width.Value mod 2) = 1) or ((SetMapSize_Height.Value mod 2) = 1) then
-            ShowMessage('Map size must be even.')
-          else
+          if check_map_dimensions then
           begin
-            close;
-            MainWindow.set_map_size(SetMapSize_Width.Value,SetMapSize_Height.Value);
+            ModalResult := mrOk;
+            Map.set_map_size(SetMapSize_Width.Value,SetMapSize_Height.Value);
           end;
         end;
     2:  begin
           if shift_map_direction > 0 then
           begin
-            close;
-            MainWindow.shift_map(shift_map_direction,ShiftMap_NumTiles.Value);
+            ModalResult := mrOk;
+            Map.shift_map(shift_map_direction,ShiftMap_NumTiles.Value);
           end;
         end;
     3:  begin
-          MainWindow.change_structure_owner(ChStrOwn_PlayerFrom.ItemIndex,ChStrOwn_PlayerTo.ItemIndex,ChStrOwn_Swap.Checked);
-          close;
+          Map.change_structure_owner(ChStrOwn_PlayerFrom.ItemIndex,ChStrOwn_PlayerTo.ItemIndex,ChStrOwn_Swap.Checked);
+          ModalResult := mrOk;
         end;
     4:  begin
-          if ((SetMapSize_Width.Value mod 2) = 1) or ((SetMapSize_Height.Value mod 2) = 1) then
-            ShowMessage('Map size must be even.')
-          else
+          if check_map_dimensions then
           begin
-            close;
+            ModalResult := mrOk;
             MainWindow.new_map(SetMapSize_Width.Value,SetMapSize_Height.Value);
           end;
         end;
     5:  begin
-          close;
-          MainWindow.change_tileset(Tileset_List.ItemIndex);
+          ModalResult := mrOk;
+          Tileset.change_tileset(Tileset_List.ItemIndex);
         end;
   end;
 end;
@@ -181,6 +165,25 @@ end;
 procedure TSetDialog.ShiftMap_SelectDirection(Sender: TObject);
 begin
   shift_map_direction := (Sender as TRadioButton).Tag;
+end;
+
+procedure TSetDialog.update_tileset_list;
+var
+  tilesets: TStringList;
+  i: integer;
+  default_tileset: integer;
+begin
+  tilesets := TStringList.Create;
+  default_tileset := 0;
+  for i := 0 to Tileset.cnt_tilesets - 1 do
+  begin
+    tilesets.Add(Tileset.tileset_list.Names[i]);
+    if Tileset.tileset_list.ValueFromIndex[i] = Settings.DefaultTilesetName then
+      default_tileset := i;
+  end;
+  Tileset_List.Items := tilesets;
+  tilesets.Destroy;
+  Tileset_List.ItemIndex := default_tileset;
 end;
 
 procedure TSetDialog.update_player_list(player_list: TStringList);
@@ -194,6 +197,21 @@ begin
   ChStrOwn_PlayerTo.Items := player_list;
   ChStrOwn_PlayerTo.Items.Add('None (delete)');
   ChStrOwn_PlayerTo.ItemIndex := Max(prev_index, 0);
+end;
+
+procedure TSetDialog.update_tileset;
+begin
+  if Tileset.current_tileset <> -1 then
+    Tileset_List.ItemIndex := Tileset.current_tileset;
+end;
+
+function TSetDialog.check_map_dimensions: boolean;
+begin
+  result := false;
+  if ((SetMapSize_Width.Value mod 2) = 1) or ((SetMapSize_Height.Value mod 2) = 1) then
+    ShowMessage('Map size must be even.')
+  else
+    result := true;
 end;
 
 end.

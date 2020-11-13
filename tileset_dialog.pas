@@ -36,6 +36,7 @@ type
     btnCopyPresetCode: TButton;
     btnUsePreset: TButton;
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure DrawTileset(Sender: TObject);
@@ -60,12 +61,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure btnCopyPresetCodeClick(Sender: TObject);
     procedure btnUsePresetClick(Sender: TObject);
-  private
-    procedure set_continuous_preset_tiles;
-    procedure block_preset_to_text;
-    procedure draw_block_preset;
-  public
-    procedure tileset_changed;
+
   private
     tileset_top: integer;
     tileset_height: integer;
@@ -86,6 +82,16 @@ type
     block_top: word;
     block_tiles: array[0..63] of smallint;
     block_tile_current: integer;
+
+    pending_update_tileset: boolean;
+  public
+    // Dispatcher events
+    procedure update_tileset;
+    procedure update_grid_color;
+  private
+    procedure set_continuous_preset_tiles;
+    procedure block_preset_to_text;
+    procedure draw_block_preset;
   end;
 
 var
@@ -114,6 +120,12 @@ begin
   TilesetImage.Picture.Bitmap.Width := 640;
   block_width := 1;
   block_height := 1;
+end;
+
+procedure TTilesetDialog.FormShow(Sender: TObject);
+begin
+  if pending_update_tileset then
+    update_tileset;
 end;
 
 procedure TTilesetDialog.FormHide(Sender: TObject);
@@ -415,8 +427,26 @@ begin
       MainWindow.block_data[x, y].tile := block_tiles[x + y * block_width];
       MainWindow.block_data[x, y].special := IfThen(block_tiles[x + y * block_width] = -1, 65535, 0);
     end;
-  MainWindow.draw_cursor_image;
+  MainWindow.render_cursor_image;
   close;
+end;
+
+procedure TTilesetDialog.update_tileset;
+begin
+  if not Visible then
+  begin
+    pending_update_tileset := true;
+    exit;
+  end;
+  pending_update_tileset := false;
+  DrawTileset(nil);
+  draw_block_preset;
+end;
+
+procedure TTilesetDialog.update_grid_color;
+begin
+  if TilesetGrid.Checked then
+    DrawTileset(nil);
 end;
 
 procedure TTilesetDialog.set_continuous_preset_tiles;
@@ -477,12 +507,6 @@ begin
   end;
   PresetImage.Canvas.Pen.Color := clBlue;
   PresetImage.Canvas.Rectangle(pos_left-1, pos_top-1, pos_left + block_width * 32 + 1, pos_top + block_height * 32 + 1);
-end;
-
-procedure TTilesetDialog.tileset_changed;
-begin
-  DrawTileset(nil);
-  draw_block_preset;
 end;
 
 end.

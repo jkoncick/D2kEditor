@@ -12,7 +12,7 @@ type
     text_uib_filename: string;
     samples_uib_filename: string;
 
-    text_uib: TStringList;
+    text_uib: THashedStringList;
     samples_uib: TStringList;
     custom_text_value_list: TValueListEditor;
 
@@ -37,11 +37,11 @@ var
 
 implementation
 
-uses SysUtils, _utils, event_dialog, tileatr_editor, structures_editor;
+uses SysUtils, _utils, _dispatcher;
 
 procedure TStringTable.init;
 begin
-  text_uib := TStringList.Create;
+  text_uib := THashedStringList.Create;
   samples_uib := TStringList.Create;
   load_text_uib('');
   load_samples_uib;
@@ -67,8 +67,8 @@ begin
   text_uib_filename := tmp_filename;
   // Load TEXT.UIB file
   load_uib_file(tmp_filename, text_uib);
-  // Update all occurences
-  TileAtrEditor.update_tile_hint_text_list;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTextUib);
 end;
 
 procedure TStringTable.load_samples_uib;
@@ -82,9 +82,8 @@ begin
   samples_uib_filename := tmp_filename;
   // Load SAMPLES.UIB file
   load_uib_file(tmp_filename, samples_uib);
-  // Update all occurences
-  EventDialog.update_sound_names;
-  StructuresEditor.update_sound_names;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLSamplesUib);
 end;
 
 procedure TStringTable.load_uib_file(filename: String; storage: TStringList);

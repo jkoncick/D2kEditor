@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Units
-  _utils, _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
+  _utils, _dispatcher, _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -291,11 +291,18 @@ type
 
     // Others
     special_value_changing: boolean;
+    editing_marker_disabled: boolean;
 
-    // Structure editor procedures
-    procedure update_structures_list;
+    // Dispatcher procedures
+    procedure update_structures_list(building_list, unit_list: TStringList);
     procedure update_player_list(player_list: TStringList);
     procedure update_misc_object_list;
+    procedure update_tileset;
+    procedure update_structure_controls;
+    procedure update_map_dimensions;
+    procedure update_map_name;
+    procedure update_mission_load_status;
+    procedure update_map_stats;
 
     // Rendering procedures
     procedure resize_map_canvas;
@@ -303,45 +310,31 @@ type
     procedure render_minimap;
     procedure render_minimap_position_marker;
     procedure render_editing_marker;
-    procedure render_tileset;
+    procedure resize_cursor_image;
+    procedure render_cursor_image;
 
     // Map loading & saving procedures
+    procedure new_map(new_width, new_height: integer);
     procedure load_map(filename: String);
     procedure save_map(filename: String);
-    procedure unload_mission;
     function check_map_errors: boolean;
-    procedure set_window_titles(map_name: String);
     procedure refresh_recent_files_menu;
 
     // Map testing procedures
     function check_map_can_be_tested: boolean;
 
     // Miscellaneous helper procedures
-    procedure tileset_changed;
     procedure set_special_value;
     function mode(m: SelectedMode): boolean;
     function mouse_over_map_canvas: boolean;
     procedure apply_key_preset(key: word);
-    procedure show_power_and_statistics;
     procedure start_event_position_selection(x, y: integer; mode: EventPositionSelectionMode);
     procedure finish_event_position_selection(min_x, max_x, min_y, max_y: integer);
-    procedure draw_paint_tile_select_glyph(target: integer; tile_index: integer; source_canvas: TCanvas);
 
     // Procedures related to selecting/placing block
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
     procedure select_block_preset(preset_index: integer);
     procedure copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean; area_type: integer);
-
-    // Procedures related to cursor image
-    procedure resize_cursor_image;
-    procedure draw_cursor_image;
-
-    // Procedures called from other dialog
-    procedure set_map_size(new_width, new_height: integer);
-    procedure shift_map(direction, num_tiles: integer);
-    procedure change_structure_owner(player_from, player_to: integer; swap: boolean);
-    procedure new_map(new_width, new_height: integer);
-    procedure change_tileset(index: integer);
   end;
 
 var
@@ -359,12 +352,9 @@ procedure TMainWindow.FormCreate(Sender: TObject);
 var
   i: integer;
   btn: TSpeedButton;
+  tmp_strings: TStringList;
 begin
   // Miscellaneous initializations
-  randomize;
-  current_dir := ExtractFilePath(Application.ExeName);
-  Application.HintPause := 500;
-  Application.HintHidePause:= 100000;
   DragAcceptFiles(Handle, True);
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
   moving_event := -1;
@@ -373,9 +363,12 @@ begin
   top := 40;
   CursorImage.Picture.Bitmap.TransparentColor := clBtnFace;
   // Initialize terrain editing controls
+  tmp_strings := TStringList.Create;
   for i := 0 to Length(brush_size_presets) - 1 do
-    cbBrushSize.Items.Add(inttostr(brush_size_presets[i,1]) + ' x ' + inttostr(brush_size_presets[i,2]));
+    tmp_strings.Add(inttostr(brush_size_presets[i,1]) + ' x ' + inttostr(brush_size_presets[i,2]));
+  cbBrushSize.Items := tmp_strings;
   cbBrushSize.ItemIndex := 0;
+  tmp_strings.Destroy;
   for i := -4 to cnt_paint_tile_groups-1 do
   begin
     btn := TSpeedButton.Create(self);
@@ -429,19 +422,14 @@ begin
       end;
     end;
   end;
-  // Initialize mission
-  Mission.init;
-  // Load and initialize graphics
-  Renderer.init;
+  // Initialize minimap buffer
   minimap_buffer := TBitmap.Create;
   minimap_buffer.Width := MiniMap.Width;
   minimap_buffer.Height := MiniMap.Height;
   minimap_buffer.PixelFormat := pf32bit;
-  // Initialize tilesets
-  Tileset.init;
   // Initialize Random Generator
   //--RandomGen.init(Memo1.Lines);
-  // Initialize recent files
+  // Initialize recent files menu items
   for i := 1 to cnt_recent_files do
   begin
     recent_files_menuitems[i] := TMenuItem.Create(MainWindow.Recentfiles1);
@@ -452,6 +440,7 @@ begin
     Recentfiles1.Add(recent_files_menuitems[i]);
   end;
   refresh_recent_files_menu;
+  // Initialize settings menu items
   Useallocationindexes1.Checked := Settings.UseAllocationIndexes;
   Showeventmarkers1.Checked := Settings.ShowEventMarkers;
   Markdefenceareas1.Checked := Settings.MarkDefenceAreas;
@@ -767,16 +756,14 @@ end;
 
 procedure TMainWindow.Newmap1Click(Sender: TObject);
 begin
-  SetDialog.select_menu(5);
-  SetDialog.select_menu(4);
+  if SetDialog.select_menu(5) = mrOk then
+    SetDialog.select_menu(4);
 end;
 
 procedure TMainWindow.Openmap1Click(Sender: TObject);
 begin
   if MapOpenDialog.Execute then
-  begin
     load_map(MapOpenDialog.FileName);
-  end;
 end;
 
 procedure TMainWindow.Reopenmap1Click(Sender: TObject);
@@ -812,21 +799,7 @@ begin
   if Settings.CheckMapErrorsOnSave then
     check_map_errors;
   if MapSaveDialog.Execute then
-  begin
-    if Map.filename <> MapSaveDialog.FileName then
-    begin
-      Map.filename := MapSaveDialog.FileName;
-      if Mission.mis_assigned then
-        Mission.mis_filename := Mission.get_mis_filename(Map.filename);
-      StatusBar.Panels[3].Text := MapSaveDialog.FileName;
-      Settings.determine_game_paths_from_path(Map.filename);
-      set_window_titles(ChangeFileExt(ExtractFileName(Map.filename),''));
-    end;
     save_map(MapSaveDialog.FileName);
-    // Update recent files list
-    Settings.update_recent_files(MapSaveDialog.FileName);
-    refresh_recent_files_menu;
-  end;
 end;
 
 procedure TMainWindow.Savemapimage1Click(Sender: TObject);
@@ -874,16 +847,12 @@ end;
 procedure TMainWindow.Undo1Click(Sender: TObject);
 begin
   Map.do_undo;
-  render_minimap;
-  render_map;
   mouse_already_clicked := false;
 end;
 
 procedure TMainWindow.Redo1Click(Sender: TObject);
 begin
   Map.do_redo;
-  render_minimap;
-  render_map;
   mouse_already_clicked := false;
 end;
 
@@ -926,7 +895,7 @@ begin
 
   RbBlockMode.Checked := true;
   EditorPages.TabIndex := 1;
-  draw_cursor_image;
+  render_cursor_image;
 
   GlobalUnLock(handle);
   CloseClipboard;
@@ -940,44 +909,23 @@ end;
 procedure TMainWindow.Selectnext1Click(Sender: TObject);
 begin
   Tileset.next_tileset;
-  MissionDialog.tileset_changed;
-  // Re-render everything
-  render_minimap;
-  render_map;
 end;
 
 procedure TMainWindow.Reloadtileset1Click(Sender: TObject);
 begin
   Tileset.reload_tileset;
-  TileAtrEditor.render_tileset;
-  // Re-render everything
-  render_tileset;
-  render_map;
-  render_minimap;
 end;
 
 procedure TMainWindow.Loadtileset1Click(Sender: TObject);
 begin
   if TilesetOpenDialog.Execute then
-  begin
     Tileset.load_image_from_file(TilesetOpenDialog.FileName);
-    // Re-render everything
-    tileset_changed;
-    render_tileset;
-    render_map;
-  end;
 end;
 
 procedure TMainWindow.Loadtilesetattributes1Click(Sender: TObject);
 begin
   if TileatrOpenDialog.Execute then
-  begin
     Tileset.load_attributes_from_file(TileatrOpenDialog.FileName);
-    // Re-render everything
-    tileset_changed;
-    render_minimap;
-    render_map;
-  end;
 end;
 
 procedure TMainWindow.TileAttributeseditor1Click(Sender: TObject);
@@ -1003,15 +951,15 @@ end;
 procedure TMainWindow.SettingChange(Sender: TObject);
 begin
   case (Sender as TComponent).Tag of
-  1: begin Settings.UseAllocationIndexes := (Sender as TMenuItem).Checked; render_map; render_minimap; draw_cursor_image; end;
+  1: begin Settings.UseAllocationIndexes := (Sender as TMenuItem).Checked; render_map; render_minimap; render_cursor_image; end;
   2: begin Settings.ShowEventMarkers := (Sender as TMenuItem).Checked; render_map; end;
   3: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
-  4: begin Settings.ShowUnknownSpecials := (Sender as TMenuItem).Checked; render_map; draw_cursor_image; end;
+  4: begin Settings.ShowUnknownSpecials := (Sender as TMenuItem).Checked; render_map; render_cursor_image; end;
   11: begin Settings.AlwaysAskOnQuit := (Sender as TMenuItem).Checked end;
   12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
   13: begin Settings.RestrictPainting := (Sender as TMenuItem).Checked end;
   14: begin Settings.UseRandomPaintMap := (Sender as TMenuItem).Checked end;
-  15: begin Settings.TranslateStructureNames := (Sender as TMenuItem).Checked; update_structures_list; end;
+  15: begin Settings.TranslateStructureNames := (Sender as TMenuItem).Checked; Dispatcher.register_event(evSCTranslateStructureNames); end;
   20:
     begin
       if GridColorDialog.Execute then
@@ -1019,14 +967,14 @@ begin
         Settings.GridColor := GridColorDialog.Color;
         if sbShowGrid.Down then
           render_map;
-        TileAtrEditor.render_tileset;
-        TilesetDialog.DrawTileset(nil);
+        TileAtrEditor.update_grid_color;
+        TilesetDialog.update_grid_color;
       end;
     end;
   24:
     begin
       render_map;
-      draw_cursor_image;
+      render_cursor_image;
       BlockPresetDialog.draw_all;
     end;
   else render_map;
@@ -1061,19 +1009,12 @@ begin
   if not Map.loaded then
     exit;
   if RemapTilesOpenDialog.Execute then
-  begin
-    if Map.remap_tiles(RemapTilesOpenDialog.FileName) then
-    begin
-      render_map;
-      render_minimap;
-    end else
+    if not Map.remap_tiles(RemapTilesOpenDialog.FileName) then
       Application.MessageBox('The ini file must contain [Remap_Tiles] section'#13'with key-value pairs in the form'#13'from_tile=to_tile'#13'where key and value is a tile index.', 'Invalid remap tiles ini file', MB_OK or MB_ICONERROR);
-  end;
 end;
 
 procedure TMainWindow.Showmapstatistics1Click(Sender: TObject);
 begin
-  MapStatsDialog.update_stats;
   MapStatsDialog.Show;
 end;
 
@@ -1098,22 +1039,20 @@ begin
 end;
 
 procedure TMainWindow.Assignmisfile1Click(Sender: TObject);
+var
+  tmp_filename: string;
 begin
   if not Map.loaded then
     exit;
   if not Mission.mis_assigned then
   begin
-    Mission.mis_assigned := true;
-    Mission.mis_filename := Mission.get_mis_filename(Map.filename);
-    if FileExists(Mission.mis_filename) then
-      Mission.load_mis_file(Mission.mis_filename);
-    StatusBar.Panels[4].Text := 'MIS';
-    Assignmisfile1.Caption := 'Unassign .mis file';
-    MissionDialog.fill_data;
-    EventDialog.update_contents;
+    tmp_filename := Mission.get_mis_filename(Map.filename);
+    if FileExists(tmp_filename) then
+      Mission.load_mis_file(tmp_filename)
+    else
+      Mission.new_mission;
   end else
-    unload_mission;
-  render_map;
+    Mission.unload_mission;
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
@@ -1266,18 +1205,20 @@ begin
   // Move event marker
   if (moving_event <> -1) then
   begin
+    Renderer.invalidate_map_tile(0, Mission.mis_data.events[moving_event].map_pos_y);
+    Renderer.invalidate_map_tile(Map.width-1, map_y);
     Mission.mis_data.events[moving_event].map_pos_x := map_x;
     Mission.mis_data.events[moving_event].map_pos_y := map_y;
-    Mission.process_event_markers;
-    render_map;
+    Dispatcher.register_event(evMisEventPositionChange);
     exit;
   end;
   if (moving_condition <> -1) then
   begin
+    Renderer.invalidate_map_tile(0, Mission.mis_data.conditions[moving_condition].map_pos_y);
+    Renderer.invalidate_map_tile(Map.width-1, map_y);
     Mission.mis_data.conditions[moving_condition].map_pos_x := map_x;
     Mission.mis_data.conditions[moving_condition].map_pos_y := map_y;
-    Mission.process_event_markers;
-    render_map;
+    Dispatcher.register_event(evMisEventPositionChange);
     exit;
   end;
   // Move cursor image and resize if exceeding map canvas border
@@ -1306,7 +1247,6 @@ var
   event_marker: ^TEventMarker;
   cursor_left: integer;
   cursor_top: integer;
-  editing_marker_disabled: boolean;
 begin
   map_x := x div 32 + map_canvas_left;
   map_y := y div 32 + map_canvas_top;
@@ -1315,7 +1255,6 @@ begin
     exit;
   mouse_already_clicked := true;
   mouse_last_button := Button;
-  editing_marker_disabled := false;
   // Get tile attributes for this tile (DEBUG only)
   if (Button = mbRight) and (ssShift in Shift) then
   begin
@@ -1419,15 +1358,6 @@ begin
       exit;
     end;
   end;
-  // Do not update power and statistics while painting but at end of painting
-  if not mode(mPaintMode) then
-  begin
-    Map.calculate_power_and_statistics;
-  end;
-  render_minimap;
-  render_map;
-  if editing_marker_disabled then
-    Renderer.remove_editing_marker(MapCanvas.Canvas);
 end;
 
 procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
@@ -1451,11 +1381,7 @@ begin
   end else
   // Double click for filling area
   if mode(mPaintMode) then
-  begin
     Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group);
-    render_minimap;
-    render_map;
-  end;
 end;
 
 procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
@@ -1483,16 +1409,6 @@ begin
       exit;
     end;
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true, ssShift in Shift, cbSelectAreaType.ItemIndex - 1);
-    // Erase copied area
-    if ssShift in Shift then
-    begin
-      render_minimap;
-      render_map;
-    end;
-  end;
-  if mode(mPaintMode) then
-  begin
-    Map.calculate_power_and_statistics;
   end;
 end;
 
@@ -1555,62 +1471,8 @@ begin
 end;
 
 procedure TMainWindow.SpecialValueChange(Sender: TObject);
-var
-  i: integer;
-  special, player: integer;
-  tiledata_entry: TTileDataEntryPtr;
 begin
-  special := StrToIntDef(SpecialValue.Text, 0);
-  tiledata_entry := Structures.get_tiledata_entry(special);
-  if tiledata_entry.stype = ST_MISC_OBJECT then
-  begin
-    MiscObjList.ItemIndex := tiledata_entry.index;
-    BuildingList.ItemIndex := -1;
-    UnitList.ItemIndex := -1;
-    LbStructureName.Caption := Structures.misc_object_info[tiledata_entry.index].name;
-  end else
-  if tiledata_entry.stype = ST_BUILDING then
-  begin
-    MiscObjList.ItemIndex := -1;
-    for i := 0 to Structures.building_type_mapping_count - 1 do
-      if Structures.building_type_mapping[i] = Integer(tiledata_entry.index) then
-      begin
-        BuildingList.ItemIndex := i;
-        break;
-      end;
-    UnitList.ItemIndex := -1;
-    PlayerSelect.ItemIndex := tiledata_entry.player;
-    player := Mission.get_player_alloc_index(tiledata_entry.player);
-    if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_side_versions[tiledata_entry.index, player] <> -1) then
-      LbStructureName.Caption := Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, player])
-    else
-      LbStructureName.Caption := 'INVALID';
-    show_power_and_statistics;
-  end else
-  if tiledata_entry.stype = ST_UNIT then
-  begin
-    MiscObjList.ItemIndex := -1;
-    BuildingList.ItemIndex := -1;
-    UnitList.ItemIndex := tiledata_entry.index;
-    PlayerSelect.ItemIndex := tiledata_entry.player;
-    player := Mission.get_player_alloc_index(tiledata_entry.player);
-    if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_side_versions[tiledata_entry.index, player] <> -1) then
-      LbStructureName.Caption := Structures.get_unit_name_str(Structures.unit_side_versions[tiledata_entry.index, player])
-    else
-      LbStructureName.Caption := 'INVALID';
-    show_power_and_statistics;
-  end else
-  begin
-    if not special_value_changing then
-    begin
-      MiscObjList.ItemIndex := -1;
-      BuildingList.ItemIndex := -1;
-      UnitList.ItemIndex := -1;
-    end;
-    LbStructureName.Caption := '';
-  end;
-  render_editing_marker;
-  special_value_changing := false;
+  update_structure_controls;
 end;
 
 procedure TMainWindow.btnFindSelectedObjectClick(Sender: TObject);
@@ -1641,7 +1503,7 @@ end;
 procedure TMainWindow.PlayerSelectChange(Sender: TObject);
 begin
   set_special_value;
-  show_power_and_statistics;
+  update_map_stats;
 end;
 
 procedure TMainWindow.MiscObjListClick(Sender: TObject);
@@ -1706,22 +1568,16 @@ begin
   BlockPresetDialog.init_presets;
 end;
 
-procedure TMainWindow.update_structures_list;
+procedure TMainWindow.update_structures_list(building_list, unit_list: TStringList);
 var
-  i: integer;
-  tmp_strings_buildings, tmp_strings_units: TStringList;
+  prev_index: integer;
 begin
-  tmp_strings_buildings := TStringList.Create;
-  tmp_strings_units := TStringList.Create;
-  for i := 0 to Structures.building_type_mapping_count - 1 do
-    tmp_strings_buildings.Add(Structures.get_building_type_str(Structures.building_type_mapping[i]));
-  for i := 0 to Structures.templates.UnitTypeCount - 1 do
-    tmp_strings_units.Add(Structures.get_unit_type_str(i));
-  BuildingList.Items := tmp_strings_buildings;
-  UnitList.Items := tmp_strings_units;
-  tmp_strings_buildings.Destroy;
-  tmp_strings_units.Destroy;
-  SpecialValueChange(nil);
+  prev_index := BuildingList.ItemIndex;
+  BuildingList.Items := building_list;
+  BuildingList.ItemIndex := prev_index;
+  prev_index := UnitList.ItemIndex;
+  UnitList.Items := unit_list;
+  UnitList.ItemIndex := prev_index;
 end;
 
 procedure TMainWindow.update_player_list(player_list: TStringList);
@@ -1743,6 +1599,146 @@ begin
     tmp_strings.Add(Structures.misc_object_info[i].name);
   MiscObjList.Items := tmp_strings;
   tmp_strings.Destroy;
+end;
+
+procedure TMainWindow.update_tileset;
+var
+  area_types: TStringList;
+  i: integer;
+  tile_x, tile_y: integer;
+begin
+  // Show tileset name
+  StatusBar.Panels[1].Text := Tileset.tileset_name;
+  // Draw glyphs on paint tile group buttons in terrain editing GUI
+  for i := -4 to cnt_paint_tile_groups-1 do
+  begin
+    if Tileset.paint_tile_groups[i].name <> '' then
+    begin
+      tile_x := Tileset.paint_tile_groups[i].tile_index mod 20;
+      tile_y := Tileset.paint_tile_groups[i].tile_index div 20;
+      paint_tile_select[i].Glyph.Canvas.CopyRect(Rect(0,0,28,28), Tileset.tileimage.Canvas, Rect(tile_x*32+2, tile_y*32+2, tile_x*32+30, tile_y*32+30));
+      paint_tile_select[i].Glyph.Canvas.Pixels[0,27] := $1;
+    end else
+    begin
+      paint_tile_select[i].Glyph.Canvas.Brush.Color := clBlack;
+      paint_tile_select[i].Glyph.Canvas.Brush.Style := bsSolid;
+      paint_tile_select[i].Glyph.Canvas.Rectangle(0, 0, paint_tile_select[i].Glyph.Width, paint_tile_select[i].Glyph.Height);
+    end;
+    paint_tile_select[i].Enabled := Tileset.paint_tile_groups[i].name <> '';
+    paint_tile_select[i].Hint := Tileset.paint_tile_groups[i].name;
+  end;
+  // Set text on block preset group buttons
+  for i := 0 to cnt_block_preset_groups-1 do
+  begin
+    block_preset_select[i].Enabled := Tileset.block_preset_groups[i].name <> '';
+    block_preset_select[i].Caption := Tileset.block_preset_groups[i].name;
+  end;
+  // Fill Area type combo box
+  area_types := TStringList.Create;
+  area_types.Add('(Everything)');
+  for i := 0 to Tileset.fill_area_rules_used - 1 do
+    area_types.Add(Tileset.fill_area_rules[i].name);
+  cbSelectAreaType.Items := area_types;
+  cbSelectAreaType.ItemIndex := 0;
+  area_types.Destroy;
+  // Update paint tile group label
+  if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
+    LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
+end;
+
+procedure TMainWindow.update_structure_controls;
+var
+  i: integer;
+  special, player: integer;
+  tiledata_entry: TTileDataEntryPtr;
+begin
+  special := StrToIntDef(SpecialValue.Text, 0);
+  tiledata_entry := Structures.get_tiledata_entry(special);
+  if tiledata_entry.stype = ST_MISC_OBJECT then
+  begin
+    MiscObjList.ItemIndex := tiledata_entry.index;
+    BuildingList.ItemIndex := -1;
+    UnitList.ItemIndex := -1;
+    LbStructureName.Caption := Structures.misc_object_info[tiledata_entry.index].name;
+  end else
+  if tiledata_entry.stype = ST_BUILDING then
+  begin
+    MiscObjList.ItemIndex := -1;
+    for i := 0 to Structures.building_type_mapping_count - 1 do
+      if Structures.building_type_mapping[i] = Integer(tiledata_entry.index) then
+      begin
+        BuildingList.ItemIndex := i;
+        break;
+      end;
+    UnitList.ItemIndex := -1;
+    PlayerSelect.ItemIndex := tiledata_entry.player;
+    player := Mission.get_player_alloc_index(tiledata_entry.player);
+    if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_side_versions[tiledata_entry.index, player] <> -1) then
+      LbStructureName.Caption := Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, player])
+    else
+      LbStructureName.Caption := 'INVALID';
+    update_map_stats;
+  end else
+  if tiledata_entry.stype = ST_UNIT then
+  begin
+    MiscObjList.ItemIndex := -1;
+    BuildingList.ItemIndex := -1;
+    UnitList.ItemIndex := tiledata_entry.index;
+    PlayerSelect.ItemIndex := tiledata_entry.player;
+    player := Mission.get_player_alloc_index(tiledata_entry.player);
+    if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_side_versions[tiledata_entry.index, player] <> -1) then
+      LbStructureName.Caption := Structures.get_unit_name_str(Structures.unit_side_versions[tiledata_entry.index, player])
+    else
+      LbStructureName.Caption := 'INVALID';
+    update_map_stats;
+  end else
+  begin
+    if not special_value_changing then
+    begin
+      MiscObjList.ItemIndex := -1;
+      BuildingList.ItemIndex := -1;
+      UnitList.ItemIndex := -1;
+    end;
+    LbStructureName.Caption := '';
+  end;
+  render_editing_marker;
+end;
+
+procedure TMainWindow.update_map_dimensions;
+begin
+  StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
+  resize_map_canvas;
+end;
+
+procedure TMainWindow.update_map_name;
+begin
+  if Map.filename = '' then
+    StatusBar.Panels[3].Text := 'Map not saved'
+  else
+    StatusBar.Panels[3].Text := Map.filename;
+  refresh_recent_files_menu;
+end;
+
+procedure TMainWindow.update_mission_load_status;
+begin
+  if Mission.mis_assigned then
+  begin
+    StatusBar.Panels[4].Text := 'MIS';
+    Assignmisfile1.Caption := 'Unassign .mis file';
+  end else
+  begin
+    StatusBar.Panels[4].Text := '';
+    Assignmisfile1.Caption := 'Assign .mis file';
+  end;
+end;
+
+procedure TMainWindow.update_map_stats;
+var
+  i: integer;
+begin
+  i := PlayerSelect.ItemIndex;
+  StatusBar.Panels[5].Text := 'W: '+inttostr(Map.stats.objects[1])+'  S: '+inttostr(Map.stats.objects[2])+'  B: '+inttostr(Map.stats.objects[3]);
+  StatusBar.Panels[6].Text := 'Power: '+inttostr(Map.stats.players[i].power_percent)+'%   ('+inttostr(Map.stats.players[i].power_output)+'/'+inttostr(Map.stats.players[i].power_need)+')';
 end;
 
 procedure TMainWindow.resize_map_canvas;
@@ -1785,7 +1781,9 @@ begin
     sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
     Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
     true);
-  render_editing_marker;
+  if not editing_marker_disabled then
+    render_editing_marker;
+  editing_marker_disabled := false;
 end;
 
 procedure TMainWindow.render_minimap;
@@ -1860,38 +1858,92 @@ begin
   CursorImage.Visible := mode(mBlockMode) and (block_width > 0) and (block_height > 0);
 end;
 
-procedure TMainWindow.render_tileset;
+procedure TMainWindow.resize_cursor_image;
 var
-  area_types: TStringList;
-  i: integer;
+  cursor_image_left: integer;
+  cursor_image_top: integer;
 begin
-  // Draw glyphs in terrain editing GUI
-  for i := -4 to cnt_paint_tile_groups-1 do
+  cursor_image_left := (CursorImage.Left - MapCanvas.Left) div 32;
+  cursor_image_top := (CursorImage.Top - MapCanvas.Top) div 32;
+  if (cursor_image_left + block_width) > map_canvas_width then
+    CursorImage.Width := (map_canvas_width - cursor_image_left) * 32
+  else
+    CursorImage.Width := block_width * 32 + 1;
+  if (cursor_image_top + block_height) > map_canvas_height then
+    CursorImage.Height := (map_canvas_height - cursor_image_top) * 32
+  else
+    CursorImage.Height := block_height * 32 + 1;
+end;
+
+procedure TMainWindow.render_cursor_image;
+var
+  x, y: integer;
+  tile_x, tile_y: word;
+  border_x, border_y: integer;
+  str: String;
+  any_blank_tiles: boolean;
+begin
+  border_x := (BlockImage.Width - block_width * 32) div 2;
+  border_y := (BlockImage.Height - block_height * 32) div 2;
+  BlockImage.Canvas.Brush.Color := clBtnFace;
+  BlockImage.Canvas.Pen.Color := clBtnFace;
+  BlockImage.Canvas.Rectangle(0,0,BlockImage.Width,BlockImage.Height);
+  CursorImage.Width := block_width * 32 + 1;
+  CursorImage.Height := block_height * 32 + 1;
+  CursorImage.Picture.Bitmap.Width := block_width * 32 + 1;
+  CursorImage.Picture.Bitmap.Height := block_height * 32 + 1;
+  // Render block image
+  if (block_width = 0) or (block_width > 8) or (block_height = 0) or (block_height > 8) then
   begin
-    draw_paint_tile_select_glyph(i, Tileset.paint_tile_groups[i].tile_index, Tileset.tileimage.Canvas);
-    paint_tile_select[i].Enabled := Tileset.paint_tile_groups[i].name <> '';
-    paint_tile_select[i].Hint := Tileset.paint_tile_groups[i].name;
-  end;
-  for i := 0 to cnt_block_preset_groups-1 do
+    // If block size is zero or too big, render dummy text there
+    str := 'Click here to';
+    BlockImage.Canvas.TextOut((BlockImage.Width - BlockImage.Canvas.TextWidth(str)) div 2, 52, str);
+    str := 'select a block';
+    BlockImage.Canvas.TextOut((BlockImage.Width - BlockImage.Canvas.TextWidth(str)) div 2, 66, str);
+  end else
   begin
-    block_preset_select[i].Enabled := Tileset.block_preset_groups[i].name <> '';
-    block_preset_select[i].Caption := Tileset.block_preset_groups[i].name;
+    for x:= 0 to block_width-1 do
+      for y := 0 to block_height-1 do
+      begin
+        tile_x := block_data[x,y].tile mod 20;
+        tile_y := block_data[x,y].tile div 20;
+        BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
+      end;
   end;
-  // Fill Area type combo box
-  area_types := TStringList.Create;
-  area_types.Add('(Everything)');
-  for i := 0 to Tileset.fill_area_rules_used - 1 do
-    area_types.Add(Tileset.fill_area_rules[i].name);
-  cbSelectAreaType.Items := area_types;
-  cbSelectAreaType.ItemIndex := 0;
-  area_types.Clear;
-  draw_cursor_image;
-  if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
-    LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
-  if (TilesetDialog <> nil) and TilesetDialog.Visible then
-    TilesetDialog.tileset_changed;
-  if (BlockPresetDialog <> nil) then
-    BlockPresetDialog.init_presets;
+  // Check if block has any blank tile so that it should be transparent
+  any_blank_tiles := false;
+  for x:= 0 to block_width-1 do
+    for y := 0 to block_height-1 do
+      if block_data[x,y].tile = 65535 then
+        any_blank_tiles := true;
+  CursorImage.Transparent := any_blank_tiles;
+  // Render cursor image
+  Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
+    false, false, false, sbMarkOwnerSide.Down,
+    Useallocationindexes1.Checked, false, false, Showunknownspecials1.Checked,
+    false);
+  CursorImage.Canvas.Pen.Color := clBlue;
+  CursorImage.Canvas.Brush.Style := bsClear;
+  CursorImage.Canvas.Rectangle(0, 0, block_width * 32 + 1, block_height * 32 + 1);
+  resize_cursor_image;
+  render_editing_marker;
+end;
+
+procedure TMainWindow.new_map(new_width, new_height: integer);
+begin
+  if (Tileset.current_tileset = -1) then
+      Tileset.change_tileset_by_name(Settings.DefaultTilesetName);
+  Map.new_map(new_width, new_height);
+  // Initialize mission
+  if Settings.AssignMisFileToNewMap then
+    Mission.new_mission
+  else
+    Mission.unload_mission;
+  // Reset random generator
+  //--RandomGen.reset;
+  // Finish it
+  EditorPages.ActivePage := PageTerrain;
+  //--Memo1.Lines.Clear;
 end;
 
 procedure TMainWindow.load_map(filename: String);
@@ -1907,41 +1959,18 @@ begin
   end;
   // Load map file
   Map.load_map_file(filename);
-  // Set status bar
-  StatusBar.Panels[3].Text := filename;
-  StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
-  // Initialize settings
-  Settings.determine_game_paths_from_path(Map.filename);
-  Launcher.get_map_test_settings(Map.filename);
   // Load mis file
   tmp_mis_filename := Mission.get_mis_filename(Map.filename);
   if FileExists(tmp_mis_filename) then
   begin
-    Mission.mis_assigned := true;
-    StatusBar.Panels[4].Text := 'MIS';
     Mission.load_mis_file(tmp_mis_filename);
-    Assignmisfile1.Caption := 'Unassign .mis file';
-    // Update Mission settings and Events and Conditions dialogs.
-    // Map's ini file will be loaded along with Mission dialog.
-    MissionDialog.fill_data;
-    EventDialog.update_contents;
   end else
   begin
-    unload_mission;
+    Mission.unload_mission;
     // No tileset specified for map, if mis file not present - set to default one
     if (Tileset.current_tileset = -1) then
       Tileset.change_tileset_by_name(Settings.DefaultTilesetName);
   end;
-  set_window_titles(ChangeFileExt(ExtractFileName(Map.filename), ''));
-  if MapStatsDialog.Visible then
-    MapStatsDialog.update_stats;
-  // Rendering
-  resize_map_canvas;
-  render_minimap;
-  render_map;
-  // Update recent files list
-  Settings.update_recent_files(filename);
-  refresh_recent_files_menu;
 end;
 
 procedure TMainWindow.save_map(filename: String);
@@ -1954,17 +1983,6 @@ begin
   end;
 end;
 
-procedure TMainWindow.unload_mission;
-begin
-  Mission.mis_assigned := false;
-  Mission.mis_filename := '';
-  StatusBar.Panels[4].Text := '';
-  Mission.set_default_mis_values;
-  Assignmisfile1.Caption := 'Assign .mis file';
-  MissionDialog.Close;
-  EventDialog.Close;
-end;
-
 function TMainWindow.check_map_errors: boolean;
 var
   errmsg: String;
@@ -1975,19 +1993,6 @@ begin
   begin
     Application.MessageBox(PChar(errmsg), 'Map error', MB_ICONWARNING);
     result := false;
-  end;
-end;
-
-procedure TMainWindow.set_window_titles(map_name: String);
-begin
-  Caption := 'Dune 2000 Map and Mission Editor';
-  MissionDialog.Caption := 'Mission settings';
-  EventDialog.Caption := 'Events and Conditions';
-  if map_name <> '' then
-  begin
-    Caption := Caption + ' - ' + map_name;
-    MissionDialog.Caption := MissionDialog.Caption + ' - ' + map_name;
-    EventDialog.Caption := EventDialog.Caption + ' - ' + map_name;
   end;
 end;
 
@@ -2036,19 +2041,6 @@ begin
     result := true;
 end;
 
-procedure TMainWindow.tileset_changed;
-begin
-  if Tileset.current_tileset <> -1 then
-  begin
-    SetDialog.Tileset_List.ItemIndex := Tileset.current_tileset;
-    StatusBar.Panels[1].Text := Tileset.tileset_name;
-  end else
-  begin
-    StatusBar.Panels[1].Text := 'Custom files';
-  end;
-  TileAtrEditor.tileset_changed;
-end;
-
 procedure TMainWindow.set_special_value;
 var
   tiledata_entry: TTileDataEntryPtr;
@@ -2086,6 +2078,7 @@ begin
   end;
   special_value_changing := true;
   SpecialValue.Text := inttostr(value);
+  special_value_changing := false;
   mouse_already_clicked := false;
 end;
 
@@ -2141,15 +2134,6 @@ begin
   select_block_preset(Tileset.get_block_preset(block_preset_group, key, bpNext));
 end;
 
-procedure TMainWindow.show_power_and_statistics;
-var
-  i: integer;
-begin
-  i := PlayerSelect.ItemIndex;
-  StatusBar.Panels[5].Text := 'W: '+inttostr(Map.stats.objects[1])+'  S: '+inttostr(Map.stats.objects[2])+'  B: '+inttostr(Map.stats.objects[3]);
-  StatusBar.Panels[6].Text := 'Power: '+inttostr(Map.stats.players[i].power_percent)+'%   ('+inttostr(Map.stats.players[i].power_output)+'/'+inttostr(Map.stats.players[i].power_need)+')';
-end;
-
 procedure TMainWindow.start_event_position_selection(x, y: integer; mode: EventPositionSelectionMode);
 begin
   EditorPages.TabIndex := 0;
@@ -2191,16 +2175,6 @@ begin
     MissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y);
 end;
 
-procedure TMainWindow.draw_paint_tile_select_glyph(target, tile_index: integer; source_canvas: TCanvas);
-var
-  tile_x, tile_y: integer;
-begin
-  tile_x := tile_index mod 20;
-  tile_y := tile_index div 20;
-  paint_tile_select[target].Glyph.Canvas.CopyRect(Rect(0,0,28,28), source_canvas, Rect(tile_x*32+2, tile_y*32+2, tile_x*32+30, tile_y*32+30));
-  paint_tile_select[target].Glyph.Canvas.Pixels[0,27] := $1;
-end;
-
 procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top: word);
 var
   x, y: integer;
@@ -2214,7 +2188,7 @@ begin
       block_data[x,y].special := 0;
     end;
   mouse_already_clicked := false;
-  draw_cursor_image;
+  render_cursor_image;
 end;
 
 procedure TMainWindow.select_block_preset(preset_index: integer);
@@ -2234,7 +2208,7 @@ begin
     end;
   RbBlockMode.Checked := true;
   mouse_already_clicked := false;
-  draw_cursor_image;
+  render_cursor_image;
 end;
 
 procedure TMainWindow.copy_block_from_map(b_width, b_height, b_left, b_top: word; structures, erase: boolean; area_type: integer);
@@ -2242,145 +2216,8 @@ begin
   block_width := b_width;
   block_height := b_height;
   Map.copy_block(b_left, b_top, b_width, b_height, Addr(block_data), CbSelectStructures.State <> cbGrayed, (CbSelectStructures.State <> cbUnchecked) and structures, area_type, erase);
-  draw_cursor_image;
+  render_cursor_image;
   RbBlockMode.Checked := True;
-end;
-
-procedure TMainWindow.resize_cursor_image;
-var
-  cursor_image_left: integer;
-  cursor_image_top: integer;
-begin
-  cursor_image_left := (CursorImage.Left - MapCanvas.Left) div 32;
-  cursor_image_top := (CursorImage.Top - MapCanvas.Top) div 32;
-  if (cursor_image_left + block_width) > map_canvas_width then
-    CursorImage.Width := (map_canvas_width - cursor_image_left) * 32
-  else
-    CursorImage.Width := block_width * 32 + 1;
-  if (cursor_image_top + block_height) > map_canvas_height then
-    CursorImage.Height := (map_canvas_height - cursor_image_top) * 32
-  else
-    CursorImage.Height := block_height * 32 + 1;
-end;
-
-procedure TMainWindow.draw_cursor_image;
-var
-  x, y: integer;
-  tile_x, tile_y: word;
-  border_x, border_y: integer;
-  str: String;
-  any_blank_tiles: boolean;
-begin
-  border_x := (BlockImage.Width - block_width * 32) div 2;
-  border_y := (BlockImage.Height - block_height * 32) div 2;
-  BlockImage.Canvas.Brush.Color := clBtnFace;
-  BlockImage.Canvas.Pen.Color := clBtnFace;
-  BlockImage.Canvas.Rectangle(0,0,BlockImage.Width,BlockImage.Height);
-  CursorImage.Width := block_width * 32 + 1;
-  CursorImage.Height := block_height * 32 + 1;
-  CursorImage.Picture.Bitmap.Width := block_width * 32 + 1;
-  CursorImage.Picture.Bitmap.Height := block_height * 32 + 1;
-  // Render block image
-  if (block_width = 0) or (block_width > 8) or (block_height = 0) or (block_height > 8) then
-  begin
-    // If block size is zero or too big, render dummy text there
-    str := 'Click here to';
-    BlockImage.Canvas.TextOut((BlockImage.Width - BlockImage.Canvas.TextWidth(str)) div 2, 52, str);
-    str := 'select a block';
-    BlockImage.Canvas.TextOut((BlockImage.Width - BlockImage.Canvas.TextWidth(str)) div 2, 66, str);
-  end else
-  begin
-    for x:= 0 to block_width-1 do
-      for y := 0 to block_height-1 do
-      begin
-        tile_x := block_data[x,y].tile mod 20;
-        tile_y := block_data[x,y].tile div 20;
-        BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
-      end;
-  end;
-  // Check if block has any blank tile so that it should be transparent
-  any_blank_tiles := false;
-  for x:= 0 to block_width-1 do
-    for y := 0 to block_height-1 do
-      if block_data[x,y].tile = 65535 then
-        any_blank_tiles := true;
-  CursorImage.Transparent := any_blank_tiles;
-  // Render cursor image
-  Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
-    false, false, false, sbMarkOwnerSide.Down,
-    Useallocationindexes1.Checked, false, false, Showunknownspecials1.Checked,
-    false);
-  CursorImage.Canvas.Pen.Color := clBlue;
-  CursorImage.Canvas.Brush.Style := bsClear;
-  CursorImage.Canvas.Rectangle(0, 0, block_width * 32 + 1, block_height * 32 + 1);
-  resize_cursor_image;
-  render_editing_marker;
-end;
-
-procedure TMainWindow.set_map_size(new_width, new_height: integer);
-begin
-  if (Map.width = new_width) and (Map.height = new_height) then
-    exit;
-  Map.set_map_size(new_width, new_height);
-  StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
-  resize_map_canvas;
-  render_minimap;
-  render_map;
-end;
-
-procedure TMainWindow.shift_map(direction, num_tiles: integer);
-begin
-  Map.shift_map(direction, num_tiles);
-  EventDialog.fill_grids;
-  render_minimap;
-  render_map;
-end;
-
-procedure TMainWindow.change_structure_owner(player_from,
-  player_to: integer; swap: boolean);
-begin
-  Map.change_structure_owner(player_from, player_to, swap);
-  render_minimap;
-  render_map;
-end;
-
-procedure TMainWindow.new_map(new_width, new_height: integer);
-begin
-  if (Tileset.current_tileset = -1) then
-      Tileset.change_tileset_by_name(Settings.DefaultTilesetName);
-  Map.new_map(new_width, new_height);
-  StatusBar.Panels[2].Text := inttostr(Map.width)+' x '+inttostr(Map.height);
-  StatusBar.Panels[3].Text := 'Map not saved';
-  set_window_titles('Untitled');
-  // Reset mission
-  if Settings.AssignMisFileToNewMap then
-  begin
-    Mission.mis_assigned := false;
-    Mission.set_default_mis_values;
-    Assignmisfile1Click(nil);
-  end else
-    unload_mission;
-  // Reset random generator
-  //--RandomGen.reset;
-  // Get test map settings
-  Launcher.get_map_test_settings('');
-  // Finish it
-  if MapStatsDialog.Visible then
-    MapStatsDialog.update_stats;
-  resize_map_canvas;
-  render_minimap;
-  render_map;
-  EditorPages.ActivePage := PageTerrain;
-  //--Memo1.Lines.Clear;
-end;
-
-procedure TMainWindow.change_tileset(index: integer);
-begin
-  Tileset.change_tileset(index);
-  MissionDialog.tileset_changed;
-  // Re-render everything
-  render_minimap;
-  render_map;
 end;
 
 end.

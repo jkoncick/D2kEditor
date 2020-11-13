@@ -187,8 +187,11 @@ type
     function get_mis_filename(filename: String): String;
     procedure load_mis_file(filename: String);
     procedure save_mis_file(filename: String);
-    procedure process_event_markers;
+    procedure new_mission;
+    procedure unload_mission;
     procedure set_default_mis_values;
+    // Dispatcher procedures
+    procedure cache_event_markers;
     // Loading and saving notes
     procedure load_notes_from_ini(ini: TMemIniFile);
     procedure save_notes_to_ini(ini: TMemIniFile);
@@ -224,7 +227,7 @@ var
 
 implementation
 
-uses SysUtils, Math, main, _tileset, _stringtable, _settings, _structures;
+uses SysUtils, Math, mission_dialog, _tileset, _stringtable, _settings, _structures, _dispatcher;
 
 procedure TMission.init;
 begin
@@ -243,16 +246,16 @@ begin
 end;
 
 procedure TMission.load_mis_file(filename: String);
-var
-  tileset_name: String;
 begin
   load_binary_file(filename, mis_data, sizeof(mis_data));
   mis_filename := filename;
+  mis_assigned := true;
   mis_modified := false;
 
-  tileset_name := String(mis_data.tileset);
-  Tileset.change_tileset_by_name(tileset_name);
-  process_event_markers;
+  // Map's ini file will be loaded along with Mission dialog.
+  MissionDialog.fill_data;
+  Tileset.change_tileset_by_name(mis_data.tileset);
+  Dispatcher.register_event(evMisLoad);
 end;
 
 procedure TMission.save_mis_file(filename: String);
@@ -260,10 +263,68 @@ begin
   save_binary_file(filename, mis_data, sizeof(mis_data));
 
   if ExtractFileName(filename) <> '_TESTMAP.MIS' then
+  begin
     mis_modified := false;
+    mis_filename := filename;
+  end;
 end;
 
-procedure TMission.process_event_markers;
+procedure TMission.new_mission;
+begin
+  mis_filename := '';
+  mis_assigned := true;
+  set_default_mis_values;
+  MissionDialog.fill_data;
+  Dispatcher.register_event(evMisLoad);
+end;
+
+procedure TMission.unload_mission;
+begin
+  if not mis_assigned then
+    exit;
+  mis_filename := '';
+  mis_assigned := false;
+  set_default_mis_values;
+  MissionDialog.Close;
+  MissionDialog.fill_data;
+  Dispatcher.register_event(evMisLoad);
+end;
+
+procedure TMission.set_default_mis_values;
+var
+  i, j: integer;
+begin
+  FillChar(mis_data, sizeof(mis_data), 0);
+  // Write tileset name
+  Move(Tileset.tileset_name[1], mis_data.tileset, Length(Tileset.tileset_name));
+  Move(Tileset.tileatr_name[1], mis_data.tileatr, Length(Tileset.tileatr_name));
+  // Player properties and AI
+  for i := 0 to 7 do
+  begin
+    mis_data.tech_level[i] := Settings.DefaultMisTechLevel;
+    mis_data.starting_money[i] := Settings.DefaultMisStartingMoney;
+    mis_data.allocation_index[i] := i;
+    mis_data.ai_segments[i,0] := i;
+    Move(default_ai[1], mis_data.ai_segments[i,1], Length(default_ai)-1);
+  end;
+  // Allegiance
+  for i := 0 to 7 do
+    for j := 0 to 7 do
+    begin
+      if i = j then
+        mis_data.allegiance[i,j] := 0
+      else
+        mis_data.allegiance[i,j] := 1;
+    end;
+  // Time limit
+  mis_data.time_limit := -1;
+  // Clear notes
+  clear_notes;
+  // Clear mofication flag
+  mis_modified := false;
+end;
+
+procedure TMission.cache_event_markers;
 var
   event: ^TEvent;
   condition: ^TCondition;
@@ -273,9 +334,11 @@ var
   moved: boolean;
   attempts: integer;
 begin
+  // Clear event markers
   for x := 0 to max_map_width - 1 do
     for y := 0 to max_map_height - 1 do
       event_markers[x,y].emtype := emNone;
+  // Process events
   for i:= 0 to mis_data.num_events - 1 do
   begin
     event := Addr(mis_data.events[i]);
@@ -310,6 +373,7 @@ begin
       event_markers[x][y].moved := moved;
     end;
   end;
+  // Process conditions
   for i:= 0 to mis_data.num_conditions - 1 do
   begin
     condition := Addr(mis_data.conditions[i]);
@@ -322,45 +386,6 @@ begin
       event_markers[x][y].index := i;
     end;
   end;
-end;
-
-procedure TMission.set_default_mis_values;
-var
-  i, j: integer;
-  x, y: integer;
-begin
-  FillChar(mis_data, sizeof(mis_data), 0);
-  // Write tileset name
-  Move(Tileset.tileset_name[1], mis_data.tileset, Length(Tileset.tileset_name));
-  Move(Tileset.tileatr_name[1], mis_data.tileatr, Length(Tileset.tileatr_name));
-  // Player properties and AI
-  for i := 0 to 7 do
-  begin
-    mis_data.tech_level[i] := Settings.DefaultMisTechLevel;
-    mis_data.starting_money[i] := Settings.DefaultMisStartingMoney;
-    mis_data.allocation_index[i] := i;
-    mis_data.ai_segments[i,0] := i;
-    Move(default_ai[1], mis_data.ai_segments[i,1], Length(default_ai)-1);
-  end;
-  // Allegiance
-  for i := 0 to 7 do
-    for j := 0 to 7 do
-    begin
-      if i = j then
-        mis_data.allegiance[i,j] := 0
-      else
-        mis_data.allegiance[i,j] := 1;
-    end;
-  // Time limit
-  mis_data.time_limit := -1;
-  // Clear event markers
-  for x := 0 to max_map_width - 1 do
-    for y := 0 to max_map_height - 1 do
-      Mission.event_markers[x,y].emtype := emNone;
-  // Clear notes
-  clear_notes;
-  // Clear mofication flag
-  mis_modified := false;
 end;
 
 procedure TMission.load_notes_from_ini(ini: TMemIniFile);
@@ -582,10 +607,7 @@ begin
   mis_modified := true;
   // Update event markers on map if event had position
   if event_used_position then
-  begin
-    process_event_markers;
-    MainWindow.render_map;
-  end;
+    Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 procedure TMission.delete_condition(deleted_index: integer);
@@ -644,10 +666,7 @@ begin
   mis_modified := true;
   // Update event markers on map if condition had position
   if condition_used_position then
-  begin
-    process_event_markers;
-    MainWindow.render_map;
-  end;
+    Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 function TMission.condition_is_used(index: integer): boolean;
@@ -686,10 +705,7 @@ begin
   // Update event markers on map if event had position
   event_used_position := (event_type_info[mis_data.events[e1].event_type].use_map_position) or (event_type_info[mis_data.events[e2].event_type].use_map_position);
   if event_used_position then
-  begin
-    process_event_markers;
-    MainWindow.render_map;
-  end;
+    Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 procedure TMission.swap_conditions(c1, c2: integer);
@@ -736,10 +752,7 @@ begin
   mis_modified := true;
   // Update event markers on map if condition had position
   if condition_used_position then
-  begin
-    process_event_markers;
-    MainWindow.render_map;
-  end;
+    Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 function TMission.get_or_create_condition(condition_type: ConditionType;
@@ -799,8 +812,7 @@ begin
     event.num_conditions := 1;
     event.condition_index[0] := cond_index;
   end;
-  process_event_markers;
-  MainWindow.render_map;
+  Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 procedure TMission.create_harvester_replacement(player: integer);
@@ -851,8 +863,7 @@ begin
   event[3].condition_index[0] := cond_index[2];
   event[3].condition_index[1] := cond_index[4];
   event[3].condition_not[1] := 1;
-  process_event_markers;
-  MainWindow.render_map;
+  Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 procedure TMission.create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
@@ -971,7 +982,6 @@ begin
       condition.map_pos_y := min(Map.height - 1, max(0, new_pos_y));
     end;
   end;
-  process_event_markers;
 end;
 
 procedure TMission.adjust_event_positions_on_map_resize;
@@ -998,7 +1008,6 @@ begin
       condition.map_pos_y := min(Map.height - 1, condition.map_pos_y);
     end;
   end;
-  process_event_markers;
 end;
 
 function TMission.check_errors: String;

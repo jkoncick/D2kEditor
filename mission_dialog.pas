@@ -129,19 +129,24 @@ type
     defence_area_num: integer;
     loading: boolean;
   public
+    // Dispatcher procedures
     procedure fill_data;
     procedure update_player_list(player_list: TStringList);
     procedure update_player_colors;
-    procedure tileset_changed;
-
+    procedure update_tileset;
+    procedure update_mis_ai_properties;
+  private
+    // MISAI editor related procedures
     function get_integer_value(source: array of byte; pos, bytes: integer): integer;
     function get_float_value(source: array of byte; pos: integer): single;
     procedure fill_ai_values;
-
+    // Mission ini file related procedures
     function get_ini_filename(map_filename: String): String;
     procedure load_ini_fields;
     procedure empty_ini_fields;
+  public
     procedure save_ini_fields(map_filename: String);
+    // Procedures called from different forms
     procedure finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);
   end;
 
@@ -151,7 +156,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, _stringtable, _settings, _tileset, _launcher, event_dialog, main, tileatr_editor;
+  Math, StrUtils, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
 
 {$R *.dfm}
 
@@ -302,7 +307,7 @@ begin
   edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
   edTilesetName.Text := Mission.mis_data.tileset;
   edTileatrName.Text := Mission.mis_data.tileatr;
-  if FileExists(get_ini_filename(Map.filename)) then
+  if Mission.mis_assigned and FileExists(get_ini_filename(Map.filename)) then
   begin
     load_ini_fields;
     cbUseINI.Checked := true;
@@ -340,10 +345,16 @@ begin
     color_marker[i].Color := Structures.player_info[Mission.mis_data.allocation_index[i]].color_inv;
 end;
 
-procedure TMissionDialog.tileset_changed;
+procedure TMissionDialog.update_tileset;
 begin
   edTilesetName.Text := Tileset.tileset_name;
   edTileatrName.Text := Tileset.tileatr_name;
+end;
+
+procedure TMissionDialog.update_mis_ai_properties;
+begin
+  if Mission.mis_assigned then
+    fill_ai_values;
 end;
 
 function TMissionDialog.get_integer_value(source: array of byte; pos, bytes: integer): integer;
@@ -643,9 +654,7 @@ begin
     exit;
   Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
   color_marker[(Sender as TSpinEdit).Tag].Color := Structures.player_info[Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag]].color_inv;
-  MainWindow.render_map;
-  MainWindow.render_minimap;
-  MainWindow.draw_cursor_image;
+  Dispatcher.register_event(evMisAllocIndexChange);
 end;
 
 procedure TMissionDialog.allegiance_btn_click(Sender: TObject);
@@ -707,6 +716,10 @@ begin
     if i <> AIValueList.Row then
       AIValueList.Cells[1,i] := AIValueList.Cells[1,AIValueList.Row];
     prop := Addr(Structures.mis_ai_properties[i-1]);
+    // Check if defence area was affected
+    if (prop.position >= 7505) and (prop.position <= 7604) then
+      Dispatcher.register_event(evMisDefenceAreaChange);
+    // Determine data type
     bytes := 1;
     case prop.data_type of
       'b': bytes := 1;
@@ -923,19 +936,16 @@ begin
   Structures.load_misc_objects_ini;
   Structures.load_limits_ini;
   Structures.load_templates_other_txt;
-  Structures.do_pending_actions(loading);
 end;
 
 procedure TMissionDialog.cbColoursBinChange(Sender: TObject);
 begin
   Structures.load_colours_bin;
-  Structures.do_pending_actions(loading);
 end;
 
 procedure TMissionDialog.cbPlayersIniChange(Sender: TObject);
 begin
   Structures.load_players_ini;
-  Structures.do_pending_actions(loading);
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);
@@ -954,7 +964,7 @@ begin
   Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 2] := min_y;
   Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 3] := max_y;
   fill_ai_values;
-  MainWindow.render_map;
+  Dispatcher.register_event(evMisDefenceAreaChange);
 end;
 
 end.

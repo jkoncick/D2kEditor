@@ -161,6 +161,7 @@ type
     N3: TMenuItem;
     Showkeyshortcuts2: TMenuItem;
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
@@ -250,12 +251,17 @@ type
     notes_enabled: boolean;
     msg_text_is_custom: boolean;
     copy_conditions_from: integer;
+
+    pending_update_contents: boolean;
   public
+    // Dispatcher events
     procedure update_contents;
-    procedure fill_grids;
     procedure update_player_list(player_list: TStringList);
     procedure update_structures_list;
-    procedure update_sound_names;
+    procedure update_sound_list;
+  private
+    // Fill data procedures
+    procedure fill_grids;
     // Event-related procedures
     procedure select_event(index: integer);
     procedure fill_event_ui(event_valid: boolean);
@@ -270,6 +276,7 @@ type
     procedure fill_condition_ui_panel(panel: TPanel; var panel_top: integer);
     procedure change_condition_type(condition_type: integer);
     procedure apply_condition_changes;
+  public
     // Procedures called from different forms
     procedure finish_event_position_selection(x, y: integer);
     procedure enable_map_ini_features(enabled: boolean);
@@ -280,7 +287,7 @@ var
 
 implementation
 
-uses Math, main, _stringtable, _settings, _structures;
+uses Math, main, _stringtable, _settings, _structures, _dispatcher;
 
 {$R *.dfm}
 
@@ -369,6 +376,12 @@ begin
   select_condition(0);
 end;
 
+procedure TEventDialog.FormShow(Sender: TObject);
+begin
+  if pending_update_contents then
+    update_contents;
+end;
+
 procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
@@ -411,11 +424,59 @@ end;
 
 procedure TEventDialog.update_contents;
 begin
+  if not Visible then
+  begin
+    pending_update_contents := true;
+    exit;
+  end;
+  pending_update_contents := false;
   if not Mission.mis_assigned then
     exit;
   fill_grids;
   select_event(selected_event);
   select_condition(selected_condition);
+end;
+
+procedure TEventDialog.update_player_list(player_list: TStringList);
+var
+  prev_index: integer;
+begin
+  cbEventPlayer.Items := player_list;
+  cbAllegianceSource.Items := player_list;
+  cbAllegianceTarget.Items := player_list;
+  cbConditionPlayer.Items := player_list;
+  prev_index := cbCreateEventsPlayer.ItemIndex;
+  cbCreateEventsPlayer.Items := player_list;
+  cbCreateEventsPlayer.ItemIndex := Max(prev_index, 0);
+end;
+
+procedure TEventDialog.update_structures_list;
+var
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  for i:= 0 to Structures.templates.BuildingCount -1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + Structures.get_building_name_str(i));
+  cbBuildingType.Items := tmp_strings;
+  tmp_strings.Clear;
+  for i:= 0 to Structures.templates.UnitCount -1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + Structures.get_unit_name_str(i));
+  UnitSelectionList.Items := tmp_strings;
+  cbUnitType.Items := tmp_strings;
+  tmp_strings.Destroy;
+end;
+
+procedure TEventDialog.update_sound_list;
+var
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  for i := 0 to StringTable.samples_uib.Count - 1 do
+    tmp_strings.Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
+  cbSoundName.Items := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 procedure TEventDialog.fill_grids;
@@ -477,48 +538,6 @@ begin
   // All event grid must be redrawn
   if cbMarkEventsHavingCondition.Checked then
     EventGrid.Invalidate;
-end;
-
-procedure TEventDialog.update_player_list(player_list: TStringList);
-var
-  prev_index: integer;
-begin
-  cbEventPlayer.Items := player_list;
-  cbAllegianceSource.Items := player_list;
-  cbAllegianceTarget.Items := player_list;
-  cbConditionPlayer.Items := player_list;
-  prev_index := cbCreateEventsPlayer.ItemIndex;
-  cbCreateEventsPlayer.Items := player_list;
-  cbCreateEventsPlayer.ItemIndex := Max(prev_index, 0);
-end;
-
-procedure TEventDialog.update_structures_list;
-var
-  i: integer;
-  tmp_strings: TStringList;
-begin
-  tmp_strings := TStringList.Create;
-  for i:= 0 to Structures.templates.BuildingCount -1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + Structures.get_building_name_str(i));
-  cbBuildingType.Items := tmp_strings;
-  tmp_strings.Clear;
-  for i:= 0 to Structures.templates.UnitCount -1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + Structures.get_unit_name_str(i));
-  UnitSelectionList.Items := tmp_strings;
-  cbUnitType.Items := tmp_strings;
-  tmp_strings.Destroy;
-end;
-
-procedure TEventDialog.update_sound_names;
-var
-  i: integer;
-  tmp_strings: TStringList;
-begin
-  tmp_strings := TStringList.Create;
-  for i := 0 to StringTable.samples_uib.Count - 1 do
-    tmp_strings.Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
-  cbSoundName.Items := tmp_strings;
-  tmp_strings.Destroy;
 end;
 
 procedure TEventDialog.select_event(index: integer);
@@ -747,10 +766,7 @@ begin
   fill_grids;
   // Update event markers on map if old or new event has position
   if old_event_used_position or event_type_info[event_type].use_map_position then
-  begin
-    Mission.process_event_markers;
-    MainWindow.render_map;
-  end;
+    Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 procedure TEventDialog.select_condition(index: integer);
@@ -908,10 +924,7 @@ begin
   fill_event_condition_list;
   // Update event markers on map if condition has position
   if condition_type = Byte(ctTileRevealed) then
-  begin
-    Mission.process_event_markers;
-    MainWindow.render_map;
-  end;
+    Dispatcher.register_event(evMisEventPositionChange);
 end;
 
 procedure TEventDialog.finish_event_position_selection(x, y: integer);

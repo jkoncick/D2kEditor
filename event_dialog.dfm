@@ -18,6 +18,7 @@ object EventDialog: TEventDialog
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShortCut = FormShortCut
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object Splitter1: TSplitter
