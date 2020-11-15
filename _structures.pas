@@ -389,17 +389,6 @@ const BUILDING_SKIRT_2x2: TBuildingSkirt = (size_x: 2; size_y: 2; rock_tile_x: 1
 const BUILDING_SKIRT_3x2: TBuildingSkirt = (size_x: 3; size_y: 2; rock_tile_x: 11; rock_tile_y: 30; conc_tile_x:  3; conc_tile_y: 32);
 
 // *****************************************************************************
-// Mis AI properties definitions
-// *****************************************************************************
-
-type
-  TMisAIProperty = record
-    name: String;
-    data_type: char;
-    position: integer;
-  end;
-
-// *****************************************************************************
 // Misc. objects definitions
 // *****************************************************************************
 
@@ -503,11 +492,6 @@ type
     house_color_pixel_shades: array of byte;
     house_color_pixel_count_total: integer;
 
-    // Mis AI properties related data
-    mis_ai_properties_template: array of TMisAIProperty;
-    mis_ai_properties: array of TMisAIProperty;
-    cnt_mis_ai_properties: integer;
-
     // Misc. objects related data
     graphics_misc_objects: TBitmap;
     graphics_misc_objects_mask: TBitmap;
@@ -571,9 +555,6 @@ type
     procedure recolor_structure_image(image_index, house_index: integer);
     function get_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean; var was_already_loaded: boolean): TStructureImagePtr;
     function get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
-    // Mis AI properties related procedures
-    procedure load_mis_ai_properties_ini;
-    procedure cache_mis_ai_properties;
     // Misc. objects related procedures
     procedure load_graphics_misc_objects;
     procedure load_misc_objects_ini;
@@ -606,7 +587,6 @@ begin
   load_tiledata_bin;
   load_colours_bin;
   load_data_r16;
-  load_mis_ai_properties_ini;
   load_graphics_misc_objects;
   load_misc_objects_ini;
   load_players_ini;
@@ -1373,78 +1353,6 @@ begin
     result := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]])
   else
     result := nil;
-end;
-
-procedure TStructures.load_mis_ai_properties_ini;
-var
-  tmp_filename: String;
-  i: integer;
-  ini: TMemIniFile;
-  tmp_strings: TStringList;
-begin
-  tmp_filename := find_file('config\mis_ai_properties.ini', 'configuration');
-  if tmp_filename = '' then
-    exit;
-  // Load misai properties from ini file
-  tmp_strings := TStringList.Create;
-  ini := TMemIniFile.Create(tmp_filename);
-  ini.ReadSection('AI',tmp_strings);
-  SetLength(mis_ai_properties_template, tmp_strings.Count);
-  SetLength(mis_ai_properties, tmp_strings.Count);
-  for i := 0 to tmp_strings.Count - 1 do
-  begin
-    mis_ai_properties_template[i].name := ini.ReadString('AI',tmp_strings[i],'');
-    mis_ai_properties_template[i].data_type := tmp_strings[i][1];
-    mis_ai_properties_template[i].position := strtoint(Copy(tmp_strings[i], 3, Length(tmp_strings[i]) - 2));
-  end;
-  ini.Destroy;
-  tmp_strings.Destroy;
-end;
-
-procedure TStructures.cache_mis_ai_properties;
-var
-  i, position, num: integer;
-  name: String;
-begin
-  cnt_mis_ai_properties := 0;
-  for i := 0 to Length(mis_ai_properties_template) - 1 do
-  begin
-    name := mis_ai_properties_template[i].name;
-    // Replace building name
-    position := Pos('B#', name);
-    if position > 0 then
-    begin
-      num := strtointdef(Copy(name, position+2, 2), 100);
-      if num < templates.BuildingTypeCount then
-        name := Copy(name, 0, position-1) + templates.BuildingTypeStrings[num]
-      else
-        continue;
-    end;
-    // Replace building2 name
-    position := Pos('B2#', name);
-    if position > 0 then
-    begin
-      num := strtointdef(Copy(name, position+3, 2), 100);
-      if num < templates.BuildingCount then
-        name := Copy(name, 0, position-1) + prettify_structure_name(templates.BuildingNameStrings[num])
-      else
-        continue;
-    end;
-    // Replace unit name
-    position := Pos('U#', name);
-    if position > 0 then
-    begin
-      num := strtointdef(Copy(name, position+2, 2), 60);
-      if num < templates.UnitCount then
-        name := Copy(name, 0, position-1) + templates.UnitNameStrings[num]
-      else
-        continue;
-    end;
-    mis_ai_properties[cnt_mis_ai_properties].name := name;
-    mis_ai_properties[cnt_mis_ai_properties].data_type := mis_ai_properties_template[i].data_type;
-    mis_ai_properties[cnt_mis_ai_properties].position := mis_ai_properties_template[i].position;
-    inc(cnt_mis_ai_properties);
-  end;
 end;
 
 procedure TStructures.load_graphics_misc_objects;

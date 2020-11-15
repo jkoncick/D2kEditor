@@ -102,7 +102,7 @@ var
 
 implementation
 
-uses SysUtils, Math, _mission, _tileset, _settings, _randomgen;
+uses SysUtils, Math, _mission, _tileset, _settings, _misai, _randomgen;
 
 procedure TRenderer.init;
 begin
@@ -165,6 +165,7 @@ var
   was_already_loaded: boolean;
   house_color_pixels: integer;
   is_stealth: boolean;
+  defence_area: TDefenceAreaPtr;
 begin
   if not Map.loaded then
     exit;
@@ -557,17 +558,18 @@ begin
     cnv_target.Brush.Style := bsClear;
     cnv_target.pen.Width := 2;
     for x := 0 to cnt_players - 1 do
-      for y := 0 to Mission.mis_data.ai_segments[x,7505] - 1 do
+      for y := 0 to Min(Mission.mis_data.ai_segments[x, DEFENCE_AREAS_COUNT_BYTE], CNT_DEFENCE_AREAS) - 1 do
       begin
+        defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[x], y);
         cnv_target.Pen.Color := Structures.player_info[x].color_inv;
         cnv_target.Rectangle(
-          (Mission.mis_data.ai_segments[x,7508+y*20] - cnv_left) * 32,
-          (Mission.mis_data.ai_segments[x,7510+y*20] - cnv_top) * 32,
-          (Mission.mis_data.ai_segments[x,7509+y*20] - cnv_left) * 32 + 32,
-          (Mission.mis_data.ai_segments[x,7511+y*20] - cnv_top) * 32 + 32);
+          (defence_area.MinX - cnv_left) * 32,
+          (defence_area.MinY - cnv_top) * 32,
+          (defence_area.MaxX - cnv_left) * 32 + 32,
+          (defence_area.MaxY - cnv_top) * 32 + 32);
         cnv_target.TextOut(
-          (Mission.mis_data.ai_segments[x,7508+y*20] - cnv_left) * 32 + 3,
-          (Mission.mis_data.ai_segments[x,7510+y*20] - cnv_top) * 32 + 3,
+          (defence_area.MinX - cnv_left) * 32 + 3,
+          (defence_area.MinY - cnv_top) * 32 + 3,
           'Area' + inttostr(y+1));
       end;
   end;

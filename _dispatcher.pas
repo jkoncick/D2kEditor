@@ -102,7 +102,7 @@ var
 implementation
 
 uses
-  Forms, Classes, SysUtils, _utils, _settings, _structures, _map, _mission, main, set_dialog,
+  Forms, Classes, SysUtils, _utils, _settings, _structures, _misai, _map, _mission, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
   tileatr_editor, structures_editor;
@@ -275,7 +275,7 @@ end;
 
 procedure TDispatcher.update_mis_ai_properties;
 begin
-  Structures.cache_mis_ai_properties;
+  MisAI.cache_mis_ai_properties;
   MissionDialog.update_mis_ai_properties;
 end;
 

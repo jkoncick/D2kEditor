@@ -1,7 +1,8 @@
 program D2kEditor;
 
 uses
-  Forms, SysUtils,
+  Forms,
+  SysUtils,
   main in 'main.pas' {MainWindow},
   set_dialog in 'set_dialog.pas' {SetDialog},
   tileset_dialog in 'tileset_dialog.pas' {TilesetDialog},
@@ -21,6 +22,7 @@ uses
   _mission in '_mission.pas',
   _tileset in '_tileset.pas',
   _structures in '_structures.pas',
+  _misai in '_misai.pas',
   _stringtable in '_stringtable.pas',
   _randomgen in '_randomgen.pas',
   _launcher in '_launcher.pas';
@@ -43,6 +45,7 @@ begin
   Mission := TMission.Create;
   Tileset := TTileset.Create;
   Structures := TStructures.Create;
+  MisAI := TMisAI.Create;
   StringTable := TStringTable.Create;
   //--RandomGen := TRandomGen.Create;
   Launcher := TLauncher.Create;
@@ -62,9 +65,9 @@ begin
   Settings.load_postcreate_editor_settings;
   // Initialize program components
   Renderer.init;
-  Mission.init;
   Tileset.init;
   Structures.init;
+  MisAI.init;
   StringTable.init;
   // Load map given as first parameter
   if ParamCount > 0 then

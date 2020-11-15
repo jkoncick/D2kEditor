@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls, StdCtrls, Spin,  Buttons, ComCtrls, Grids,
-  ValEdit, IniFiles, Clipbrd, _map, _mission, _structures, _utils;
+  Dialogs, ExtCtrls, StdCtrls, Spin, Buttons, ComCtrls, Grids,
+  ValEdit, IniFiles, _map, _mission, _structures, _misai, _utils;
 
 type
   TRuleDefinition = record
@@ -15,7 +15,7 @@ type
 
 type
   TAIClipboard = record
-    ai_data: array[0..7607] of byte;
+    ai_data: TMisAISegment;
   end;
 
 type
@@ -125,7 +125,6 @@ type
     player_label_alleg: array[0..cnt_players-1] of TLabel;
     allegiance_btn: array[0..cnt_players-1, 0..cnt_players-1] of TBitBtn;
     rule_definitions: array of TRuleDefinition;
-    ai_clipboard_format: cardinal;
     defence_area_num: integer;
     loading: boolean;
   public
@@ -274,8 +273,6 @@ begin
   end;
   cbCampaignFolder.Items := tmp_strings;
   tmp_strings.Destroy;
-  // Register AI clipboard format
-  ai_clipboard_format := RegisterClipboardFormat('D2kEditorAISegment');
 end;
 
 procedure TMissionDialog.FormKeyDown(Sender: TObject; var Key: Word;
@@ -380,31 +377,33 @@ var
   bytes: integer;
   i_val: integer;
   f_val: single;
+  prop: TMisAIPropertyPtr;
   tmp_strings: TStringList;
 begin
   tmp_strings := TStringList.Create();
-  for i := 0 to Structures.cnt_mis_ai_properties -1 do
+  for i := 0 to MisAI.cnt_mis_ai_properties -1 do
   begin
+    prop := MisAI.get_misai_property(i);
     bytes := 1;
-    case Structures.mis_ai_properties[i].data_type of
+    case prop.data_type of
       'b': bytes := 1;
       'w': bytes := 2;
       'd': bytes := 4;
       'f':
         begin
-          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], Structures.mis_ai_properties[i].position);
-          if cbDiffMode.Checked and (f_val = get_float_value(Mission.default_ai, Structures.mis_ai_properties[i].position)) then
-            tmp_strings.Add(Structures.mis_ai_properties[i].name + '=')
+          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position);
+          if cbDiffMode.Checked and (f_val = get_float_value(MisAI.default_ai, prop.position)) then
+            tmp_strings.Add(prop.name + '=')
           else
-            tmp_strings.Add(Structures.mis_ai_properties[i].name + '=' + floattostrf(f_val, ffFixed, 8, 3));
+            tmp_strings.Add(prop.name + '=' + floattostrf(f_val, ffFixed, 8, 3));
           continue;
         end;
       end;
-    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], Structures.mis_ai_properties[i].position, bytes);
-    if cbDiffMode.Checked and (i_val = get_integer_value(Mission.default_ai, Structures.mis_ai_properties[i].position, bytes)) then
-      tmp_strings.Add(Structures.mis_ai_properties[i].name + '=')
+    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, bytes);
+    if cbDiffMode.Checked and (i_val = get_integer_value(MisAI.default_ai, prop.position, bytes)) then
+      tmp_strings.Add(prop.name + '=')
     else
-      tmp_strings.Add(Structures.mis_ai_properties[i].name + '=' + inttostr(i_val));
+      tmp_strings.Add(prop.name + '=' + inttostr(i_val));
   end;
   AIValueList.OnStringsChange := nil;
   AIValueList.Strings := tmp_strings;
@@ -701,7 +700,7 @@ end;
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
 var
   i: integer;
-  prop: ^TMisAIProperty;
+  prop: TMisAIPropertyPtr;
   i_val: integer;
   f_val: single;
   f_ptr: ^single;
@@ -715,9 +714,9 @@ begin
     // Set same value to all rows within selected range
     if i <> AIValueList.Row then
       AIValueList.Cells[1,i] := AIValueList.Cells[1,AIValueList.Row];
-    prop := Addr(Structures.mis_ai_properties[i-1]);
+    prop := MisAI.get_misai_property(i-1);
     // Check if defence area was affected
-    if (prop.position >= 7505) and (prop.position <= 7604) then
+    if (prop.position >= DEFENCE_AREAS_COUNT_BYTE) and (prop.position <= DEFENCE_AREAS_END_BYTE) then
       Dispatcher.register_event(evMisDefenceAreaChange);
     // Determine data type
     bytes := 1;
@@ -727,13 +726,13 @@ begin
       'd': bytes := 4;
       'f':
         begin
-          f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Mission.default_ai, prop.position));
+          f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(MisAI.default_ai, prop.position));
           f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position]);
           f_ptr^ := f_val;
           continue;
         end;
     end;
-    i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Mission.default_ai, prop.position, bytes));
+    i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(MisAI.default_ai, prop.position, bytes));
     for b := 0 to bytes - 1 do
       Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position+b] := (i_val shr (8 * b)) and 255;
   end;
@@ -742,15 +741,15 @@ end;
 
 procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
-  prop: ^TMisAIProperty;
+  prop: TMisAIPropertyPtr;
 begin
-  prop := Addr(Structures.mis_ai_properties[ARow-1]);
-  if (prop.position < 7508) or (prop.position > 7604) then
+  prop := MisAI.get_misai_property(ARow-1);
+  if (prop.position < DEFENCE_AREAS_START_BYTE) or (prop.position > DEFENCE_AREAS_END_BYTE) then
   begin
     pnSelectDefenceAreaFromMap.Visible := false;
     exit;
   end;
-  defence_area_num := (prop.position - 7508) div 20;
+  defence_area_num := (prop.position - DEFENCE_AREAS_START_BYTE) div DEFENCE_AREA_SIZE;
   pnSelectDefenceAreaFromMap.Visible := true;
   btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
 end;
@@ -799,53 +798,27 @@ end;
 procedure TMissionDialog.btnExportAIClick(Sender: TObject);
 begin
   if ExportAIDialog.Execute then
-    save_binary_file(ExportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
+    MisAI.save_misai_segment(ExportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex]);
 end;
 
 procedure TMissionDialog.btnImportAIClick(Sender: TObject);
 begin
   if ImportAIDialog.Execute then
   begin
-    load_binary_file(ImportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], Length(Mission.mis_data.ai_segments[0])-1);
+    MisAI.load_misai_segment(ImportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex]);
     fill_ai_values;
   end;
 end;
 
 procedure TMissionDialog.btnCopyAIClick(Sender: TObject);
-var
-  handle: THandle;
-  pointer: ^TAIClipboard;
 begin
-  OpenClipboard(Application.Handle);
-  EmptyClipboard;
-
-  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, sizeof(TAIClipboard));
-  pointer := GlobalLock(handle);
-
-  Move(Mission.mis_data.ai_segments[AITabControl.TabIndex][1], pointer.ai_data, 7607);
-
-  GlobalUnLock(handle);
-  SetClipboardData(ai_clipboard_format, handle);
-  CloseClipboard;
+  MisAI.copy_misai_segment_to_clipboard(Mission.mis_data.ai_segments[AITabControl.TabIndex]);
 end;
 
 procedure TMissionDialog.btnPasteAIClick(Sender: TObject);
-var
-  handle: THandle;
-  pointer: ^TAIClipboard;
 begin
-  if not Clipboard.HasFormat(ai_clipboard_format) then
-    exit;
-  OpenClipboard(Application.Handle);
-  handle := GetClipboardData(ai_clipboard_format);
-  pointer := GlobalLock(handle);
-
-  Move(pointer.ai_data, Mission.mis_data.ai_segments[AITabControl.TabIndex][1], 7607);
-
-  fill_ai_values;
-
-  GlobalUnLock(handle);
-  CloseClipboard;
+  if MisAI.paste_misai_segment_from_clipboard(Mission.mis_data.ai_segments[AITabControl.TabIndex]) then
+    fill_ai_values;
 end;
 
 procedure TMissionDialog.cbDiffModeClick(Sender: TObject);
@@ -856,14 +829,16 @@ end;
 procedure TMissionDialog.btnSelectDefenceAreaFromMapClick(Sender: TObject);
 var
   x, y: integer;
+  defence_area: TDefenceAreaPtr;
 begin
-  if defence_area_num >= Mission.mis_data.ai_segments[AITabControl.TabIndex, 7505] then
+  if defence_area_num >= Mission.mis_data.ai_segments[AITabControl.TabIndex, DEFENCE_AREAS_COUNT_BYTE] then
   begin
     Application.MessageBox('Increase number of Defence Areas first.', 'Cannot select Defence Area', MB_OK or MB_ICONWARNING);
     exit;
   end;
-  x := Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20)];
-  y := Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 2];
+  defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[AITabControl.TabIndex], defence_area_num);
+  x := defence_area.MinX;
+  y := defence_area.MinY;
   MainWindow.start_event_position_selection(x, y, epmDefenceArea);
   close;
 end;
@@ -955,14 +930,17 @@ begin
 end;
 
 procedure TMissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);
+var
+  defence_area: TDefenceAreaPtr;
 begin
   Show;
   if (min_x = -1) or (min_y = -1) then
     exit;
-  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20)] := min_x;
-  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 1] := max_x;
-  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 2] := min_y;
-  Mission.mis_data.ai_segments[AITabControl.TabIndex, 7508 + (defence_area_num * 20) + 3] := max_y;
+  defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[AITabControl.TabIndex], defence_area_num);
+  defence_area.MinX := min_x;
+  defence_area.MaxX := max_x;
+  defence_area.MinY := min_y;
+  defence_area.MaxY := max_y;
   fill_ai_values;
   Dispatcher.register_event(evMisDefenceAreaChange);
 end;

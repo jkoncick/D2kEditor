@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics, IniFiles, _map, _utils;
+uses Graphics, IniFiles, _map, _misai, _utils;
 
 // Mis file constants
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
@@ -67,7 +67,7 @@ type
     starting_money:   array[0..7] of cardinal;
     unknown1:         array[0..39] of byte;
     allocation_index: array[0..7] of byte;
-    ai_segments:      array[0..7, 0..7607] of byte;
+    ai_segments:      array[0..7] of TMisAISegment;
     allegiance:       array[0..7, 0..7] of byte;
     events:           array[0..63] of TEvent;
     conditions:       array[0..47] of TCondition;
@@ -175,14 +175,10 @@ type
     event_notes: array[0..63] of String;
     condition_notes: array[0..47] of String;
 
-    // Configuration variables
-    default_ai: array[0..7607] of byte;
-
     // Temporary variables
     tmp_unit_count: array[0..59] of integer;
 
   public
-    procedure init;
     // Loading and saving mission
     function get_mis_filename(filename: String): String;
     procedure load_mis_file(filename: String);
@@ -228,12 +224,6 @@ var
 implementation
 
 uses SysUtils, Math, mission_dialog, _tileset, _stringtable, _settings, _structures, _dispatcher;
-
-procedure TMission.init;
-begin
-  // Load default AI
-  load_binary_file(current_dir + 'config/default_ai.misai', default_ai[1], Length(default_ai)-1);
-end;
 
 function TMission.get_mis_filename(filename: String): String;
 var
@@ -304,8 +294,7 @@ begin
     mis_data.tech_level[i] := Settings.DefaultMisTechLevel;
     mis_data.starting_money[i] := Settings.DefaultMisStartingMoney;
     mis_data.allocation_index[i] := i;
-    mis_data.ai_segments[i,0] := i;
-    Move(default_ai[1], mis_data.ai_segments[i,1], Length(default_ai)-1);
+    MisAI.init_misai_segment(mis_data.ai_segments[i], i);
   end;
   // Allegiance
   for i := 0 to 7 do
