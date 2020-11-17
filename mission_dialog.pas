@@ -136,8 +136,6 @@ type
     procedure update_mis_ai_properties;
   private
     // MISAI editor related procedures
-    function get_integer_value(source: array of byte; pos, bytes: integer): integer;
-    function get_float_value(source: array of byte; pos: integer): single;
     procedure fill_ai_values;
     // Mission ini file related procedures
     function get_ini_filename(map_filename: String): String;
@@ -352,23 +350,6 @@ procedure TMissionDialog.update_mis_ai_properties;
 begin
   if Mission.mis_assigned then
     fill_ai_values;
-end;
-
-function TMissionDialog.get_integer_value(source: array of byte; pos, bytes: integer): integer;
-var
-  b: integer;
-begin
-  result := 0;
-  for b := 0 to bytes - 1 do
-    result := result + (source[pos + b] shl (8 * b));
-end;
-
-function TMissionDialog.get_float_value(source: array of byte; pos: integer): single;
-var
-  f_ptr: ^single;
-begin
-  f_ptr := Addr(source[pos]);
-  result := f_ptr^;
 end;
 
 procedure TMissionDialog.fill_ai_values;
@@ -703,9 +684,7 @@ var
   prop: TMisAIPropertyPtr;
   i_val: integer;
   f_val: single;
-  f_ptr: ^single;
   bytes: integer;
-  b: integer;
 begin
   AIValueList.OnStringsChange := nil;
   // Range selection (if one value selected, loop goes only once)
@@ -727,14 +706,12 @@ begin
       'f':
         begin
           f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(MisAI.default_ai, prop.position));
-          f_ptr := Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position]);
-          f_ptr^ := f_val;
+          set_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, f_val);
           continue;
         end;
     end;
     i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(MisAI.default_ai, prop.position, bytes));
-    for b := 0 to bytes - 1 do
-      Mission.mis_data.ai_segments[AITabControl.TabIndex, prop.position+b] := (i_val shr (8 * b)) and 255;
+    set_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, bytes, i_val);
   end;
   AIValueList.OnStringsChange := AIValueListStringsChange;
 end;

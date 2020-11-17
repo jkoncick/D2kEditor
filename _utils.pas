@@ -21,6 +21,10 @@ type
       procedure CMMouseLeave(var Message: TMessage); message CM_MOUSELEAVE;
   end;
 
+function get_integer_value(var arr: array of byte; pos, bytes: integer): integer;
+function get_float_value  (var arr: array of byte; pos: integer): single;
+procedure set_integer_value(var arr: array of byte; pos, bytes: integer; value: Integer);
+procedure set_float_value  (var arr: array of byte; pos: integer; value: single);
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);
 function IntToBin(val: integer; width: integer): string;
 function BinToInt(bin: string): integer;
@@ -39,6 +43,39 @@ uses
 procedure TImage.CMMouseLeave(var Message: TMessage);
 begin
   MainWindow.ImageMouseLeave(self);
+end;
+
+function get_integer_value(var arr: array of byte; pos, bytes: integer): integer;
+var
+  b: integer;
+begin
+  result := 0;
+  for b := 0 to bytes - 1 do
+    result := result + (arr[pos + b] shl (8 * b));
+end;
+
+function get_float_value(var arr: array of byte; pos: integer): single;
+var
+  f_ptr: ^single;
+begin
+  f_ptr := Addr(arr[pos]);
+  result := f_ptr^;
+end;
+
+procedure set_integer_value(var arr: array of byte; pos, bytes: integer; value: Integer);
+var
+  b: integer;
+begin
+  for b := 0 to bytes - 1 do
+    arr[pos + b] := (value shr (8 * b)) and 255;
+end;
+
+procedure set_float_value(var arr: array of byte; pos: integer; value: single);
+var
+  f_ptr: ^single;
+begin
+  f_ptr := Addr(arr[pos]);
+  f_ptr^ := value;
 end;
 
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);
@@ -116,4 +153,4 @@ begin
 end;
 
 end.
- 
+
