@@ -3,7 +3,7 @@ unit structures_editor;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Windows, Messages, SysUtils, Variants, Classes, Controls, Graphics, Forms,
   Dialogs, Menus, ComCtrls, ExtCtrls, StdCtrls, CheckLst, Spin, _structures,
   Grids, ValEdit, _utils, Buttons;
 
@@ -652,7 +652,7 @@ var
 
 implementation
 
-uses _tileset, _stringtable, _dispatcher, Clipbrd, _launcher, _renderer, Math, main;
+uses Math, Clipbrd, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, main;
 
 {$R *.dfm}
 
@@ -1254,7 +1254,7 @@ begin
   end;
 
   selected_frame := 1;
-  header := Structures.get_structure_image_header(first_image_index + 1);
+  header := StructGraphics.get_structure_image_header(first_image_index + 1);
   if (header = nil) or (header.EntryType = 0) then
     selected_frame := 0;
   fill_art_control_group_frame_list(ACG_BUIDING_ART, first_image_index, directions * 2 + 1, tmp_strings, selected_frame);
@@ -1757,7 +1757,7 @@ begin
   if acg.frame_list.ItemIndex <> -1 then
   begin
     image_index := acg.first_image_index + acg.frame_list.ItemIndex;
-    header := Structures.get_structure_image_header(image_index);
+    header := StructGraphics.get_structure_image_header(image_index);
   end;
   if (header <> nil) and (header.EntryType <> 0) then
   begin
@@ -2196,11 +2196,11 @@ begin
   // Basic group box
   edBuildingName.Text := Structures.templates.BuildingNameStrings[index];
   cbxBuildingType.ItemIndex := bld.BuildingType;
-  icon := Structures.get_structure_image(Structures.first_building_icon_image_index + index, 0, false, false, was_already_loaded);
+  icon := StructGraphics.get_structure_image(Structures.first_building_icon_image_index + index, 0, false, false, was_already_loaded);
   if icon <> nil then
   begin
     imgBuildingIcon.Picture.Bitmap.Assign(icon.bitmap);
-    Structures.clear_last_structure_image(Structures.first_building_icon_image_index + index, false);
+    StructGraphics.clear_last_structure_image(Structures.first_building_icon_image_index + index, false);
   end else
     draw_no_image_sign(imgBuildingIcon);
   set_owner_side_field_value(clbBuildingOwnerSide, bld.OwnerSide);
@@ -2285,11 +2285,11 @@ begin
   // Basic group box
   edUnitName.Text := Structures.templates.UnitNameStrings[index];
   cbxUnitType.ItemIndex := unt.UnitType;
-  icon := Structures.get_structure_image(Structures.first_unit_icon_image_index + index, 0, false, false, was_already_loaded);
+  icon := StructGraphics.get_structure_image(Structures.first_unit_icon_image_index + index, 0, false, false, was_already_loaded);
   if icon <> nil then
   begin
     imgUnitIcon.Picture.Bitmap.Assign(icon.bitmap);
-    Structures.clear_last_structure_image(Structures.first_unit_icon_image_index + index, false);
+    StructGraphics.clear_last_structure_image(Structures.first_unit_icon_image_index + index, false);
   end else
     draw_no_image_sign(imgUnitIcon);
   set_owner_side_field_value(clbUnitOwnerSide, unt.OwnerSide);
@@ -2934,7 +2934,7 @@ begin
       frame_name := frame_names[i]
     else
       frame_name := 'Frame ' + inttostr(i);
-    header := Structures.get_structure_image_header(first_image_index + i);
+    header := StructGraphics.get_structure_image_header(first_image_index + i);
     if (header = nil) or (header.EntryType = 0) then
       frame_size := 'empty'
     else
@@ -3093,7 +3093,7 @@ begin
       side := i;
       break;
     end;
-  structure_image := Structures.get_structure_image(image_index, side, false, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, side, false, false, was_already_loaded);
   if structure_image <> nil then
   begin
     art_height := strtointdef(edBuildingArtHeight.Text, 0);
@@ -3110,7 +3110,7 @@ begin
     imgBuildingImage.Canvas.CopyMode := cmSrcPaint;
     imgBuildingImage.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
     if not was_already_loaded then
-      Structures.clear_last_structure_image(image_index, false);
+      StructGraphics.clear_last_structure_image(image_index, false);
   end;
 end;
 
@@ -3155,7 +3155,7 @@ var
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
 begin
-  structure_image := Structures.get_structure_image(image_index, side, true, is_stealth, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, side, true, is_stealth, was_already_loaded);
   if structure_image <> nil then
   begin
     src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
@@ -3165,7 +3165,7 @@ begin
     imgUnitImage.Canvas.CopyMode := cmSrcPaint;
     imgUnitImage.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
     if not was_already_loaded then
-      Structures.clear_last_structure_image(image_index, is_stealth);
+      StructGraphics.clear_last_structure_image(image_index, is_stealth);
   end;
 end;
 
@@ -3194,7 +3194,7 @@ begin
     draw_building_art_frame(imgBuilExpImage, image_index, false);
     // Damaged frame
     image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + Structures.templates.BuildingArtDirections[building_template.BuildingArt] + 1;
-    header := Structures.get_structure_image_header(image_index);
+    header := StructGraphics.get_structure_image_header(image_index);
     if (header = nil) or (header.EntryType = 0) then
       // If damaged frame does not exist, use healthy frame
       image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + 1;
@@ -3208,10 +3208,10 @@ begin
   for i := 0 to seBuilExpNumAnimations.Value - 1 do
   begin
     image_index := Structures.animation_art_image_indexes[cbxBuilExpAnimExplosion[i].ItemIndex] + seBuilExpAnimNumFrames[i].Value;
-    structure_image := Structures.get_structure_image(image_index, 0, false, false, was_already_loaded);
+    structure_image := StructGraphics.get_structure_image(image_index, 0, false, false, was_already_loaded);
     if structure_image <> nil then
     begin
-      header := Structures.get_structure_image_header(image_index);
+      header := StructGraphics.get_structure_image_header(image_index);
       src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
       off_x := seBuilExpAnimOffsetX[i].Value - header.ImageOffsetX;
       off_y := seBuilExpAnimOffsetY[i].Value - header.ImageOffsetY;
@@ -3221,7 +3221,7 @@ begin
       imgBuilExpImage.Canvas.CopyMode := cmSrcPaint;
       imgBuilExpImage.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
       if not was_already_loaded then
-        Structures.clear_last_structure_image(image_index, false);
+        StructGraphics.clear_last_structure_image(image_index, false);
     end;
   end;
 end;
@@ -3233,10 +3233,10 @@ var
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
 begin
-  structure_image := Structures.get_structure_image(image_index, 0, false, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, 0, false, false, was_already_loaded);
   if structure_image = nil then
     exit;
-  header := Structures.get_structure_image_header(image_index);
+  header := StructGraphics.get_structure_image_header(image_index);
   if draw_background then
   begin
     img_target.Canvas.Pen.Color := clAqua;
@@ -3255,7 +3255,7 @@ begin
   img_target.Canvas.CopyMode := cmSrcPaint;
   img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
   if not was_already_loaded then
-    Structures.clear_last_structure_image(image_index, false);
+    StructGraphics.clear_last_structure_image(image_index, false);
 end;
 
 procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index: integer);
@@ -3265,10 +3265,10 @@ var
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
 begin
-  structure_image := Structures.get_structure_image(image_index, 0, true, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, 0, true, false, was_already_loaded);
   if structure_image = nil then
     exit;
-  header := Structures.get_structure_image_header(image_index);
+  header := StructGraphics.get_structure_image_header(image_index);
   img_target.Canvas.Pen.Color := clAqua;
   img_target.Canvas.Brush.Color := clAqua;
   img_target.Canvas.Brush.Style := bsSolid;
@@ -3287,7 +3287,7 @@ begin
   img_target.Canvas.CopyMode := cmSrcPaint;
   img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
   if not was_already_loaded then
-    Structures.clear_last_structure_image(image_index, false);
+    StructGraphics.clear_last_structure_image(image_index, false);
 end;
 
 procedure TStructuresEditor.draw_techpos_preview;
@@ -3329,14 +3329,14 @@ begin
     // Draw unit
     if unit_template.UnitArt <> -1 then
     begin
-      structure_image := Structures.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], side, true, is_stealth, was_already_loaded);
+      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], side, true, is_stealth, was_already_loaded);
       if structure_image <> nil then
         Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
     end;
     // Draw barrel
     if unit_template.BarrelArt <> -1 then
     begin
-      structure_image := Structures.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], side, true, is_stealth, was_already_loaded);
+      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], side, true, is_stealth, was_already_loaded);
       if structure_image <> nil then
         Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
     end;

@@ -217,7 +217,7 @@ var
 begin
   player_list := TStringList.Create;
   for i := 0 to CNT_PLAYERS - 1 do
-    player_list.Add(inttostr(i) + ' - ' + Structures.player_info[i].name);
+    player_list.Add(inttostr(i) + ' - ' + Structures.player_names[i]);
   MainWindow.update_player_list(player_list);
   SetDialog.update_player_list(player_list);
   TestMapDialog.update_player_list(player_list);

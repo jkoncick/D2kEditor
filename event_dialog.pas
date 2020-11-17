@@ -499,7 +499,7 @@ begin
     else
       EventGrid.Cells[2,i] := '';
     if et_info.use_player_index then
-      EventGrid.Cells[3,i] := Structures.player_info[event.player].name
+      EventGrid.Cells[3,i] := Structures.player_names[event.player]
     else
       EventGrid.Cells[3,i] := '';
     // Contents
@@ -523,7 +523,7 @@ begin
     // Basic information
     ConditionGrid.Cells[1,i] := ct_info.name;
     if ct_info.use_player_index then
-      ConditionGrid.Cells[2,i] := Structures.player_info[cond.player].name
+      ConditionGrid.Cells[2,i] := Structures.player_names[cond.player]
     else
       ConditionGrid.Cells[2,i] := '';
     // Contents

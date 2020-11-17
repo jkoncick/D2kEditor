@@ -626,7 +626,7 @@ begin
     num_refineries := map_stats.players[player].num_refineries;
     if num_refineries > Structures.limit_refineries_per_player then
     begin
-      result := format('You placed %d refineries for player %s on map, which is more than game''s limit of %d.'#13'Remove some refineries.', [num_refineries, Structures.player_info[player].name, Structures.limit_refineries_per_player]);
+      result := format('You placed %d refineries for player %s on map, which is more than game''s limit of %d.'#13'Remove some refineries.', [num_refineries, Structures.player_names[player], Structures.limit_refineries_per_player]);
       exit;
     end;
   end;

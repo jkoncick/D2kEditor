@@ -450,7 +450,7 @@ begin
     end;
   end;
   case event_type of
-    etAllegiance:   contents := Structures.player_info[event.player].name + ' -> ' + Structures.player_info[event.allegiance_target].name + ' (' + allegiance_type[event.allegiance_type] + ')';
+    etAllegiance:   contents := Structures.player_names[event.player] + ' -> ' + Structures.player_names[event.allegiance_target] + ' (' + allegiance_type[event.allegiance_type] + ')';
     etPlaySound:    contents := inttostr(event.value) + ' - ' + StringTable.samples_uib.ValueFromIndex[event.value];
     etSetBuildRate: contents := inttostr(event.value);
     etSetAttackBuildingRate: contents := inttostr(event.value);
@@ -507,7 +507,7 @@ begin
   space := '';
   if condition_type_info[cond.condition_type].use_player_index and show_player then
   begin
-    contents := contents + Structures.player_info[cond.player].name;
+    contents := contents + Structures.player_names[cond.player];
     space := ' ';
   end;
   case cond_type of
@@ -1008,7 +1008,7 @@ begin
   begin
     if (mis_data.ai_segments[i, 1] = 1) and ((mis_data.tech_level[i] = 0) or (mis_data.starting_money[i] = 0)) then
     begin
-      result := format('Players with active AI must have non-zero tech level and credits. Player ''%s'' does not meet this requirement.', [Structures.player_info[i].name]);
+      result := format('Players with active AI must have non-zero tech level and credits. Player ''%s'' does not meet this requirement.', [Structures.player_names[i]]);
       exit;
     end;
   end;

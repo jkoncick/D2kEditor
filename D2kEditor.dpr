@@ -22,6 +22,7 @@ uses
   _mission in '_mission.pas',
   _tileset in '_tileset.pas',
   _structures in '_structures.pas',
+  _graphics in '_graphics.pas',
   _misai in '_misai.pas',
   _stringtable in '_stringtable.pas',
   _randomgen in '_randomgen.pas',
@@ -45,6 +46,7 @@ begin
   Mission := TMission.Create;
   Tileset := TTileset.Create;
   Structures := TStructures.Create;
+  StructGraphics := TStructGraphics.Create;
   MisAI := TMisAI.Create;
   StringTable := TStringTable.Create;
   //--RandomGen := TRandomGen.Create;
@@ -67,6 +69,7 @@ begin
   Renderer.init;
   Tileset.init;
   Structures.init;
+  StructGraphics.init;
   MisAI.init;
   StringTable.init;
   // Load map given as first parameter

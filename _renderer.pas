@@ -2,7 +2,7 @@ unit _renderer;
 
 interface
 
-uses Graphics, Types, _map, _structures, _utils;
+uses Graphics, Types, _map, _structures, _graphics, _utils;
 
 const constraint_type_color: array[0..8] of TColor = (clTeal, clOlive, clGray, clPurple, clTeal+$404040, clOlive+$404040, clGray+$404040, clPurple+$404040, clRed);
 const constraint_side_rect: array[0..3, 0..3] of integer = (
@@ -318,7 +318,7 @@ begin
             Inc(player, 4);
           if o_use_alloc_indexes then
             player := Mission.get_player_alloc_index(player);
-          cnv_target.Pen.Color := Structures.player_info[player].color_inv;
+          cnv_target.Pen.Color := StructGraphics.player_colors_inv[player];
           cnv_target.Brush.Color := cnv_target.Pen.Color;
           cnv_target.Brush.Style := bsSolid;
           cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
@@ -358,9 +358,9 @@ begin
         dest_rect := rect(x*32,y*32,x*32+32,y*32+32);
         cnv_target.Brush.Style := bsSolid;
         cnv_target.CopyMode := cmSrcAnd;
-        cnv_target.CopyRect(dest_rect,Structures.graphics_misc_objects_mask.Canvas,src_rect);
+        cnv_target.CopyRect(dest_rect,StructGraphics.graphics_misc_objects_mask.Canvas,src_rect);
         cnv_target.CopyMode := cmSrcPaint;
-        cnv_target.CopyRect(dest_rect,Structures.graphics_misc_objects.Canvas,src_rect);
+        cnv_target.CopyRect(dest_rect,StructGraphics.graphics_misc_objects.Canvas,src_rect);
         cnv_target.CopyMode := cmSrcCopy;
       end else
       if tiledata_entry.stype = ST_BUILDING then
@@ -441,14 +441,14 @@ begin
               wall_frame := WALL_FRAME_MAPPING[wall_frame];
             end;
             // Draw main building frame
-            structure_image := Structures.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt] + 1 + wall_frame, player2, false, false, was_already_loaded);
+            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt] + 1 + wall_frame, player2, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
               draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
               inc(house_color_pixels, structure_image.house_color_pixel_count);
             end;
             // Draw base building frame
-            structure_image := Structures.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt], player2, false, false, was_already_loaded);
+            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt], player2, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
               draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
@@ -459,7 +459,7 @@ begin
           if building_template.BarrelArt <> -1 then
           begin
             // Draw main barrel frame
-            structure_image := Structures.get_structure_image(Structures.building_art_image_indexes[building_template.BarrelArt] + 1, player2, false, false, was_already_loaded);
+            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BarrelArt] + 1, player2, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
               draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
@@ -469,7 +469,7 @@ begin
           // Draw owner side marker
           if o_mark_owner_side and (house_color_pixels < 10) then
           begin
-            cnv_target.Pen.Color := Structures.player_info[player2].color_inv;
+            cnv_target.Pen.Color := StructGraphics.player_colors_inv[player2];
             cnv_target.Brush.Color := cnv_target.Pen.Color;
             cnv_target.Brush.Style := bsSolid;
             cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
@@ -491,14 +491,14 @@ begin
             // Draw unit
             if unit_template.UnitArt <> -1 then
             begin
-              structure_image := Structures.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], player2, true, is_stealth, was_already_loaded);
+              structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], player2, true, is_stealth, was_already_loaded);
               if structure_image <> nil then
                 draw_structure_image(cnv_target, x*32 + structure_image.offset_x, y*32 + structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
             end;
             // Draw barrel
             if unit_template.BarrelArt <> -1 then
             begin
-              structure_image := Structures.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], player2, true, is_stealth, was_already_loaded);
+              structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], player2, true, is_stealth, was_already_loaded);
               if structure_image <> nil then
                 draw_structure_image(cnv_target, x*32 + structure_image.offset_x, y*32 + structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
             end;
@@ -509,9 +509,9 @@ begin
             dest_rect := rect(x*32,y*32,x*32+32,y*32+32);
             cnv_target.Brush.Style := bsSolid;
             cnv_target.CopyMode := cmSrcAnd;
-            cnv_target.CopyRect(dest_rect,Structures.graphics_misc_objects_mask.Canvas,src_rect);
+            cnv_target.CopyRect(dest_rect,StructGraphics.graphics_misc_objects_mask.Canvas,src_rect);
             cnv_target.CopyMode := cmSrcPaint;
-            cnv_target.CopyRect(dest_rect,Structures.graphics_misc_objects.Canvas,src_rect);
+            cnv_target.CopyRect(dest_rect,StructGraphics.graphics_misc_objects.Canvas,src_rect);
             cnv_target.CopyMode := cmSrcCopy;
           end;
         end else
@@ -537,8 +537,8 @@ begin
         if event_marker_type_info[ord(event_marker.emtype)].player_related then
         begin
           player := Min(event_marker.side, CNT_PLAYERS - 1);
-          cnv_target.Pen.Color := Structures.player_info[player].color_inv;
-          cnv_target.Brush.Color := Structures.player_info[player].color_inv;
+          cnv_target.Pen.Color := StructGraphics.player_colors_inv[player];
+          cnv_target.Brush.Color := StructGraphics.player_colors_inv[player];
         end else
         begin
           cnv_target.Pen.Color := clGray;
@@ -561,7 +561,7 @@ begin
       for y := 0 to Min(Mission.mis_data.ai_segments[x, DEFENCE_AREAS_COUNT_BYTE], CNT_DEFENCE_AREAS) - 1 do
       begin
         defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[x], y);
-        cnv_target.Pen.Color := Structures.player_info[x].color_inv;
+        cnv_target.Pen.Color := StructGraphics.player_colors_inv[x];
         cnv_target.Rectangle(
           (defence_area.MinX - cnv_left) * 32,
           (defence_area.MinY - cnv_top) * 32,
@@ -809,7 +809,7 @@ begin
       if tiledata_entry.stype = ST_UNIT then
       begin
         index := (bmp_target.height - (y+border_y) - 1) * bmp_target.width + x+border_x;
-        bmp_data[index] := Structures.player_info[player2].color;
+        bmp_data[index] := StructGraphics.player_colors[player2];
       end else
       if tiledata_entry.stype = ST_BUILDING then
       begin
@@ -825,7 +825,7 @@ begin
             if (building_template.TilesOccupiedAll and (1 shl (yy * MAX_BUILDING_SIZE + xx))) <> 0 then
             begin
               index := (bmp_target.height - (y+border_y+yy) - 1) * bmp_target.width + x+border_x+xx;
-              bmp_data[index] := Structures.player_info[player2].color;
+              bmp_data[index] := StructGraphics.player_colors[player2];
             end;
           end;
       end;

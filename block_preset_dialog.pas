@@ -48,7 +48,7 @@ var
 
 implementation
 
-uses _tileset, _settings, _structures, main, tileset_dialog;
+uses _tileset, _settings, _graphics, main, tileset_dialog;
 
 {$R *.dfm}
 
@@ -252,7 +252,7 @@ begin
           Inc(player, 2);
         if (tile_attr and taConcreteOwnerSideBit3) <> 0 then
           Inc(player, 4);
-        BlockPresetImage.Canvas.Pen.Color := Structures.player_info[player].color_inv;
+        BlockPresetImage.Canvas.Pen.Color := StructGraphics.player_colors_inv[player];
         BlockPresetImage.Canvas.Brush.Color := BlockPresetImage.Canvas.Pen.Color;
         BlockPresetImage.Canvas.Brush.Style := bsSolid;
         BlockPresetImage.Canvas.Ellipse(off_x + x*32 + 8, off_y + y*32 + 8, off_x + x*32 + 24, off_y + y*32 + 24);

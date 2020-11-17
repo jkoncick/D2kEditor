@@ -1,0 +1,529 @@
+unit _graphics;
+
+interface
+
+uses Windows, Graphics, _utils;
+
+// *****************************************************************************
+// DATA.R16 file definitions
+// *****************************************************************************
+
+type
+  TR16EntryHeader = packed record
+    EntryType: byte;
+    ImageWidth: integer;
+    ImageHeight: integer;
+    ImageOffsetX: integer;
+    ImageOffsetY: integer;
+    ImageHandle: cardinal;
+    PaletteHandle: cardinal;
+    BitsPerPixel: byte;
+    FrameHeight: byte;
+    FrameWidth: byte;
+    Alignment: byte;
+  end;
+
+  TR16EntryHeaderPtr = ^TR16EntryHeader;
+
+  TR16Palette = packed record
+    Memory: integer;
+    PaletteHandle2: integer;
+    Colors: array[0..255] of word;
+  end;
+
+  TR16PalettePtr = ^TR16Palette;
+
+// *****************************************************************************
+// Internal graphical data structure definitions
+// *****************************************************************************
+
+type
+  TStructureImage = record
+    bitmap: TBitmap;
+    bitmap_mask: TBitmap;
+    bitmap_data: TWordArrayPtr;
+    offset_x: SmallInt;
+    offset_y: SmallInt;
+    house_color_pixel_first_index: integer;
+    house_color_pixel_count: word;
+    current_house_color: SmallInt;
+  end;
+
+  TStructureImagePtr = ^TStructureImage;
+
+  TStructureImageMappingEntry = record
+    normal_index: smallint;
+    stealth_index: smallint;
+  end;
+
+const STRUCTURE_IMAGE_ENTRY_NOT_LOADED = -1;
+const STRUCTURE_IMAGE_ENTRY_EMPTY = -2;
+
+const DATA_R16_FILE_ENTRY_POSITIONS_ALLOC_STEP = 1024;
+const STRUCTURE_IMAGES_ALLOC_STEP = 128;
+const HOUSE_COLOR_PIXEL_ALLOC_STEP = 8192;
+
+const WALL_FRAME_MAPPING: array[0..15] of integer = (0, 2, 3, 12, 1, 6, 11, 7, 4, 13, 5, 9, 15, 10, 8, 14);
+
+type
+  TBuildingSkirt = record
+    size_x: integer;
+    size_y: integer;
+    rock_tile_x: integer;
+    rock_tile_y: integer;
+    conc_tile_x: integer;
+    conc_tile_y: integer;
+  end;
+
+const CONCRETE_TILES: array[0..2] of word = (651, 671, 691);
+
+const BUILDING_SKIRT_2x2: TBuildingSkirt = (size_x: 2; size_y: 2; rock_tile_x: 17; rock_tile_y: 30; conc_tile_x:  9; conc_tile_y: 32);
+const BUILDING_SKIRT_3x2: TBuildingSkirt = (size_x: 3; size_y: 2; rock_tile_x: 11; rock_tile_y: 30; conc_tile_x:  3; conc_tile_y: 32);
+
+// *****************************************************************************
+// TGraphics class
+// *****************************************************************************
+
+type
+  TStructGraphics = class
+
+  public
+    // File names
+    colours_bin_filename: String;
+    data_r16_filename: String;
+    graphics_misc_objects_filename: String;
+
+    // COLOURS.BIN related data
+    colours: array[0..CNT_PLAYERS-1,0..15] of word;
+    player_colors: array[0..CNT_PLAYERS-1] of Cardinal;
+    player_colors_inv: array[0..CNT_PLAYERS-1] of Cardinal;
+
+    // DATA.R16 related data
+    data_r16_file_contents: array of byte;
+    data_r16_file_entry_positions: array of integer;
+    data_r16_file_entry_count: integer;
+
+    structure_images: array of TStructureImage;
+    structure_images_count: integer;
+    structure_image_entry_mapping: array of TStructureImageMappingEntry;
+    house_color_pixel_indexes: array of word;
+    house_color_pixel_shades: array of byte;
+    house_color_pixel_count_total: integer;
+
+    // Misc. objects graphics related data
+    graphics_misc_objects: TBitmap;
+    graphics_misc_objects_mask: TBitmap;
+
+  public
+    // General procedures
+    procedure init;
+
+    // COLOURS.BIN related procedures
+    procedure load_colours_bin;
+    // DATA.R16 related procedures
+    procedure load_data_r16;
+    procedure clear_structure_image_data;
+    procedure clear_last_structure_image(entry_index: integer; is_stealth: boolean);
+    procedure load_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean);
+    procedure recolor_structure_image(image_index, house_index: integer);
+    function get_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean; var was_already_loaded: boolean): TStructureImagePtr;
+    function get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
+    // Misc. objects related procedures
+    procedure load_graphics_misc_objects;
+  end;
+
+var
+  StructGraphics: TStructGraphics;
+
+implementation
+
+uses Forms, SysUtils, _settings, _dispatcher, mission_dialog;
+
+procedure TStructGraphics.init;
+begin
+  graphics_misc_objects := TBitmap.Create;
+  graphics_misc_objects_mask := TBitmap.Create;
+  load_colours_bin;
+  load_data_r16;
+  load_graphics_misc_objects;
+end;
+
+procedure TStructGraphics.load_colours_bin;
+var
+  tmp_filename, tmp_filename2: String;
+  color: Cardinal;
+  i: integer;
+begin
+  // Step 1 - editor's internal file
+  tmp_filename := current_dir + 'config\COLOURS.BIN';
+  if Settings.LoadCustomColoursBin then
+  begin
+    // Step 2 - game's internal file
+    tmp_filename2 := Settings.GamePath + '\Data\bin\COLOURS.BIN';
+    if FileExists(tmp_filename2) then
+      tmp_filename := tmp_filename2;
+    // Step 3 - file under CustomCampaignData folder
+    tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\Colours\' + MissionDialog.cbColoursBin.Text;
+    if FileExists(tmp_filename2) then
+      tmp_filename := tmp_filename2;
+  end;
+  // Check if file exists
+  if not FileExists(tmp_filename) then
+  begin
+    Application.MessageBox('Could not find file COLOURS.BIN', 'Error loading game file', MB_OK or MB_ICONERROR);
+    exit;
+  end;
+  // This file is already loaded - do not load it again
+  if tmp_filename = colours_bin_filename then
+    exit;
+  colours_bin_filename := tmp_filename;
+  // Load COLOURS.BIN file
+  load_binary_file(tmp_filename, colours, sizeof(colours));
+  for i := 0 to CNT_PLAYERS - 1 do
+  begin
+    color := 0;
+    color := color or (((colours[i, 8] and $7C00) shr 10) shl 19) or (((colours[i, 8] and $7C00) shr 12) shl 16);
+    color := color or (((colours[i, 8] and $03E0) shr  5) shl 11) or (((colours[i, 8] and $03E0) shr  7) shl  8);
+    color := color or (((colours[i, 8] and $001F) shr  0) shl  3) or (((colours[i, 8] and $001F) shr  2) shl  0);
+    player_colors[i] := color;
+    player_colors_inv[i] := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
+  end;
+  // Invalidate all preloaded structure images
+  for i := 0 to structure_images_count - 1 do
+    structure_images[i].current_house_color := -1;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLColoursBin);
+end;
+
+procedure TStructGraphics.load_data_r16;
+var
+  tmp_filename: String;
+  data_r16_file: file of byte;
+  data_r16_file_size: integer;
+  index: integer;
+  position: integer;
+  first_byte: byte;
+  header: TR16EntryHeaderPtr;
+  image_data_size: integer;
+  total_entry_size: integer;
+begin
+  tmp_filename := find_file('Data\DATA.R16', 'graphics');
+  if (tmp_filename = '') or (tmp_filename = data_r16_filename) then
+    exit;
+  data_r16_filename := tmp_filename;
+
+  // Clear all previously loaded data
+  clear_structure_image_data;
+  // Load file into buffer
+  AssignFile(data_r16_file, tmp_filename);
+  Reset(data_r16_file);
+  data_r16_file_size := FileSize(data_r16_file);
+  SetLength(data_r16_file_contents, data_r16_file_size);
+  BlockRead(data_r16_file, data_r16_file_contents[0], data_r16_file_size);
+  CloseFile(data_r16_file);
+  // Parse file
+  index := 0;
+  position := 0;
+  while position < data_r16_file_size do
+  begin
+    first_byte := data_r16_file_contents[position];
+    // Reallocate data_r16_file_entry_positions capacity if needed
+    if index = Length(data_r16_file_entry_positions) then
+      SetLength(data_r16_file_entry_positions, Length(data_r16_file_entry_positions) + DATA_R16_FILE_ENTRY_POSITIONS_ALLOC_STEP);
+    data_r16_file_entry_positions[index] := position;
+    if first_byte = 0 then
+    begin
+      inc(position);
+      inc(index);
+      continue;
+    end;
+    header := Addr(data_r16_file_contents[position]);
+    image_data_size := header.ImageWidth * header.ImageHeight * (header.BitsPerPixel div 8);
+    total_entry_size := sizeof(TR16EntryHeader) + image_data_size;
+    if (header.PaletteHandle <> 0) and (header.BitsPerPixel = 8) and (header.EntryType = 1) then
+      inc(total_entry_size, sizeof(TR16Palette));
+    inc(position, total_entry_size);
+    inc(index);
+  end;
+  data_r16_file_entry_count := index;
+  // Initialize entry mapping
+  SetLength(structure_image_entry_mapping, data_r16_file_entry_count);
+  for index := 0 to data_r16_file_entry_count - 1 do
+  begin
+    structure_image_entry_mapping[index].normal_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
+    structure_image_entry_mapping[index].stealth_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
+  end;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLDataR16);
+end;
+
+procedure TStructGraphics.clear_structure_image_data;
+var
+  i: integer;
+begin
+  // Clean DATA.R16 file contents
+  SetLength(data_r16_file_contents, 0);
+  SetLength(data_r16_file_entry_positions, 0);
+  data_r16_file_entry_count := 0;
+  // Clean structure images
+  for i := 0 to structure_images_count - 1 do
+  begin
+    with structure_images[i] do
+    begin
+      if bitmap <> nil then
+        bitmap.Destroy;
+      bitmap := nil;
+      if bitmap_mask <> nil then
+        bitmap_mask.Destroy;
+      bitmap_mask := nil;
+      bitmap_data := nil;
+    end;
+  end;
+  SetLength(structure_images, 0);
+  structure_images_count := 0;
+  SetLength(structure_image_entry_mapping, 0);
+  // Clean house color pixels
+  SetLength(house_color_pixel_indexes, 0);
+  SetLength(house_color_pixel_shades, 0);
+  house_color_pixel_count_total := 0;
+end;
+
+procedure TStructGraphics.clear_last_structure_image(entry_index: integer; is_stealth: boolean);
+begin
+  if structure_images_count = 0 then
+    exit;
+  dec(structure_images_count);
+  with structure_images[structure_images_count] do
+  begin
+    if bitmap <> nil then
+      bitmap.Destroy;
+    bitmap := nil;
+    if bitmap_mask <> nil then
+      bitmap_mask.Destroy;
+    bitmap_mask := nil;
+    bitmap_data := nil;
+    dec(house_color_pixel_count_total, house_color_pixel_count);
+  end;
+  if not is_stealth then
+    structure_image_entry_mapping[entry_index].normal_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED
+  else
+    structure_image_entry_mapping[entry_index].stealth_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
+end;
+
+procedure TStructGraphics.load_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean);
+var
+  already_loaded: boolean;
+  header: TR16EntryHeaderPtr;
+  image_data_8bpp: TByteArrayPtr;
+  image_data_16bpp: TWordArrayPtr;
+  palette_origin_index: integer;
+  palette_origin_header: TR16EntryHeaderPtr;
+  palette: TR16PalettePtr;
+  width, height, padded_width: Integer;
+  tmp_bitmap, tmp_bitmap_mask: TBitmap;
+  tmp_bitmap_data: TWordArrayPtr;
+  tmp_offset_x, tmp_offset_y: integer;
+  tmp_house_color_pixel_count: integer;
+  x, y, image_pos, bitmap_pos: integer;
+  pixel: byte;
+begin
+  // Check if this entry is already loaded
+  if not is_stealth then
+    already_loaded := structure_image_entry_mapping[entry_index].normal_index <> STRUCTURE_IMAGE_ENTRY_NOT_LOADED
+  else
+    already_loaded := structure_image_entry_mapping[entry_index].stealth_index <> STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
+  if already_loaded then
+    exit;
+  // Check if this entry is empty
+  if data_r16_file_contents[data_r16_file_entry_positions[entry_index]] = 0 then
+  begin
+    // Empty entry
+    if not is_stealth then
+      structure_image_entry_mapping[entry_index].normal_index := STRUCTURE_IMAGE_ENTRY_EMPTY
+    else
+      structure_image_entry_mapping[entry_index].stealth_index := STRUCTURE_IMAGE_ENTRY_EMPTY;
+    exit;
+  end;
+  // Load header and dimensions
+  header := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]]);
+  image_data_8bpp := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index] + sizeof(TR16EntryHeader)]);
+  image_data_16bpp := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index] + sizeof(TR16EntryHeader)]);
+  width := header.ImageWidth;
+  height := header.ImageHeight;
+  padded_width := width + (width mod 2);
+  // Get palette (go back to entry with referenced palette if needed)
+  palette_origin_index := entry_index;
+  while data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index]] <> 1 do
+    dec(palette_origin_index);
+  palette_origin_header := Addr(data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index]]);
+  palette := Addr(data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index] + sizeof(TR16EntryHeader) + palette_origin_header.ImageWidth * palette_origin_header.ImageHeight]);
+  // Create bitmap for internal image storage
+  tmp_bitmap := TBitmap.Create;
+  tmp_bitmap.Width := width;
+  tmp_bitmap.Height := height;
+  tmp_bitmap.PixelFormat := pf15bit;
+  tmp_bitmap_data := tmp_bitmap.ScanLine[height - 1];
+  // Load image pixels
+  tmp_house_color_pixel_count := 0;
+  image_pos := 0;
+  for y := 0 to height - 1 do
+    for x := 0 to width - 1 do
+    begin
+      bitmap_pos := (height - y - 1) * padded_width + x;
+      if header.BitsPerPixel = 8 then
+      begin
+        pixel := image_data_8bpp[image_pos];
+        // Elliminate shadows
+        if pixel = 1 then
+          pixel := 0;
+        // If unit is stealth then whole shape will be drawn in house color
+        if is_stealth and (pixel <> 0) then
+          pixel := 248;
+        // House colox pixel
+        if pixel >= 240 then
+        begin
+          dec(pixel, 240);
+          // Reallocate house_color_pixel_indexes and house_color_pixel_shades capacity if needed
+          if (house_color_pixel_count_total + tmp_house_color_pixel_count) = Length(house_color_pixel_indexes) then
+          begin
+            SetLength(house_color_pixel_indexes, Length(house_color_pixel_indexes) + HOUSE_COLOR_PIXEL_ALLOC_STEP);
+            SetLength(house_color_pixel_shades, Length(house_color_pixel_shades) + HOUSE_COLOR_PIXEL_ALLOC_STEP);
+          end;
+          house_color_pixel_indexes[house_color_pixel_count_total + tmp_house_color_pixel_count] := bitmap_pos;
+          house_color_pixel_shades[house_color_pixel_count_total + tmp_house_color_pixel_count] := pixel;
+          inc(tmp_house_color_pixel_count);
+          tmp_bitmap_data[bitmap_pos] := colours[house_index, pixel];
+        end else
+          tmp_bitmap_data[bitmap_pos] := palette.colors[pixel];
+      end else
+        tmp_bitmap_data[bitmap_pos] := image_data_16bpp[image_pos];
+      inc(image_pos);
+    end;
+  // Create mask from image bitmap
+  tmp_bitmap_mask := TBitmap.Create;
+  tmp_bitmap_mask.Assign(tmp_bitmap);
+  tmp_bitmap_mask.Mask(clFuchsia);
+  // Change transparent image pixels to black color
+  if header.BitsPerPixel = 8 then
+  begin
+    image_pos := 0;
+    for y := 0 to height - 1 do
+      for x := 0 to width - 1 do
+      begin
+        if image_data_8bpp[image_pos] <= 1 then
+          tmp_bitmap_data[(height - y - 1) * padded_width + x] := 0;
+        inc(image_pos);
+      end;
+  end;
+  // Compute offsets
+  if not is_unit then
+  begin
+    tmp_offset_x := header.ImageOffsetX * -1
+  end else
+    tmp_offset_x := (header.FrameWidth div 2 - header.ImageOffsetX) - (header.FrameWidth - 32) div 2;
+  if not is_unit then
+  begin
+    tmp_offset_y := header.ImageOffsetY;
+  end else
+    tmp_offset_y := (header.FrameHeight div 2 - header.ImageOffsetY) - (header.FrameHeight - 32) div 2;
+  // Save structure image
+  if structure_images_count = Length(structure_images) then
+    SetLength(structure_images, Length(structure_images) + STRUCTURE_IMAGES_ALLOC_STEP);
+  with structure_images[structure_images_count] do
+  begin
+    bitmap := tmp_bitmap;
+    bitmap_mask := tmp_bitmap_mask;
+    bitmap_data := tmp_bitmap_data;
+    offset_x := tmp_offset_x;
+    offset_y := tmp_offset_y;
+    house_color_pixel_first_index := house_color_pixel_count_total;
+    house_color_pixel_count := tmp_house_color_pixel_count;
+    current_house_color := house_index;
+  end;
+  inc(house_color_pixel_count_total, tmp_house_color_pixel_count);
+  if not is_stealth then
+    structure_image_entry_mapping[entry_index].normal_index := structure_images_count
+  else
+    structure_image_entry_mapping[entry_index].stealth_index := structure_images_count;
+  inc(structure_images_count);
+end;
+
+procedure TStructGraphics.recolor_structure_image(image_index, house_index: integer);
+var
+  i: integer;
+begin
+  with structure_images[image_index] do
+  begin
+    if current_house_color = house_index then
+      exit;
+    for i := 0 to house_color_pixel_count - 1 do
+      bitmap_data[house_color_pixel_indexes[house_color_pixel_first_index + i]] := colours[house_index, house_color_pixel_shades[house_color_pixel_first_index + i]];
+    current_house_color := house_index;
+  end;
+end;
+
+function TStructGraphics.get_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean; var was_already_loaded: boolean): TStructureImagePtr;
+var
+  image_index: integer;
+begin
+  was_already_loaded := false;
+  result := nil;
+  if data_r16_filename = '' then
+    exit;
+  if entry_index >= data_r16_file_entry_count then
+    exit;
+  // Check if image is already preloaded
+  if not is_stealth then
+    image_index := structure_image_entry_mapping[entry_index].normal_index
+  else
+    image_index := structure_image_entry_mapping[entry_index].stealth_index;
+  // Image is already preloaded, but is empty
+  if image_index = STRUCTURE_IMAGE_ENTRY_EMPTY then
+    exit;
+  // Image is already preloaded, recolor it and return it
+  if image_index <> STRUCTURE_IMAGE_ENTRY_NOT_LOADED then
+  begin
+    recolor_structure_image(image_index, house_index);
+    was_already_loaded := true;
+    result := Addr(structure_images[image_index]);
+    exit;
+  end;
+  // Image is not yet preloaded, load it now
+  load_structure_image(entry_index, house_index, is_unit, is_stealth);
+  if not is_stealth then
+    image_index := structure_image_entry_mapping[entry_index].normal_index
+  else
+    image_index := structure_image_entry_mapping[entry_index].stealth_index;
+  // Image is empty
+  if image_index = STRUCTURE_IMAGE_ENTRY_EMPTY then
+    exit;
+  // Image is loaded now
+  result := Addr(structure_images[image_index]);
+end;
+
+function TStructGraphics.get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
+begin
+  if entry_index < data_r16_file_entry_count then
+    result := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]])
+  else
+    result := nil;
+end;
+
+procedure TStructGraphics.load_graphics_misc_objects;
+var
+  tmp_filename: String;
+begin
+  tmp_filename := find_file('graphics\misc_objects.bmp', 'graphics');
+  if (tmp_filename = '') or (tmp_filename = graphics_misc_objects_filename) then
+    exit;
+  graphics_misc_objects_filename := tmp_filename;
+  // Load graphics from files
+  graphics_misc_objects.LoadFromFile(tmp_filename);
+  // Create mask
+  graphics_misc_objects_mask.Assign(graphics_misc_objects);
+  graphics_misc_objects_mask.Mask(clBlack);
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLMiscObjectsBmp);
+end;
+
+end.

@@ -173,7 +173,7 @@ var
   i: integer;
 begin
   for i := 0 to cnt_players - 1 do
-    StatsGrid.Cells[i+1,0] := Structures.player_info[i].name;
+    StatsGrid.Cells[i+1,0] := Structures.player_names[i];
 end;
 
 end.

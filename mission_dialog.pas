@@ -153,7 +153,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
+  Math, StrUtils, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
 
 {$R *.dfm}
 
@@ -326,9 +326,9 @@ begin
   cbMapSideId.ItemIndex := Max(prev_index, 0);
   for i := 0 to cnt_players-1 do
   begin
-    player_label[i].Caption := Structures.player_info[i].name;
-    player_label_alleg[i].Caption := IfThen(Length(Structures.player_info[i].name) <= 8, Structures.player_info[i].name, Copy(Structures.player_info[i].name, 0, 6)+'.');
-    AITabControl.Tabs[i] := Structures.player_info[i].shortname;
+    player_label[i].Caption := Structures.player_names[i];
+    player_label_alleg[i].Caption := IfThen(Length(Structures.player_names[i]) <= 8, Structures.player_names[i], Copy(Structures.player_names[i], 0, 6)+'.');
+    AITabControl.Tabs[i] := Structures.player_names_short[i];
   end;
 end;
 
@@ -337,7 +337,7 @@ var
   i: integer;
 begin
   for i := 0 to cnt_players-1 do
-    color_marker[i].Color := Structures.player_info[Mission.mis_data.allocation_index[i]].color_inv;
+    color_marker[i].Color := StructGraphics.player_colors_inv[Mission.mis_data.allocation_index[i]];
 end;
 
 procedure TMissionDialog.update_tileset;
@@ -633,7 +633,7 @@ begin
   if loading then
     exit;
   Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
-  color_marker[(Sender as TSpinEdit).Tag].Color := Structures.player_info[Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag]].color_inv;
+  color_marker[(Sender as TSpinEdit).Tag].Color := StructGraphics.player_colors_inv[Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag]];
   Dispatcher.register_event(evMisAllocIndexChange);
 end;
 
@@ -881,9 +881,9 @@ begin
   Structures.load_speed_bin(false);
   Structures.load_techpos_bin(false);
   Structures.load_tiledata_bin;
-  Structures.load_colours_bin;
-  Structures.load_data_r16;
-  Structures.load_graphics_misc_objects;
+  StructGraphics.load_colours_bin;
+  StructGraphics.load_data_r16;
+  StructGraphics.load_graphics_misc_objects;
   Structures.load_players_ini;
   Structures.load_misc_objects_ini;
   Structures.load_limits_ini;
@@ -892,7 +892,7 @@ end;
 
 procedure TMissionDialog.cbColoursBinChange(Sender: TObject);
 begin
-  Structures.load_colours_bin;
+  StructGraphics.load_colours_bin;
 end;
 
 procedure TMissionDialog.cbPlayersIniChange(Sender: TObject);
