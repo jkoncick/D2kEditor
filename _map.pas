@@ -566,7 +566,9 @@ begin
           Inc(need[tiledata_entry.player], tmp_power)
         else if tmp_power < 0 then
           Inc(output[tiledata_entry.player], tmp_power * -1);
-      end;
+      end else
+      if tiledata_entry.stype = ST_UNIT then
+        inc(map_stats.num_structures_total);
     end;
   // Calculate power value from output/need for each player
   for x := 0 to cnt_players - 1 do
