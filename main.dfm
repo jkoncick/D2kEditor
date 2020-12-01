@@ -409,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -418,7 +418,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 6
         end
       end
@@ -694,11 +694,13 @@ object MainWindow: TMainWindow
       Caption = 'Mission'
       object Missionsettings1: TMenuItem
         Caption = 'Mission settings'
+        Enabled = False
         ShortCut = 121
         OnClick = Missionsettings1Click
       end
       object EventsandConditions1: TMenuItem
         Caption = 'Events and Conditions'
+        Enabled = False
         ShortCut = 122
         OnClick = EventsandConditions1Click
       end
@@ -706,7 +708,7 @@ object MainWindow: TMainWindow
         Caption = '-'
       end
       object Assignmisfile1: TMenuItem
-        Caption = '(Un)Assign .mis file'
+        Caption = 'Assign .mis file'
         OnClick = Assignmisfile1Click
       end
     end

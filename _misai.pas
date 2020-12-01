@@ -51,7 +51,7 @@ type
     // MisAI configuration related procedures
     procedure init;
     procedure load_mis_ai_properties_ini;
-    procedure cache_mis_ai_properties;
+    procedure cache_mis_ai_property_list;
     procedure load_default_ai;
     function get_misai_property(index: integer): TMisAIPropertyPtr;
     // MisAI segment manipulation procedures
@@ -104,7 +104,7 @@ begin
   tmp_strings.Destroy;
 end;
 
-procedure TMisAI.cache_mis_ai_properties;
+procedure TMisAI.cache_mis_ai_property_list;
 var
   i, position, num: integer;
   name: String;

@@ -454,7 +454,7 @@ var
 
 implementation
 
-uses Forms, IniFiles, mission_dialog, _settings, _mission, _graphics, _stringtable, _dispatcher;
+uses Forms, IniFiles, _settings, _mission, _missionini, _graphics, _stringtable, _dispatcher;
 
 procedure TStructures.init;
 begin
@@ -931,11 +931,11 @@ begin
   // Step 1 - editor's internal file
   tmp_filename := current_dir + 'config\players.ini';
   // Step 2 - file under CustomCampaignData folder
-  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\' + MissionDialog.cbModsFolder.Text + '\config\players.ini';
+  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\' + MissionIni.ModsFolder + '\config\players.ini';
   if FileExists(tmp_filename2) then
     tmp_filename := tmp_filename2;
   // Step 3 - file under Players folder
-  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\Players\' + MissionDialog.cbPlayersIni.Text;
+  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\Players\' + MissionIni.PlayersFile;
   if FileExists(tmp_filename2) then
     tmp_filename := tmp_filename2;
   // Check if file exists

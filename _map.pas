@@ -74,11 +74,16 @@ type
 
   public
     Property loaded: boolean read map_loaded;
-    Property filename: String read map_filename write map_filename;
+    Property filename: String read map_filename;
     Property data: TMapData read map_data;
     Property width: word read map_width;
     Property height: word read map_height;
     Property stats: TMapStats read map_stats;
+
+    // Loading and saving procedures
+    procedure load_map(filename: String);
+    procedure save_map(filename: String; is_testmap: boolean);
+    procedure new_map(new_width, new_height: integer);
 
     // Basic map manipulation procedures
   private
@@ -119,11 +124,6 @@ type
     function check_map_modified: boolean;
     function search_special(special: word; var result_x, result_y: integer): boolean;
 
-    // Load & Save procedures
-    procedure load_map_file(filename: String);
-    procedure save_map_file(filename: String);
-    procedure new_map(new_width, new_height: integer);
-
     // Map actions
     procedure set_map_size(new_width, new_height: integer);
     procedure shift_map(direction, num_tiles: integer);
@@ -140,6 +140,115 @@ implementation
 
 uses SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main, _launcher, _dispatcher;
 
+procedure TMap.load_map(filename: String);
+var
+  map_file: file of word;
+  x, y: integer;
+begin
+  // Reset map data
+  for x := 0 to max_map_width-1 do
+    for y := 0 to max_map_height-1 do
+    begin
+      map_data[x,y].tile := 0;
+      map_data[x,y].special := 0;
+    end;
+  // Read map file
+  AssignFile(map_file, filename);
+  Reset(map_file);
+  Read(map_file, map_width);
+  Read(map_file, map_height);
+  for y := 0 to map_height - 1 do
+    for x := 0 to map_width - 1 do
+    begin
+      Read(map_file, map_data[x,y].tile);
+      Read(map_file, map_data[x,y].special);
+    end;
+  CloseFile(map_file);
+  // Update internal variables
+  map_loaded := true;
+  map_filename := filename;
+  map_modified := false;
+  reset_undo_history;
+  // Update recent files list
+  Settings.update_recent_files(map_filename);
+  Settings.determine_game_paths_from_path(map_filename);
+  // Get test map settings
+  Launcher.get_map_test_settings(map_filename);
+  // Load mission
+  Mission.load_mission(filename);
+  // Register event in dispatcher
+  Dispatcher.register_event(evMapLoad);
+end;
+
+procedure TMap.save_map(filename: String; is_testmap: boolean);
+var
+  map_file: file of word;
+  x, y: integer;
+begin
+  AssignFile(map_file, filename);
+  ReWrite(map_file);
+  Write(map_file, map_width);
+  Write(map_file, map_height);
+  for y := 0 to map_height - 1 do
+    for x := 0 to map_width - 1 do
+    begin
+      Write(map_file, map_data[x,y].tile);
+      Write(map_file, map_data[x,y].special);
+    end;
+  CloseFile(map_file);
+  if not is_testmap then
+  begin
+    map_modified := false;
+    undo_pos_last_saved := undo_pos;
+    // Map file name has changed
+    if filename <> map_filename then
+    begin
+      map_filename := filename;
+      // Update recent files list
+      Settings.update_recent_files(map_filename);
+      Settings.determine_game_paths_from_path(map_filename);
+      // Get test map settings
+      Launcher.get_map_test_settings(map_filename);
+      // Register event in dispatcher
+      Dispatcher.register_event(evMapFilenameChange);
+    end;
+  end;
+  // Save mission
+  Mission.save_mission(filename, is_testmap);
+end;
+
+procedure TMap.new_map(new_width, new_height: integer);
+var
+  x, y: integer;
+begin
+  // Reset map data
+  for x := 0 to max_map_width-1 do
+    for y := 0 to max_map_height-1 do
+    begin
+      map_data[x,y].tile := 0;
+      map_data[x,y].special := 0;
+    end;
+  // Initialize map
+  map_width := new_width;
+  map_height := new_height;
+  for x := 0 to map_width - 1 do
+    for y := 0 to map_height - 1 do
+      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
+  if Settings.PreplaceWormSpawner then
+    map_data[0,0].special := Structures.misc_object_info[1].value;
+  map_filename := '';
+  map_loaded := true;
+  map_modified := false;
+  reset_undo_history;
+  // Reset random generator
+  //--RandomGen.reset;
+  // Get test map settings
+  Launcher.get_map_test_settings(map_filename);
+  // New mission
+  Mission.new_mission;
+  // Register event in dispatcher
+  Dispatcher.register_event(evMapLoad);
+end;
 
 // Modify map tile and save old values into undo history.
 // Map data should not be modified outside this or undo/redo methods.
@@ -698,109 +807,6 @@ begin
     end;
   until (x = search_last_x) and (y = search_last_y);
   result := false;
-end;
-
-
-procedure TMap.load_map_file(filename: String);
-var
-  map_file: file of word;
-  x, y: integer;
-begin
-  // Reset map data
-  for x := 0 to max_map_width-1 do
-    for y := 0 to max_map_height-1 do
-    begin
-      map_data[x,y].tile := 0;
-      map_data[x,y].special := 0;
-    end;
-  // Read map file
-  AssignFile(map_file, filename);
-  Reset(map_file);
-  Read(map_file, map_width);
-  Read(map_file, map_height);
-  for y := 0 to map_height - 1 do
-    for x := 0 to map_width - 1 do
-    begin
-      Read(map_file, map_data[x,y].tile);
-      Read(map_file, map_data[x,y].special);
-    end;
-  CloseFile(map_file);
-  // Update internal variables
-  map_loaded := true;
-  map_filename := filename;
-  map_modified := false;
-  reset_undo_history;
-  // Update recent files list
-  Settings.update_recent_files(map_filename);
-  Settings.determine_game_paths_from_path(map_filename);
-  // Get test map settings
-  Launcher.get_map_test_settings(map_filename);
-  // Register event in dispatcher
-  Dispatcher.register_event(evMapLoad);
-end;
-
-procedure TMap.save_map_file(filename: String);
-var
-  map_file: file of word;
-  x, y: integer;
-begin
-  AssignFile(map_file, filename);
-  ReWrite(map_file);
-  Write(map_file, map_width);
-  Write(map_file, map_height);
-  for y := 0 to map_height - 1 do
-    for x := 0 to map_width - 1 do
-    begin
-      Write(map_file, map_data[x,y].tile);
-      Write(map_file, map_data[x,y].special);
-    end;
-  CloseFile(map_file);
-  if ExtractFileName(filename) <> 'TESTMAP.MAP' then
-  begin
-    map_modified := false;
-    undo_pos_last_saved := undo_pos;
-    // Map file name has changed
-    if filename <> map_filename then
-    begin
-      map_filename := filename;
-      // Update recent files list
-      Settings.update_recent_files(map_filename);
-      Settings.determine_game_paths_from_path(map_filename);
-      // Get test map settings
-      Launcher.get_map_test_settings(map_filename);
-      // Register event in dispatcher
-      Dispatcher.register_event(evMapFilenameChange);
-    end;
-  end;
-end;
-
-procedure TMap.new_map(new_width, new_height: integer);
-var
-  x, y: integer;
-begin
-  // Reset map data
-  for x := 0 to max_map_width-1 do
-    for y := 0 to max_map_height-1 do
-    begin
-      map_data[x,y].tile := 0;
-      map_data[x,y].special := 0;
-    end;
-  // Initialize map
-  map_width := new_width;
-  map_height := new_height;
-  for x := 0 to map_width - 1 do
-    for y := 0 to map_height - 1 do
-      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
-  if Settings.PreplaceWormSpawner then
-    map_data[0,0].special := Structures.misc_object_info[1].value;
-  map_filename := '';
-  map_loaded := true;
-  map_modified := false;
-  reset_undo_history;
-  // Get test map settings
-  Launcher.get_map_test_settings(map_filename);
-  // Register event in dispatcher
-  Dispatcher.register_event(evMapLoad);
 end;
 
 procedure TMap.set_map_size(new_width, new_height: integer);

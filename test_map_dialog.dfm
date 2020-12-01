@@ -75,9 +75,9 @@ object TestMapDialog: TTestMapDialog
     Height = 22
     MaxLength = 1
     MaxValue = 9
-    MinValue = 1
+    MinValue = 0
     TabOrder = 1
-    Value = 1
+    Value = 0
   end
   object eDifficultyLevel: TComboBox
     Left = 96

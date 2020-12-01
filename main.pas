@@ -4,11 +4,11 @@ interface
 
 uses
   // System libraries
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Windows, Messages, SysUtils, StrUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Units
-  _utils, _dispatcher, _renderer, _map, _mission, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
+  _utils, _dispatcher, _renderer, _map, _mission, _missionini, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -314,9 +314,7 @@ type
     procedure render_cursor_image;
 
     // Map loading & saving procedures
-    procedure new_map(new_width, new_height: integer);
     procedure load_map(filename: String);
-    procedure save_map(filename: String);
     function check_map_errors: boolean;
     procedure refresh_recent_files_menu;
 
@@ -788,7 +786,7 @@ begin
   else begin
     if Settings.CheckMapErrorsOnSave then
       check_map_errors;
-    save_map(Map.filename);
+    Map.save_map(Map.filename, false);
   end;
 end;
 
@@ -799,7 +797,7 @@ begin
   if Settings.CheckMapErrorsOnSave then
     check_map_errors;
   if MapSaveDialog.Execute then
-    save_map(MapSaveDialog.FileName);
+    Map.save_map(MapSaveDialog.FileName, false);
 end;
 
 procedure TMainWindow.Savemapimage1Click(Sender: TObject);
@@ -1020,39 +1018,30 @@ end;
 
 procedure TMainWindow.EventsandConditions1Click(Sender: TObject);
 begin
-  if not Mission.mis_assigned then
-  begin
-    Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
-    exit;
-  end;
   EventDialog.Show;
 end;
 
 procedure TMainWindow.Missionsettings1Click(Sender: TObject);
 begin
-  if not Mission.mis_assigned then
-  begin
-    Application.MessageBox('No mission file is assigned to this map.', 'Error', MB_ICONERROR);
-    exit;
-  end;
   MissionDialog.Show;
 end;
 
 procedure TMainWindow.Assignmisfile1Click(Sender: TObject);
 var
-  tmp_filename: string;
+  msg: string;
 begin
   if not Map.loaded then
     exit;
-  if not Mission.mis_assigned then
+  if Mission.mis_assigned then
   begin
-    tmp_filename := Mission.get_mis_filename(Map.filename);
-    if FileExists(tmp_filename) then
-      Mission.load_mis_file(tmp_filename)
-    else
-      Mission.new_mission;
+    msg := 'Do you really want to delete mission file ' + Mission.mis_filename;
+    if MissionIni.mission_ini_assigned then
+      msg := msg + ' and mission ini file ' + MissionIni.mission_ini_filename;
+    msg := msg + '?'#13'The data will be lost!';
+    if Application.MessageBox(PChar(msg), 'Unassign mission file', MB_YESNO or MB_ICONWARNING) = IDYES then
+      Mission.delete_mission;
   end else
-    Mission.unload_mission;
+    Mission.assign_mission;
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
@@ -1713,23 +1702,22 @@ end;
 procedure TMainWindow.update_map_name;
 begin
   if Map.filename = '' then
-    StatusBar.Panels[3].Text := 'Map not saved'
-  else
+  begin
+    StatusBar.Panels[3].Text := 'Map not saved';
+    EditorPages.ActivePage := PageTerrain;
+  end else
+  begin
     StatusBar.Panels[3].Text := Map.filename;
-  refresh_recent_files_menu;
+    refresh_recent_files_menu;
+  end;
 end;
 
 procedure TMainWindow.update_mission_load_status;
 begin
-  if Mission.mis_assigned then
-  begin
-    StatusBar.Panels[4].Text := 'MIS';
-    Assignmisfile1.Caption := 'Unassign .mis file';
-  end else
-  begin
-    StatusBar.Panels[4].Text := '';
-    Assignmisfile1.Caption := 'Assign .mis file';
-  end;
+  Missionsettings1.Enabled := Mission.mis_assigned;
+  EventsandConditions1.Enabled := Mission.mis_assigned;
+  Assignmisfile1.Caption := IfThen(Mission.mis_assigned, 'Unassign .mis file', 'Assign .mis file');
+  StatusBar.Panels[4].Text := IfThen(Mission.mis_assigned, 'MIS', '');
 end;
 
 procedure TMainWindow.update_map_stats;
@@ -1929,58 +1917,20 @@ begin
   render_editing_marker;
 end;
 
-procedure TMainWindow.new_map(new_width, new_height: integer);
-begin
-  if (Tileset.current_tileset = -1) then
-      Tileset.change_tileset_by_name(Settings.DefaultTilesetName);
-  Map.new_map(new_width, new_height);
-  // Initialize mission
-  if Settings.AssignMisFileToNewMap then
-    Mission.new_mission
-  else
-    Mission.unload_mission;
-  // Reset random generator
-  //--RandomGen.reset;
-  // Finish it
-  EditorPages.ActivePage := PageTerrain;
-  //--Memo1.Lines.Clear;
-end;
-
 procedure TMainWindow.load_map(filename: String);
-var
-  tmp_mis_filename: String;
 begin
   if not FileExists(filename) then
+  begin
+    Application.MessageBox(PChar('File does not exist: ' + filename), 'Load map error', MB_ICONERROR);
     exit;
+  end;
   if UpperCase(Copy(filename, Length(filename)-2, 3)) <> 'MAP' then
   begin
-    Application.MessageBox('Invalid file type. You need to provide a file with .map extension.', 'Load map error', MB_ICONERROR);
+    Application.MessageBox('Invalid file type. You need to provide a file with .MAP extension.', 'Load map error', MB_ICONERROR);
     exit;
   end;
   // Load map file
-  Map.load_map_file(filename);
-  // Load mis file
-  tmp_mis_filename := Mission.get_mis_filename(Map.filename);
-  if FileExists(tmp_mis_filename) then
-  begin
-    Mission.load_mis_file(tmp_mis_filename);
-  end else
-  begin
-    Mission.unload_mission;
-    // No tileset specified for map, if mis file not present - set to default one
-    if (Tileset.current_tileset = -1) then
-      Tileset.change_tileset_by_name(Settings.DefaultTilesetName);
-  end;
-end;
-
-procedure TMainWindow.save_map(filename: String);
-begin
-  Map.save_map_file(filename);
-  if Mission.mis_assigned then
-  begin
-    Mission.save_mis_file(Mission.get_mis_filename(filename));
-    MissionDialog.save_ini_fields(filename);
-  end;
+  Map.load_map(filename);
 end;
 
 function TMainWindow.check_map_errors: boolean;

@@ -57,7 +57,7 @@ var
 implementation
 
 uses
-  Math, main, _settings, _map, _tileset;
+  Math, _settings, _map, _tileset;
 
 {$R *.dfm}
 
@@ -152,7 +152,7 @@ begin
           if check_map_dimensions then
           begin
             ModalResult := mrOk;
-            MainWindow.new_map(SetMapSize_Width.Value,SetMapSize_Height.Value);
+            Map.new_map(SetMapSize_Width.Value,SetMapSize_Height.Value);
           end;
         end;
     5:  begin

@@ -49,7 +49,7 @@ var
 implementation
 
 uses
-  _settings, Windows, SysUtils, IniFiles, ShellApi, mission_dialog, main;
+  Windows, SysUtils, IniFiles, ShellApi, _settings, _map;
 
 { TLauncher }
 
@@ -152,7 +152,6 @@ end;
 procedure TLauncher.launch_current_mission;
 var
   ini: TIniFile;
-  temp_map_name: String;
 begin
   if random(9001) = 1337 then
   begin
@@ -161,7 +160,7 @@ begin
   end;
   // Write test map settings to ini file
   ini := TIniFile.Create(Settings.GamePath + '\spawn.ini');
-  ini.WriteString('Settings', 'Scenario', 'TESTMAP');
+  ini.WriteString ('Settings', 'Scenario', 'TESTMAP');
   ini.WriteInteger('Settings', 'MySideID', MySideID);
   ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);
   ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
@@ -172,12 +171,7 @@ begin
     ini.DeleteKey('Settings', 'TextUib');
   ini.Destroy;
   // Save current mission as TESTMAP.MAP
-  temp_map_name := Missiondialog.edMapName.Text;
-  Missiondialog.edMapName.Text := 'TESTMAP';
-  MainWindow.save_map(Settings.MissionsPath + '\TESTMAP.MAP');
-  Missiondialog.edMapName.Text := temp_map_name;
-  if not MissionDialog.cbUseINI.Checked then
-    DeleteFile(Settings.MissionsPath + '\TESTMAP.INI');
+  Map.save_map(Settings.MissionsPath + '\TESTMAP.MAP', true);
   // Launch game
   ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), PChar('-SPAWN ' + TestMapParameters), PChar(Settings.GamePath), SW_SHOWNORMAL);
 end;

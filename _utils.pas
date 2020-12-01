@@ -38,7 +38,7 @@ var
 implementation
 
 uses
-  Forms, Windows, _settings, main, mission_dialog;
+  Forms, Windows, _settings, main, _missionini;
 
 procedure TImage.CMMouseLeave(var Message: TMessage);
 begin
@@ -119,7 +119,7 @@ begin
   if FileExists(tmp_filename2) then
     tmp_filename := tmp_filename2;
   // 3rd try: CustomCampaignData folder
-  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\' + MissionDialog.cbModsFolder.Text + '\' + name_pattern;
+  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\' + MissionIni.ModsFolder + '\' + name_pattern;
   if FileExists(tmp_filename2) then
     tmp_filename := tmp_filename2;
   // Check if file exists

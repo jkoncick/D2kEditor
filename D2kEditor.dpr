@@ -19,11 +19,12 @@ uses
   _dispatcher in '_dispatcher.pas',
   _renderer in '_renderer.pas',
   _map in '_map.pas',
+  _misai in '_misai.pas',
   _mission in '_mission.pas',
+  _missionini in '_missionini.pas',
   _tileset in '_tileset.pas',
   _structures in '_structures.pas',
   _graphics in '_graphics.pas',
-  _misai in '_misai.pas',
   _stringtable in '_stringtable.pas',
   _randomgen in '_randomgen.pas',
   _launcher in '_launcher.pas';
@@ -43,11 +44,12 @@ begin
   Dispatcher := TDispatcher.Create;
   Renderer := TRenderer.Create;
   Map := TMap.Create;
+  MisAI := TMisAI.Create;
   Mission := TMission.Create;
+  MissionIni := TMissionIni.Create;
   Tileset := TTileset.Create;
   Structures := TStructures.Create;
   StructGraphics := TStructGraphics.Create;
-  MisAI := TMisAI.Create;
   StringTable := TStringTable.Create;
   //--RandomGen := TRandomGen.Create;
   Launcher := TLauncher.Create;
@@ -67,10 +69,12 @@ begin
   Settings.load_postcreate_editor_settings;
   // Initialize program components
   Renderer.init;
+  MisAI.init;
+  Mission.init;
+  MissionIni.init;
   Tileset.init;
   Structures.init;
   StructGraphics.init;
-  MisAI.init;
   StringTable.init;
   // Load map given as first parameter
   if ParamCount > 0 then

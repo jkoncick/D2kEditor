@@ -247,8 +247,6 @@ var
   i: integer;
 begin
   current_tileset := -1;
-  tileset_name := 'BLOXBGBS';
-  tileatr_name := 'TILEATR3';
   tileimage := Graphics.TBitmap.Create;
   palette_loaded := false;
   tmp_strings := TStringList.Create;

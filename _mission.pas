@@ -167,31 +167,27 @@ type
   TMission = class
 
   public
+    // MIS file related data
     mis_filename: String;
     mis_assigned: boolean;
     mis_modified: boolean;
     mis_data: TMisFile;
+    // Other data
     event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
-    event_notes: array[0..63] of String;
-    condition_notes: array[0..47] of String;
-
-    // Temporary variables
-    tmp_unit_count: array[0..59] of integer;
 
   public
-    // Loading and saving mission
-    function get_mis_filename(filename: String): String;
-    procedure load_mis_file(filename: String);
-    procedure save_mis_file(filename: String);
+    procedure init;
+    // Loading and saving procedures
+    function get_mis_filename(map_filename: String): String;
+    procedure load_mission(map_filename: String);
+    procedure save_mission(map_filename: String; is_testmap: boolean);
+    procedure assign_mission;
     procedure new_mission;
+    procedure delete_mission;
     procedure unload_mission;
-    procedure set_default_mis_values;
+    procedure reset_mission_data;
     // Dispatcher procedures
     procedure cache_event_markers;
-    // Loading and saving notes
-    procedure load_notes_from_ini(ini: TMemIniFile);
-    procedure save_notes_to_ini(ini: TMemIniFile);
-    procedure clear_notes;
     // Getting text descriptions
     function get_event_contents(index: integer): String;
     function get_event_conditions(index: integer): String;
@@ -223,49 +219,92 @@ var
 
 implementation
 
-uses SysUtils, Math, mission_dialog, _tileset, _stringtable, _settings, _structures, _dispatcher;
+uses SysUtils, Math, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher;
 
-function TMission.get_mis_filename(filename: String): String;
-var
-  tmp_filename: String;
+procedure TMission.init;
 begin
-  tmp_filename := ExtractFileDir(filename)+'\_'+UpperCase(ExtractFileName(filename));
-  tmp_filename[length(tmp_filename)-1]:= 'I';
-  tmp_filename[length(tmp_filename)]:= 'S';
-  result := tmp_filename;
+  reset_mission_data;
 end;
 
-procedure TMission.load_mis_file(filename: String);
+function TMission.get_mis_filename(map_filename: String): String;
 begin
-  load_binary_file(filename, mis_data, sizeof(mis_data));
-  mis_filename := filename;
+  result := ChangeFileExt(ExtractFileDir(map_filename)+'\_'+UpperCase(ExtractFileName(map_filename)), '.MIS');
+end;
+
+procedure TMission.load_mission(map_filename: String);
+var
+  tmp_filename: string;
+begin
+  tmp_filename := get_mis_filename(map_filename);
+  if not FileExists(tmp_filename) then
+  begin
+    MissionIni.unload_mission_ini(false);
+    unload_mission;
+    // Change tileset to default or currently loaded one
+    if (Tileset.current_tileset = -1) then
+      Tileset.change_tileset_by_name(Settings.DefaultTilesetName)
+    else
+      Tileset.change_tileset(Tileset.current_tileset);
+    exit;
+  end;
+
+  mis_filename := tmp_filename;
   mis_assigned := true;
   mis_modified := false;
 
-  // Map's ini file will be loaded along with Mission dialog.
-  MissionDialog.fill_data;
+  // Load actual data
+  load_binary_file(tmp_filename, mis_data, sizeof(mis_data));
+  // Load mission ini file
+  MissionIni.load_mission_ini(map_filename);
+  // Change tileset according to mission's tileset
   Tileset.change_tileset_by_name(mis_data.tileset);
+  // Do needed actions
   Dispatcher.register_event(evMisLoad);
 end;
 
-procedure TMission.save_mis_file(filename: String);
+procedure TMission.save_mission(map_filename: String; is_testmap: boolean);
+var
+  tmp_filename: string;
 begin
-  save_binary_file(filename, mis_data, sizeof(mis_data));
-
-  if ExtractFileName(filename) <> '_TESTMAP.MIS' then
+  tmp_filename := get_mis_filename(map_filename);
+  if not mis_assigned then
   begin
-    mis_modified := false;
-    mis_filename := filename;
+    if FileExists(tmp_filename) then
+      DeleteFile(tmp_filename);
+    MissionIni.save_mission_ini(map_filename, is_testmap);
+    exit;
   end;
+  if not is_testmap then
+  begin
+    mis_filename := tmp_filename;
+    mis_modified := false;
+  end;
+
+  // Save actual data
+  save_binary_file(tmp_filename, mis_data, sizeof(mis_data));
+  // Save mission ini file
+  MissionIni.save_mission_ini(map_filename, is_testmap);
+end;
+
+procedure TMission.assign_mission;
+begin
+  mis_assigned := true;
+  Dispatcher.register_event(evMisLoad);
 end;
 
 procedure TMission.new_mission;
 begin
-  mis_filename := '';
-  mis_assigned := true;
-  set_default_mis_values;
-  MissionDialog.fill_data;
-  Dispatcher.register_event(evMisLoad);
+  unload_mission;
+  if Settings.AssignMisFileToNewMap then
+    assign_mission;
+end;
+
+procedure TMission.delete_mission;
+begin
+  if (mis_filename <> '') and (FileExists(mis_filename)) then
+    DeleteFile(mis_filename);
+  MissionIni.delete_mission_ini;
+  unload_mission;
 end;
 
 procedure TMission.unload_mission;
@@ -274,13 +313,14 @@ begin
     exit;
   mis_filename := '';
   mis_assigned := false;
-  set_default_mis_values;
-  MissionDialog.Close;
-  MissionDialog.fill_data;
+  reset_mission_data;
+  // Uload mission ini file
+  MissionIni.unload_mission_ini(true);
+  // Do needed actions
   Dispatcher.register_event(evMisLoad);
 end;
 
-procedure TMission.set_default_mis_values;
+procedure TMission.reset_mission_data;
 var
   i, j: integer;
 begin
@@ -307,8 +347,6 @@ begin
     end;
   // Time limit
   mis_data.time_limit := -1;
-  // Clear notes
-  clear_notes;
   // Clear mofication flag
   mis_modified := false;
 end;
@@ -377,43 +415,6 @@ begin
   end;
 end;
 
-procedure TMission.load_notes_from_ini(ini: TMemIniFile);
-var
-  i: integer;
-begin
-  if not Settings.EnableEventNotes then
-    exit;
-  for i := 0 to Length(event_notes) - 1 do
-    event_notes[i] := ini.ReadString('Notes', 'event'+inttostr(i), '');
-  for i := 0 to Length(condition_notes) - 1 do
-    condition_notes[i] := ini.ReadString('Notes', 'condition'+inttostr(i), '');
-end;
-
-procedure TMission.save_notes_to_ini(ini: TMemIniFile);
-var
-  i: integer;
-begin
-  if not Settings.EnableEventNotes then
-    exit;
-  ini.EraseSection('Notes');
-  for i := 0 to Length(event_notes) - 1 do
-    if event_notes[i] <> '' then
-      ini.WriteString('Notes', 'event'+inttostr(i), event_notes[i]);
-  for i := 0 to Length(condition_notes) - 1 do
-    if condition_notes[i] <> '' then
-      ini.WriteString('Notes', 'condition'+inttostr(i), condition_notes[i]);
-end;
-
-procedure TMission.clear_notes;
-var
-  i: integer;
-begin
-  for i := 0 to Length(event_notes) - 1 do
-    event_notes[i] := '';
-  for i := 0 to Length(condition_notes) - 1 do
-    condition_notes[i] := '';
-end;
-
 function TMission.get_event_contents(index: integer): String;
 var
   event: ^TEvent;
@@ -421,6 +422,7 @@ var
   contents: string;
   i: integer;
   dummy: boolean;
+  tmp_unit_count: array[0..MAX_UNIT_TYPES-1] of byte;
 begin
   event := Addr(mis_data.events[index]);
   event_type := EventType(event.event_type);
@@ -518,7 +520,7 @@ begin
     ctCasualties:     contents := contents + space + inttostr(cond.value) + '  ' + floattostrf(cond.casualties_ratio, ffFixed, 8, 3);
     ctTileRevealed:   contents := contents + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y);
     ctSpiceHarvested: contents := contents + inttostr(cond.value);
-    ctFlag:           contents := contents + condition_notes[index];
+    ctFlag:           contents := contents + MissionIni.condition_notes[index];
   end;
   //contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.more_uses) + ' ' + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y) + ' ' + inttostr(cond.casualty_flags) + ' ' + inttostr(cond.side) + ' ' + inttostr(cond.building_type) + ' ' + inttostr(cond.unit_type_or_comparison_function);
   result := contents;
@@ -553,10 +555,10 @@ begin
   for i := mis_data.num_events downto position + 1 do
   begin
     mis_data.events[i] := mis_data.events[i-1];
-    event_notes[i] := event_notes[i-1];
+    MissionIni.event_notes[i] := MissionIni.event_notes[i-1];
   end;
   FillChar(mis_data.events[position], sizeof(TEvent), 0);
-  event_notes[position] := '';
+  MissionIni.event_notes[position] := '';
   inc(mis_data.num_events);
   mis_modified := true;
   result := true;
@@ -570,7 +572,7 @@ begin
     exit;
   end;
   FillChar(mis_data.conditions[mis_data.num_conditions], sizeof(TCondition), 0);
-  condition_notes[mis_data.num_conditions] := '';
+  MissionIni.condition_notes[mis_data.num_conditions] := '';
   inc(mis_data.num_conditions);
   mis_modified := true;
   result := true;
@@ -588,10 +590,10 @@ begin
   for i := deleted_index to mis_data.num_events - 2 do
   begin
     mis_data.events[i] := mis_data.events[i+1];
-    event_notes[i] := event_notes[i+1];
+    MissionIni.event_notes[i] := MissionIni.event_notes[i+1];
   end;
   FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
-  event_notes[mis_data.num_events - 1] := '';
+  MissionIni.event_notes[mis_data.num_events - 1] := '';
   dec(mis_data.num_events);
   mis_modified := true;
   // Update event markers on map if event had position
@@ -612,10 +614,10 @@ begin
   for i := deleted_index to mis_data.num_conditions - 2 do
   begin
     mis_data.conditions[i] := mis_data.conditions[i+1];
-    condition_notes[i] := condition_notes[i+1];
+    MissionIni.condition_notes[i] := MissionIni.condition_notes[i+1];
   end;
   FillChar(mis_data.conditions[mis_data.num_conditions - 1], sizeof(TCondition), 0);
-  condition_notes[mis_data.num_conditions - 1] := '';
+  MissionIni.condition_notes[mis_data.num_conditions - 1] := '';
   // Go through all events
   for i := 0 to mis_data.num_events - 1 do
   begin
@@ -687,9 +689,9 @@ begin
   tmp_event := mis_data.events[e1];
   mis_data.events[e1] := mis_data.events[e2];
   mis_data.events[e2] := tmp_event;
-  tmp_note := event_notes[e1];
-  event_notes[e1] := event_notes[e2];
-  event_notes[e2] := tmp_note;
+  tmp_note := MissionIni.event_notes[e1];
+  MissionIni.event_notes[e1] := MissionIni.event_notes[e2];
+  MissionIni.event_notes[e2] := tmp_note;
   mis_modified := true;
   // Update event markers on map if event had position
   event_used_position := (event_type_info[mis_data.events[e1].event_type].use_map_position) or (event_type_info[mis_data.events[e2].event_type].use_map_position);
@@ -713,9 +715,9 @@ begin
   mis_data.conditions[c1] := mis_data.conditions[c2];
   mis_data.conditions[c2] := tmp_condition;
   // Swap condition notes
-  tmp_note := condition_notes[c1];
-  condition_notes[c1] := condition_notes[c2];
-  condition_notes[c2] := tmp_note;
+  tmp_note := MissionIni.condition_notes[c1];
+  MissionIni.condition_notes[c1] := MissionIni.condition_notes[c2];
+  MissionIni.condition_notes[c2] := tmp_note;
   // Go through all events
   for i := 0 to mis_data.num_events - 1 do
   begin

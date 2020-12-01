@@ -260,6 +260,7 @@ type
     procedure update_structures_list;
     procedure update_sound_list;
   private
+    procedure enable_mission_ini_features;
     // Fill data procedures
     procedure fill_grids;
     // Event-related procedures
@@ -279,7 +280,6 @@ type
   public
     // Procedures called from different forms
     procedure finish_event_position_selection(x, y: integer);
-    procedure enable_map_ini_features(enabled: boolean);
   end;
 
 var
@@ -287,7 +287,7 @@ var
 
 implementation
 
-uses Math, main, _stringtable, _settings, _structures, _dispatcher;
+uses Math, main, _missionini, _stringtable, _settings, _structures, _dispatcher;
 
 {$R *.dfm}
 
@@ -432,6 +432,7 @@ begin
   pending_update_contents := false;
   if not Mission.mis_assigned then
     exit;
+  enable_mission_ini_features;
   fill_grids;
   select_event(selected_event);
   select_condition(selected_condition);
@@ -479,6 +480,16 @@ begin
   tmp_strings.Destroy;
 end;
 
+procedure TEventDialog.enable_mission_ini_features;
+begin
+  notes_enabled := MissionIni.mission_ini_assigned and Settings.EnableEventNotes;
+  lblEventNote.Visible := notes_enabled;
+  lblConditionNote.Visible := notes_enabled;
+  edEventNote.Visible := notes_enabled;
+  edConditionNote.Visible := notes_enabled;
+  btnCustomMsgText.Visible := MissionIni.mission_ini_assigned;
+end;
+
 procedure TEventDialog.fill_grids;
 var
   i: integer;
@@ -507,7 +518,7 @@ begin
     // Conditions
     EventGrid.Cells[5,i] := Mission.get_event_conditions(i-1);
     // Note
-    EventGrid.Cells[6,i] := Mission.event_notes[i-1];
+    EventGrid.Cells[6,i] := MissionIni.event_notes[i-1];
   end;
   // Clear unused event rows
   for i := Mission.mis_data.num_events + 1 to 64 do
@@ -600,7 +611,7 @@ begin
   if event_type_info[tmp_event.event_type].value_name <> '' then
     fill_event_ui_panel(epEventValue, panel_top);
   if notes_enabled then
-    edEventNote.Text := Mission.event_notes[selected_event];
+    edEventNote.Text := MissionIni.event_notes[selected_event];
   // Fill unit list
   fill_event_unit_list;
   // Fill condition list
@@ -758,10 +769,10 @@ begin
   Mission.mis_modified := true;
   // Save event note
   if notes_enabled then
-    Mission.event_notes[selected_event] := edeventNote.Text;
+    MissionIni.event_notes[selected_event] := edeventNote.Text;
   // Save custom message text
   if (event_type = Byte(etShowMessage)) and msg_text_is_custom then
-    StringTable.set_custom_text(tmp_event.message_index, edMessageText.Text);
+    MissionIni.set_custom_text(tmp_event.message_index, edMessageText.Text);
   // Update GUI
   fill_grids;
   // Update event markers on map if old or new event has position
@@ -821,7 +832,7 @@ begin
   if condition_type_info[tmp_condition.condition_type].value_name <> '' then
     fill_condition_ui_panel(cpConditionValue, panel_top);
   if notes_enabled then
-    edConditionNote.Text := Mission.condition_notes[selected_condition];
+    edConditionNote.Text := MissionIni.condition_notes[selected_condition];
 end;
 
 procedure TEventDialog.fill_condition_ui_panel(panel: TPanel;
@@ -917,7 +928,7 @@ begin
   Mission.mis_modified := true;
   // Save condition note
   if notes_enabled then
-    Mission.condition_notes[selected_condition] := edConditionNote.Text;
+    MissionIni.condition_notes[selected_condition] := edConditionNote.Text;
   // Update GUI
   fill_grids;
   EventConditionList.Clear;
@@ -941,17 +952,6 @@ begin
     seConditionPositionX.Value := x;
     seConditionPositionY.Value := y;
   end;
-end;
-
-procedure TEventDialog.enable_map_ini_features(enabled: boolean);
-begin
-  notes_enabled := enabled and Settings.EnableEventNotes;
-  lblEventNote.Visible := notes_enabled;
-  lblConditionNote.Visible := notes_enabled;
-  edEventNote.Visible := notes_enabled;
-  edConditionNote.Visible := notes_enabled;
-  btnCustomMsgText.Visible := enabled;
-  seMessageIdChange(nil);
 end;
 
 procedure TEventDialog.seMessageIdChange(Sender: TObject);
@@ -1325,7 +1325,7 @@ begin
   if Mission.add_event(selected_event + 1) then
   begin
     Mission.mis_data.events[selected_event + 1] := Mission.mis_data.events[selected_event];
-    Mission.event_notes[selected_event + 1] := Mission.event_notes[selected_event];
+    MissionIni.event_notes[selected_event + 1] := MissionIni.event_notes[selected_event];
     fill_grids;
     EventGrid.Row := selected_event + 2;
   end;
@@ -1384,7 +1384,7 @@ begin
   if Mission.add_condition then
   begin
     Mission.mis_data.conditions[Mission.mis_data.num_conditions-1] := Mission.mis_data.conditions[selected_condition];
-    Mission.condition_notes[Mission.mis_data.num_conditions-1] := Mission.condition_notes[selected_condition];
+    MissionIni.condition_notes[Mission.mis_data.num_conditions-1] := MissionIni.condition_notes[selected_condition];
     fill_grids;
     ConditionGrid.Row := Mission.mis_data.num_conditions;
   end;
@@ -1553,7 +1553,7 @@ begin
   end else
   begin
     btnCustomMsgText.Caption := 'Custom text';
-    StringTable.remove_custom_text(seMessageId.Value);
+    MissionIni.remove_custom_text(seMessageId.Value);
     edMessageText.Text := StringTable.get_text(seMessageId.Value, true, msg_text_is_custom);
     edMessageText.ReadOnly := true;
     fill_grids;

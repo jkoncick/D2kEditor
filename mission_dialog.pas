@@ -8,17 +8,6 @@ uses
   ValEdit, IniFiles, _map, _mission, _structures, _misai, _utils;
 
 type
-  TRuleDefinition = record
-    name: String;
-    default_value: String;
-  end;
-
-type
-  TAIClipboard = record
-    ai_data: TMisAISegment;
-  end;
-
-type
   TMissionDialog = class(TForm)
     lblTechLevel: TLabel;
     lblStartingMoney: TLabel;
@@ -83,9 +72,11 @@ type
     edMapIntelId: TEdit;
     lblPlayersIni: TLabel;
     cbPlayersIni: TComboBox;
+    // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    // Mission data editor events
     procedure seTechLevelAllChange(Sender: TObject);
     procedure edStartingMoneyAllChange(Sender: TObject);
     procedure btnAllocIndexResetClick(Sender: TObject);
@@ -97,26 +88,30 @@ type
     procedure time_limit_change(Sender: TObject);
     procedure edTilesetNameChange(Sender: TObject);
     procedure edTileatrNameChange(Sender: TObject);
+    // AI value editor events
     procedure AITabControlChange(Sender: TObject);
     procedure AIValueListStringsChange(Sender: TObject);
     procedure AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
-    procedure cbUseINIClick(Sender: TObject);
-    procedure btnResetToDefaultsClick(Sender: TObject);
-    procedure btnRefreshStringsClick(Sender: TObject);
     procedure btnExportAIClick(Sender: TObject);
     procedure btnImportAIClick(Sender: TObject);
     procedure btnCopyAIClick(Sender: TObject);
     procedure btnPasteAIClick(Sender: TObject);
     procedure cbDiffModeClick(Sender: TObject);
     procedure btnSelectDefenceAreaFromMapClick(Sender: TObject);
+    // Mission ini data editor events
+    procedure cbUseINIClick(Sender: TObject);
+    procedure btnResetToDefaultsClick(Sender: TObject);
+    procedure btnRefreshStringsClick(Sender: TObject);
+    procedure MissionIniPropertyChange(Sender: TObject);
     procedure cbMapSideIdChange(Sender: TObject);
     procedure seMapMissionNumberChange(Sender: TObject);
     procedure cbCampaignFolderChange(Sender: TObject);
     procedure cbModsFolderChange(Sender: TObject);
     procedure cbColoursBinChange(Sender: TObject);
-    procedure cbTextUibChange(Sender: TObject);
     procedure cbPlayersIniChange(Sender: TObject);
+    procedure cbTextUibChange(Sender: TObject);
   private
+    // Dynamic controls
     player_label: array[0..cnt_players-1] of TLabel;
     tech_level: array[0..cnt_players-1] of TSpinEdit;
     starting_money: array[0..cnt_players-1] of TEdit;
@@ -124,25 +119,18 @@ type
     color_marker: array[0..cnt_players-1] of TPanel;
     player_label_alleg: array[0..cnt_players-1] of TLabel;
     allegiance_btn: array[0..cnt_players-1, 0..cnt_players-1] of TBitBtn;
-    rule_definitions: array of TRuleDefinition;
+    // Misc. variables
     defence_area_num: integer;
     loading: boolean;
   public
     // Dispatcher procedures
-    procedure fill_data;
     procedure update_player_list(player_list: TStringList);
     procedure update_player_colors;
     procedure update_tileset;
-    procedure update_mis_ai_properties;
-  private
-    // MISAI editor related procedures
-    procedure fill_ai_values;
-    // Mission ini file related procedures
-    function get_ini_filename(map_filename: String): String;
-    procedure load_ini_fields;
-    procedure empty_ini_fields;
-  public
-    procedure save_ini_fields(map_filename: String);
+    procedure update_mission_data;
+    procedure update_mis_ai_values;
+    procedure update_mission_ini_data;
+
     // Procedures called from different forms
     procedure finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);
   end;
@@ -153,18 +141,17 @@ var
 implementation
 
 uses
-  Math, StrUtils, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
+  Math, StrUtils, _missionini, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
 
 {$R *.dfm}
 
 procedure TMissionDialog.FormCreate(Sender: TObject);
 var
   i, j: integer;
-  ini: TMemIniFile;
   tmp_strings: TStringList;
   SR: TSearchRec;
 begin
-  StringTable.init_value_list(StringValueList);
+  MissionIni.init_controls(MapBriefing, RuleValueList, StringValueList);
   for i := 0 to cnt_players-1 do
   begin
     // Initialize player labels
@@ -236,20 +223,9 @@ begin
     // Initialize AI PageControl
     AITabControl.Tabs.Add('');
   end;
-  // Load rule definitions from ini file
-  tmp_strings := TStringList.Create;
-  ini := TMemIniFile.Create(current_dir + 'config/rules.ini');
-  ini.ReadSection('Vars',tmp_strings);
-  SetLength(rule_definitions, tmp_strings.Count);
-  for i := 0 to tmp_strings.Count - 1 do
-  begin
-    rule_definitions[i].name := tmp_strings[i];
-    rule_definitions[i].default_value := ini.ReadString('Vars',tmp_strings[i],'');
-  end;
-  ini.Destroy;
-  tmp_strings.Clear;
   cbMapMusic.Items := EventDialog.cbMusicName.Items;
   // Initialize list of TEXT.UIB files
+  tmp_strings := TStringList.Create;
   if FindFirst(Settings.GamePath + '\Data\UI_DATA\*.UIB', 0, SR) = 0 then
   begin
     repeat
@@ -280,302 +256,6 @@ begin
     Close;
   if key = 123 then
     MainWindow.Show;
-end;
-
-procedure TMissionDialog.fill_data;
-var
-  i, j: integer;
-begin
-  loading := true;
-  for i := 0 to cnt_players-1 do
-  begin
-    tech_level[i].Value := Mission.mis_data.tech_level[i];
-    starting_money[i].Text := inttostr(Mission.mis_data.starting_money[i]);
-    alloc_index[i].Value := Mission.mis_data.allocation_index[i];
-    for j := 0 to cnt_players-1 do
-    begin
-      allegiance_btn[i,j].Caption := allegiance_type[Mission.mis_data.allegiance[i,j]];
-      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
-    end;
-  end;
-  update_player_colors;
-  edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
-  edTilesetName.Text := Mission.mis_data.tileset;
-  edTileatrName.Text := Mission.mis_data.tileatr;
-  if Mission.mis_assigned and FileExists(get_ini_filename(Map.filename)) then
-  begin
-    load_ini_fields;
-    cbUseINI.Checked := true;
-  end else
-  if cbUseINI.Checked then
-  begin
-    empty_ini_fields;
-    cbUseINI.Checked := false;
-  end;
-  fill_ai_values;
-  loading := false;
-end;
-
-procedure TMissionDialog.update_player_list(player_list: TStringList);
-var
-  i: integer;
-  prev_index: integer;
-begin
-  prev_index := cbMapSideId.ItemIndex;
-  cbMapSideId.Items := player_list;
-  cbMapSideId.ItemIndex := Max(prev_index, 0);
-  for i := 0 to cnt_players-1 do
-  begin
-    player_label[i].Caption := Structures.player_names[i];
-    player_label_alleg[i].Caption := IfThen(Length(Structures.player_names[i]) <= 8, Structures.player_names[i], Copy(Structures.player_names[i], 0, 6)+'.');
-    AITabControl.Tabs[i] := Structures.player_names_short[i];
-  end;
-end;
-
-procedure TMissionDialog.update_player_colors;
-var
-  i: integer;
-begin
-  for i := 0 to cnt_players-1 do
-    color_marker[i].Color := StructGraphics.player_colors_inv[Mission.mis_data.allocation_index[i]];
-end;
-
-procedure TMissionDialog.update_tileset;
-begin
-  edTilesetName.Text := Tileset.tileset_name;
-  edTileatrName.Text := Tileset.tileatr_name;
-end;
-
-procedure TMissionDialog.update_mis_ai_properties;
-begin
-  if Mission.mis_assigned then
-    fill_ai_values;
-end;
-
-procedure TMissionDialog.fill_ai_values;
-var
-  i: integer;
-  bytes: integer;
-  i_val: integer;
-  f_val: single;
-  prop: TMisAIPropertyPtr;
-  tmp_strings: TStringList;
-begin
-  tmp_strings := TStringList.Create();
-  for i := 0 to MisAI.cnt_mis_ai_properties -1 do
-  begin
-    prop := MisAI.get_misai_property(i);
-    bytes := 1;
-    case prop.data_type of
-      'b': bytes := 1;
-      'w': bytes := 2;
-      'd': bytes := 4;
-      'f':
-        begin
-          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position);
-          if cbDiffMode.Checked and (f_val = get_float_value(MisAI.default_ai, prop.position)) then
-            tmp_strings.Add(prop.name + '=')
-          else
-            tmp_strings.Add(prop.name + '=' + floattostrf(f_val, ffFixed, 8, 3));
-          continue;
-        end;
-      end;
-    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, bytes);
-    if cbDiffMode.Checked and (i_val = get_integer_value(MisAI.default_ai, prop.position, bytes)) then
-      tmp_strings.Add(prop.name + '=')
-    else
-      tmp_strings.Add(prop.name + '=' + inttostr(i_val));
-  end;
-  AIValueList.OnStringsChange := nil;
-  AIValueList.Strings := tmp_strings;
-  AIValueList.OnStringsChange := AIValueListStringsChange;
-  tmp_strings.Destroy;
-end;
-
-function TMissionDialog.get_ini_filename(map_filename: String): String;
-begin
-  result := ChangeFileExt(map_filename,'.ini');
-end;
-
-procedure TMissionDialog.load_ini_fields;
-var
-  i: integer;
-  tmp_strings: TStringList;
-  ini: TMemIniFile;
-begin
-  ini := TMemIniFile.Create(get_ini_filename(Map.filename));
-  btnResetToDefaults.Enabled := true;
-  btnRefreshStrings.Enabled := true;
-  // Load basic map settings
-  edMapName.Enabled := true;
-  edMapName.Text := ini.ReadString('Basic','Name','');
-  edMapAuthor.Enabled := true;
-  edMapAuthor.Text := ini.ReadString('Basic','Author','');
-  cbMapMusic.Enabled := true;
-  cbMapMusic.Text := ini.ReadString('Basic','Music','');
-  cbMapSideId.Enabled := true;
-  cbMapSideId.ItemIndex := ini.ReadInteger('Basic','SideId',-1);
-  seMapMissionNumber.Enabled := true;
-  seMapMissionNumber.Value := ini.ReadInteger('Basic','MissionNumber',0);
-  edMapIntelId.Enabled := true;
-  edMapIntelId.Text := ini.ReadString('Data','IntelId','');
-  cbCampaignFolder.Enabled := true;
-  cbCampaignFolder.Text := ini.ReadString('Data','CampaignFolder','');
-  cbModsFolder.Enabled := true;
-  cbModsFolder.Text := ini.ReadString('Data','ModsFolder','');
-  cbColoursBin.Enabled := true;
-  cbColoursBin.Text := ini.ReadString('Data','ColoursFile','');
-  cbPlayersIni.Enabled := true;
-  cbPlayersIni.Text := ini.ReadString('Data','PlayersFile','');
-  cbTextUib.Enabled := true;
-  cbTextUib.Text := ini.ReadString('Basic','TextUib','');
-  cbMapSideIdChange(nil);
-  seMapMissionNumberChange(nil);
-  cbCampaignFolderChange(nil);
-  cbTextUibChange(nil);
-  // Load rules
-  RuleValueList.Enabled := true;
-  tmp_strings := TStringList.Create;
-  for i := 0 to Length(rule_definitions) - 1 do
-  begin
-    tmp_strings.Add(rule_definitions[i].name+'='+ini.ReadString('Vars',rule_definitions[i].name,rule_definitions[i].default_value));
-  end;
-  RuleValueList.Strings := tmp_strings;
-  tmp_strings.Clear;
-  // Load strings
-  StringValueList.Enabled := true;
-  StringTable.load_custom_texts_from_ini(ini);
-  // Load briefing
-  MapBriefing.Enabled := true;
-  tmp_strings.Delimiter := '_';
-  tmp_strings.DelimitedText := StringReplace(ini.ReadString('Basic','Briefing',''),' ','^',[rfReplaceAll]);
-  for i := 0 to tmp_strings.Count-1 do
-  begin
-    tmp_strings[i] := StringReplace(tmp_strings[i],'^',' ',[rfReplaceAll]);
-  end;
-  MapBriefing.Lines := tmp_strings;
-  // Remove additional trailing newline from the Memo
-  MapBriefing.Text := Copy(MapBriefing.Text, 1, Length(MapBriefing.Text) - 2);
-  tmp_strings.Destroy;
-  // Load event/condition notes
-  Mission.load_notes_from_ini(ini);
-  EventDialog.enable_map_ini_features(true);
-  ini.Destroy;
-end;
-
-procedure TMissionDialog.empty_ini_fields;
-begin
-  btnResetToDefaults.Enabled := false;
-  btnRefreshStrings.Enabled := false;
-  edMapName.Enabled := false;
-  edMapName.Clear;
-  edMapAuthor.Enabled := false;
-  edMapAuthor.Clear;
-  cbMapMusic.Enabled := false;
-  cbMapMusic.Text := '';
-  cbMapSideId.Enabled := false;
-  cbMapSideId.ItemIndex := -1;
-  seMapMissionNumber.Enabled := false;
-  seMapMissionNumber.Value := 0;
-  edMapIntelId.Enabled := false;
-  edMapIntelId.Text := '';
-  cbCampaignFolder.Enabled := false;
-  cbCampaignFolder.Text := '';
-  cbModsFolder.Enabled := false;
-  cbModsFolder.Text := '';
-  cbColoursBin.Enabled := false;
-  cbColoursBin.Text := '';
-  cbPlayersIni.Enabled := false;
-  cbPlayersIni.Text := '';
-  cbTextUib.Enabled := false;
-  cbTextUib.Text := '';
-  cbCampaignFolderChange(nil);
-  cbTextUibChange(nil);
-  RuleValueList.Enabled := false;
-  RuleValueList.Strings.Clear;
-  StringValueList.Enabled := false;
-  StringTable.clear_custom_texts;
-  MapBriefing.Enabled := false;
-  MapBriefing.Lines.Clear;
-  Mission.clear_notes;
-  EventDialog.enable_map_ini_features(false);
-end;
-
-procedure TMissionDialog.save_ini_fields(map_filename: String);
-var
-  i: integer;
-  tmp_string: String;
-  ini: TMemIniFile;
-begin
-  if not cbUseINI.Checked then
-    exit;
-  ini := TMemIniFile.Create(get_ini_filename(map_filename));
-  // Save basic map settings
-  if edMapName.Text = '' then
-    ini.DeleteKey('Basic','Name')
-  else
-    ini.WriteString('Basic','Name',edMapName.Text);
-  if edMapAuthor.Text = '' then
-    ini.DeleteKey('Basic','Author')
-  else
-    ini.WriteString('Basic','Author',edMapAuthor.Text);
-  if cbMapMusic.Text = '' then
-    ini.DeleteKey('Basic','Music')
-  else
-    ini.WriteString('Basic','Music',cbMapMusic.Text);
-  if cbMapSideId.ItemIndex = -1 then
-    ini.DeleteKey('Basic','SideId')
-  else
-    ini.WriteInteger('Basic','SideId',cbMapSideId.ItemIndex);
-  if seMapMissionNumber.Value = 0 then
-    ini.DeleteKey('Basic','MissionNumber')
-  else
-    ini.WriteInteger('Basic','MissionNumber',seMapMissionNumber.Value);
-  if edMapIntelId.Text = '' then
-    ini.DeleteKey('Data','IntelId')
-  else
-    ini.WriteString('Data','IntelId',edMapIntelId.Text);
-  if cbCampaignFolder.Text = '' then
-    ini.DeleteKey('Data','CampaignFolder')
-  else
-    ini.WriteString('Data','CampaignFolder',cbCampaignFolder.Text);
-  if cbModsFolder.Text = '' then
-    ini.DeleteKey('Data','ModsFolder')
-  else
-    ini.WriteString('Data','ModsFolder',cbModsFolder.Text);
-  if cbColoursBin.Text = '' then
-    ini.DeleteKey('Data','ColoursFile')
-  else
-    ini.WriteString('Data','ColoursFile',cbColoursBin.Text);
-  if cbPlayersIni.Text = '' then
-    ini.DeleteKey('Data','PlayersFile')
-  else
-    ini.WriteString('Data','PlayersFile',cbPlayersIni.Text);
-  if cbTextUib.Text = '' then
-    ini.DeleteKey('Basic','TextUib')
-  else
-    ini.WriteString('Basic','TextUib',cbTextUib.Text);
-  // Save rules
-  for i := 0 to Length(rule_definitions) - 1 do
-  begin
-    if RuleValueList.Cells[1,i+1] = rule_definitions[i].default_value then
-      ini.DeleteKey('Vars',rule_definitions[i].name)
-    else
-      ini.WriteString('Vars',rule_definitions[i].name,RuleValueList.Cells[1,i+1]);
-  end;
-  // Save strings
-  StringTable.save_custom_texts_to_ini(ini);
-  // Save briefing
-  if MapBriefing.Lines.Count = 0 then
-    ini.DeleteKey('Basic','Briefing')
-  else begin
-    tmp_string := StringReplace(MapBriefing.Text,chr(13)+chr(10),'_',[rfReplaceAll]);
-    ini.WriteString('Basic','Briefing',tmp_string);
-  end;
-  // Save event/condition notes
-  Mission.save_notes_to_ini(ini);
-  ini.UpdateFile;
-  ini.Destroy;
 end;
 
 procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
@@ -675,7 +355,7 @@ end;
 
 procedure TMissionDialog.AITabControlChange(Sender: TObject);
 begin
-  fill_ai_values;
+  update_mis_ai_values;
 end;
 
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
@@ -686,7 +366,9 @@ var
   f_val: single;
   bytes: integer;
 begin
-  AIValueList.OnStringsChange := nil;
+  if loading then
+    exit;
+  loading := true;
   // Range selection (if one value selected, loop goes only once)
   for i := AIValueList.Selection.Top to AIValueList.Selection.Bottom do
   begin
@@ -713,7 +395,7 @@ begin
     i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(MisAI.default_ai, prop.position, bytes));
     set_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, bytes, i_val);
   end;
-  AIValueList.OnStringsChange := AIValueListStringsChange;
+  loading := false;
 end;
 
 procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -731,47 +413,6 @@ begin
   btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
 end;
 
-procedure TMissionDialog.cbUseINIClick(Sender: TObject);
-var
-  ini_filename: string;
-begin
-  if loading then
-    exit;
-  if cbUseINI.Checked then
-  begin
-    load_ini_fields;
-  end else
-  begin
-    ini_filename := get_ini_filename(Map.filename);
-    if FileExists(ini_filename) and (Application.MessageBox('Do you want to delete ini file on disk?', 'Do not use ini file', MB_YESNO or MB_ICONQUESTION) = IDYES) then
-      DeleteFile(ini_filename);
-    empty_ini_fields;
-    // Need to update strings because custom texts are unloaded
-    EventDialog.update_contents;
-  end;
-end;
-
-procedure TMissionDialog.btnResetToDefaultsClick(Sender: TObject);
-var
-  i: integer;
-  tmp_strings: TStringList;
-begin
-  if not cbUseINI.Checked then
-    exit;
-  tmp_strings := TStringList.Create;
-  for i := 0 to Length(rule_definitions) - 1 do
-  begin
-    tmp_strings.Add(rule_definitions[i].name+'='+rule_definitions[i].default_value);
-  end;
-  RuleValueList.Strings := tmp_strings;
-  tmp_strings.Destroy;
-end;
-
-procedure TMissionDialog.btnRefreshStringsClick(Sender: TObject);
-begin
-  EventDialog.update_contents;
-end;
-
 procedure TMissionDialog.btnExportAIClick(Sender: TObject);
 begin
   if ExportAIDialog.Execute then
@@ -783,7 +424,7 @@ begin
   if ImportAIDialog.Execute then
   begin
     MisAI.load_misai_segment(ImportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex]);
-    fill_ai_values;
+    update_mis_ai_values;
   end;
 end;
 
@@ -795,12 +436,12 @@ end;
 procedure TMissionDialog.btnPasteAIClick(Sender: TObject);
 begin
   if MisAI.paste_misai_segment_from_clipboard(Mission.mis_data.ai_segments[AITabControl.TabIndex]) then
-    fill_ai_values;
+    update_mis_ai_values;
 end;
 
 procedure TMissionDialog.cbDiffModeClick(Sender: TObject);
 begin
-  fill_ai_values;
+  update_mis_ai_values;
 end;
 
 procedure TMissionDialog.btnSelectDefenceAreaFromMapClick(Sender: TObject);
@@ -820,16 +461,56 @@ begin
   close;
 end;
 
+procedure TMissionDialog.cbUseINIClick(Sender: TObject);
+begin
+  if loading then
+    exit;
+  if cbUseINI.Checked then
+  begin
+    MissionIni.assign_mission_ini;
+  end else
+  begin
+    if (MissionIni.mission_ini_filename <> '') and (FileExists(MissionIni.mission_ini_filename)) and (Application.MessageBox('Do you want to delete ini file from disk? All existing data will be lost!', 'Do not use ini file', MB_YESNO or MB_ICONWARNING) = IDNO) then
+    begin
+      loading := true;
+      cbUseINI.Checked := true;
+      loading := false;
+      exit;
+    end;
+    MissionIni.delete_mission_ini;
+  end;
+end;
+
+procedure TMissionDialog.btnResetToDefaultsClick(Sender: TObject);
+begin
+  MissionIni.reset_rules_to_defaults;
+end;
+
+procedure TMissionDialog.btnRefreshStringsClick(Sender: TObject);
+begin
+  Dispatcher.register_event(evMissionIniCustomTextChange);
+end;
+
+procedure TMissionDialog.MissionIniPropertyChange(Sender: TObject);
+begin
+  if loading then
+    exit;
+  MissionIni.Name := edMapName.Text;
+  MissionIni.Author := edMapAuthor.Text;
+  MissionIni.Music := cbMapMusic.Text;
+  MissionIni.IntelId := edMapIntelId.Text;
+end;
+
 procedure TMissionDialog.cbMapSideIdChange(Sender: TObject);
 begin
   if cbMapSideId.ItemIndex <> -1 then
-    Launcher.MySideID := cbMapSideId.ItemIndex;
+    MissionIni.set_side_id(cbMapSideId.ItemIndex);
 end;
 
 procedure TMissionDialog.seMapMissionNumberChange(Sender: TObject);
 begin
-  if seMapMissionNumber.Value <> 0 then
-    Launcher.MissionNumber := seMapMissionNumber.Value;
+  if not loading then
+    MissionIni.set_mission_number(seMapMissionNumber.Value);
 end;
 
 procedure TMissionDialog.cbCampaignFolderChange(Sender: TObject);
@@ -869,41 +550,164 @@ begin
   end;
   cbPlayersIni.Items := tmp_strings;
   tmp_strings.Destroy;
-  cbModsFolderChange(nil);
+
+  if not loading then
+    MissionIni.set_campaign_folder(cbCampaignFolder.Text);
 end;
 
 procedure TMissionDialog.cbModsFolderChange(Sender: TObject);
 begin
-  // Reload structures data
-  Structures.load_templates_bin(false);
-  Structures.load_builexp_bin(false);
-  Structures.load_armour_bin(false);
-  Structures.load_speed_bin(false);
-  Structures.load_techpos_bin(false);
-  Structures.load_tiledata_bin;
-  StructGraphics.load_colours_bin;
-  StructGraphics.load_data_r16;
-  StructGraphics.load_graphics_misc_objects;
-  Structures.load_players_ini;
-  Structures.load_misc_objects_ini;
-  Structures.load_limits_ini;
-  Structures.load_templates_other_txt;
+  MissionIni.set_mods_folder(cbModsFolder.Text);
 end;
 
 procedure TMissionDialog.cbColoursBinChange(Sender: TObject);
 begin
-  StructGraphics.load_colours_bin;
+  MissionIni.set_colours_file(cbColoursBin.Text);
 end;
 
 procedure TMissionDialog.cbPlayersIniChange(Sender: TObject);
 begin
-  Structures.load_players_ini;
+  MissionIni.set_players_file(cbPlayersIni.Text);
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);
 begin
-  Launcher.TextUib := cbTextUib.Text;
-  StringTable.load_text_uib(cbTextUib.Text);
+  MissionIni.set_text_uib(cbTextUib.Text);
+end;
+
+procedure TMissionDialog.update_player_list(player_list: TStringList);
+var
+  i: integer;
+  prev_index: integer;
+begin
+  prev_index := cbMapSideId.ItemIndex;
+  cbMapSideId.Items := player_list;
+  cbMapSideId.ItemIndex := prev_index;
+  for i := 0 to cnt_players-1 do
+  begin
+    player_label[i].Caption := Structures.player_names[i];
+    player_label_alleg[i].Caption := IfThen(Length(Structures.player_names[i]) <= 8, Structures.player_names[i], Copy(Structures.player_names[i], 0, 6)+'.');
+    AITabControl.Tabs[i] := Structures.player_names_short[i];
+  end;
+end;
+
+procedure TMissionDialog.update_player_colors;
+var
+  i: integer;
+begin
+  for i := 0 to cnt_players-1 do
+    color_marker[i].Color := StructGraphics.player_colors_inv[Mission.mis_data.allocation_index[i]];
+end;
+
+procedure TMissionDialog.update_tileset;
+begin
+  edTilesetName.Text := Tileset.tileset_name;
+  edTileatrName.Text := Tileset.tileatr_name;
+end;
+
+procedure TMissionDialog.update_mission_data;
+var
+  i, j: integer;
+begin
+  loading := true;
+  for i := 0 to cnt_players-1 do
+  begin
+    tech_level[i].Value := Mission.mis_data.tech_level[i];
+    starting_money[i].Text := inttostr(Mission.mis_data.starting_money[i]);
+    alloc_index[i].Value := Mission.mis_data.allocation_index[i];
+    for j := 0 to cnt_players-1 do
+    begin
+      allegiance_btn[i,j].Caption := allegiance_type[Mission.mis_data.allegiance[i,j]];
+      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
+    end;
+  end;
+  update_player_colors;
+  edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
+  edTilesetName.Text := Mission.mis_data.tileset;
+  edTileatrName.Text := Mission.mis_data.tileatr;
+  loading := false;
+end;
+
+procedure TMissionDialog.update_mis_ai_values;
+var
+  i: integer;
+  bytes: integer;
+  i_val: integer;
+  f_val: single;
+  prop: TMisAIPropertyPtr;
+  tmp_strings: TStringList;
+begin
+  if not Mission.mis_assigned then
+    exit;
+  loading := true;
+  tmp_strings := TStringList.Create();
+  for i := 0 to MisAI.cnt_mis_ai_properties -1 do
+  begin
+    prop := MisAI.get_misai_property(i);
+    bytes := 1;
+    case prop.data_type of
+      'b': bytes := 1;
+      'w': bytes := 2;
+      'd': bytes := 4;
+      'f':
+        begin
+          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position);
+          if cbDiffMode.Checked and (f_val = get_float_value(MisAI.default_ai, prop.position)) then
+            tmp_strings.Add(prop.name + '=')
+          else
+            tmp_strings.Add(prop.name + '=' + floattostrf(f_val, ffFixed, 8, 3));
+          continue;
+        end;
+      end;
+    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, bytes);
+    if cbDiffMode.Checked and (i_val = get_integer_value(MisAI.default_ai, prop.position, bytes)) then
+      tmp_strings.Add(prop.name + '=')
+    else
+      tmp_strings.Add(prop.name + '=' + inttostr(i_val));
+  end;
+  AIValueList.Strings := tmp_strings;
+  tmp_strings.Destroy;
+  loading := false;
+end;
+
+procedure TMissionDialog.update_mission_ini_data;
+var
+  status: boolean;
+begin
+  loading := true;
+  status := MissionIni.mission_ini_assigned;
+
+  cbUseINI.Checked := status;
+  btnResetToDefaults.Enabled := status;
+  btnRefreshStrings.Enabled := status;
+  edMapName.Enabled := status;
+  edMapName.Text := MissionIni.Name;
+  edMapAuthor.Enabled := status;
+  edMapAuthor.Text := MissionIni.Author;
+  cbMapMusic.Enabled := status;
+  cbMapMusic.Text := MissionIni.Music;
+  cbMapSideId.Enabled := status;
+  cbMapSideId.ItemIndex := MissionIni.SideId;
+  seMapMissionNumber.Enabled := status;
+  seMapMissionNumber.Value := MissionIni.MissionNumber;
+  cbTextUib.Enabled := status;
+  cbTextUib.Text := MissionIni.TextUib;
+  MapBriefing.Enabled := status;
+  cbCampaignFolder.Enabled := status;
+  cbCampaignFolder.Text := MissionIni.CampaignFolder;
+  cbCampaignFolderChange(nil);
+  cbModsFolder.Enabled := status;
+  cbModsFolder.Text := MissionIni.ModsFolder;
+  cbColoursBin.Enabled := status;
+  cbColoursBin.Text := MissionIni.ColoursFile;
+  cbPlayersIni.Enabled := status;
+  cbPlayersIni.Text := MissionIni.PlayersFile;
+  edMapIntelId.Enabled := status;
+  edMapIntelId.Text := MissionIni.IntelId;
+  RuleValueList.Enabled := status;
+  StringValueList.Enabled := status;
+
+  loading := false;
 end;
 
 procedure TMissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);
@@ -918,7 +722,7 @@ begin
   defence_area.MaxX := max_x;
   defence_area.MinY := min_y;
   defence_area.MaxY := max_y;
-  fill_ai_values;
+  update_mis_ai_values;
   Dispatcher.register_event(evMisDefenceAreaChange);
 end;
 

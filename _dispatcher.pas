@@ -10,11 +10,14 @@ type
     evMapShift,
     evMapTilesModify,
     evMapFilenameChange,
-    // Mission-related eventd
+    // Mission-related events
     evMisLoad,
     evMisAllocIndexChange,
     evMisEventPositionChange,
     evMisDefenceAreaChange,
+    // Mission ini-related events
+    evMissionIniLoad,
+    evMissionIniCustomTextChange,
     // Initialize tilesets event
     evInitTilesets,
     // Tileset file load events
@@ -52,6 +55,7 @@ type
     paUpdateStructuresListTranslated,
     paUpdateMiscObjectList,
     paUpdatePlayerList,
+    paUpdateMisAIPropertyList,
     // Update various contents
     paUpdateTileset,
     paUpdateStructureControls,
@@ -60,9 +64,12 @@ type
     paUpdateMissionLoadStatus,
     paUpdateMapStats,
     paUpdateEventMarkers,
-    paUpdateMisAIProperties,
     paUpdatePlayerColours,
     paUpdateSpeedModifiers,
+    // Update mission dialog contents
+    paUpdateMissionData,
+    paUpdateMissionIniData,
+    paUpdateMisAiValues,
     // Update whole dialog contents
     paUpdateEventDialog,
     paUpdateTileAtrEditor,
@@ -87,12 +94,12 @@ type
   private
     procedure update_structures_list_translated;
     procedure update_player_list;
+    procedure update_mis_ai_property_list;
     procedure update_tileset;
     procedure update_map_name;
     procedure update_mission_load_status;
     procedure update_map_stats;
     procedure update_event_markers;
-    procedure update_mis_ai_properties;
 
   end;
 
@@ -119,10 +126,13 @@ begin
     evMapTilesModify:             pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap];
     evMapFilenameChange:          pact := pact + [paUpdateMapName];
     // Mission-related events
-    evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateMissionData, paUpdateMisAiValues, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisAllocIndexChange:        pact := pact + [paUpdateStructureControls, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisEventPositionChange:     pact := pact + [paUpdateEventMarkers];
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
+    // Mission ini-related events
+    evMissionIniLoad:             pact := pact + [paUpdateMissionIniData, paUpdateEventDialog];
+    evMissionIniCustomTextChange: pact := pact + [paUpdateEventDialog];
     // Initialize tilesets event
     evInitTilesets:               pact := pact + [paUpdateTilesetList];
     // Tileset file load events
@@ -138,7 +148,7 @@ begin
       end;
     evFLSamplesUib:               pact := pact + [paUpdateSoundList];
     // Structures file load events
-    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIProperties, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor];
     evFLArmourBin:                pact := pact + [paUpdateStructuresEditor];
     evFLSpeedBin:                 pact := pact + [paUpdateSpeedModifiers, paUpdateStructuresEditor];
@@ -154,7 +164,7 @@ begin
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
     evACTileAtrEditor:            pact := pact + [paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIProperties, paUpdateMapStats, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
   end;
 end;
 
@@ -170,6 +180,7 @@ begin
   if paUpdateStructuresListTranslated in pact then update_structures_list_translated;
   if paUpdateMiscObjectList     in pact then MainWindow.update_misc_object_list;
   if paUpdatePlayerList         in pact then update_player_list;
+  if paUpdateMisAIPropertyList  in pact then update_mis_ai_property_list;
   if paUpdateTileset            in pact then update_tileset;
   // Update various contents
   if paUpdateStructureControls  in pact then MainWindow.update_structure_controls;
@@ -178,9 +189,12 @@ begin
   if paUpdateMissionLoadStatus  in pact then update_mission_load_status;
   if paUpdateMapStats           in pact then update_map_stats;
   if paUpdateEventMarkers       in pact then update_event_markers;
-  if paUpdateMisAIProperties    in pact then update_mis_ai_properties;
   if paUpdatePlayerColours      in pact then MissionDialog.update_player_colors;
   if paUpdateSpeedModifiers     in pact then TileAtrEditor.update_speed_modifiers;
+  // Update mission dialog contents
+  if paUpdateMissionData        in pact then MissionDialog.update_mission_data;
+  if paUpdateMissionIniData     in pact then MissionDialog.update_mission_ini_data;
+  if paUpdateMisAiValues        in pact then MissionDialog.update_mis_ai_values;
   // Update whole dialog contents
   if paUpdateEventDialog        in pact then EventDialog.update_contents;
   if paUpdateTileAtrEditor      in pact then TileAtrEditor.update_contents;
@@ -227,6 +241,12 @@ begin
   player_list.Destroy;
 end;
 
+procedure TDispatcher.update_mis_ai_property_list;
+begin
+  MisAI.cache_mis_ai_property_list;
+  pact := pact + [paUpdateMisAiValues];
+end;
+
 procedure TDispatcher.update_tileset;
 begin
   MainWindow.update_tileset;
@@ -256,7 +276,10 @@ procedure TDispatcher.update_mission_load_status;
 begin
   MainWindow.update_mission_load_status;
   if not Mission.mis_assigned then
+  begin
+    MissionDialog.Close;
     EventDialog.Close;
+  end;
 end;
 
 procedure TDispatcher.update_map_stats;
@@ -271,12 +294,6 @@ begin
   Mission.cache_event_markers;
   if Settings.ShowEventMarkers then
     pact := pact + [paRenderMap];
-end;
-
-procedure TDispatcher.update_mis_ai_properties;
-begin
-  MisAI.cache_mis_ai_properties;
-  MissionDialog.update_mis_ai_properties;
 end;
 
 end.

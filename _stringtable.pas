@@ -14,22 +14,16 @@ type
 
     text_uib: THashedStringList;
     samples_uib: TStringList;
-    custom_text_value_list: TValueListEditor;
 
   public
     procedure init;
-    procedure init_value_list(value_list: TValueListEditor);
     procedure load_text_uib(text_uib_name: string);
     procedure load_samples_uib;
+  private
     procedure load_uib_file(filename: String; storage: TStringList);
-    function get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
-    procedure set_custom_text(index: integer; text: String);
-    procedure remove_custom_text(index: integer);
-    // Loading and saving custom texts
-    procedure load_custom_texts_from_ini(ini: TMemIniFile);
-    procedure save_custom_texts_to_ini(ini: TMemIniFile);
-    procedure clear_custom_texts;
 
+  public
+    function get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
   end;
 
 var
@@ -37,7 +31,7 @@ var
 
 implementation
 
-uses SysUtils, _utils, _dispatcher;
+uses SysUtils, _missionini, _utils, _dispatcher;
 
 procedure TStringTable.init;
 begin
@@ -45,11 +39,6 @@ begin
   samples_uib := TStringList.Create;
   load_text_uib('');
   load_samples_uib;
-end;
-
-procedure TStringTable.init_value_list(value_list: TValueListEditor);
-begin
-  custom_text_value_list := value_list;
 end;
 
 procedure TStringTable.load_text_uib(text_uib_name: string);
@@ -121,61 +110,14 @@ begin
 end;
 
 function TStringTable.get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
-var
-  row: integer;
 begin
   is_custom := false;
-  if (custom_text_value_list <> nil) and accept_custom and custom_text_value_list.FindRow(inttostr(index), row) then
-  begin
-    result := custom_text_value_list.Cells[1,row];
-    is_custom := true;
-  end else
-  if (index >= text_uib.Count) or (index < 0) then
+  if accept_custom and MissionIni.get_custom_text(index, result) then
+    is_custom := true
+  else if (index >= text_uib.Count) or (index < 0) then
     result := '(undefined)'
   else
     result := text_uib.ValueFromIndex[index];
-end;
-
-procedure TStringTable.set_custom_text(index: integer; text: String);
-begin
-  custom_text_value_list.Values[inttostr(index)] := text;
-end;
-
-procedure TStringTable.remove_custom_text(index: integer);
-var
-  row: integer;
-begin
-   if custom_text_value_list.FindRow(inttostr(index), row) then
-     custom_text_value_list.DeleteRow(row);
-end;
-
-procedure TStringTable.load_custom_texts_from_ini(ini: TMemIniFile);
-var
-  tmp_strings: TStringList;
-  i: integer;
-begin
-  tmp_strings := TStringList.Create;
-  ini.ReadSection('Text', tmp_strings);
-  for i := 0 to tmp_strings.Count-1 do
-  begin
-    tmp_strings[i] := tmp_strings[i]+'='+ini.ReadString('Text',tmp_strings[i],'');
-  end;
-  custom_text_value_list.Strings := tmp_strings;
-  tmp_strings.Destroy;
-end;
-
-procedure TStringTable.save_custom_texts_to_ini(ini: TMemIniFile);
-var
-  i: integer;
-begin
-  ini.EraseSection('Text');
-  for i := 0 to custom_text_value_list.Strings.Count - 1 do
-    ini.WriteString('Text', custom_text_value_list.Cells[0,i+1], custom_text_value_list.Cells[1,i+1]);
-end;
-
-procedure TStringTable.clear_custom_texts;
-begin
-  custom_text_value_list.Strings.Clear;
 end;
 
 end.

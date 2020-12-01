@@ -137,7 +137,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, _settings, _dispatcher, mission_dialog;
+uses Forms, SysUtils, _settings, _dispatcher, _missionini;
 
 procedure TStructGraphics.init;
 begin
@@ -163,7 +163,7 @@ begin
     if FileExists(tmp_filename2) then
       tmp_filename := tmp_filename2;
     // Step 3 - file under CustomCampaignData folder
-    tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionDialog.cbCampaignFolder.Text + '\Colours\' + MissionDialog.cbColoursBin.Text;
+    tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\Colours\' + MissionIni.ColoursFile;
     if FileExists(tmp_filename2) then
       tmp_filename := tmp_filename2;
   end;

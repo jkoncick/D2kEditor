@@ -255,6 +255,7 @@ object MissionDialog: TMissionDialog
         Width = 129
         Height = 22
         Caption = 'Refresh strings in events'
+        Enabled = False
         TabOrder = 7
         OnClick = btnRefreshStringsClick
       end
@@ -264,6 +265,7 @@ object MissionDialog: TMissionDialog
         Width = 125
         Height = 22
         Caption = 'Reset values to defaults'
+        Enabled = False
         TabOrder = 8
         OnClick = btnResetToDefaultsClick
       end
@@ -272,14 +274,18 @@ object MissionDialog: TMissionDialog
         Top = 318
         Width = 201
         Height = 21
+        Enabled = False
         TabOrder = 9
+        OnChange = MissionIniPropertyChange
       end
       object edMapAuthor: TEdit
         Left = 64
         Top = 342
         Width = 201
         Height = 21
+        Enabled = False
         TabOrder = 10
+        OnChange = MissionIniPropertyChange
       end
       object cbMapSideId: TComboBox
         Left = 320
@@ -287,6 +293,7 @@ object MissionDialog: TMissionDialog
         Width = 113
         Height = 21
         Style = csDropDownList
+        Enabled = False
         ItemHeight = 13
         TabOrder = 12
         OnChange = cbMapSideIdChange
@@ -296,6 +303,7 @@ object MissionDialog: TMissionDialog
         Top = 342
         Width = 73
         Height = 22
+        Enabled = False
         MaxValue = 9
         MinValue = 0
         TabOrder = 13
@@ -307,8 +315,10 @@ object MissionDialog: TMissionDialog
         Top = 366
         Width = 201
         Height = 21
+        Enabled = False
         ItemHeight = 13
         TabOrder = 11
+        OnChange = MissionIniPropertyChange
       end
       object edTilesetName: TEdit
         Left = 456
@@ -333,6 +343,7 @@ object MissionDialog: TMissionDialog
         Top = 390
         Width = 161
         Height = 21
+        Enabled = False
         ItemHeight = 13
         TabOrder = 16
         OnChange = cbTextUibChange
@@ -342,6 +353,7 @@ object MissionDialog: TMissionDialog
         Top = 318
         Width = 161
         Height = 21
+        Enabled = False
         ItemHeight = 13
         TabOrder = 17
         OnChange = cbModsFolderChange
@@ -351,6 +363,7 @@ object MissionDialog: TMissionDialog
         Top = 342
         Width = 161
         Height = 21
+        Enabled = False
         ItemHeight = 13
         TabOrder = 18
         OnChange = cbColoursBinChange
@@ -360,6 +373,7 @@ object MissionDialog: TMissionDialog
         Top = 294
         Width = 161
         Height = 21
+        Enabled = False
         ItemHeight = 13
         TabOrder = 19
         OnChange = cbCampaignFolderChange
@@ -369,13 +383,16 @@ object MissionDialog: TMissionDialog
         Top = 366
         Width = 113
         Height = 21
+        Enabled = False
         TabOrder = 20
+        OnChange = MissionIniPropertyChange
       end
       object cbPlayersIni: TComboBox
         Left = 520
         Top = 366
         Width = 161
         Height = 21
+        Enabled = False
         ItemHeight = 13
         TabOrder = 21
         OnChange = cbPlayersIniChange
@@ -445,6 +462,7 @@ object MissionDialog: TMissionDialog
           Width = 424
           Height = 104
           Align = alClient
+          Enabled = False
           ScrollBars = ssVertical
           TabOrder = 1
         end
