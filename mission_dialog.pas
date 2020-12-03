@@ -462,6 +462,8 @@ begin
 end;
 
 procedure TMissionDialog.cbUseINIClick(Sender: TObject);
+var
+  msg: string;
 begin
   if loading then
     exit;
@@ -470,14 +472,18 @@ begin
     MissionIni.assign_mission_ini;
   end else
   begin
-    if (MissionIni.mission_ini_filename <> '') and (FileExists(MissionIni.mission_ini_filename)) and (Application.MessageBox('Do you want to delete ini file from disk? All existing data will be lost!', 'Do not use ini file', MB_YESNO or MB_ICONWARNING) = IDNO) then
+    msg := 'Warning: This action will erase all Mission ini file data.'#13;
+    if MissionIni.mission_ini_filename <> '' then
+      msg := msg + 'When you save this map, the file ' + ExtractFileName(MissionIni.mission_ini_filename) + ' will be deleted and data will be lost!'#13;
+    msg := msg + 'Do you want to continue?'#13;
+    if Application.MessageBox(PChar(msg), 'Do not use ini file', MB_YESNO or MB_ICONWARNING) = IDNO then
     begin
       loading := true;
       cbUseINI.Checked := true;
       loading := false;
       exit;
     end;
-    MissionIni.delete_mission_ini;
+    MissionIni.unload_mission_ini(true);
   end;
 end;
 

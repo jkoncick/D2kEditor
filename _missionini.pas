@@ -53,7 +53,6 @@ type
     procedure load_mission_ini(map_filename: String);
     procedure save_mission_ini(map_filename: String; is_testmap: boolean);
     procedure assign_mission_ini;
-    procedure delete_mission_ini;
     procedure unload_mission_ini(load_tilesets: boolean);
     procedure reset_mission_ini_data;
     procedure reset_rules_to_defaults;
@@ -263,13 +262,6 @@ procedure TMissionIni.assign_mission_ini;
 begin
   mission_ini_assigned := true;
   Dispatcher.register_event(evMissionIniLoad);
-end;
-
-procedure TMissionIni.delete_mission_ini;
-begin
-  if (mission_ini_filename <> '') and (FileExists(mission_ini_filename)) then
-    DeleteFile(mission_ini_filename);
-  unload_mission_ini(true);
 end;
 
 procedure TMissionIni.unload_mission_ini(load_tilesets: boolean);

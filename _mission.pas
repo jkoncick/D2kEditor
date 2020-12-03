@@ -183,7 +183,6 @@ type
     procedure save_mission(map_filename: String; is_testmap: boolean);
     procedure assign_mission;
     procedure new_mission;
-    procedure delete_mission;
     procedure unload_mission;
     procedure reset_mission_data;
     // Dispatcher procedures
@@ -297,14 +296,6 @@ begin
   unload_mission;
   if Settings.AssignMisFileToNewMap then
     assign_mission;
-end;
-
-procedure TMission.delete_mission;
-begin
-  if (mis_filename <> '') and (FileExists(mis_filename)) then
-    DeleteFile(mis_filename);
-  MissionIni.delete_mission_ini;
-  unload_mission;
 end;
 
 procedure TMission.unload_mission;

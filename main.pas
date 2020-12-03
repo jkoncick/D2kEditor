@@ -1034,12 +1034,17 @@ begin
     exit;
   if Mission.mis_assigned then
   begin
-    msg := 'Do you really want to delete mission file ' + Mission.mis_filename;
-    if MissionIni.mission_ini_assigned then
-      msg := msg + ' and mission ini file ' + MissionIni.mission_ini_filename;
-    msg := msg + '?'#13'The data will be lost!';
+    msg := 'Warning: This action will erase all Mission data.'#13;
+    if Mission.mis_filename <> '' then
+    begin
+      msg := msg + 'When you save this map, the mission file ' + ExtractFileName(Mission.mis_filename);
+      if MissionIni.mission_ini_filename <> '' then
+        msg := msg + ' and ini file ' + ExtractFileName(MissionIni.mission_ini_filename);
+      msg := msg + ' will be deleted and data will be lost!'#13
+    end;
+    msg := msg + 'Do you want to continue?'#13;
     if Application.MessageBox(PChar(msg), 'Unassign mission file', MB_YESNO or MB_ICONWARNING) = IDYES then
-      Mission.delete_mission;
+      Mission.unload_mission;
   end else
     Mission.assign_mission;
 end;
