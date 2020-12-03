@@ -39,8 +39,10 @@ begin
   Application.Title := 'D2kEditor';
   Application.HintPause := 500;
   Application.HintHidePause:= 100000;
-  // Create program components
+  // Load settings
   Settings := TSettings.Create;
+  Settings.load_precreate_editor_settings;
+  // Create program modules
   Dispatcher := TDispatcher.Create;
   Renderer := TRenderer.Create;
   Map := TMap.Create;
@@ -67,7 +69,7 @@ begin
   Application.CreateForm(TStructuresEditor, StructuresEditor);
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
-  // Initialize program components
+  // Initialize program modules
   Renderer.init;
   MisAI.init;
   Mission.init;

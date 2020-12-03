@@ -352,6 +352,9 @@ var
   btn: TSpeedButton;
   tmp_strings: TStringList;
 begin
+  // Load GUI setings
+  Settings.load_window_position(self);
+  CbSelectStructures.State := TCheckBoxState(Settings.load_control_property_int(CbSelectStructures, 'State', Ord(CbSelectStructures.State)));
   // Miscellaneous initializations
   DragAcceptFiles(Handle, True);
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
@@ -399,8 +402,6 @@ begin
     block_preset_select[i] := btn;
   end;
   block_preset_select[0].Down := True;
-  // Load settings
-  Settings.load_precreate_editor_settings;
   // First time run intro message
   if (Settings.GamePath = '') then
   begin

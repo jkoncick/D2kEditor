@@ -3,7 +3,7 @@ unit _settings;
 interface
 
 uses
-  IniFiles, Types, Forms;
+  IniFiles, Types, Forms, Controls, Dialogs;
 
 const cnt_recent_files = 9;
 
@@ -51,15 +51,19 @@ type
     RecentFiles: Array[1..cnt_recent_files] of String;
 
   private
-    tmp_ini: TMemIniFile;
+    ini: TMemIniFile;
 
   public
     procedure load_precreate_editor_settings;
     procedure load_postcreate_editor_settings;
     procedure save_editor_settings;
     procedure determine_game_paths_from_path(path: String);
-    procedure load_window_position(ini: TMemIniFile; window: TForm; window_name: String);
-    procedure save_window_position(ini: TMemIniFile; window: TForm; window_name: String);
+    procedure load_window_position(window: TForm);
+    procedure save_window_position(window: TForm);
+    function  load_control_property_int(control: TControl; property_name: String; property_value: integer): integer;
+    procedure save_control_property_int(control: TControl; property_name: String; property_value: integer);
+    procedure load_file_dialog_initial_dir(dialog: TOpenDialog; default_dir: String);
+    procedure save_file_dialog_initial_dir(dialog: TOpenDialog);
     procedure update_recent_files(filename: String);
 
   end;
@@ -75,11 +79,9 @@ uses
 
 procedure TSettings.load_precreate_editor_settings;
 var
-  ini: TMemIniFile;
   i: integer;
 begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
-  tmp_ini := ini;
   // Load preferences
   PreserveGUISettings := ini.ReadBool('Preferences', 'PreserveGUISettings', true);
   RestrictPainting := ini.ReadBool('Preferences', 'RestrictPainting', true);
@@ -116,59 +118,44 @@ begin
   determine_game_paths_from_path(current_dir);
   // Load recent files
   for i := 1 to cnt_recent_files do
-  begin
     RecentFiles[i] := ini.ReadString('RecentFiles', 'file' + inttostr(i), '');
-  end;
-  // Load MainWindow GUI setings
-  if not PreserveGUISettings then
-    exit;
-  load_window_position(ini, MainWindow, 'MainWindow');
-  MainWindow.CbSelectStructures.State := TCheckBoxState(ini.ReadInteger('GUI','MainWindow.CbSelectStructures.State',Ord(MainWindow.CbSelectStructures.State)));
 end;
 
 procedure TSettings.load_postcreate_editor_settings;
-var
-  ini: TMemIniFile;
 begin
-  ini := tmp_ini;
   // Load GUI settings for all other dialogs
-  if not PreserveGUISettings then
-  begin
-    ini.Destroy;
-    exit;
-  end;
-  load_window_position(ini, TilesetDialog, 'TilesetDialog');
-  load_window_position(ini, BlockPresetDialog, 'BlockPresetDialog');
-  load_window_position(ini, SetDialog, 'SetDialog');
-  load_window_position(ini, TestMapDialog, 'TestMapDialog');
-  load_window_position(ini, MissionDialog, 'MissionDialog');
-  MissionDialog.StringValueList.Height := ini.ReadInteger('GUI','MissionDialog.StringValueList.Height',MissionDialog.StringValueList.Height);
-  load_window_position(ini, EventDialog, 'EventDialog');
-  EventDialog.LowerPanel.Height := ini.ReadInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
-  EventDialog.EventGrid.ColWidths[4] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
-  EventDialog.EventGrid.ColWidths[5] := ini.ReadInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
-  load_window_position(ini, MapStatsDialog, 'MapStatsDialog');
-  load_window_position(ini, TileAtrEditor, 'TileAtrEditor');
-  TileAtrEditor.cbAlwaysOnTop.Checked := ini.ReadBool('GUI','TileAtrEditor.cbAlwaysOnTop.Checked',TileAtrEditor.cbAlwaysOnTop.Checked);
-  load_window_position(ini, StructuresEditor, 'StructuresEditor');
+  load_window_position(TilesetDialog);
+  load_window_position(BlockPresetDialog);
+  load_window_position(SetDialog);
+  load_window_position(TestMapDialog);
+  load_window_position(MissionDialog);
+  MissionDialog.StringValueList.Height := load_control_property_int(MissionDialog.StringValueList, 'Height', MissionDialog.StringValueList.Height);
+  load_window_position(EventDialog);
+  EventDialog.LowerPanel.Height := load_control_property_int(EventDialog.LowerPanel, 'Height', EventDialog.LowerPanel.Height);
+  EventDialog.EventGrid.ColWidths[4] := load_control_property_int(EventDialog.EventGrid, 'ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
+  EventDialog.EventGrid.ColWidths[5] := load_control_property_int(EventDialog.EventGrid, 'ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
+  load_window_position(MapStatsDialog);
+  load_window_position(TileAtrEditor);
+  TileAtrEditor.cbAlwaysOnTop.State := TCheckBoxState(load_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State)));
+  load_window_position(StructuresEditor);
   // Load file dialog paths
-  MainWindow.MapOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapOpenDialog', MissionsPath);
-  MainWindow.MapSaveDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapSaveDialog', MissionsPath);
-  MainWindow.TilesetOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'TilesetOpenDialog', GamePath + '\Data');
-  MainWindow.TileatrOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'TileatrOpenDialog', GamePath + '\Data\bin');
-  MainWindow.MapImageSaveDialog.InitialDir := ini.ReadString('FileDialogPaths', 'MapImageSaveDialog', '');
-  MainWindow.RemapTilesOpenDialog.InitialDir := ini.ReadString('FileDialogPaths', 'RemapTilesOpenDialog', current_dir);
-  MissionDialog.ExportAIDialog.InitialDir := ini.ReadString('FileDialogPaths', 'ExportAIDialog', current_dir + 'AI_templates');
-  MissionDialog.ImportAIDialog.InitialDir := ini.ReadString('FileDialogPaths', 'ImportAIDialog', current_dir + 'AI_templates');
-  TileAtrEditor.SaveTileAtrDialog.InitialDir := ini.ReadString('FileDialogPaths', 'SaveTileAtrDialog', GamePath + '\Data\bin');
+  load_file_dialog_initial_dir(MainWindow.MapOpenDialog,        MissionsPath);
+  load_file_dialog_initial_dir(MainWindow.MapSaveDialog,        MissionsPath);
+  load_file_dialog_initial_dir(MainWindow.TilesetOpenDialog,    GamePath + '\Data');
+  load_file_dialog_initial_dir(MainWindow.TileatrOpenDialog,    GamePath + '\Data\bin');
+  load_file_dialog_initial_dir(MainWindow.MapImageSaveDialog,   '');
+  load_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog, current_dir);
+  load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,    current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,    current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(TileAtrEditor.SaveTileAtrDialog, GamePath + '\Data\bin');
 
   ini.Destroy;
+  ini := nil;
 end;
 
 
 procedure TSettings.save_editor_settings;
 var
-  ini: TMemIniFile;
   i: integer;
 begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
@@ -207,46 +194,35 @@ begin
   ini.WriteString('Paths','MissionsPath',MissionsPath);
   // Save recent files
   for i := 1 to cnt_recent_files do
-  begin
     if RecentFiles[i] <> '' then
       ini.WriteString('RecentFiles', 'file' + inttostr(i), RecentFiles[i]);
-  end;
   // Save GUI settings
-  save_window_position(ini, MainWindow, 'MainWindow');
-  ini.WriteInteger('GUI','MainWindow.CbSelectStructures.State',Ord(MainWindow.CbSelectStructures.State));
-  save_window_position(ini, TilesetDialog, 'TilesetDialog');
-  save_window_position(ini, BlockPresetDialog, 'BlockPresetDialog');
-  save_window_position(ini, SetDialog, 'SetDialog');
-  save_window_position(ini, TestMapDialog, 'TestMapDialog');
-  save_window_position(ini, MissionDialog, 'MissionDialog');
-  ini.WriteInteger('GUI','MissionDialog.StringValueList.Height',MissionDialog.StringValueList.Height);
-  save_window_position(ini, EventDialog, 'EventDialog');
-  ini.WriteInteger('GUI','EventDialog.LowerPanel.Height',EventDialog.LowerPanel.Height);
-  ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
-  ini.WriteInteger('GUI','EventDialog.EventGrid.ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
-  save_window_position(ini, MapStatsDialog, 'MapStatsDialog');
-  save_window_position(ini, TileAtrEditor, 'TileAtrEditor');
-  save_window_position(ini, StructuresEditor, 'StructuresEditor');
-  ini.WriteBool('GUI','TileAtrEditor.cbAlwaysOnTop.Checked',TileAtrEditor.cbAlwaysOnTop.Checked);
+  save_window_position(MainWindow);
+  save_control_property_int(MainWindow.CbSelectStructures, 'State', Ord(MainWindow.CbSelectStructures.State));
+  save_window_position(TilesetDialog);
+  save_window_position(BlockPresetDialog);
+  save_window_position(SetDialog);
+  save_window_position(TestMapDialog);
+  save_window_position(MissionDialog);
+  save_control_property_int(MissionDialog.StringValueList, 'Height', MissionDialog.StringValueList.Height);
+  save_window_position(EventDialog);
+  save_control_property_int(EventDialog.LowerPanel, 'Height', EventDialog.LowerPanel.Height);
+  save_control_property_int(EventDialog.EventGrid, 'ColWidths[4]', EventDialog.EventGrid.ColWidths[4]);
+  save_control_property_int(EventDialog.EventGrid, 'ColWidths[5]', EventDialog.EventGrid.ColWidths[5]);
+  save_window_position(MapStatsDialog);
+  save_window_position(TileAtrEditor);
+  save_window_position(StructuresEditor);
+  save_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State));
   // Save file dialog paths
-  if MainWindow.MapOpenDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'MapOpenDialog', ExtractFilePath(MainWindow.MapOpenDialog.FileName));
-  if MainWindow.MapSaveDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'MapSaveDialog', ExtractFilePath(MainWindow.MapSaveDialog.FileName));
-  if MainWindow.TilesetOpenDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'TilesetOpenDialog', ExtractFilePath(MainWindow.TilesetOpenDialog.FileName));
-  if MainWindow.TileatrOpenDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'TileatrOpenDialog', ExtractFilePath(MainWindow.TileatrOpenDialog.FileName));
-  if MainWindow.MapImageSaveDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'MapImageSaveDialog', ExtractFilePath(MainWindow.MapImageSaveDialog.FileName));
-  if MainWindow.RemapTilesOpenDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'RemapTilesOpenDialog', ExtractFilePath(MainWindow.RemapTilesOpenDialog.FileName));
-  if MissionDialog.ExportAIDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'ExportAIDialog', ExtractFilePath(MissionDialog.ExportAIDialog.FileName));
-  if MissionDialog.ImportAIDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'ImportAIDialog', ExtractFilePath(MissionDialog.ImportAIDialog.FileName));
-  if TileAtrEditor.SaveTileAtrDialog.FileName <> '' then
-    ini.WriteString('FileDialogPaths', 'SaveTileAtrDialog', ExtractFilePath(TileAtrEditor.SaveTileAtrDialog.FileName));
+  save_file_dialog_initial_dir(MainWindow.MapOpenDialog);
+  save_file_dialog_initial_dir(MainWindow.MapSaveDialog);
+  save_file_dialog_initial_dir(MainWindow.TilesetOpenDialog);
+  save_file_dialog_initial_dir(MainWindow.TileatrOpenDialog);
+  save_file_dialog_initial_dir(MainWindow.MapImageSaveDialog);
+  save_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog);
+  save_file_dialog_initial_dir(MissionDialog.ExportAIDialog);
+  save_file_dialog_initial_dir(MissionDialog.ImportAIDialog);
+  save_file_dialog_initial_dir(TileAtrEditor.SaveTileAtrDialog);
 
   ini.UpdateFile;
   ini.Destroy;
@@ -285,14 +261,16 @@ begin
   end;
 end;
 
-procedure TSettings.load_window_position(ini: TMemIniFile; window: TForm; window_name: String);
+procedure TSettings.load_window_position(window: TForm);
 var
   i, left, top: integer;
   windowRect, dummyRect: TRect;
   onAnyMonitor: boolean;
 begin
-  left := ini.ReadInteger('GUI', window_name + '.Left', window.Left);
-  top := ini.ReadInteger('GUI', window_name + '.Top', window.Top);
+  if not PreserveGUISettings then
+    exit;
+  left := ini.ReadInteger('GUI', window.Name + '.Left', window.Left);
+  top := ini.ReadInteger('GUI', window.Name + '.Top', window.Top);
   // Check if the window is shown on any monitor
   windowRect := Rect(left, top, left + window.Width, top + window.Height);
   onAnyMonitor := false;
@@ -310,24 +288,50 @@ begin
   if window.BorderStyle <> bsSizeable then
     exit;
   if not ((window.Constraints.MinWidth = window.Constraints.MaxWidth) and (window.Constraints.MinWidth <> 0)) then
-    window.Width := ini.ReadInteger('GUI', window_name + '.Width', window.Width);
+    window.Width := ini.ReadInteger('GUI', window.Name + '.Width', window.Width);
   if not ((window.Constraints.MinHeight = window.Constraints.MaxHeight) and (window.Constraints.MinHeight <> 0)) then
-    window.Height := ini.ReadInteger('GUI', window_name + '.Height', window.Height);
-  if ini.ReadBool('GUI', window_name + '.Maximized', false) then
+    window.Height := ini.ReadInteger('GUI', window.Name + '.Height', window.Height);
+  if ini.ReadBool('GUI', window.Name + '.Maximized', false) then
     window.WindowState := wsMaximized;
 end;
 
-procedure TSettings.save_window_position(ini: TMemIniFile; window: TForm; window_name: String);
+procedure TSettings.save_window_position(window: TForm);
 begin
-  ini.WriteInteger('GUI', window_name + '.Left', window.Left);
-  ini.WriteInteger('GUI', window_name + '.Top', window.Top);
+  if not PreserveGUISettings then
+    exit;
+  ini.WriteInteger('GUI', window.Name + '.Left', window.Left);
+  ini.WriteInteger('GUI', window.Name + '.Top', window.Top);
   if window.BorderStyle <> bsSizeable then
     exit;
   if not ((window.Constraints.MinWidth = window.Constraints.MaxWidth) and (window.Constraints.MinWidth <> 0)) then
-    ini.WriteInteger('GUI', window_name + '.Width', window.Width);
+    ini.WriteInteger('GUI', window.Name + '.Width', window.Width);
   if not ((window.Constraints.MinHeight = window.Constraints.MaxHeight) and (window.Constraints.MinHeight <> 0)) then
-    ini.WriteInteger('GUI', window_name + '.Height', window.Height);
-  ini.WriteBool('GUI', window_name + '.Maximized', window.WindowState = wsMaximized);
+    ini.WriteInteger('GUI', window.Name + '.Height', window.Height);
+  ini.WriteBool('GUI', window.Name + '.Maximized', window.WindowState = wsMaximized);
+end;
+
+function TSettings.load_control_property_int(control: TControl; property_name: String; property_value: integer): integer;
+begin
+  result := property_value;
+  if PreserveGUISettings then
+    result := ini.ReadInteger('GUI', control.Owner.Name + '.' + control.Name + '.' + property_name, property_value);
+end;
+
+procedure TSettings.save_control_property_int(control: TControl; property_name: String; property_value: integer);
+begin
+  if PreserveGUISettings then
+    ini.WriteInteger('GUI', control.Owner.Name + '.' + control.Name + '.' + property_name, property_value);
+end;
+
+procedure TSettings.load_file_dialog_initial_dir(dialog: TOpenDialog; default_dir: String);
+begin
+  dialog.InitialDir := ini.ReadString('FileDialogPaths', dialog.Name, default_dir);
+end;
+
+procedure TSettings.save_file_dialog_initial_dir(dialog: TOpenDialog);
+begin
+  if dialog.FileName <> '' then
+    ini.WriteString('FileDialogPaths', dialog.Name, ExtractFilePath(dialog.FileName));
 end;
 
 procedure TSettings.update_recent_files(filename: String);

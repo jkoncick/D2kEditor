@@ -153,6 +153,8 @@ begin
     TilesetScroll.Position := 40 - tileset_height;
     exit;
   end;
+  if Tileset.tileimage = nil then
+    exit;
   tileset_top := TilesetScroll.Position;
   TilesetImage.Canvas.CopyRect(rect(0,0,640,tileset_height*32),Tileset.tileimage.Canvas,rect(0,tileset_top*32,640,tileset_top*32+tileset_height*32));
   if TilesetMarkTiles.Checked then
