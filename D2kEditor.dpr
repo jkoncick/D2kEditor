@@ -1,6 +1,7 @@
 program D2kEditor;
 
 uses
+  Windows,
   Forms,
   SysUtils,
   main in 'main.pas' {MainWindow},
@@ -14,6 +15,7 @@ uses
   mission_launcher in 'mission_launcher.pas' {MissionLauncher},
   tileatr_editor in 'tileatr_editor.pas' {TileAtrEditor},
   structures_editor in 'structures_editor.pas' {StructuresEditor},
+  debug_window in 'debug_window.pas' {DebugWindow},
   _utils in '_utils.pas',
   _settings in '_settings.pas',
   _dispatcher in '_dispatcher.pas',
@@ -35,6 +37,7 @@ begin
   // Miscellaneous initializations
   randomize;
   current_dir := ExtractFilePath(Application.ExeName);
+  QueryPerformanceFrequency(performance_frequency);
   Application.Initialize;
   Application.Title := 'D2kEditor';
   Application.HintPause := 500;
@@ -67,6 +70,7 @@ begin
   Application.CreateForm(TMissionLauncher, MissionLauncher);
   Application.CreateForm(TTileAtrEditor, TileAtrEditor);
   Application.CreateForm(TStructuresEditor, StructuresEditor);
+  Application.CreateForm(TDebugWindow, DebugWindow);
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
   // Initialize program modules

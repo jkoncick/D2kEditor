@@ -406,7 +406,6 @@ type
   public
     // General procedures
     procedure init;
-    function get_status: String;
 
     // TEMPLATES.BIN related procedures
     procedure load_templates_bin(force: boolean);
@@ -469,25 +468,6 @@ begin
   load_players_ini;
   load_limits_ini;
   load_templates_other_txt;
-end;
-
-function TStructures.get_status: String;
-begin
-  result :=
-    'Templates.bin file: '+templates_bin_filename+#13+
-    'BUILEXP.BIN file: '+builexp_bin_filename+#13+
-    'ARMOUR.BIN file: '+armour_bin_filename+#13+
-    'SPEED.BIN file: '+speed_bin_filename+#13+
-    'TILEDATA.BIN file: '+tiledata_bin_filename+#13+
-    'COLOURS.BIN file: '+StructGraphics.colours_bin_filename+#13+
-    'DATA.R16 file: '+StructGraphics.data_r16_filename+#13+
-    'misc_objects.bmp file: '+StructGraphics.graphics_misc_objects_filename+#13+
-    'misc_objects.ini file: '+misc_objects_ini_filename+#13+
-    'players.ini file: '+players_ini_filename+#13+
-    'limits.ini file: '+limits_ini_filename+#13+
-    'templates_other.txt file: '+templates_other_txt_filename+#13+
-    'Structure images loaded: '+inttostr(StructGraphics.structure_images_count)+#13+
-    'House color pixel count: '+inttostr(StructGraphics.house_color_pixel_count_total);
 end;
 
 procedure TStructures.load_templates_bin(force: boolean);

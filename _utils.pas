@@ -34,6 +34,7 @@ procedure save_binary_file(filename: String; var data; size: integer);
 
 var
   current_dir: String;
+  performance_frequency: Int64;
 
 implementation
 

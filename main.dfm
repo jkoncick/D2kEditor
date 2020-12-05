@@ -561,13 +561,6 @@ object MainWindow: TMainWindow
         ShortCut = 16449
         OnClick = TileAttributeseditor1Click
       end
-      object N12: TMenuItem
-        Caption = '-'
-      end
-      object Showstatus1: TMenuItem
-        Caption = 'Show status (debug)'
-        OnClick = Showstatus1Click
-      end
     end
     object Structures1: TMenuItem
       Caption = 'Structures'
@@ -575,13 +568,6 @@ object MainWindow: TMainWindow
         Caption = 'Structures editor...'
         ShortCut = 16472
         OnClick = Structureseditor1Click
-      end
-      object N14: TMenuItem
-        Caption = '-'
-      end
-      object Showstatus2: TMenuItem
-        Caption = 'Show status (debug)'
-        OnClick = Showstatus2Click
       end
     end
     object Settings1: TMenuItem
@@ -736,6 +722,14 @@ object MainWindow: TMainWindow
         OnClick = Mouseactions1Click
       end
       object N5: TMenuItem
+        Caption = '-'
+      end
+      object Debugwindow1: TMenuItem
+        Caption = 'Debug window'
+        ShortCut = 255
+        OnClick = Debugwindow1Click
+      end
+      object N15: TMenuItem
         Caption = '-'
       end
       object About1: TMenuItem

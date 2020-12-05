@@ -24,9 +24,6 @@ type
     evFLTilesetImage,
     evFLTileatrBin,
     evFLTilesetIni,
-    // UIB string table file load events
-    evFLTextUib,
-    evFLSamplesUib,
     // Structures file load events
     evFLTemplatesBin,
     evFLBuilexpBin,
@@ -34,12 +31,16 @@ type
     evFLSpeedBin,
     evFLTechposBin,
     evFLTiledataBin,
-    evFLColoursBin,
     evFLMiscObjectsIni,
     evFLPlayersIni,
-    // Graphics file load events
-    evFLMiscObjectsBmp,
+    // StructGraphics file load events
+    evFLColoursBin,
     evFLDataR16,
+    evFLMiscObjectsBmp,
+    evLoadStructureImage,
+    // StringTable file load events
+    evFLTextUib,
+    evFLSamplesUib,
     // Setting change events
     evSCTranslateStructureNames,
     // Apply changes events
@@ -77,7 +78,9 @@ type
     // Rendering
     paRenderMap,
     paRenderMinimap,
-    paRenderCursorImage
+    paRenderCursorImage,
+    // Debug window
+    paUpdateDebugValues
   );
 
 type
@@ -112,7 +115,7 @@ uses
   Forms, Classes, SysUtils, _utils, _settings, _structures, _misai, _map, _mission, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
-  tileatr_editor, structures_editor;
+  tileatr_editor, structures_editor, debug_window;
 
 { TDispatcher }
 
@@ -136,30 +139,31 @@ begin
     // Initialize tilesets event
     evInitTilesets:               pact := pact + [paUpdateTilesetList];
     // Tileset file load events
-    evFLTilesetImage:             pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderCursorImage];
-    evFLTileatrBin:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evFLTilesetIni:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMinimap];
-    // UIB string table file load events
+    evFLTilesetImage:             pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
+    evFLTileatrBin:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLTilesetIni:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMinimap, paUpdateDebugValues];
+    // Structures file load events
+    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
+    evFLArmourBin:                pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
+    evFLSpeedBin:                 pact := pact + [paUpdateSpeedModifiers, paUpdateStructuresEditor, paUpdateDebugValues];
+    evFLTechposBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
+    evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLPlayersIni:               pact := pact + [paUpdatePlayerList, paUpdateEventDialog, paUpdateDebugValues];
+    // StructGraphics file load events
+    evFLColoursBin:               pact := pact + [paUpdatePlayerColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
+    evFLMiscObjectsBmp:           pact := pact + [paRenderMap, paRenderCursorImage, paUpdateDebugValues];
+    evLoadStructureImage:         pact := pact + [paUpdateDebugValues];
+    // StringTable file load events
     evFLTextUib:
       begin
-                                  pact := pact + [paUpdateTextList, paUpdateEventDialog];
+                                  pact := pact + [paUpdateTextList, paUpdateEventDialog, paUpdateDebugValues];
         if Settings.TranslateStructureNames then
                                   pact := pact + [paUpdateStructuresListTranslated];
       end;
-    evFLSamplesUib:               pact := pact + [paUpdateSoundList];
-    // Structures file load events
-    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor];
-    evFLArmourBin:                pact := pact + [paUpdateStructuresEditor];
-    evFLSpeedBin:                 pact := pact + [paUpdateSpeedModifiers, paUpdateStructuresEditor];
-    evFLTechposBin:               pact := pact + [paUpdateStructuresEditor];
-    evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evFLColoursBin:               pact := pact + [paUpdatePlayerColours, paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evFLPlayersIni:               pact := pact + [paUpdatePlayerList, paUpdateEventDialog];
-    // Graphics file load events
-    evFLMiscObjectsBmp:           pact := pact + [paRenderMap, paRenderCursorImage];
-    evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage];
+    evFLSamplesUib:               pact := pact + [paUpdateSoundList, paUpdateDebugValues];
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
@@ -203,6 +207,8 @@ begin
   if paRenderMap                in pact then MainWindow.render_map;
   if paRenderMinimap            in pact then MainWindow.render_minimap;
   if paRenderCursorImage        in pact then MainWindow.render_cursor_image;
+  // Debug window
+  if paUpdateDebugValues        in pact then DebugWindow.update_debug_values;
   // Reset pending actions
   pact := [];
 end;

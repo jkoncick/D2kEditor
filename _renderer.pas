@@ -173,13 +173,17 @@ begin
   min_y := 0;
   max_x := cnv_width - 1;
   max_y := cnv_height - 1;
-  {cnv_target.Pen.Color := clBlack;
-  cnv_target.Brush.Color := clBlack;
-  cnv_target.Brush.Style := bsSolid;
-  cnv_target.Rectangle(0, 0, cnv_width * 32, cnv_height * 32);}
   // Rendering optimization
   if o_rendering_optimization then
   begin
+    // Debug mode
+    if Settings.Debug_ShowDifferentialRendering then
+    begin
+      cnv_target.Pen.Color := clBlack;
+      cnv_target.Brush.Color := clBlack;
+      cnv_target.Brush.Style := bsSolid;
+      cnv_target.Rectangle(0, 0, cnv_width * 32, cnv_height * 32);
+    end;
     remove_editing_marker(cnv_target);
     // Horizontal scroll
     if (cnv_left <> diffrender_old_left) and (abs(cnv_left - diffrender_old_left) < cnv_width)  then

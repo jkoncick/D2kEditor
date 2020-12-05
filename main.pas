@@ -121,7 +121,6 @@ type
     sbMarkOwnerSide: TSpeedButton;
     Recentfiles1: TMenuItem;
     N6: TMenuItem;
-    Showstatus1: TMenuItem;
     GridColorDialog: TColorDialog;
     N7: TMenuItem;
     Gridcolor1: TMenuItem;
@@ -130,7 +129,6 @@ type
     More1: TMenuItem;
     Memo1: TMemo;
     TileAttributeseditor1: TMenuItem;
-    N12: TMenuItem;
     Restrictpainting1: TMenuItem;
     Saveminimapimage1: TMenuItem;
     Reloadtileset1: TMenuItem;
@@ -145,10 +143,10 @@ type
     Userandompaintmap1: TMenuItem;
     LbStructureName: TLabel;
     Structures1: TMenuItem;
-    Showstatus2: TMenuItem;
     Structureseditor1: TMenuItem;
-    N14: TMenuItem;
     Translatestructurenames1: TMenuItem;
+    N15: TMenuItem;
+    Debugwindow1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -185,9 +183,7 @@ type
     procedure Loadtileset1Click(Sender: TObject);
     procedure Loadtilesetattributes1Click(Sender: TObject);
     procedure TileAttributeseditor1Click(Sender: TObject);
-    procedure Showstatus1Click(Sender: TObject);
     procedure Structureseditor1Click(Sender: TObject);
-    procedure Showstatus2Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure More1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
@@ -202,6 +198,7 @@ type
     procedure Launchwithsettings1Click(Sender: TObject);
     procedure KeyShortcuts1Click(Sender: TObject);
     procedure Mouseactions1Click(Sender: TObject);
+    procedure Debugwindow1Click(Sender: TObject);
     procedure About1Click(Sender: TObject);
     // Main form components events
     procedure MapScrollChange(Sender: TObject);
@@ -342,7 +339,7 @@ implementation
 
 uses
   // Dialogs
-  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor;
+  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window;
 
 {$R *.dfm}
 
@@ -593,7 +590,6 @@ begin
         PaintTileSelectClick(paint_tile_select[paint_tile_group]);
       end;
     end;
-    255: Showstatus2Click(nil);
   end;
   if (key >= 37) and (key <= 40) then
   begin
@@ -932,19 +928,9 @@ begin
   TileAtrEditor.Show;
 end;
 
-procedure TMainWindow.Showstatus1Click(Sender: TObject);
-begin
-  ShowMessage(Tileset.get_status);
-end;
-
 procedure TMainWindow.Structureseditor1Click(Sender: TObject);
 begin
   StructuresEditor.Show;
-end;
-
-procedure TMainWindow.Showstatus2Click(Sender: TObject);
-begin
-  ShowMessage(Structures.get_status);
 end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
@@ -1113,6 +1099,11 @@ begin
               'Left = Select block'#13+
               'Right = Next variant'#13+
               'Middle = Show / hide keys');
+end;
+
+procedure TMainWindow.Debugwindow1Click(Sender: TObject);
+begin
+  DebugWindow.Show;
 end;
 
 procedure TMainWindow.About1Click(Sender: TObject);
@@ -1768,13 +1759,22 @@ begin
 end;
 
 procedure TMainWindow.render_map;
+var
+  t1, t2: Int64;
 begin
   if not Map.loaded then
     exit;
+  if Settings.Debug_ShowRenderTime then
+    QueryPerformanceCounter(t1);
   Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
     sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
     Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
     true);
+  if Settings.Debug_ShowRenderTime then
+  begin
+    QueryPerformanceCounter(t2);
+    Caption := FloatToStr((t2-t1) / performance_frequency);
+  end;
   if not editing_marker_disabled then
     render_editing_marker;
   editing_marker_disabled := false;
@@ -2082,6 +2082,7 @@ begin
   result := result and not ((ForegroundWindow = MissionLauncher.Handle) and PtInRect(MissionLauncher.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = TileAtrEditor.Handle) and PtInRect(TileAtrEditor.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = StructuresEditor.Handle) and PtInRect(StructuresEditor.BoundsRect, Mouse.CursorPos));
+  result := result and not (DebugWindow.Visible and PtInRect(DebugWindow.BoundsRect, Mouse.CursorPos));
   result := result or block_select_started;
 end;
 

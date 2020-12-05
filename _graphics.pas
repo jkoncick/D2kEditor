@@ -446,6 +446,7 @@ begin
   else
     structure_image_entry_mapping[entry_index].stealth_index := structure_images_count;
   inc(structure_images_count);
+  Dispatcher.register_event(evLoadStructureImage);
 end;
 
 procedure TStructGraphics.recolor_structure_image(image_index, house_index: integer);

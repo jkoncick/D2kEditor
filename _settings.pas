@@ -50,6 +50,10 @@ type
     // Recent files
     RecentFiles: Array[1..cnt_recent_files] of String;
 
+    // Debug settings
+    Debug_ShowRenderTime: boolean;
+    Debug_ShowDifferentialRendering: boolean;
+
   private
     ini: TMemIniFile;
 
@@ -75,7 +79,7 @@ implementation
 
 uses
   SysUtils, StdCtrls, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, structures_editor, _utils;
+  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, structures_editor, debug_window, _utils;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -138,6 +142,7 @@ begin
   load_window_position(TileAtrEditor);
   TileAtrEditor.cbAlwaysOnTop.State := TCheckBoxState(load_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State)));
   load_window_position(StructuresEditor);
+  load_window_position(DebugWindow);
   // Load file dialog paths
   load_file_dialog_initial_dir(MainWindow.MapOpenDialog,        MissionsPath);
   load_file_dialog_initial_dir(MainWindow.MapSaveDialog,        MissionsPath);
@@ -211,8 +216,9 @@ begin
   save_control_property_int(EventDialog.EventGrid, 'ColWidths[5]', EventDialog.EventGrid.ColWidths[5]);
   save_window_position(MapStatsDialog);
   save_window_position(TileAtrEditor);
-  save_window_position(StructuresEditor);
   save_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State));
+  save_window_position(StructuresEditor);
+  save_window_position(DebugWindow);
   // Save file dialog paths
   save_file_dialog_initial_dir(MainWindow.MapOpenDialog);
   save_file_dialog_initial_dir(MainWindow.MapSaveDialog);

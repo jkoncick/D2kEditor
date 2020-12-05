@@ -228,8 +228,6 @@ type
 
     function get_random_paint_tile(group, x, y: integer): integer;
     function get_block_preset(group: integer; key: word; variant: integer): integer;
-
-    function get_status: String;
   end;
 
 var
@@ -1174,23 +1172,6 @@ begin
   last_block_preset_group := group;
   last_block_preset_key := key;
   result := preset_index;
-end;
-
-function TTileset.get_status: String;
-begin
-  result :=
-    'Tileset index: '+inttostr(current_tileset)+#13+
-    'Tileset name: '+tileset_name+#13+
-    'Tileset attributes name: '+tileatr_name+#13+
-    'Tileset image file: '+tileimage_filename+#13+
-    'Tileset attributes file: '+tileatr_filename+#13+
-    'Tileset configuration file: '+config_filename+#13+
-    'Minimap color rules used: '+inttostr(minimap_color_rules_used)+#13+
-    'Fill area rules used: '+inttostr(fill_area_rules_used)+#13+
-    'Paint tiles used: '+inttostr(paint_tiles_used)+#13+
-    'Block presets used: '+inttostr(block_presets_used)+#13+
-    'Preset tiles used: '+inttostr(block_preset_tiles_used)+#13+
-    'Connection points used: '+inttostr(connection_points_used);
 end;
 
 end.
