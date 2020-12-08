@@ -343,14 +343,14 @@ end;
 
 procedure TMissionDialog.edTilesetNameChange(Sender: TObject);
 begin
-  FillChar(Mission.mis_data.tileset, Length(Mission.mis_data.tileset), 0);
-  Move(edTilesetName.Text[1], Mission.mis_data.tileset, Length(edTilesetName.Text));
+  if not loading then
+    store_c_string(edTilesetName.Text, Addr(Mission.mis_data.tileset), Length(Mission.mis_data.tileset));
 end;
 
 procedure TMissionDialog.edTileatrNameChange(Sender: TObject);
 begin
-  FillChar(Mission.mis_data.tileatr, Length(Mission.mis_data.tileatr), 0);
-  Move(edTileatrName.Text[1], Mission.mis_data.tileatr, Length(edTileatrName.Text));
+  if not loading then
+    store_c_string(edTileatrName.Text, Addr(Mission.mis_data.tileatr), Length(Mission.mis_data.tileatr));
 end;
 
 procedure TMissionDialog.AITabControlChange(Sender: TObject);

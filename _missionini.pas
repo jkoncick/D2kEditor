@@ -77,7 +77,7 @@ var
 
 implementation
 
-uses SysUtils, StrUtils, _utils, _dispatcher, _structures, _graphics, _stringtable, _launcher;
+uses SysUtils, StrUtils, _utils, _dispatcher, _tileset, _structures, _graphics, _stringtable, _launcher;
 
 { TMissionIni }
 
@@ -387,6 +387,8 @@ end;
 
 procedure TMissionIni.load_custom_campaign_data_files(load_tilesets: boolean);
 begin
+  if load_tilesets then
+    Tileset.load_tileset(false);
   Structures.load_templates_bin(false);
   Structures.load_builexp_bin(false);
   Structures.load_armour_bin(false);

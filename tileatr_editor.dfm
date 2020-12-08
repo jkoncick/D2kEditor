@@ -68,19 +68,19 @@ object TileAtrEditor: TTileAtrEditor
       end
       item
         Text = 'No tileset loaded'
-        Width = 100
+        Width = 128
       end
       item
         Text = 'No Image loaded'
-        Width = 304
+        Width = 292
       end
       item
         Text = 'No Attributes loaded'
-        Width = 304
+        Width = 292
       end
       item
         Text = 'No INI Config loaded'
-        Width = 304
+        Width = 292
       end>
   end
   object TilesetScrollBar: TScrollBar
@@ -387,13 +387,13 @@ object TileAtrEditor: TTileAtrEditor
   object MainMenu: TMainMenu
     object File1: TMenuItem
       Caption = 'File'
-      object OpenTileAtr1: TMenuItem
-        Caption = 'Load attributes file'
-        OnClick = OpenTileAtr1Click
-      end
       object OpenTileset1: TMenuItem
         Caption = 'Load image'
         OnClick = OpenTileset1Click
+      end
+      object OpenTileAtr1: TMenuItem
+        Caption = 'Load attributes file'
+        OnClick = OpenTileAtr1Click
       end
       object OpenBoth1: TMenuItem
         Caption = 'Load both'
@@ -402,13 +402,18 @@ object TileAtrEditor: TTileAtrEditor
       object N3: TMenuItem
         Caption = '-'
       end
-      object ReloadTileatr1: TMenuItem
+      object ReloadTileset1: TMenuItem
         Caption = 'Reload tileset'
         ShortCut = 16466
-        OnClick = ReloadTileatr1Click
+        OnClick = ReloadTileset1Click
       end
       object N1: TMenuItem
         Caption = '-'
+      end
+      object Applychanges1: TMenuItem
+        Caption = 'Apply changes'
+        ShortCut = 16449
+        OnClick = Applychanges1Click
       end
       object SaveTileAtr1: TMenuItem
         Caption = 'Save attributes'
@@ -421,7 +426,7 @@ object TileAtrEditor: TTileAtrEditor
         OnClick = Saveandtest1Click
       end
       object SaveTileAtras1: TMenuItem
-        Caption = 'Save Attributes as'
+        Caption = 'Save attributes as'
         OnClick = SaveTileAtras1Click
       end
       object N5: TMenuItem
@@ -463,8 +468,8 @@ object TileAtrEditor: TTileAtrEditor
     end
   end
   object SaveTileAtrDialog: TSaveDialog
-    DefaultExt = 'bin'
-    Filter = 'Dune 2000 tileatr file (*.bin)|*.bin'
+    DefaultExt = 'BIN'
+    Filter = 'Dune 2000 tileatr file (*.BIN)|*.BIN'
     Left = 96
   end
 end

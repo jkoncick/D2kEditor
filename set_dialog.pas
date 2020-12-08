@@ -157,7 +157,7 @@ begin
         end;
     5:  begin
           ModalResult := mrOk;
-          Tileset.change_tileset(Tileset_List.ItemIndex);
+          Tileset.change_tileset_by_index(Tileset_List.ItemIndex);
         end;
   end;
 end;
@@ -201,8 +201,7 @@ end;
 
 procedure TSetDialog.update_tileset;
 begin
-  if Tileset.current_tileset <> -1 then
-    Tileset_List.ItemIndex := Tileset.current_tileset;
+  Tileset_List.ItemIndex := Tileset.tileset_index;
 end;
 
 function TSetDialog.check_map_dimensions: boolean;

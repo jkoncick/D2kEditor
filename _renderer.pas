@@ -313,13 +313,7 @@ begin
         // Draw concrete owner marker
         if (tile_type = ttBuildable) and ((tile_attr and taConcrete) <> 0) and o_mark_owner_side then
         begin
-          player := 0;
-          if (tile_attr and taConcreteOwnerSideBit1) <> 0 then
-            Inc(player, 1);
-          if (tile_attr and taConcreteOwnerSideBit2) <> 0 then
-            Inc(player, 2);
-          if (tile_attr and taConcreteOwnerSideBit3) <> 0 then
-            Inc(player, 4);
+          player := (tile_attr shr 17) and 7;
           if o_use_alloc_indexes then
             player := Mission.get_player_alloc_index(player);
           cnv_target.Pen.Color := StructGraphics.player_colors_inv[player];

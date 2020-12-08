@@ -240,10 +240,10 @@ begin
     MissionIni.unload_mission_ini(false);
     unload_mission;
     // Change tileset to default or currently loaded one
-    if (Tileset.current_tileset = -1) then
-      Tileset.change_tileset_by_name(Settings.DefaultTilesetName)
+    if (Tileset.tileset_index = -1) then
+      Tileset.change_tileset_to_default
     else
-      Tileset.change_tileset(Tileset.current_tileset);
+      Tileset.load_tileset(false);
     exit;
   end;
 
@@ -256,7 +256,7 @@ begin
   // Load mission ini file
   MissionIni.load_mission_ini(map_filename);
   // Change tileset according to mission's tileset
-  Tileset.change_tileset_by_name(mis_data.tileset);
+  Tileset.change_tileset_by_name(mis_data.tileset, mis_data.tileatr);
   // Do needed actions
   Dispatcher.register_event(evMisLoad);
 end;

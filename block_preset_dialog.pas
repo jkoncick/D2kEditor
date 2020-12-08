@@ -245,13 +245,7 @@ begin
       tile_attr := Tileset.attributes[tile];
       if MainWindow.sbMarkOwnerSide.Down and ((tile_attr and $8800) = $8800) then
       begin
-        player := 0;
-        if (tile_attr and taConcreteOwnerSideBit1) <> 0 then
-          Inc(player, 1);
-        if (tile_attr and taConcreteOwnerSideBit2) <> 0 then
-          Inc(player, 2);
-        if (tile_attr and taConcreteOwnerSideBit3) <> 0 then
-          Inc(player, 4);
+        player := (tile_attr shr 17) and 7;
         BlockPresetImage.Canvas.Pen.Color := StructGraphics.player_colors_inv[player];
         BlockPresetImage.Canvas.Brush.Color := BlockPresetImage.Canvas.Pen.Color;
         BlockPresetImage.Canvas.Brush.Style := bsSolid;

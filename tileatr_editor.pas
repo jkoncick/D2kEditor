@@ -114,7 +114,7 @@ type
     rgFilterMode: TRadioGroup;
     rgOperation: TRadioGroup;
     cbMultipleSelectMode: TCheckBox;
-    ReloadTileatr1: TMenuItem;
+    ReloadTileset1: TMenuItem;
     N3: TMenuItem;
     SaveTileAtras1: TMenuItem;
     SaveTileAtrDialog: TSaveDialog;
@@ -143,6 +143,7 @@ type
     cbAnyOf: TCheckBox;
     stSideBitValues: TStaticText;
     stSpeedModifier: TStaticText;
+    Applychanges1: TMenuItem;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -157,7 +158,8 @@ type
     procedure OpenTileset1Click(Sender: TObject);
     procedure OpenTileAtr1Click(Sender: TObject);
     procedure OpenBoth1Click(Sender: TObject);
-    procedure ReloadTileatr1Click(Sender: TObject);
+    procedure ReloadTileset1Click(Sender: TObject);
+    procedure Applychanges1Click(Sender: TObject);
     procedure SaveTileAtr1Click(Sender: TObject);
     procedure Saveandtest1Click(Sender: TObject);
     procedure SaveTileAtras1Click(Sender: TObject);
@@ -241,7 +243,7 @@ var
 
 implementation
 
-uses main, _stringtable, _settings, _structures, _dispatcher;
+uses main, _utils, _stringtable, _settings, _structures, _dispatcher;
 
 {$R *.dfm}
 
@@ -328,17 +330,22 @@ begin
   MainWindow.Loadtilesetattributes1Click(Sender);
 end;
 
-procedure TTileAtrEditor.ReloadTileatr1Click(Sender: TObject);
+procedure TTileAtrEditor.ReloadTileset1Click(Sender: TObject);
 begin
-  Tileset.reload_tileset;
+  Tileset.load_tileset(true);
+end;
+
+procedure TTileAtrEditor.Applychanges1Click(Sender: TObject);
+begin
+  Dispatcher.register_event(evTileatrModify);
 end;
 
 procedure TTileAtrEditor.SaveTileAtr1Click(Sender: TObject);
 begin
   if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
   begin
-    Tileset.save_attributes;
-    Dispatcher.register_event(evACTileAtrEditor);
+    Tileset.save_tileatr;
+    Dispatcher.register_event(evTileatrModify);
   end;
 end;
 
@@ -346,21 +353,18 @@ procedure TTileAtrEditor.Saveandtest1Click(Sender: TObject);
 begin
   if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
   begin
-    Tileset.save_attributes;
-    Dispatcher.register_event(evACTileAtrEditor);
+    Tileset.save_tileatr;
+    Dispatcher.register_event(evTileatrModify);
     MainWindow.Quicklaunch1Click(Sender);
   end;
 end;
 
 procedure TTileAtrEditor.SaveTileAtras1Click(Sender: TObject);
 begin
-  if Tileset.tileatr_filename <> '' then
+  if (Tileset.tileatr_filename <> '') and SaveTileAtrDialog.Execute and confirm_overwrite_original_file(SaveTileAtrDialog.FileName) then
   begin
-    if SaveTileAtrDialog.Execute and confirm_overwrite_original_file(SaveTileAtrDialog.FileName) then
-    begin
-      Tileset.save_attributes_to_file(SaveTileAtrDialog.FileName);
-      Dispatcher.register_event(evACTileAtrEditor);
-    end;
+    Tileset.save_tileatr_to_file(SaveTileAtrDialog.FileName);
+    Dispatcher.register_event(evTileatrModify);
   end;
 end;
 
@@ -371,7 +375,7 @@ end;
 
 procedure TTileAtrEditor.QuickOpenClick(Sender: TObject);
 begin
-  Tileset.change_tileset((Sender as TMenuItem).Tag);
+  Tileset.change_tileset_by_index((Sender as TMenuItem).Tag);
 end;
 
 procedure TTileAtrEditor.Undo1Click(Sender: TObject);
@@ -698,27 +702,12 @@ begin
     exit;
   end;
   pending_update_contents := false;
+  StatusBar.Panels[1].Text := Format(IfThen(Tileset.tileset_index <> -1, '%s / %s', '*%s / %s'), [Tileset.tileset_name, Tileset.tileatr_name]);
   StatusBar.Panels[2].Text := Tileset.tileimage_filename;
   StatusBar.Panels[3].Text := Tileset.tileatr_filename;
   StatusBar.Panels[4].Text := Tileset.config_filename;
-  if Tileset.current_tileset <> -1 then
-  begin
-    menuitems[Tileset.current_tileset].Checked := true;
-    StatusBar.Panels[1].Text := Tileset.tileset_name;
-  end else
-  begin
-    StatusBar.Panels[1].Text := 'Custom files';
-    for i := 0 to Length(menuitems) -1 do
-      menuitems[i].Checked := false;
-  end;
-  TileAtrListEditor.Enabled := Tileset.config_filename <> '';
-  if not TileAtrListEditor.Enabled then
-  begin
-    for i := 0 to 7 do
-      TileAtrListEditor.State[i] := cbUnchecked;
-    TileAtrListClickCheck(nil);
-  end;
-  btnConvertEditorAttributes.Enabled := Tileset.config_filename <> '';
+  for i := 0 to Length(menuitems) -1 do
+    menuitems[i].Checked := Tileset.tileset_index = i;
   active_tile := -1;
   reset_undo_history;
   render_tileset;
@@ -784,11 +773,14 @@ var
   color, color_editor: cardinal;
   tile_text: String;
   min_x, min_y, max_x, max_y: integer;
+  t1, t2: Int64;
 begin
   top_pixels := tileset_top * 32;
   selected_value := strtoint64('$'+TileAtrValue.Text);
   if Tileset.tileatr_filename <> '' then
   begin
+    if Settings.Debug_ShowRenderTime then
+      QueryPerformanceCounter(t1);
     TilesetImage.Canvas.Font.Color := Settings.GridColor;
     // Draw tileset
     TilesetImage.Canvas.CopyRect(Rect(0,0,640,tileset_height*32), Tileset.tileimage.Canvas, Rect(0,top_pixels,640,top_pixels+tileset_height*32));
@@ -922,6 +914,12 @@ begin
       min_y := (min(select_start_y, select_end_y) - tileset_top) * 32+1;
       max_y := (max(select_start_y, select_end_y) - tileset_top) * 32+32;
       TilesetImage.Canvas.Rectangle(min_x, min_y, max_x, max_y);
+    end;
+    // Measure rendering time
+    if Settings.Debug_ShowRenderTime then
+    begin
+      QueryPerformanceCounter(t2);
+      Caption := FloatToStr((t2-t1) / performance_frequency);
     end;
   end;
 end;
@@ -1115,9 +1113,10 @@ begin
   // At this point we know the file is original game's file - show confirmation dialog
   dialog_result := Application.MessageBox(
     PChar(
-    'You are about to modify an original Dune 2000 game file, which can break the game!'#13+
-    'Make sure you have a backup of file '''+filename+''' before overwriting it!'#13#13+
-    'Do you really want to save over the file?'),
+    'You are about to modify an original Dune 2000 game file, which can break your game!'#13+
+    'It is recommended to use CustomCampaignData folder or save file under different name.'#13+
+    'If you still want to overwrite the file '''+filename+''' make sure you have a backup!'#13#13+
+    'Do you really want to proceed and save over the file?'),
     'Save Tile Attributes Warning', MB_YESNO or MB_ICONWARNING);
   result := dialog_result = IDYES;
 end;

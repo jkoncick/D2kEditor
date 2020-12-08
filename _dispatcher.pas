@@ -4,27 +4,28 @@ interface
 
 type
   TDispatcherRegisteredEvent = (
-    // Map-related events
+    // Map events
     evMapLoad,
     evMapResize,
     evMapShift,
     evMapTilesModify,
     evMapFilenameChange,
-    // Mission-related events
+    // Mission events
     evMisLoad,
     evMisAllocIndexChange,
     evMisEventPositionChange,
     evMisDefenceAreaChange,
-    // Mission ini-related events
+    // Mission ini events
     evMissionIniLoad,
     evMissionIniCustomTextChange,
-    // Initialize tilesets event
-    evInitTilesets,
-    // Tileset file load events
+    // Tileset events
+    evFLLTilesetList,
     evFLTilesetImage,
     evFLTileatrBin,
     evFLTilesetIni,
-    // Structures file load events
+    evTileatrModify,
+    evTileatrFilenameChange,
+    // Structures events
     evFLTemplatesBin,
     evFLBuilexpBin,
     evFLArmourBin,
@@ -33,18 +34,17 @@ type
     evFLTiledataBin,
     evFLMiscObjectsIni,
     evFLPlayersIni,
-    // StructGraphics file load events
+    // StructGraphics events
     evFLColoursBin,
     evFLDataR16,
     evFLMiscObjectsBmp,
     evLoadStructureImage,
-    // StringTable file load events
+    // StringTable events
     evFLTextUib,
     evFLSamplesUib,
     // Setting change events
     evSCTranslateStructureNames,
     // Apply changes events
-    evACTileAtrEditor,
     evACStructuresEditor
   );
   TDispatcherPendingAction = (
@@ -112,7 +112,7 @@ var
 implementation
 
 uses
-  Forms, Classes, SysUtils, _utils, _settings, _structures, _misai, _map, _mission, main, set_dialog,
+  Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _misai, _map, _mission, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
   tileatr_editor, structures_editor, debug_window;
@@ -122,27 +122,28 @@ uses
 procedure TDispatcher.register_event(event: TDispatcherRegisteredEvent);
 begin
   case event of
-    // Map-related events
+    // Map events
     evMapLoad:                    pact := pact + [paUpdateMapDimensions, paUpdateMapName, paUpdateMapStats, paRenderMap, paRenderMinimap];
     evMapResize:                  pact := pact + [paUpdateMapDimensions, paUpdateMapStats, paUpdateEventMarkers, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapShift:                   pact := pact + [paUpdateMapStats, paUpdateEventMarkers, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapTilesModify:             pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap];
     evMapFilenameChange:          pact := pact + [paUpdateMapName];
-    // Mission-related events
+    // Mission events
     evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateMissionData, paUpdateMisAiValues, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisAllocIndexChange:        pact := pact + [paUpdateStructureControls, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisEventPositionChange:     pact := pact + [paUpdateEventMarkers];
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
-    // Mission ini-related events
+    // Mission ini events
     evMissionIniLoad:             pact := pact + [paUpdateMissionIniData, paUpdateEventDialog];
     evMissionIniCustomTextChange: pact := pact + [paUpdateEventDialog];
-    // Initialize tilesets event
-    evInitTilesets:               pact := pact + [paUpdateTilesetList];
-    // Tileset file load events
+    // Tileset events
+    evFLLTilesetList:             pact := pact + [paUpdateTilesetList];
     evFLTilesetImage:             pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evFLTileatrBin:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLTilesetIni:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMinimap, paUpdateDebugValues];
-    // Structures file load events
+    evTileatrModify:              pact := pact + [paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evTileatrFilenameChange:      pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paUpdateDebugValues];
+    // Structures events
     evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
     evFLArmourBin:                pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
@@ -151,12 +152,12 @@ begin
     evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLPlayersIni:               pact := pact + [paUpdatePlayerList, paUpdateEventDialog, paUpdateDebugValues];
-    // StructGraphics file load events
+    // StructGraphics events
     evFLColoursBin:               pact := pact + [paUpdatePlayerColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsBmp:           pact := pact + [paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evLoadStructureImage:         pact := pact + [paUpdateDebugValues];
-    // StringTable file load events
+    // StringTable events
     evFLTextUib:
       begin
                                   pact := pact + [paUpdateTextList, paUpdateEventDialog, paUpdateDebugValues];
@@ -167,7 +168,6 @@ begin
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
-    evACTileAtrEditor:            pact := pact + [paRenderMap, paRenderMinimap, paRenderCursorImage];
     evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
   end;
 end;
@@ -255,6 +255,7 @@ end;
 
 procedure TDispatcher.update_tileset;
 begin
+  Tileset.update_tileset_index;
   MainWindow.update_tileset;
   SetDialog.update_tileset;
   TilesetDialog.update_tileset;

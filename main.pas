@@ -903,24 +903,24 @@ end;
 
 procedure TMainWindow.Selectnext1Click(Sender: TObject);
 begin
-  Tileset.next_tileset;
+  Tileset.change_tileset_next;
 end;
 
 procedure TMainWindow.Reloadtileset1Click(Sender: TObject);
 begin
-  Tileset.reload_tileset;
+  Tileset.load_tileset(true);
 end;
 
 procedure TMainWindow.Loadtileset1Click(Sender: TObject);
 begin
   if TilesetOpenDialog.Execute then
-    Tileset.load_image_from_file(TilesetOpenDialog.FileName);
+    Tileset.load_tileimage_from_file(TilesetOpenDialog.FileName);
 end;
 
 procedure TMainWindow.Loadtilesetattributes1Click(Sender: TObject);
 begin
   if TileatrOpenDialog.Execute then
-    Tileset.load_attributes_from_file(TileatrOpenDialog.FileName);
+    Tileset.load_tileatr_from_file(TileatrOpenDialog.FileName);
 end;
 
 procedure TMainWindow.TileAttributeseditor1Click(Sender: TObject);
@@ -1594,7 +1594,10 @@ var
   tile_x, tile_y: integer;
 begin
   // Show tileset name
-  StatusBar.Panels[1].Text := Tileset.tileset_name;
+  if Tileset.tileset_index <> -1 then
+    StatusBar.Panels[1].Text := Tileset.tileset_name
+  else
+    StatusBar.Panels[1].Text := '*' + Tileset.tileset_name;
   // Draw glyphs on paint tile group buttons in terrain editing GUI
   for i := -4 to cnt_paint_tile_groups-1 do
   begin

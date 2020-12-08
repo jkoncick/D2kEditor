@@ -67,7 +67,7 @@ begin
 
   s := TStringList.Create;
 
-  add_debug_value(s, Tileset, 'Tileset index', inttostr(Tileset.current_tileset));
+  add_debug_value(s, Tileset, 'Tileset index', inttostr(Tileset.tileset_index));
   add_debug_value(s, Tileset, 'Tileset name', Tileset.tileset_name);
   add_debug_value(s, Tileset, 'Attributes name', Tileset.tileatr_name);
   add_debug_value(s, Tileset, 'Image file', Tileset.tileimage_filename);
