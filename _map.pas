@@ -138,11 +138,15 @@ var
 
 implementation
 
-uses SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main, _launcher, _dispatcher;
+uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main, _launcher, _dispatcher;
 
 procedure TMap.load_map(filename: String);
 var
   map_file: file of word;
+  map_file_size: integer;
+  buffer: array of word;
+  pos: integer;
+  tmp_map_width, tmp_map_height: word;
   x, y: integer;
 begin
   // Reset map data
@@ -155,15 +159,30 @@ begin
   // Read map file
   AssignFile(map_file, filename);
   Reset(map_file);
-  Read(map_file, map_width);
-  Read(map_file, map_height);
+  map_file_size := Filesize(map_file);
+  SetLength(buffer, map_file_size);
+  BlockRead(map_file, buffer[0], map_file_size);
+  CloseFile(map_file);
+  tmp_map_width := buffer[0];
+  tmp_map_height := buffer[1];
+  // Check for validity of map format
+  if (tmp_map_width > max_map_width) or (tmp_map_height > max_map_height) or (map_file_size <> (tmp_map_width * tmp_map_height * 2 + 2)) then
+  begin
+    Application.MessageBox('The file has invalid format.', 'Error loading map', MB_ICONERROR or MB_OK);
+    SetLength(buffer, 0);
+    exit;
+  end;
+  map_width := tmp_map_width;
+  map_height := tmp_map_height;
+  pos := 2;
   for y := 0 to map_height - 1 do
     for x := 0 to map_width - 1 do
     begin
-      Read(map_file, map_data[x,y].tile);
-      Read(map_file, map_data[x,y].special);
+      map_data[x,y].tile := buffer[pos];
+      map_data[x,y].special := buffer[pos+1];
+      inc(pos, 2);
     end;
-  CloseFile(map_file);
+  SetLength(buffer, 0);
   // Update internal variables
   map_loaded := true;
   map_filename := filename;
@@ -183,19 +202,28 @@ end;
 procedure TMap.save_map(filename: String; is_testmap: boolean);
 var
   map_file: file of word;
+  map_file_size: integer;
+  buffer: array of word;
+  pos: integer;
   x, y: integer;
 begin
   AssignFile(map_file, filename);
   ReWrite(map_file);
-  Write(map_file, map_width);
-  Write(map_file, map_height);
+  map_file_size := map_width * map_height * 2 + 2;
+  SetLength(buffer, map_file_size);
+  buffer[0] := map_width;
+  buffer[1] := map_height;
+  pos := 2;
   for y := 0 to map_height - 1 do
     for x := 0 to map_width - 1 do
     begin
-      Write(map_file, map_data[x,y].tile);
-      Write(map_file, map_data[x,y].special);
+      buffer[pos] := map_data[x,y].tile;
+      buffer[pos+1] := map_data[x,y].special;
+      inc(pos, 2);
     end;
+  BlockWrite(map_file, buffer[0], map_file_size);
   CloseFile(map_file);
+  SetLength(buffer, 0);
   if not is_testmap then
   begin
     map_modified := false;
