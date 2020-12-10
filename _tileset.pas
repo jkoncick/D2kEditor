@@ -40,6 +40,9 @@ const taAnyPass = $6000;
 const taBuildable = $8000;
 const taSand = $10000;
 
+// Version constant
+const CURRENT_TILESET_CONFIG_VERSION = 1;
+
 // Tileset type definitions
 type
   TileType = (ttPassable, ttImpassable, ttInfantryOnly, ttBuildable);
@@ -155,7 +158,7 @@ type
     palette_loaded: Boolean;
     palette: PLogPalette;
 
-    // Tileset attribute variables
+    // Tile attribute variables
     attributes: array[0..cnt_tileset_tiles-1] of cardinal;
     tile_hint_text: array[0..cnt_tileset_tiles-1] of integer;
     attributes_editor: array[0..cnt_tileset_tiles-1] of byte;
@@ -163,6 +166,7 @@ type
     tile_paint_group: array[0..cnt_tileset_tiles-1] of shortint;
 
     // Tileset configuration
+    matching_tileatr_name: string;
     default_paint_group: integer;
 
     minimap_color_rules: array[0..max_minimap_color_rules-1] of TMinimapColorRule;
@@ -388,7 +392,7 @@ begin
     load_bmp_image(tmp_filename);
     exit;
   end;
-  Application.MessageBox(PChar('Could not find image file for tileset ' + p_tileset_name), 'Error loading tileset', MB_OK or MB_ICONWARNING);
+  Application.MessageBox(PChar('Could not find image file for tileset ' + p_tileset_name), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
 end;
 
 procedure TTileset.load_tileimage_from_file(filename: String);
@@ -404,6 +408,10 @@ begin
     load_r8_image(filename)
   else if Ext = '.BMP' then
     load_bmp_image(filename);
+  // Check if load was succesful
+  if tileimage_filename <> filename then
+    exit;
+  // Load tileset configuration
   tileset_name := UpperCase(ChangeFileExt(ExtractFileName(filename), ''));
   load_config(tileset_name, false);
 end;
@@ -422,7 +430,7 @@ begin
   Reset(f);
   if (filesize(f) <> r16_file_size) then
   begin
-    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r16_file_size) + ' bytes)'), 'Error loading tileset', MB_OK or MB_ICONERROR);
+    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r16_file_size) + ' bytes)'), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
     Close(f);
     exit;
   end;
@@ -465,7 +473,7 @@ begin
   Reset(f);
   if (filesize(f) <> r8_file_size) then
   begin
-    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r8_file_size) + ' bytes)'), 'Error loading tileset', MB_OK or MB_ICONERROR);
+    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r8_file_size) + ' bytes)'), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
     Close(f);
     exit;
   end;
@@ -509,7 +517,7 @@ begin
   filename := Settings.GamePath+'\Data\bin\PALETTE.BIN';
   if not FileExists(filename) then
   begin
-    Application.MessageBox(PChar('Error loading palette. Could not find file ' + filename), 'Error loading tileset', MB_OK or MB_ICONERROR);
+    Application.MessageBox(PChar('Error loading palette. Could not find file ' + filename), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
     exit;
   end;
   AssignFile(f, filename);
@@ -565,6 +573,12 @@ begin
   // Load TILEATR.BIN file
   AssignFile(tileatr_file, filename);
   Reset(tileatr_file);
+  if FileSize(tileatr_file) <> (cnt_tileset_tiles * 2) then
+  begin
+    Application.MessageBox(PChar('Error loading tile attributes from ' + filename + ':'#13'File does not have expected size (' + inttostr(cnt_tileset_tiles * 2 * 4) + ' bytes)'), 'Error loading tile attributes', MB_OK or MB_ICONERROR);
+    CloseFile(tileatr_file);
+    exit;
+  end;
   BlockRead(tileatr_file, attributes, cnt_tileset_tiles);
   BlockRead(tileatr_file, tile_hint_text, cnt_tileset_tiles);
   CloseFile(tileatr_file);
@@ -580,6 +594,7 @@ var
   ini: TMemIniFile;
   tmp_strings: TStringList;
   decoder, decoder2: TStringList;
+  config_version: integer;
   i, j, k, l, x, y: integer;
   key: char;
   preset_index: integer;
@@ -600,7 +615,7 @@ begin
     exit;
   if tmp_filename = '' then
   begin
-    Application.MessageBox(PChar('Could not find tileset configuration ini file for tileset ' + p_tileset_name + '. Loading default tileset configuration instead.'), 'Error loading tileset', MB_ICONWARNING or MB_OK);
+    Application.MessageBox(PChar('Could not find tileset configuration ini file for tileset ' + p_tileset_name + '. Loading default tileset configuration instead.'), 'Error loading tileset configuration', MB_ICONWARNING or MB_OK);
     tmp_filename := find_file('tilesets\template.ini', 'tileset configuration');
     if (tmp_filename = '') or (tmp_filename = config_filename) then
       exit;
@@ -614,7 +629,16 @@ begin
   decoder.Delimiter := ';';
   decoder2.Delimiter := '.';
   // Load basic information
+  matching_tileatr_name := ini.ReadString('Basic', 'tileatr', '');
   default_paint_group := ini.ReadInteger('Basic', 'default_paint_group', 1) - 1;
+  config_version := ini.ReadInteger('Basic', 'version', 0);
+  if config_version <> CURRENT_TILESET_CONFIG_VERSION then
+    Application.MessageBox(PChar(
+      'The tileset configuration file ''' + config_filename + ''''#13 +
+      'was made for different version of D2kEditor and may be incompatible with the version you use.'#13 +
+      'Please get the latest available version of tileset configuration ini file or fix your file.'#13 +
+      'You can get one or ask for help on FED2k forums.'),
+      'Tileset configuration warning', MB_ICONWARNING + MB_OK);
   // Load minimap color rules
   minimap_color_rules_used := 0;
   ini.ReadSection('Minimap_Color_Rules', tmp_strings);
@@ -918,7 +942,7 @@ begin
   BlockWrite(tileatr_file, tile_hint_text, cnt_tileset_tiles);
   CloseFile(tileatr_file);
   // Save editor attributes into tileset .ini file
-  if (config_filename = '') or (Tileset.tileset_index = -1) then
+  if (config_filename = '') or (AnsiCompareText(tileatr_name, matching_tileatr_name) <> 0) then
     exit;
   lines_input := TStringList.Create;
   lines_output := TStringList.Create;
@@ -974,7 +998,6 @@ procedure TTileset.save_tileatr_to_file(filename: String);
 begin
   tileatr_name := UpperCase(ChangeFileExt(ExtractFileName(filename), ''));
   tileatr_filename := filename;
-  update_tileset_index;
   save_tileatr;
   // Register event in dispatcher
   Dispatcher.register_event(evTileatrFilenameChange);

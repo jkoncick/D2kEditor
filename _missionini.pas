@@ -193,6 +193,7 @@ begin
   if SideId <> -1 then
     Launcher.MySideID := SideID;
   Launcher.MissionNumber := MissionNumber;
+  Launcher.TextUib := TextUib;
   load_custom_campaign_data_files(false);
   Dispatcher.register_event(evMissionIniLoad);
 end;

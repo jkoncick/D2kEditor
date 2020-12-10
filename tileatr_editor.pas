@@ -1114,7 +1114,7 @@ begin
   dialog_result := Application.MessageBox(
     PChar(
     'You are about to modify an original Dune 2000 game file, which can break your game!'#13+
-    'It is recommended to use CustomCampaignData folder or save file under different name.'#13+
+    'It is recommended to use CustomCampaignData Mods folder or save file under different name.'#13+
     'If you still want to overwrite the file '''+filename+''' make sure you have a backup!'#13#13+
     'Do you really want to proceed and save over the file?'),
     'Save Tile Attributes Warning', MB_YESNO or MB_ICONWARNING);

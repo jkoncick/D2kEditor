@@ -409,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -418,7 +418,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 6
         end
       end
@@ -546,11 +546,11 @@ object MainWindow: TMainWindow
         Caption = '-'
       end
       object Loadtileset1: TMenuItem
-        Caption = 'Load custom image'
+        Caption = 'Use custom image'
         OnClick = Loadtileset1Click
       end
       object Loadtilesetattributes1: TMenuItem
-        Caption = 'Load custom attributes'
+        Caption = 'Use custom attributes'
         OnClick = Loadtilesetattributes1Click
       end
       object N6: TMenuItem
