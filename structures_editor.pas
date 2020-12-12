@@ -815,7 +815,6 @@ begin
   Structures.load_armour_bin(true);
   Structures.load_techpos_bin(true);
   Structures.load_speed_bin(true);
-  apply_changes;
 end;
 
 procedure TStructuresEditor.CopyfilestoModsfolder1Click(Sender: TObject);
