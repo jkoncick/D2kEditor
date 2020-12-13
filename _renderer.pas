@@ -515,7 +515,7 @@ begin
         end else
           draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, $FF00FF, 2);
       end else
-      if o_show_unknown_specials then
+      if o_show_unknown_specials and (special <> 65535) then
       begin
         // Unknown special value
         cnv_target.Brush.Style := bsClear;
