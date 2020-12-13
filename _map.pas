@@ -992,35 +992,67 @@ var
   count: integer;
   i, x, y: integer;
 begin
+  result := false;
   // Load ini file
   ini := TMemIniFile.Create(ini_filename);
   strings := TStringList.Create;
+  // Handle Remap_Tiles section
   ini.ReadSection('Remap_Tiles', strings);
   count := strings.Count;
-  if count = 0 then
+  if count <> 0 then
   begin
-    result := false;
+    result := true;
+    SetLength(from_tiles, count);
+    SetLength(to_tiles, count);
+    for i := 0 to count - 1 do
+    begin
+      from_tiles[i] := strtoint(strings[i]);
+      to_tiles[i] := ini.ReadInteger('Remap_Tiles', strings[i], 0);
+    end;
+    // Remap the tiles
+    for y := 0 to height - 1 do
+      for x := 0 to width - 1 do
+        for i := 0 to count - 1 do
+          if map_data[x, y].tile = from_tiles[i] then
+          begin
+            map_data[x, y].tile := to_tiles[i];
+            break;
+          end;
+    SetLength(from_tiles, 0);
+    SetLength(to_tiles, 0);
+  end;
+  // Handle Remap_Specials section
+  ini.ReadSection('Remap_Specials', strings);
+  count := strings.Count;
+  if count <> 0 then
+  begin
+    result := true;
+    SetLength(from_tiles, count);
+    SetLength(to_tiles, count);
+    for i := 0 to count - 1 do
+    begin
+      from_tiles[i] := strtoint(strings[i]);
+      to_tiles[i] := ini.ReadInteger('Remap_Specials', strings[i], 0);
+    end;
+    // Remap the tiles
+    for y := 0 to height - 1 do
+      for x := 0 to width - 1 do
+        for i := 0 to count - 1 do
+          if map_data[x, y].special = from_tiles[i] then
+          begin
+            map_data[x, y].special := to_tiles[i];
+            break;
+          end;
+    SetLength(from_tiles, 0);
+    SetLength(to_tiles, 0);
+  end;
+  // Finalize
+  strings.Destroy;
+  ini.Destroy;
+  if not result then
     exit;
-  end;
-  SetLength(from_tiles, count);
-  SetLength(to_tiles, count);
-  for i := 0 to count - 1 do
-  begin
-    from_tiles[i] := strtoint(strings[i]);
-    to_tiles[i] := ini.ReadInteger('Remap_Tiles', strings[i], 0);
-  end;
-  // Remap the tiles
-  for y := 0 to height - 1 do
-    for x := 0 to width - 1 do
-      for i := 0 to count - 1 do
-        if map_data[x, y].tile = from_tiles[i] then
-        begin
-          map_data[x, y].tile := to_tiles[i];
-          break;
-        end;
   reset_undo_history;
   map_modified := true;
-  result := true;
   Dispatcher.register_event(evMapTilesModify);
 end;
 

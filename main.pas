@@ -995,7 +995,7 @@ begin
     exit;
   if RemapTilesOpenDialog.Execute then
     if not Map.remap_tiles(RemapTilesOpenDialog.FileName) then
-      Application.MessageBox('The ini file must contain [Remap_Tiles] section'#13'with key-value pairs in the form'#13'from_tile=to_tile'#13'where key and value is a tile index.', 'Invalid remap tiles ini file', MB_OK or MB_ICONERROR);
+      Application.MessageBox('The ini file must contain at least one of [Remap_Tiles] and [Remap_Specials] sections'#13'with key-value pairs in the form'#13'from_index=to_index'#13'where key and value is a tile/special index.', 'Invalid remap tiles ini file', MB_OK or MB_ICONERROR);
 end;
 
 procedure TMainWindow.Showmapstatistics1Click(Sender: TObject);
