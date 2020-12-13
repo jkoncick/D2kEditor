@@ -397,6 +397,15 @@ object MissionDialog: TMissionDialog
         TabOrder = 21
         OnChange = cbPlayersIniChange
       end
+      object btnModsFolderOpen: TButton
+        Left = 336
+        Top = 293
+        Width = 97
+        Height = 22
+        Caption = 'Open Mods folder'
+        TabOrder = 22
+        OnClick = btnModsFolderOpenClick
+      end
     end
     object RulesAndStringsPanel: TPanel
       Left = 0

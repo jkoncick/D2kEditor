@@ -72,6 +72,7 @@ type
     edMapIntelId: TEdit;
     lblPlayersIni: TLabel;
     cbPlayersIni: TComboBox;
+    btnModsFolderOpen: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
@@ -110,6 +111,7 @@ type
     procedure cbColoursBinChange(Sender: TObject);
     procedure cbPlayersIniChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
+    procedure btnModsFolderOpenClick(Sender: TObject);
   private
     // Dynamic controls
     player_label: array[0..cnt_players-1] of TLabel;
@@ -141,7 +143,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, _missionini, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
+  Math, StrUtils, ShellApi, _missionini, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
 
 {$R *.dfm}
 
@@ -579,6 +581,12 @@ end;
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);
 begin
   MissionIni.set_text_uib(cbTextUib.Text);
+end;
+
+procedure TMissionDialog.btnModsFolderOpenClick(Sender: TObject);
+begin
+  if (cbCampaignFolder.Text <> '') then
+    ShellExecute(0, 'open', PChar(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\' + cbModsFolder.Text), nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TMissionDialog.update_player_list(player_list: TStringList);

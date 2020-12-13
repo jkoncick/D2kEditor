@@ -1,10 +1,10 @@
 object MissionLauncher: TMissionLauncher
-  Left = 192
-  Top = 114
+  Left = 137
+  Top = 111
   BorderStyle = bsDialog
-  Caption = 'Mission Launcher'
-  ClientHeight = 567
-  ClientWidth = 880
+  Caption = 'Mission Launcher / Browser'
+  ClientHeight = 574
+  ClientWidth = 1192
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,176 +14,90 @@ object MissionLauncher: TMissionLauncher
   KeyPreview = True
   OldCreateOrder = False
   Scaled = False
+  OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object lbMissionName: TLabel
-    Left = 272
-    Top = 12
-    Width = 69
-    Height = 13
-    Caption = 'Mission Name:'
-  end
-  object lbMissionAuthor: TLabel
-    Left = 632
-    Top = 12
-    Width = 34
-    Height = 13
-    Caption = 'Author:'
-  end
-  object lbMissionNumber: TLabel
-    Left = 784
-    Top = 12
-    Width = 48
-    Height = 13
-    Caption = 'Mission #:'
-  end
   object lbMissionFileName: TLabel
-    Left = 272
-    Top = 508
+    Left = 688
+    Top = 546
     Width = 48
     Height = 13
     Caption = 'File name:'
   end
   object lbDifficultyLevel: TLabel
-    Left = 640
-    Top = 508
+    Left = 952
+    Top = 524
     Width = 43
     Height = 13
     Caption = 'Difficulty:'
   end
-  object lbMissionCampaignFolder: TLabel
-    Left = 272
-    Top = 536
-    Width = 79
-    Height = 13
-    Caption = 'Campaign folder:'
-  end
-  object lbMissionModsFolder: TLabel
-    Left = 544
-    Top = 536
-    Width = 58
-    Height = 13
-    Caption = 'Mods folder:'
-  end
-  object lbMissionList: TListBox
-    Left = 0
-    Top = 0
-    Width = 265
-    Height = 567
-    Align = alLeft
-    ItemHeight = 13
-    TabOrder = 0
-    OnClick = lbMissionListClick
-    OnDblClick = btnOpenMissionInEditorClick
-  end
   object mMissionBriefing: TMemo
-    Left = 272
-    Top = 40
-    Width = 593
-    Height = 457
+    Left = 688
+    Top = 0
+    Width = 505
+    Height = 513
     ReadOnly = True
     ScrollBars = ssVertical
-    TabOrder = 1
-  end
-  object edMissionName: TEdit
-    Left = 344
-    Top = 8
-    Width = 281
-    Height = 21
-    ReadOnly = True
-    TabOrder = 2
-  end
-  object edMissionAuthor: TEdit
-    Left = 672
-    Top = 8
-    Width = 105
-    Height = 21
-    ReadOnly = True
-    TabOrder = 3
-  end
-  object edMissionNumber: TEdit
-    Left = 840
-    Top = 8
-    Width = 25
-    Height = 21
-    ReadOnly = True
-    TabOrder = 4
+    TabOrder = 0
   end
   object edMissionFileName: TEdit
-    Left = 328
-    Top = 504
-    Width = 185
+    Left = 744
+    Top = 544
+    Width = 249
     Height = 21
     ReadOnly = True
-    TabOrder = 5
+    TabOrder = 1
   end
   object btnLaunchGame: TButton
-    Left = 784
-    Top = 504
+    Left = 1104
+    Top = 520
     Width = 83
-    Height = 49
+    Height = 45
     Caption = 'Launch Game'
-    TabOrder = 6
+    TabOrder = 2
     OnClick = btnLaunchGameClick
   end
   object btnOpenMissionInEditor: TButton
-    Left = 520
-    Top = 504
-    Width = 115
+    Left = 1000
+    Top = 544
+    Width = 97
     Height = 21
     Caption = 'Open in Editor'
-    TabOrder = 7
+    TabOrder = 3
     OnClick = btnOpenMissionInEditorClick
   end
   object cbDifficultyLevel: TComboBox
-    Left = 688
-    Top = 504
+    Left = 1008
+    Top = 520
     Width = 89
     Height = 21
     Style = csDropDownList
     ItemHeight = 13
     ItemIndex = 1
-    TabOrder = 8
+    TabOrder = 4
     Text = 'Normal'
     Items.Strings = (
       'Easy'
       'Normal'
       'Hard')
   end
-  object edMissionCampaignFolder: TEdit
-    Left = 360
-    Top = 532
-    Width = 129
-    Height = 21
-    ReadOnly = True
-    TabOrder = 9
-  end
-  object edMissionModsFolder: TEdit
-    Left = 608
-    Top = 532
-    Width = 121
-    Height = 21
-    ReadOnly = True
-    TabOrder = 10
-  end
-  object btnOpenCampaignFolder: TButton
-    Left = 496
-    Top = 532
-    Width = 41
-    Height = 21
-    Caption = 'Open'
-    TabOrder = 11
-    OnClick = btnOpenCampaignFolderClick
-  end
-  object btnOpenModsFolder: TButton
-    Left = 736
-    Top = 532
-    Width = 41
-    Height = 21
-    Caption = 'Open'
-    TabOrder = 12
-    OnClick = btnOpenModsFolderClick
+  object sgMissionList: TStringGrid
+    Left = 0
+    Top = 0
+    Width = 681
+    Height = 574
+    Align = alLeft
+    ColCount = 6
+    DefaultRowHeight = 18
+    FixedCols = 0
+    RowCount = 2
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goRowSelect, goThumbTracking]
+    TabOrder = 5
+    OnDblClick = sgMissionListDblClick
+    OnMouseWheelDown = sgMissionListMouseWheelDown
+    OnMouseWheelUp = sgMissionListMouseWheelUp
+    OnSelectCell = sgMissionListSelectCell
   end
 end

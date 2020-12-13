@@ -79,7 +79,7 @@ implementation
 
 uses
   SysUtils, StdCtrls, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, tileatr_editor, structures_editor, debug_window, _utils;
+  mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window, _utils;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -139,6 +139,7 @@ begin
   EventDialog.EventGrid.ColWidths[4] := load_control_property_int(EventDialog.EventGrid, 'ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
   EventDialog.EventGrid.ColWidths[5] := load_control_property_int(EventDialog.EventGrid, 'ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
   load_window_position(MapStatsDialog);
+  load_window_position(MissionLauncher);
   load_window_position(TileAtrEditor);
   TileAtrEditor.cbAlwaysOnTop.State := TCheckBoxState(load_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State)));
   load_window_position(StructuresEditor);
@@ -215,6 +216,7 @@ begin
   save_control_property_int(EventDialog.EventGrid, 'ColWidths[4]', EventDialog.EventGrid.ColWidths[4]);
   save_control_property_int(EventDialog.EventGrid, 'ColWidths[5]', EventDialog.EventGrid.ColWidths[5]);
   save_window_position(MapStatsDialog);
+  save_window_position(MissionLauncher);
   save_window_position(TileAtrEditor);
   save_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State));
   save_window_position(StructuresEditor);

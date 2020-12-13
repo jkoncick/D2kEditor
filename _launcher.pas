@@ -67,7 +67,8 @@ begin
   if FindFirst(Settings.MissionsPath + '\*.INI', 0, SR) = 0 then
   begin
     repeat
-      tmp_strings.Add(SR.Name);
+      if ChangeFileExt(SR.Name, '') <> 'TESTMAP' then
+        tmp_strings.Add(SR.Name);
     until FindNext(SR) <> 0;
       FindClose(SR);
   end;
@@ -78,7 +79,7 @@ begin
     ini := TMemIniFile.Create(Settings.MissionsPath + '\' + tmp_strings[i]);
     mission_data[i].filename := ChangeFileExt(tmp_strings[i],'');
     mission_data[i].mission_name := ini.ReadString('Basic', 'Name', mission_data[i].filename);
-    mission_data[i].author := ini.ReadString('Basic', 'Author', '(Unnamed)');
+    mission_data[i].author := ini.ReadString('Basic', 'Author', '');
     mission_data[i].briefing := ini.ReadString('Basic', 'Briefing', '');
     mission_data[i].text_uib := ini.ReadString('Basic', 'TextUib', '');
     mission_data[i].mission_number := ini.ReadInteger('Basic', 'MissionNumber', 0);
