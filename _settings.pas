@@ -54,7 +54,7 @@ type
     Debug_ShowRenderTime: boolean;
     Debug_ShowDifferentialRendering: boolean;
 
-  private
+  public
     ini: TMemIniFile;
 
   public
@@ -79,7 +79,8 @@ implementation
 
 uses
   SysUtils, StdCtrls, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window, _utils;
+  mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window, _utils,
+  Grids;
 
 procedure TSettings.load_precreate_editor_settings;
 var
@@ -126,6 +127,8 @@ begin
 end;
 
 procedure TSettings.load_postcreate_editor_settings;
+var
+  i: integer;
 begin
   // Load GUI settings for all other dialogs
   load_window_position(TilesetDialog);
@@ -136,8 +139,8 @@ begin
   MissionDialog.StringValueList.Height := load_control_property_int(MissionDialog.StringValueList, 'Height', MissionDialog.StringValueList.Height);
   load_window_position(EventDialog);
   EventDialog.LowerPanel.Height := load_control_property_int(EventDialog.LowerPanel, 'Height', EventDialog.LowerPanel.Height);
-  EventDialog.EventGrid.ColWidths[4] := load_control_property_int(EventDialog.EventGrid, 'ColWidths[4]',EventDialog.EventGrid.ColWidths[4]);
-  EventDialog.EventGrid.ColWidths[5] := load_control_property_int(EventDialog.EventGrid, 'ColWidths[5]',EventDialog.EventGrid.ColWidths[5]);
+  for i := EventDialog.EventGrid.FixedCols to EventDialog.EventGrid.ColCount - 1 do
+    EventDialog.EventGrid.ColWidths[i] := load_control_property_int(EventDialog.EventGrid, Format('ColWidths[%d]', [i]), EventDialog.EventGrid.ColWidths[i]);
   load_window_position(MapStatsDialog);
   load_window_position(MissionLauncher);
   load_window_position(TileAtrEditor);
@@ -213,10 +216,11 @@ begin
   save_control_property_int(MissionDialog.StringValueList, 'Height', MissionDialog.StringValueList.Height);
   save_window_position(EventDialog);
   save_control_property_int(EventDialog.LowerPanel, 'Height', EventDialog.LowerPanel.Height);
-  save_control_property_int(EventDialog.EventGrid, 'ColWidths[4]', EventDialog.EventGrid.ColWidths[4]);
-  save_control_property_int(EventDialog.EventGrid, 'ColWidths[5]', EventDialog.EventGrid.ColWidths[5]);
+  for i := EventDialog.EventGrid.FixedCols to EventDialog.EventGrid.ColCount - 1 do
+    save_control_property_int(EventDialog.EventGrid, Format('ColWidths[%d]', [i]), EventDialog.EventGrid.ColWidths[i]);
   save_window_position(MapStatsDialog);
   save_window_position(MissionLauncher);
+  MissionLauncher.save_mission_grid_column_states;
   save_window_position(TileAtrEditor);
   save_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State));
   save_window_position(StructuresEditor);

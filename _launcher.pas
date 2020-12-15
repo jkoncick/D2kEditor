@@ -10,12 +10,16 @@ type
     filename: String;
     mission_name: String;
     author: String;
-    briefing: String;
-    text_uib: String;
-    mission_number: integer;
     side_id: integer;
+    mission_number: integer;
+    text_uib: String;
+    briefing: String;
     campaign_folder: String;
     mods_folder: String;
+    colours_file: String;
+    players_file: String;
+    intel_id: String;
+    tileset: String;
   end;
 
 type
@@ -58,6 +62,9 @@ var
   tmp_strings: TStringList;
   ini: TMemIniFile;
   SR: TSearchRec;
+  mis_filename: string;
+  mis_file: file of byte;
+  tileset_name_buffer: array[0..199] of char;
   i: integer;
 begin
   if missions_loaded then
@@ -76,18 +83,34 @@ begin
   mission_list.Capacity := tmp_strings.Count;
   for i := 0 to tmp_strings.Count - 1 do
   begin
+    // Load mission details from mission ini file
     ini := TMemIniFile.Create(Settings.MissionsPath + '\' + tmp_strings[i]);
     mission_data[i].filename := ChangeFileExt(tmp_strings[i],'');
     mission_data[i].mission_name := ini.ReadString('Basic', 'Name', mission_data[i].filename);
     mission_data[i].author := ini.ReadString('Basic', 'Author', '');
-    mission_data[i].briefing := ini.ReadString('Basic', 'Briefing', '');
-    mission_data[i].text_uib := ini.ReadString('Basic', 'TextUib', '');
-    mission_data[i].mission_number := ini.ReadInteger('Basic', 'MissionNumber', 0);
     mission_data[i].side_id := ini.ReadInteger('Basic', 'SideId', 0);
+    mission_data[i].mission_number := ini.ReadInteger('Basic', 'MissionNumber', 0);
+    mission_data[i].text_uib := ini.ReadString('Basic', 'TextUib', '');
+    mission_data[i].briefing := ini.ReadString('Basic', 'Briefing', '');
     mission_data[i].campaign_folder := ini.ReadString('Data', 'CampaignFolder', '');
     mission_data[i].mods_folder := ini.ReadString('Data', 'ModsFolder', '');
-    mission_list.Add(mission_data[i].mission_name + '=' + inttostr(i));
+    mission_data[i].colours_file := ini.ReadString('Data', 'ColoursFile', '');
+    mission_data[i].players_file := ini.ReadString('Data', 'PlayersFile', '');
+    mission_data[i].intel_id := ini.ReadString('Data', 'IntelId', '');
     ini.Destroy;
+    // Load mission tileset from MIS file
+    mis_filename := Settings.MissionsPath + '\_' + mission_data[i].filename + '.MIS';
+    if FileExists(mis_filename) then
+    begin
+      AssignFile(mis_file, mis_filename);
+      Reset(mis_file);
+      Seek(mis_file, $10598);
+      BlockRead(mis_file, tileset_name_buffer[0], Length(tileset_name_buffer));
+      mission_data[i].tileset := tileset_name_buffer;
+      Close(mis_file);
+    end;
+    // Add this mission into list
+    mission_list.Add(mission_data[i].mission_name + '=' + inttostr(i));
   end;
   mission_list.Sort;
   tmp_strings.Destroy;

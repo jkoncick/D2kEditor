@@ -409,7 +409,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -418,7 +418,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 6
         end
       end
@@ -485,7 +485,7 @@ object MainWindow: TMainWindow
         Caption = '-'
       end
       object Missionlauncher1: TMenuItem
-        Caption = 'Mission launcher'
+        Caption = 'Mission browser'
         ShortCut = 16460
         OnClick = Missionlauncher1Click
       end
