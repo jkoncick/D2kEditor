@@ -175,6 +175,8 @@ type
     fill_area_rules: array[0..max_fill_area_rules-1] of TFillAreaRule;
     fill_area_rules_used: integer;
 
+    editor_attribute_names: array[0..7] of string;
+
     paint_tile_groups: array[-4..cnt_paint_tile_groups-1] of TPaintTileGroup;
     paint_tiles: array[0..max_paint_tiles-1] of word; // Tile numbers of clean sand/rock/dunes
     paint_tiles_used: integer;
@@ -216,7 +218,7 @@ type
     procedure load_tileatr_from_file(filename: String);
     procedure load_tileatr_bin_file(filename: String);
     // Load tileset configuration
-    procedure load_config(p_tileset_name: string; force: boolean);
+    procedure load_config(p_tileset_name: string; use_default, force: boolean);
     function load_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;
     // Saving tile attributes
     procedure save_tileatr;
@@ -347,7 +349,7 @@ procedure TTileset.load_tileset(force_reload: boolean);
 begin
   load_tileimage(tileset_name, force_reload);
   load_tileatr(tileatr_name, force_reload);
-  load_config(tileset_name, force_reload);
+  load_config(tileset_name, true, force_reload);
   // Failsafe to default tileset if tileset image/attributes could not be loaded
   if (tileimage_filename = '') and (tileset_name <> Settings.DefaultTilesetName) then
     load_tileimage(Settings.DefaultTilesetName, false);
@@ -413,7 +415,7 @@ begin
     exit;
   // Load tileset configuration
   tileset_name := UpperCase(ChangeFileExt(ExtractFileName(filename), ''));
-  load_config(tileset_name, false);
+  load_config(tileset_name, false, false);
 end;
 
 procedure TTileset.load_r16_image(filename: String);
@@ -588,7 +590,7 @@ begin
   Dispatcher.register_event(evFLTileatrBin);
 end;
 
-procedure TTileset.load_config(p_tileset_name: string; force: boolean);
+procedure TTileset.load_config(p_tileset_name: string; use_default, force: boolean);
 var
   tmp_filename: string;
   ini: TMemIniFile;
@@ -615,6 +617,8 @@ begin
     exit;
   if tmp_filename = '' then
   begin
+    if not use_default then
+      exit;
     Application.MessageBox(PChar('Could not find tileset configuration ini file for tileset ' + p_tileset_name + '. Loading default tileset configuration instead.'), 'Error loading tileset configuration', MB_ICONWARNING or MB_OK);
     tmp_filename := find_file('tilesets\template.ini', 'tileset configuration');
     if (tmp_filename = '') or (tmp_filename = config_filename) then
@@ -661,6 +665,9 @@ begin
     load_rule(ini.ReadString('Fill_Area_Rules', tmp_strings[i], '0'), Addr(fill_area_rules[i].rule));
     inc(fill_area_rules_used);
   end;
+  // Load editor attribute names
+  for i := 0 to 7 do
+    editor_attribute_names[i] := ini.ReadString('Editor_Tile_Attribute_Names', 'Attribute'+inttostr(i+1), 'Editor Attribute '+inttostr(i+1));
   // Reset editor attributes
   for i := 0 to cnt_tileset_tiles - 1 do
     attributes_editor[i] := 0;
@@ -810,7 +817,8 @@ begin
             begin
               tile := strtoint(decoder2[x + y * width + 2]);
               block_preset_tiles[preset_tile_index + x + y * width] := tile;
-              inc(block_preset_coverage[tile]);
+              if tile <> -1 then
+                inc(block_preset_coverage[tile]);
             end;
         end;
         inc(preset_tile_index, width * height);

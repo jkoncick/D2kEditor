@@ -135,7 +135,6 @@ type
     TileAtrNotValue: TEdit;
     lbTileAtrNotValue: TLabel;
     cbDrawEditorAttributes: TCheckBox;
-    TileAtrColorEditor: TPanel;
     cbAlwaysOnTop: TCheckBox;
     lbTileHintText: TListBox;
     edRule: TEdit;
@@ -233,7 +232,7 @@ type
     procedure set_tile_attribute_list(value, not_value: int64);
     procedure set_tile_attribute_value(value, not_value: int64);
     procedure set_tile_attribute_rule(value, not_value: int64);
-    procedure get_tile_attribute_color(value: int64; var color, color_editor: cardinal);
+    function get_tile_attribute_color(value: int64): cardinal;
     procedure set_tile_attributes(tile_index: integer; single_op: boolean);
     function confirm_overwrite_original_file(filename: string): boolean;
   end;
@@ -248,8 +247,24 @@ uses main, _utils, _stringtable, _settings, _structures, _dispatcher;
 {$R *.dfm}
 
 procedure TTileAtrEditor.FormCreate(Sender: TObject);
+var
+  i: integer;
+  p: TPanel;
 begin
   TilesetImage.Picture.Bitmap.Width := 640;
+  // Create editor attributes color panels
+  for i := 0 to 7 do
+  begin
+    p := TPanel.Create(self);
+    p.Width := 13;
+    p.Height := 13;
+    p.Top := 42 + i * 17;
+    p.Left := 892;
+    p.BevelOuter := bvNone;
+    p.Color := atr_colors_editor[i];
+    p.ParentBackground := false;
+    p.Parent := self;
+  end;
 end;
 
 procedure TTileAtrEditor.FormShow(Sender: TObject);
@@ -303,7 +318,7 @@ end;
 procedure TTileAtrEditor.FormMouseWheelDown(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
-  TilesetScrollBar.Position := TilesetScrollBar.Position + 2;
+  TilesetScrollBar.Position := Min(TilesetScrollBar.Position + 2, TilesetScrollBar.Max - TilesetScrollBar.PageSize + 1);
   Handled := true;
 end;
 
@@ -414,7 +429,7 @@ begin
   pos_y := Y div 32 + tileset_top;
   tile_index := pos_x + pos_y * 20;
   view_mode := ViewMode(rgViewMode.ItemIndex);
-  attributes_mode := (view_mode = vmDrawTilesetAttributes) or (view_mode = vmDrawMinimapColors) or (view_mode = vmDrawFillAreaGroups);
+  attributes_mode := view_mode <> vmEditTileHintText;
   if Button = mbRight then
   begin
     if attributes_mode then
@@ -640,7 +655,7 @@ var
   attributes_mode: boolean;
 begin
   view_mode := ViewMode(rgViewMode.ItemIndex);
-  attributes_mode := (view_mode = vmDrawTilesetAttributes) or (view_mode = vmDrawMinimapColors) or (view_mode = vmDrawFillAreaGroups);
+  attributes_mode := view_mode <> vmEditTileHintText;
   TileAtrList.Enabled := attributes_mode;
   TileAtrListEditor.Enabled := attributes_mode;
   rgOperation.Enabled := attributes_mode;
@@ -651,8 +666,8 @@ begin
   cbAnyOf.Enabled := attributes_mode;
   cbDrawEditorAttributes.Enabled := attributes_mode;
   btnConvertEditorAttributes.Enabled := attributes_mode;
-  TileAtrList.Visible := view_mode <> vmEditTileHintText;
-  lbTileHintText.Visible := view_mode = vmEditTileHintText;
+  TileAtrList.Visible := attributes_mode;
+  lbTileHintText.Visible := not attributes_mode;
   render_tileset;
 end;
 
@@ -708,6 +723,8 @@ begin
   StatusBar.Panels[4].Text := Tileset.config_filename;
   for i := 0 to Length(menuitems) -1 do
     menuitems[i].Checked := Tileset.tileset_index = i;
+  for i := 0 to 7 do
+    TileAtrListEditor.Items[i] := Tileset.editor_attribute_names[i];
   active_tile := -1;
   reset_undo_history;
   render_tileset;
@@ -771,6 +788,8 @@ var
   fill_area_type: integer;
   selected_value: int64;
   color, color_editor: cardinal;
+  num_editor_attributes: integer;
+  i, j: integer;
   tile_text: String;
   min_x, min_y, max_x, max_y: integer;
   t1, t2: Int64;
@@ -812,7 +831,6 @@ begin
         tile_value := Tileset.get_tile_attributes(tile_index, 0, filter_mode = fmByRule);
         // Determine whether tile should be marked according to current filter mode
         mark_tile := false;
-        color_editor := 0;
         tile_text := '';
         case filter_mode of
           fmAll:            mark_tile := true;
@@ -824,10 +842,11 @@ begin
           fmNothing:        mark_tile := false;
           end;
         // Determine color according to current view mode
+        color := 0;
         if view_mode = vmDrawTilesetAttributes then
         begin
           if mark_tile then
-            get_tile_attribute_color(tile_value, color, color_editor);
+            color := get_tile_attribute_color(tile_value);
         end else
         if view_mode = vmDrawMinimapColors then
         begin
@@ -882,12 +901,23 @@ begin
           TilesetImage.Canvas.Pen.Color := color;
           TilesetImage.Canvas.Rectangle(x*32+1, y*32+1, x*32+31, y*32+31);
           TilesetImage.Canvas.Rectangle(x*32+2, y*32+2, x*32+30, y*32+30);
-          // Draw editor attribute color
-          if cbDrawEditorAttributes.Checked and (color_editor <> 0) then
+          // Draw editor attribute color markers
+          if cbDrawEditorAttributes.Checked then
           begin
-            TilesetImage.Canvas.Pen.Color := color_editor;
-            TilesetImage.Canvas.Rectangle(x*32+14, y*32+14, x*32+18, y*32+18);
-            TilesetImage.Canvas.Rectangle(x*32+15, y*32+15, x*32+17, y*32+17);
+            num_editor_attributes := 0;
+            for i := 0 to 7 do
+              if ((tile_value shr 32) and (1 shl i)) <> 0 then
+                inc(num_editor_attributes);
+            j := 0;
+            for i := 0 to 7 do
+            begin
+              if ((tile_value shr 32) and (1 shl i)) = 0 then
+                continue;
+              TilesetImage.Canvas.Pen.Color := atr_colors_editor[i];
+              TilesetImage.Canvas.Rectangle(x*32 + 16 - num_editor_attributes*2 + j*4, y*32+14, x*32 + 20 - num_editor_attributes*2 + j*4, y*32+18);
+              TilesetImage.Canvas.Rectangle(x*32 + 17 - num_editor_attributes*2 + j*4, y*32+15, x*32 + 19 - num_editor_attributes*2 + j*4, y*32+17);
+              inc(j);
+            end;
           end;
           //Draw text (i.e. number)
           if tile_text <> '' then
@@ -996,17 +1026,13 @@ end;
 
 procedure TTileAtrEditor.set_tile_attribute_value(value, not_value: int64);
 var
-  color, color_editor: cardinal;
+  color: cardinal;
   building_unit_owner, concrete_owner, spice_amount, unknown_owner: integer;
 begin
   TileAtrValue.Text := IntToHex(value, 10);
   TileAtrNotValue.Text := IntToHex(not_value, 10);
-  get_tile_attribute_color(value, color, color_editor);
+  color := get_tile_attribute_color(value);
   TileAtrColor.Color := color;
-  if color_editor = 0 then
-    TileAtrColorEditor.Color := color
-  else
-    TileAtrColorEditor.Color := color_editor;
   // Set side bit values label
   building_unit_owner := value and 7;
   concrete_owner := (value shr 17) and 7;
@@ -1042,23 +1068,14 @@ begin
     Tileset.load_rule(edRule.Text, Addr(rule));
 end;
 
-procedure TTileAtrEditor.get_tile_attribute_color(value: int64; var color, color_editor: cardinal);
+function TTileAtrEditor.get_tile_attribute_color(value: int64): cardinal;
 var
   i: integer;
-  v: int64;
 begin
-  color := $0;
-  color_editor := $0;
+  result := $0;
   for i := 0 to 31 do
     if (value and (1 shl i)) <> 0 then
-      color := color or atr_colors_game[i];
-  for i := 0 to 7 do
-  begin
-    v := 1;
-    v := v shl (i+32);
-    if (value and v) <> 0 then
-      color_editor := color_editor or atr_colors_editor[i];
-  end;
+      result := result or atr_colors_game[i];
 end;
 
 procedure TTileAtrEditor.set_tile_attributes(tile_index: integer; single_op: boolean);

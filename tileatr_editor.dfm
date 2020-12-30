@@ -272,9 +272,9 @@ object TileAtrEditor: TTileAtrEditor
     OnClick = btnClearAttributesClick
   end
   object TileAtrListEditor: TCheckListBox
-    Left = 892
+    Left = 909
     Top = 38
-    Width = 201
+    Width = 184
     Height = 141
     OnClickCheck = TileAtrListClickCheck
     Color = clWhite
@@ -285,14 +285,14 @@ object TileAtrEditor: TTileAtrEditor
     Font.Style = []
     ItemHeight = 17
     Items.Strings = (
-      'Editor Area type 1'
-      'Editor Area type 2'
-      'Editor Area type 3'
-      'Editor Area type 4'
-      'Editor Area type 5'
-      'Editor Area type 6'
-      'Editor Area type 7'
-      'Editor Area type 8')
+      ''
+      ''
+      ''
+      ''
+      ''
+      ''
+      ''
+      '')
     ParentFont = False
     Style = lbOwnerDrawFixed
     TabOrder = 13
@@ -306,16 +306,6 @@ object TileAtrEditor: TTileAtrEditor
     Color = clBlack
     ParentBackground = False
     TabOrder = 14
-    object TileAtrColorEditor: TPanel
-      Left = 8
-      Top = 8
-      Width = 5
-      Height = 5
-      BevelOuter = bvNone
-      Color = clBlack
-      ParentBackground = False
-      TabOrder = 0
-    end
   end
   object TileAtrNotValue: TEdit
     Left = 1012

@@ -1244,7 +1244,7 @@ begin
   // Get tile attributes for this tile (DEBUG only)
   if (Button = mbRight) and (ssShift in Shift) then
   begin
-    Caption := inttohex(Tileset.get_tile_attributes(Map.data[map_x, map_y].tile, Map.data[map_x, map_y].special, true), 16);
+    Caption := inttostr(Map.data[map_x, map_y].tile) + ' ' + inttohex(Tileset.get_tile_attributes(Map.data[map_x, map_y].tile, Map.data[map_x, map_y].special, true), 16);
     exit;
   end;
   // Event position selection mode
