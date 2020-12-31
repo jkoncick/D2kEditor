@@ -20,6 +20,7 @@ type
   TBlockPresetDialog = class(TForm)
     BlockPresetImage: TImage;
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -30,6 +31,8 @@ type
     variants_cnt: array[0..num_rows-1, 0..num_cols-1] of integer;
     variants_current: array[0..num_rows-1, 0..num_cols-1] of integer;
     render_letters: boolean;
+    // Pending action flags
+    pending_update_tileset: boolean;
 
   public
     // Dispatcher procedures
@@ -57,6 +60,12 @@ begin
   ClientWidth := 960;
   ClientHeight := 384;
   init_presets;
+end;
+
+procedure TBlockPresetDialog.FormShow(Sender: TObject);
+begin
+  if pending_update_tileset then
+    update_tileset;
 end;
 
 procedure TBlockPresetDialog.FormHide(Sender: TObject);
@@ -135,6 +144,12 @@ end;
 
 procedure TBlockPresetDialog.update_tileset;
 begin
+  if not Visible then
+  begin
+    pending_update_tileset := true;
+    exit;
+  end;
+  pending_update_tileset := false;
   init_presets;
 end;
 
@@ -243,7 +258,7 @@ begin
         BlockPresetImage.Canvas.CopyRect(dest_rect, Tileset.tileimage.Canvas, src_rect);
       // Draw concrete owner marker
       tile_attr := Tileset.attributes[tile];
-      if MainWindow.sbMarkOwnerSide.Down and ((tile_attr and $8800) = $8800) then
+      if (tile_attr and $8800) = $8800 then
       begin
         player := (tile_attr shr 17) and 7;
         BlockPresetImage.Canvas.Pen.Color := StructGraphics.player_colors_inv[player];

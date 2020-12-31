@@ -960,7 +960,6 @@ begin
     begin
       render_map;
       render_cursor_image;
-      BlockPresetDialog.draw_all;
     end;
   else render_map;
   end;

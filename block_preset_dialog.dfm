@@ -17,6 +17,7 @@ object BlockPresetDialog: TBlockPresetDialog
   OnCreate = FormCreate
   OnHide = FormHide
   OnKeyDown = FormKeyDown
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object BlockPresetImage: TImage
