@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Version 2.0 (released 2020-10-18)
+Version 2.0 (released 2021-01-12)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
@@ -61,6 +61,12 @@ Added: Use random paint map feature. Predefined 128*128 background map of clean 
        The advantage is better distribution of random sand/rock tiles and more natural look. Can be turned on in Settings.
 Fixed: Spacebar was not always working for switching from block preset window to tileset window
 Added: Remap tiles feature
+Added: Debug window. Accessible from Help menu. It will show some internal values, most importantly paths
+       to currently loaded files (configuration, graphics) to easily track which modded files are used.
+Added: Built-in Mission Browser / Launcher, showing a table with mission details (name, author, ...)
+       providing easy overview of all of your mission settings. You can select specific columns to be shown or not.
+Changed: The way how "Unassign .mis file" option and unchecking "Use mission .ini file..." checkbox behaves.
+         When you save the map, it will delete .MIS/.ini file from disk.
 Added: "D2k Mapping Manual" document
 
 Major new features and changes:
@@ -68,8 +74,8 @@ Major new features and changes:
    Buildings and units are displayed in exactly same way as shown in-game, supporting mods!
 2) Added Structures Editor where you can edit buildings, units, weapons, armour and much more.
    This is going to be a better replacement of TibEd, having much more features!
-3) Added support for new Mission Launcher and added a built-in launcher into D2kEditor.
-   Also added support for loading per-mission/per-mod editor configuration, player names and colors.
+3) Added support for new Mission Launcher, which means support for loading 
+   per-mission/per-mod graphics, configuration, player names and colors.
 4) Merged TileAtrEditor program into D2kEditor, so D2kEditor now has built-in Tile Attribute editor. 
    TileAtrEditor became obsolete and no longer needed.
 5) Significant improvements related to creating maps using custom tilesets. 
@@ -111,6 +117,7 @@ Ad 3)
 - Editor can load modified buildings&units graphics for individual mission from specified Campaign and Mods folder
 - Editor can load modified buildings&units configuration for individual mission from specified Campaign and Mods folder
 - Last two points are useful for mapping with modded game resources (i.e. new/replaced units)
+- Editor can load tileset graphics&attributes for individual mission from specified Campaign and Mods folder 
 - Editor will load following graphics/config files for individual mission from this folder structure:
 
 {Dune2000 root folder}
@@ -127,11 +134,22 @@ Ad 3)
            |- misc_objects.ini
            |- limits.ini
            |- players.ini
+        |- tilesets
+           |- BLOX****.ini
         |- data
            |- bin
               |- Templates.bin
+              |- ARMOUR.BIN
+              |- BUILEXP.BIN
+              |- SPEED.BIN
+              |- TECHPOS.BIN
               |- TILEDATA.BIN
+              |- TILEATR*.BIN
            |- DATA.R16
+           |- BLOX****.R16
+           |- UI_DATA
+              |- Text.UIB
+              |- samples.uib
 
 
 Ad 4)
@@ -178,6 +196,7 @@ Ad 5)
 
 Ad 6)
 - Added "name" property under [Basic] section for specification of user-friendly tileset name
+- Added "version" property to determine compatibility with specific version of editor
 - Changed the way how rules (minimap color rules, fill area rules) are specified. Rules are now specified in this form:
   $attrubites_tile_must_have
   -OR-
@@ -186,6 +205,7 @@ Ad 6)
   To design a rule, you can simply use specific filter on Tile Attributes editor and just copy the rule specification.
 - The minimap colors are now specified in "$RRGGBB" format instead of "$BBGGRR" format.
 - Fill area rules now have names. The names correspond to area types in Select mode.
+- Editor attribute names are customizable, which can help understand the meaning and purpose of specific attribute
 - You can specify up to 12 paint groups in [Paint_Tile_Groups] section.
   Groups A,B,C,D are reserved for thin spice, thick spice, concrete and void.
   Groups 1-8 are tileset-specific groups you can use for any terrain type.
