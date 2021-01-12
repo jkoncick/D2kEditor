@@ -224,8 +224,6 @@ type
     procedure save_tileatr;
     procedure save_tileatr_to_file(filename: String);
 
-    procedure convert_editor_attributes;
-
     // Functions related to tileset configuration
     function get_paint_tile_group_char(group: integer): char;
     function get_tile_attributes(tile, special: word; use_internal_attributes: boolean): Int64;
@@ -1009,17 +1007,6 @@ begin
   save_tileatr;
   // Register event in dispatcher
   Dispatcher.register_event(evTileatrFilenameChange);
-end;
-
-procedure TTileset.convert_editor_attributes;
-var
-  i: integer;
-begin
-  for i := 0 to cnt_tileset_tiles-1 do
-  begin
-    attributes_editor[i] := attributes_editor[i] or ((attributes[i] shr 4) and $0F);
-    attributes[i] := attributes[i] and $FFFFFF00;
-  end;
 end;
 
 function TTileset.get_paint_tile_group_char(group: integer): char;

@@ -240,6 +240,8 @@ begin
     for y := 0 to preset.height - 1 do
     begin
       tile := Tileset.block_preset_tiles[preset.block_preset_tile_index + x + y * preset.width];
+      if tile = 65535 then
+        continue;
       tile_x := tile mod 20;
       tile_y := tile div 20;
       src_rect := Rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32);

@@ -119,7 +119,6 @@ type
     SaveTileAtras1: TMenuItem;
     SaveTileAtrDialog: TSaveDialog;
     rgViewMode: TRadioGroup;
-    btnConvertEditorAttributes: TButton;
     N5: TMenuItem;
     Exit1: TMenuItem;
     cbShowGrid: TCheckBox;
@@ -143,6 +142,9 @@ type
     stSideBitValues: TStaticText;
     stSpeedModifier: TStaticText;
     Applychanges1: TMenuItem;
+    cbDrawOwnerSide: TCheckBox;
+    cbHideUnmarkedTiles: TCheckBox;
+    cbShowHoverText: TCheckBox;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -182,7 +184,6 @@ type
     procedure rgFilterModeClick(Sender: TObject);
     procedure cbAnyOfClick(Sender: TObject);
     procedure cbOptionClick(Sender: TObject);
-    procedure btnConvertEditorAttributesClick(Sender: TObject);
     procedure cbAlwaysOnTopClick(Sender: TObject);
     procedure rgViewModeClick(Sender: TObject);
     procedure edRuleChange(Sender: TObject);
@@ -242,7 +243,7 @@ var
 
 implementation
 
-uses main, _utils, _stringtable, _settings, _structures, _dispatcher;
+uses main, _utils, _stringtable, _settings, _structures, _graphics, _dispatcher;
 
 {$R *.dfm}
 
@@ -472,8 +473,15 @@ procedure TTileAtrEditor.TilesetImageMouseMove(Sender: TObject;
   Shift: TShiftState; X, Y: Integer);
 var
   pos_x, pos_y: integer;
+  tile_index: integer;
   is_custom: boolean;
   tile_hint_text_id: integer;
+  view_mode: ViewMode;
+  hint_str: string;
+  show_hint: boolean;
+  i: integer;
+  tile_value: int64;
+  and_value: int64;
 begin
   pos_x := X div 32;
   pos_y := Y div 32 + tileset_top;
@@ -481,7 +489,8 @@ begin
     exit;
   mouse_old_x := pos_x;
   mouse_old_y := pos_y;
-  StatusBar.Panels[0].Text := 'x : ' + inttostr(pos_x) + ' y : ' + inttostr(pos_y) + '  (' + inttostr(pos_y*20 + pos_x) + ')';
+  tile_index := pos_y*20 + pos_x;
+  StatusBar.Panels[0].Text := 'x : ' + inttostr(pos_x) + ' y : ' + inttostr(pos_y) + '  (' + inttostr(tile_index) + ')';
   if (not select_started) and (ssLeft in Shift) then
     TilesetImageMouseDown(Sender, mbLeft, Shift, X, Y);
   if select_started and ((pos_x <> select_end_x) or (pos_y <> select_end_y)) then
@@ -490,19 +499,51 @@ begin
     select_end_y := pos_y;
     render_tileset;
   end;
-  if ViewMode(rgViewMode.ItemIndex) = vmEditTileHintText then
+  view_mode := ViewMode(rgViewMode.ItemIndex);
+  hint_str := '';
+  show_hint := false;
+  if view_mode = vmEditTileHintText then
   begin
-    tile_hint_text_id := Tileset.tile_hint_text[pos_x + pos_y*20];
+    tile_hint_text_id := Tileset.tile_hint_text[tile_index];
     if tile_hint_text_id <> -1 then
     begin
-      Application.CancelHint;
-      TilesetImage.ShowHint := true;
-      TilesetImage.Hint := StringTable.get_text(tile_hint_text_id, false, is_custom);
-    end else
-    begin
-      TilesetImage.ShowHint := false;
+      hint_str := StringTable.get_text(tile_hint_text_id, false, is_custom);
+      show_hint := true;
     end;
+  end
+  else if cbShowHoverText.Checked then
+  begin
+    case view_mode of
+      vmDrawTilesetAttributes:
+        begin
+          tile_value := Tileset.get_tile_attributes(tile_index, 0, false);
+          for i := 0 to 39 do
+          begin
+            and_value := 1;
+            and_value := and_value shl i;
+            if (tile_value and and_value) <> 0 then
+            begin
+              if i < 32 then
+                hint_str := hint_str + TileAtrList.Items[i] + #13
+              else
+                hint_str := hint_str + '* ' + TileAtrListEditor.Items[i-32] + #13;
+            end;
+          end;
+          hint_str := copy(hint_str, 1, Length(hint_str) - 1);
+        end;
+      vmDrawMinimapColors: hint_str := '$' + inttohex(Tileset.get_tile_color(tile_index, 0), 6);
+      vmDrawFillAreaGroups: hint_str := Tileset.fill_area_rules[Tileset.get_fill_area_type(tile_index, 0)].name;
+      vmCheckBlockPresetCoverage: hint_str := inttostr(Tileset.block_preset_coverage[tile_index]) + ' occurences';
+    end;
+    show_hint := true;
   end;
+  if show_hint then
+  begin
+    Application.CancelHint;
+    TilesetImage.ShowHint := true;
+    TilesetImage.Hint := hint_str;
+  end else
+    TilesetImage.ShowHint := false;
 end;
 
 procedure TTileAtrEditor.TilesetImageMouseUp(Sender: TObject;
@@ -635,12 +676,6 @@ begin
   render_tileset;
 end;
 
-procedure TTileAtrEditor.btnConvertEditorAttributesClick(Sender: TObject);
-begin
-  Tileset.convert_editor_attributes;
-  render_tileset;
-end;
-
 procedure TTileAtrEditor.cbAlwaysOnTopClick(Sender: TObject);
 begin
   if cbAlwaysOnTop.Checked then
@@ -665,7 +700,8 @@ begin
   edRule.Enabled := attributes_mode;
   cbAnyOf.Enabled := attributes_mode;
   cbDrawEditorAttributes.Enabled := attributes_mode;
-  btnConvertEditorAttributes.Enabled := attributes_mode;
+  cbDrawOwnerSide.Enabled := attributes_mode;
+  cbShowHoverText.Enabled := attributes_mode;
   TileAtrList.Visible := attributes_mode;
   lbTileHintText.Visible := not attributes_mode;
   render_tileset;
@@ -919,9 +955,37 @@ begin
               inc(j);
             end;
           end;
-          //Draw text (i.e. number)
+          // Draw building/unit owner side marker
+          if (view_mode = vmDrawTilesetAttributes) and cbDrawOwnerSide.Checked and ((tile_value and $3F8) <> 0) then
+          begin
+            color := StructGraphics.player_colors_inv[tile_value and 7];
+            TilesetImage.Canvas.Pen.Color := color;
+            TilesetImage.Canvas.Brush.Color := color;
+            TilesetImage.Canvas.Brush.Style := bsSolid;
+            TilesetImage.Canvas.Ellipse(x*32 + 11, y*32 + 3, x*32 + 21, y*32 + 14);
+            TilesetImage.Canvas.Brush.Style := bsClear;
+          end;
+          // Draw concrete owner side marker
+          if (view_mode = vmDrawTilesetAttributes) and cbDrawOwnerSide.Checked and ((tile_value and $800) <> 0) then
+          begin
+            color := StructGraphics.player_colors_inv[(tile_value shr 17) and 7];
+            TilesetImage.Canvas.Pen.Color := color;
+            TilesetImage.Canvas.Brush.Color := color;
+            TilesetImage.Canvas.Brush.Style := bsSolid;
+            TilesetImage.Canvas.Ellipse(x*32 + 11, y*32 + 18, x*32 + 21, y*32 + 29);
+            TilesetImage.Canvas.Brush.Style := bsClear;
+          end;
+          // Draw text (i.e. number)
           if tile_text <> '' then
             TilesetImage.Canvas.TextOut(x*32 + (32 - TilesetImage.Canvas.TextWidth(tile_text)) div 2, y*32+10, tile_text);
+        end else
+        if cbHideUnmarkedTiles.Checked then
+        begin
+          TilesetImage.Canvas.Pen.Color := Settings.GridColor;
+          TilesetImage.Canvas.Brush.Color := Settings.GridColor;
+          TilesetImage.Canvas.Brush.Style := bsSolid;
+          TilesetImage.Canvas.Rectangle(x*32, y*32, x*32 + 32, y*32 + 32);
+          TilesetImage.Canvas.Brush.Style := bsClear;
         end;
         // Highlight selected tile
         if (active_tile = tile_index) and cbMarkSelection.Checked then
@@ -1038,7 +1102,7 @@ begin
   concrete_owner := (value shr 17) and 7;
   spice_amount := (value shr 20) and 7;
   unknown_owner := (value shr 25) and 7;
-  stSideBitValues.Caption := Format('Building/Unit owner = %d  Concrete owner = %d  Spice amount = %d  Unknown owner = %d', [building_unit_owner, concrete_owner, spice_amount, unknown_owner]);
+  stSideBitValues.Caption := Format('Owner: %d  Conc: %d  Spice: %d  Unkn.Own: %d', [building_unit_owner, concrete_owner, spice_amount, unknown_owner]);
   // Set speed modifier label
   update_speed_modifiers;
 end;
