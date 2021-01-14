@@ -746,7 +746,7 @@ var
   tmp_filename: String;
 begin
   tmp_filename := find_file('Data\bin\BUILEXP.BIN', 'game');
-  if (tmp_filename = '') or (tmp_filename = builexp_bin_filename) then
+  if (tmp_filename = '') or ((tmp_filename = builexp_bin_filename) and not force) then
     exit;
   builexp_bin_filename := tmp_filename;
   // Read BUILEXP.BIN file
