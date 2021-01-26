@@ -226,10 +226,6 @@ type
     UnitTypeCount:           byte;
   end;
 
-const NUM_TECHNICAL_GRAPHICAL_ENTRIES = 206;
-const NUM_EMPTY_UNIT_SIDEBAR_ICONS = 10;
-const MAX_BUILDING_SIZE = 4;
-
 // *****************************************************************************
 // BUILEXP.BIN file definitions
 // *****************************************************************************
@@ -334,6 +330,56 @@ type
   TTemplatesOtherByteType = (tobtNone, tobtBuilding, tobtUnit, tobtWeapon, tobtExplosion);
 
 // *****************************************************************************
+// Auxiliary constants and types
+// *****************************************************************************
+
+const MAX_BUILDING_SIZE = 4;
+
+type
+  TItemNameList = array[0..0, 0..49] of char;
+  TItemNameListPtr = ^TItemNameList;
+
+// *****************************************************************************
+// Data Export / Import structures
+// *****************************************************************************
+
+type
+  TBuildingExportData = record
+    building_name:             array[0..449] of char;
+    building_template:         TBuildingTemplate;
+    builexp_entry:             TBuilExpEntry;
+    buildup_art_frames:        integer;
+    ref_building_type:         array[0..49] of char;
+    ref_prereq1_building_type: array[0..49] of char;
+    ref_prereq2_building_type: array[0..49] of char;
+    ref_armour_type:           array[0..49] of char;
+    ref_primary_weapon:        array[0..49] of char;
+    ref_secondary_weapon:      array[0..49] of char;
+    ref_death_explosion:       array[0..49] of char;
+    ref_firing_explosion:      array[0..49] of char;
+    icon_data:                 array[0..3368] of byte;
+  end;
+
+  TBuildingExportDataPtr = ^TBuildingExportData;
+
+type
+  TUnitExportData = record
+    unit_name:                 array[0..449] of char;
+    unit_template:             TUnitTemplate;
+    ref_unit_type:             array[0..49] of char;
+    ref_prereq1_building_type: array[0..49] of char;
+    ref_prereq2_building_type: array[0..49] of char;
+    ref_armour_type:           array[0..49] of char;
+    ref_primary_weapon:        array[0..49] of char;
+    ref_secondary_weapon:      array[0..49] of char;
+    ref_death_explosion:       array[0..49] of char;
+    ref_firing_explosion:      array[0..49] of char;
+    icon_data:                 array[0..3368] of byte;
+  end;
+
+  TUnitExportDataPtr = ^TUnitExportData;
+
+// *****************************************************************************
 // TStructures class
 // *****************************************************************************
 
@@ -403,6 +449,9 @@ type
     templates_other: TStringList;
     templates_other_byte_types: array[0..85] of TTemplatesOtherByteType;
 
+    // Clipboard formats
+    clipboard_format_building: cardinal;
+    clipboard_format_unit: cardinal;
   public
     // General procedures
     procedure init;
@@ -446,6 +495,25 @@ type
     procedure load_limits_ini;
     // Templates other related procedures
     procedure load_templates_other_txt;
+
+    // Data Export/Import, Copy/Paste and other manipulation procedures
+    procedure store_item_reference(var data; item_index: integer; item_list: TItemNameListPtr);
+
+    procedure store_building_data(index: integer; data: TBuildingExportDataPtr);
+    procedure restore_building_data(index: integer; data: TBuildingExportDataPtr);
+    procedure copy_building(index: integer);
+    function paste_building(index: integer): boolean;
+    procedure export_building(index: integer; filename: string);
+    procedure import_building(index: integer; filename: string);
+    procedure swap_buildings(index1, index2: integer);
+
+    procedure store_unit_data(index: integer; data: TUnitExportDataPtr);
+    procedure restore_unit_data(index: integer; data: TUnitExportDataPtr);
+    procedure copy_unit(index: integer);
+    function paste_unit(index: integer): boolean;
+    procedure export_unit(index: integer; filename: string);
+    procedure import_unit(index: integer; filename: string);
+    procedure swap_units(index1, index2: integer);
   end;
 
 var
@@ -453,7 +521,7 @@ var
 
 implementation
 
-uses Forms, IniFiles, _settings, _mission, _missionini, _graphics, _stringtable, _dispatcher;
+uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _graphics, _stringtable, _dispatcher;
 
 procedure TStructures.init;
 begin
@@ -468,6 +536,8 @@ begin
   load_players_ini;
   load_limits_ini;
   load_templates_other_txt;
+  clipboard_format_building := RegisterClipboardFormat('D2kEditorBuildingExportData');
+  clipboard_format_unit := RegisterClipboardFormat('D2kEditorUnitExportData');
 end;
 
 procedure TStructures.load_templates_bin(force: boolean);
@@ -504,21 +574,25 @@ var
 begin
   data := Addr(templates);
   index := NUM_TECHNICAL_GRAPHICAL_ENTRIES;
+  unit_art_image_indexes[0] := index;
   for i := 0 to data.UnitArtCount-1 do
   begin
     unit_art_image_indexes[i] := index;
     inc(index, data.UnitArtAnimationFrames[i] * data.UnitArtDirectionFrames[i]);
   end;
+  building_art_image_indexes[0] := index;
   for i := 0 to data.BuildingArtCount-1 do
   begin
     building_art_image_indexes[i] := index;
     inc(index, data.BuildingArtDirections[i] * 2 + 1);
   end;
+  projectile_art_image_indexes[0] := index;
   for i := 0 to data.ProjectileArtCount-1 do
   begin
     projectile_art_image_indexes[i] := index;
     inc(index, data.ProjectileArtDirections[i]);
   end;
+  animation_art_image_indexes[0] := index;
   for i := 0 to data.AnimationArtCount-1 do
   begin
     animation_art_image_indexes[i] := index;
@@ -982,6 +1056,279 @@ begin
     else
       templates_other_byte_types[i] := tobtNone
   end;
+end;
+
+procedure TStructures.store_item_reference(var data; item_index: integer; item_list: TItemNameListPtr);
+begin
+  if item_index = -1 then
+    FillChar(data, 50, 0)
+  else
+    Move(item_list[item_index], data, 50);
+end;
+
+procedure TStructures.store_building_data(index: integer; data: TBuildingExportDataPtr);
+var
+  icon_ptr: TR16EntryHeaderPtr;
+begin
+  // Actual building data
+  Move(templates.BuildingNameStrings[index], data.building_name, Length(data.building_name));
+  Move(templates.BuildingDefinitions[index], data.building_template, sizeof(TBuildingTemplate));
+  Move(builexp[index], data.builexp_entry, sizeof(TBuilExpEntry));
+  // Buildup art frames
+  data.buildup_art_frames := templates.BuildupArtFrames[index];
+  // References
+  store_item_reference(data.ref_building_type, data.building_template.BuildingType, Addr(templates.BuildingTypeStrings));
+  store_item_reference(data.ref_prereq1_building_type, data.building_template.Prereq1BuildingType, Addr(templates.BuildingTypeStrings));
+  store_item_reference(data.ref_prereq2_building_type, data.building_template.Prereq2BuildingType, Addr(templates.BuildingTypeStrings));
+  store_item_reference(data.ref_armour_type, data.building_template.ArmorType, Addr(armour.ArmourTypeStrings));
+  store_item_reference(data.ref_primary_weapon, data.building_template.PrimaryWeapon, Addr(templates.WeaponStrings));
+  store_item_reference(data.ref_secondary_weapon, data.building_template.SecondaryWeapon, Addr(templates.WeaponStrings));
+  store_item_reference(data.ref_death_explosion, data.building_template.DeathExplosion, Addr(templates.ExplosionStrings));
+  store_item_reference(data.ref_firing_explosion, data.building_template.FiringExplosion, Addr(templates.ExplosionStrings));
+  // Building icon
+  icon_ptr := StructGraphics.get_structure_image_header(first_building_icon_image_index + index);
+  if icon_ptr.EntryType <> 0 then
+    Move(icon_ptr.EntryType, data.icon_data, sizeof(data.icon_data))
+  else
+    FillChar(data.icon_data, sizeof(data.icon_data), 0);
+end;
+
+procedure TStructures.restore_building_data(index: integer; data: TBuildingExportDataPtr);
+begin
+  // Actual building data
+  Move(data.building_name, templates.BuildingNameStrings[index], Length(data.building_name));
+  Move(data.building_template, templates.BuildingDefinitions[index], sizeof(TBuildingTemplate));
+  Move(data.builexp_entry, builexp[index], sizeof(TBuilExpEntry));
+  // Buildup art frames
+  if templates.BuildupArtFrames[index] <> data.buildup_art_frames then
+  begin
+    StructGraphics.change_image_entry_count(buildup_art_image_indexes[index], templates.BuildupArtFrames[index], data.buildup_art_frames);
+    templates.BuildupArtFrames[index] := data.buildup_art_frames;
+    compute_image_indexes;
+  end;
+  // Building icon
+  if data.icon_data[0] <> 0 then
+    StructGraphics.modify_image_data(first_building_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
+  else
+    StructGraphics.modify_image_data(first_building_icon_image_index + index, data.icon_data, 1)
+end;
+
+procedure TStructures.copy_building(index: integer);
+var
+  handle: THandle;
+  pointer: TBuildingExportDataPtr;
+begin
+  OpenClipboard(Application.Handle);
+  EmptyClipboard;
+
+  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, SizeOf(TBuildingExportData));
+  pointer := GlobalLock(handle);
+
+  store_building_data(index, pointer);
+
+  GlobalUnLock(handle);
+  SetClipboardData(clipboard_format_building, handle);
+  CloseClipboard;
+end;
+
+function TStructures.paste_building(index: integer): boolean;
+var
+  handle: THandle;
+  pointer: TBuildingExportDataPtr;
+begin
+  result := false;
+  if not Clipboard.HasFormat(clipboard_format_building) then
+    exit;
+  OpenClipboard(Application.Handle);
+  handle := GetClipboardData(clipboard_format_building);
+  pointer := GlobalLock(handle);
+
+  restore_building_data(index, pointer);
+
+  GlobalUnLock(handle);
+  CloseClipboard;
+  result := true;
+end;
+
+procedure TStructures.export_building(index: integer; filename: string);
+var
+  building_data: TBuildingExportData;
+begin
+  store_building_data(index, Addr(building_data));
+  save_binary_file(filename, building_data, sizeof(building_data));
+end;
+
+procedure TStructures.import_building(index: integer; filename: string);
+var
+  building_data: TBuildingExportData;
+begin
+  load_binary_file(filename, building_data, sizeof(building_data));
+  restore_building_data(index, Addr(building_data));
+end;
+
+procedure TStructures.swap_buildings(index1, index2: integer);
+var
+  tmp_building_name: array[0..449] of char;
+  tmp_building_template: TBuildingTemplate;
+  tmp_builexp_entry: TBuilExpEntry;
+  tmp_buildup_art_frames: integer;
+  tmp_building_animation_frames: integer;
+  i: integer;
+begin
+  // Swap building data
+  move(templates.BuildingNameStrings[index1,0], tmp_building_name[0], Length(tmp_building_name));
+  move(templates.BuildingNameStrings[index2,0], templates.BuildingNameStrings[index1,0], Length(tmp_building_name));
+  move(tmp_building_name[0], templates.BuildingNameStrings[index2,0], Length(tmp_building_name));
+  tmp_building_template := templates.BuildingDefinitions[index1];
+  templates.BuildingDefinitions[index1] := templates.BuildingDefinitions[index2];
+  templates.BuildingDefinitions[index2] := tmp_building_template;
+  tmp_builexp_entry := builexp[index1];
+  builexp[index1] := builexp[index2];
+  builexp[index2] := tmp_builexp_entry;
+  StructGraphics.swap_image_entries(first_building_icon_image_index + index1, first_building_icon_image_index + index2, 1, 1);
+  // Swap building animations
+  StructGraphics.swap_image_entries(building_animation_image_indexes[index1], building_animation_image_indexes[index2], templates.BuildingAnimationFrames[index1], templates.BuildingAnimationFrames[index2]);
+  tmp_building_animation_frames := templates.BuildingAnimationFrames[index1];
+  templates.BuildingAnimationFrames[index1] := templates.BuildingAnimationFrames[index2];
+  templates.BuildingAnimationFrames[index2] := tmp_building_animation_frames;
+  for i := 0 to templates.BuildingCount - 1 do
+  begin
+    if (templates.BuildingDefinitions[i].Flags and BF_HAS_ANIMATION) = 0 then
+      continue;
+    if templates.BuildingDefinitions[i].BuildingAnimation = index1 then
+      templates.BuildingDefinitions[i].BuildingAnimation := index2
+    else if templates.BuildingDefinitions[i].BuildingAnimation = index2 then
+      templates.BuildingDefinitions[i].BuildingAnimation := index1;
+  end;
+  // Swap buildup animations
+  StructGraphics.swap_image_entries(buildup_art_image_indexes[index1], buildup_art_image_indexes[index2], templates.BuildupArtFrames[index1], templates.BuildupArtFrames[index2]);
+  tmp_buildup_art_frames := templates.BuildupArtFrames[index1];
+  templates.BuildupArtFrames[index1] := templates.BuildupArtFrames[index2];
+  templates.BuildupArtFrames[index2] := tmp_buildup_art_frames;
+  for i := 0 to templates.BuildingCount - 1 do
+  begin
+    if templates.BuildupArtFrames[i] = 0 then
+      continue;
+    if templates.BuildingDefinitions[i].BuildupArt = index1 then
+      templates.BuildingDefinitions[i].BuildupArt := index2
+    else if templates.BuildingDefinitions[i].BuildupArt = index2 then
+      templates.BuildingDefinitions[i].BuildupArt := index1;
+  end;
+  compute_image_indexes;
+end;
+
+procedure TStructures.store_unit_data(index: integer; data: TUnitExportDataPtr);
+var
+  icon_ptr: TR16EntryHeaderPtr;
+begin
+  // Actual unit data
+  Move(templates.UnitNameStrings[index], data.unit_name, Length(data.unit_name));
+  Move(templates.UnitDefinitions[index], data.unit_template, sizeof(TUnitTemplate));
+  // References
+  store_item_reference(data.ref_unit_type, data.unit_template.UnitType, Addr(templates.UnitTypeStrings));
+  store_item_reference(data.ref_prereq1_building_type, data.unit_template.Prereq1BuildingType, Addr(templates.BuildingTypeStrings));
+  store_item_reference(data.ref_prereq2_building_type, data.unit_template.Prereq2BuildingType, Addr(templates.BuildingTypeStrings));
+  store_item_reference(data.ref_armour_type, data.unit_template.ArmorType, Addr(armour.ArmourTypeStrings));
+  store_item_reference(data.ref_primary_weapon, data.unit_template.PrimaryWeapon, Addr(templates.WeaponStrings));
+  store_item_reference(data.ref_secondary_weapon, data.unit_template.SecondaryWeapon, Addr(templates.WeaponStrings));
+  store_item_reference(data.ref_death_explosion, data.unit_template.DeathExplosion, Addr(templates.ExplosionStrings));
+  store_item_reference(data.ref_firing_explosion, data.unit_template.FiringExplosion, Addr(templates.ExplosionStrings));
+  // Unit icon
+  icon_ptr := StructGraphics.get_structure_image_header(first_unit_icon_image_index + index);
+  if icon_ptr.EntryType <> 0 then
+    Move(icon_ptr.EntryType, data.icon_data, sizeof(data.icon_data))
+  else
+    FillChar(data.icon_data, sizeof(data.icon_data), 0);
+end;
+
+procedure TStructures.restore_unit_data(index: integer; data: TUnitExportDataPtr);
+begin
+  // Actual unit data
+  Move(data.unit_name, templates.UnitNameStrings[index], Length(data.unit_name));
+  Move(data.unit_template, templates.UnitDefinitions[index], sizeof(TUnitTemplate));
+  // Unit icon
+  if data.icon_data[0] <> 0 then
+    StructGraphics.modify_image_data(first_unit_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
+  else
+    StructGraphics.modify_image_data(first_unit_icon_image_index + index, data.icon_data, 1);
+end;
+
+procedure TStructures.copy_unit(index: integer);
+var
+  handle: THandle;
+  pointer: TUnitExportDataPtr;
+begin
+  OpenClipboard(Application.Handle);
+  EmptyClipboard;
+
+  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, SizeOf(TUnitExportData));
+  pointer := GlobalLock(handle);
+
+  store_unit_data(index, pointer);
+
+  GlobalUnLock(handle);
+  SetClipboardData(clipboard_format_unit, handle);
+  CloseClipboard;
+end;
+
+function TStructures.paste_unit(index: integer): boolean;
+var
+  handle: THandle;
+  pointer: TUnitExportDataPtr;
+begin
+  result := false;
+  if not Clipboard.HasFormat(clipboard_format_unit) then
+    exit;
+  OpenClipboard(Application.Handle);
+  handle := GetClipboardData(clipboard_format_unit);
+  pointer := GlobalLock(handle);
+
+  restore_unit_data(index, pointer);
+
+  GlobalUnLock(handle);
+  CloseClipboard;
+  result := true;
+end;
+
+procedure TStructures.export_unit(index: integer; filename: string);
+var
+  unit_data: TUnitExportData;
+begin
+  store_unit_data(index, Addr(unit_data));
+  save_binary_file(filename, unit_data, sizeof(unit_data));
+end;
+
+procedure TStructures.import_unit(index: integer; filename: string);
+var
+  unit_data: TUnitExportData;
+begin
+  load_binary_file(filename, unit_data, sizeof(unit_data));
+  restore_unit_data(index, Addr(unit_data));
+end;
+
+procedure TStructures.swap_units(index1, index2: integer);
+var
+  tmp_unit_name: array[0..449] of char;
+  tmp_unit_template: TUnitTemplate;
+  i: integer;
+begin
+  // Swap unit data
+  move(templates.UnitNameStrings[index1,0], tmp_unit_name[0], Length(tmp_unit_name));
+  move(templates.UnitNameStrings[index2,0], templates.UnitNameStrings[index1,0], Length(tmp_unit_name));
+  move(tmp_unit_name[0], templates.UnitNameStrings[index2,0], Length(tmp_unit_name));
+  tmp_unit_template := templates.UnitDefinitions[index1];
+  templates.UnitDefinitions[index1] := templates.UnitDefinitions[index2];
+  templates.UnitDefinitions[index2] := tmp_unit_template;
+  StructGraphics.swap_image_entries(first_unit_icon_image_index + index1, first_unit_icon_image_index + index2, 1, 1);
+  // Adjust templates other
+  for i := 0 to Length(templates.Other) - 1 do
+    if templates_other_byte_types[i] = tobtUnit then
+    begin
+      if templates.Other[i] = index1 then
+        templates.Other[i] := index2
+      else if templates.Other[i] = index2 then
+        templates.Other[i] := index1;
+    end;
 end;
 
 end.

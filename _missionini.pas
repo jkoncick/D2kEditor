@@ -401,7 +401,7 @@ begin
   Structures.load_limits_ini;
   Structures.load_templates_other_txt;
   StructGraphics.load_colours_bin;
-  StructGraphics.load_data_r16;
+  StructGraphics.load_data_r16(false);
   StructGraphics.load_graphics_misc_objects;
   StringTable.load_text_uib(TextUib);
   StringTable.load_samples_uib;

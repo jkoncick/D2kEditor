@@ -32,7 +32,10 @@ object StructuresEditor: TStructuresEditor
     Height = 19
     Panels = <
       item
-        Width = 250
+        Width = 544
+      end
+      item
+        Width = 50
       end>
   end
   object PageControl: TPageControl
@@ -89,15 +92,16 @@ object StructuresEditor: TStructuresEditor
           Left = 0
           Top = 16
           Width = 225
-          Height = 593
+          Height = 565
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbBuildingListClick
+          OnKeyDown = lbBuildingListKeyDown
         end
         object btnBuildingAdd: TButton
           Left = 0
           Top = 612
-          Width = 57
+          Width = 56
           Height = 25
           Caption = 'Add new'
           TabOrder = 1
@@ -106,7 +110,7 @@ object StructuresEditor: TStructuresEditor
         object btnBuildingRemove: TButton
           Left = 56
           Top = 612
-          Width = 73
+          Width = 72
           Height = 25
           Caption = 'Remove last'
           TabOrder = 2
@@ -115,7 +119,7 @@ object StructuresEditor: TStructuresEditor
         object btnBuildingCopy: TButton
           Left = 128
           Top = 612
-          Width = 49
+          Width = 48
           Height = 25
           Caption = 'Copy'
           TabOrder = 3
@@ -129,6 +133,42 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Paste'
           TabOrder = 4
           OnClick = btnBuildingPasteClick
+        end
+        object btnBuildingExport: TButton
+          Left = 128
+          Top = 587
+          Width = 48
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 5
+          OnClick = btnBuildingExportClick
+        end
+        object btnBuildingImport: TButton
+          Left = 176
+          Top = 587
+          Width = 49
+          Height = 25
+          Caption = 'Import'
+          TabOrder = 6
+          OnClick = btnBuildingImportClick
+        end
+        object btnBuildingMoveUp: TButton
+          Left = 0
+          Top = 587
+          Width = 56
+          Height = 25
+          Caption = 'Move up'
+          TabOrder = 7
+          OnClick = btnBuildingMoveUpClick
+        end
+        object btnBuildingMoveDown: TButton
+          Left = 56
+          Top = 587
+          Width = 72
+          Height = 25
+          Caption = 'Move down'
+          TabOrder = 8
+          OnClick = btnBuildingMoveDownClick
         end
       end
       object gbBuildingBasic: TGroupBox
@@ -1254,15 +1294,16 @@ object StructuresEditor: TStructuresEditor
           Left = 0
           Top = 16
           Width = 225
-          Height = 593
+          Height = 565
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbUnitListClick
+          OnKeyDown = lbUnitListKeyDown
         end
         object btnUnitAdd: TButton
           Left = 0
           Top = 612
-          Width = 57
+          Width = 56
           Height = 25
           Caption = 'Add new'
           TabOrder = 1
@@ -1271,7 +1312,7 @@ object StructuresEditor: TStructuresEditor
         object btnUnitRemove: TButton
           Left = 56
           Top = 612
-          Width = 73
+          Width = 72
           Height = 25
           Caption = 'Remove last'
           TabOrder = 2
@@ -1280,7 +1321,7 @@ object StructuresEditor: TStructuresEditor
         object btnUnitCopy: TButton
           Left = 128
           Top = 612
-          Width = 49
+          Width = 48
           Height = 25
           Caption = 'Copy'
           TabOrder = 3
@@ -1294,6 +1335,42 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Paste'
           TabOrder = 4
           OnClick = btnUnitPasteClick
+        end
+        object btnUnitExport: TButton
+          Left = 128
+          Top = 587
+          Width = 48
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 5
+          OnClick = btnUnitExportClick
+        end
+        object btnUnitImport: TButton
+          Left = 176
+          Top = 587
+          Width = 49
+          Height = 25
+          Caption = 'Import'
+          TabOrder = 6
+          OnClick = btnUnitImportClick
+        end
+        object btnUnitMoveUp: TButton
+          Left = 0
+          Top = 587
+          Width = 56
+          Height = 25
+          Caption = 'Move up'
+          TabOrder = 7
+          OnClick = btnUnitMoveUpClick
+        end
+        object btnUnitMoveDown: TButton
+          Left = 56
+          Top = 587
+          Width = 72
+          Height = 25
+          Caption = 'Move down'
+          TabOrder = 8
+          OnClick = btnUnitMoveDownClick
         end
       end
       object gbUnitBasic: TGroupBox
@@ -1356,7 +1433,7 @@ object StructuresEditor: TStructuresEditor
           Width = 241
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
       end
@@ -1460,7 +1537,7 @@ object StructuresEditor: TStructuresEditor
           Width = 201
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 4
         end
         object cbxUnitPrereq2BuildingType: TComboBox
@@ -1469,7 +1546,7 @@ object StructuresEditor: TStructuresEditor
           Width = 201
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
         object seUnitPrereq1UpgradesNeeded: TSpinEdit
@@ -1577,7 +1654,7 @@ object StructuresEditor: TStructuresEditor
           Width = 145
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object cbxUnitHealthBarSize: TComboBox
@@ -1715,7 +1792,7 @@ object StructuresEditor: TStructuresEditor
           Width = 113
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object seUnitUnitRotationSpeed: TSpinEdit
@@ -1797,7 +1874,7 @@ object StructuresEditor: TStructuresEditor
           Width = 185
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
         object cbxUnitSecondaryWeapon: TComboBox
@@ -1806,7 +1883,7 @@ object StructuresEditor: TStructuresEditor
           Width = 185
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 3
         end
         object seUnitRateOfFire: TSpinEdit
@@ -1886,7 +1963,7 @@ object StructuresEditor: TStructuresEditor
           Width = 153
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 0
           OnChange = RedrawUnitPreview
         end
@@ -1896,7 +1973,7 @@ object StructuresEditor: TStructuresEditor
           Width = 153
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
           OnChange = RedrawUnitPreview
         end
@@ -1906,7 +1983,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
         object cbxUnitFiringExplosion: TComboBox
@@ -1915,7 +1992,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 3
         end
         object sgUnitDirectionFrames: TStringGrid
@@ -2094,10 +2171,10 @@ object StructuresEditor: TStructuresEditor
           Top = 560
           Width = 73
           Height = 22
-          MaxValue = 0
-          MinValue = 0
+          MaxValue = 255
+          MinValue = 1
           TabOrder = 1
-          Value = 0
+          Value = 1
         end
       end
       object pnBuildingArtControlGroup: TPanel
@@ -2159,7 +2236,7 @@ object StructuresEditor: TStructuresEditor
           Top = 612
           Width = 65
           Height = 22
-          MaxValue = 0
+          MaxValue = 255
           MinValue = 0
           TabOrder = 2
           Value = 0
@@ -2169,7 +2246,7 @@ object StructuresEditor: TStructuresEditor
           Top = 612
           Width = 65
           Height = 22
-          MaxValue = 0
+          MaxValue = 255
           MinValue = 0
           TabOrder = 3
           Value = 0
@@ -2326,20 +2403,20 @@ object StructuresEditor: TStructuresEditor
           Top = 536
           Width = 73
           Height = 22
-          MaxValue = 0
-          MinValue = 0
+          MaxValue = 255
+          MinValue = 1
           TabOrder = 1
-          Value = 0
+          Value = 1
         end
         object seUnitArtDirectionFrames: TSpinEdit
           Left = 88
           Top = 560
           Width = 73
           Height = 22
-          MaxValue = 0
-          MinValue = 0
+          MaxValue = 255
+          MinValue = 1
           TabOrder = 2
-          Value = 0
+          Value = 1
         end
       end
       object pnUnitArtControlGroup: TPanel
@@ -2397,10 +2474,10 @@ object StructuresEditor: TStructuresEditor
           Top = 560
           Width = 73
           Height = 22
-          MaxValue = 0
-          MinValue = 0
+          MaxValue = 255
+          MinValue = 1
           TabOrder = 1
-          Value = 0
+          Value = 1
         end
       end
       object pnProjectileArtControlGroup: TPanel
@@ -2476,7 +2553,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object edWeaponRange: TEdit
@@ -2628,7 +2705,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 0
           OnChange = cbxWeaponProjectileArtChange
         end
@@ -2638,7 +2715,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object cbxWeaponHitExplosion: TComboBox
@@ -2647,7 +2724,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
         object cbxWeaponTrailExplosion: TComboBox
@@ -2656,7 +2733,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 3
         end
         object cbWeaponFlagWF_PROJECTILE_ALPHA: TCheckBox
@@ -2806,10 +2883,10 @@ object StructuresEditor: TStructuresEditor
           Top = 560
           Width = 73
           Height = 22
-          MaxValue = 0
-          MinValue = 0
+          MaxValue = 255
+          MinValue = 1
           TabOrder = 1
-          Value = 0
+          Value = 1
         end
       end
       object pnAnimationArtControlGroup: TPanel
@@ -2850,7 +2927,7 @@ object StructuresEditor: TStructuresEditor
         Width = 129
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 3
       end
       object edExplosionFiringPattern: TEdit
@@ -3083,6 +3160,13 @@ object StructuresEditor: TStructuresEditor
     object PageOther: TTabSheet
       Caption = 'Other         '
       ImageIndex = 9
+      object lblOtherArtList: TLabel
+        Left = 512
+        Top = 0
+        Width = 41
+        Height = 13
+        Caption = 'Other art'
+      end
       object vleTemplatesOther: TValueListEditor
         Left = 0
         Top = 0
@@ -3107,20 +3191,54 @@ object StructuresEditor: TStructuresEditor
         Width = 194
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 1
         Visible = False
         OnChange = cbxTemplatesOtherSelectChange
       end
       object cbxTemplatesOtherUnitSelect: TComboBox
-        Left = 424
-        Top = 0
+        Left = 216
+        Top = 48
         Width = 145
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 2
         Visible = False
+      end
+      object pnOtherArtControlGroup: TPanel
+        Left = 688
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 3
+      end
+      object lbOtherArtList: TListBox
+        Left = 512
+        Top = 16
+        Width = 161
+        Height = 537
+        ItemHeight = 13
+        Items.Strings = (
+          'Placement markers'
+          'Repair icon'
+          'Empty image'
+          'Selection markers'
+          'Health bars'
+          'Dot markers'
+          'Small numbers'
+          'Credit numbers'
+          'Shroud'
+          'Crates'
+          'Spice blooms'
+          'Building/unit markers'
+          'Rock craters'
+          'Sand craters'
+          'Stealth animation'
+          'Stealth reveal mask')
+        TabOrder = 4
+        OnClick = lbOtherArtListClick
       end
     end
     object PageTechpos: TTabSheet
@@ -3199,7 +3317,7 @@ object StructuresEditor: TStructuresEditor
         Width = 135
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 2
         Visible = False
         OnChange = cbxTechposUnitTypeChange
@@ -3253,5 +3371,23 @@ object StructuresEditor: TStructuresEditor
     Interval = 50
     OnTimer = tmBuildingBuildupArtTimer
     Left = 956
+  end
+  object DataExportDialog: TSaveDialog
+    Left = 892
+  end
+  object DataImportDialog: TOpenDialog
+    Left = 924
+  end
+  object ArtImportDialog: TOpenDialog
+    DefaultExt = 'R16'
+    Filter = 'Dune 2000 graphics file (*.R16)|*.R16'
+    Title = 'Import Art'
+    Left = 860
+  end
+  object ArtExportDialog: TSaveDialog
+    DefaultExt = 'R16'
+    Filter = 'Dune 2000 graphics file (*.R16)|*.R16'
+    Title = 'Export Art'
+    Left = 828
   end
 end

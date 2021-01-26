@@ -63,7 +63,12 @@ const DATA_R16_FILE_ENTRY_POSITIONS_ALLOC_STEP = 1024;
 const STRUCTURE_IMAGES_ALLOC_STEP = 128;
 const HOUSE_COLOR_PIXEL_ALLOC_STEP = 8192;
 
+const NUM_TECHNICAL_GRAPHICAL_ENTRIES = 206;
+const NUM_EMPTY_UNIT_SIDEBAR_ICONS = 10;
+
 const WALL_FRAME_MAPPING: array[0..15] of integer = (0, 2, 3, 12, 1, 6, 11, 7, 4, 13, 5, 9, 15, 10, 8, 14);
+
+const CONCRETE_TILES: array[0..2] of word = (651, 671, 691);
 
 type
   TBuildingSkirt = record
@@ -75,13 +80,11 @@ type
     conc_tile_y: integer;
   end;
 
-const CONCRETE_TILES: array[0..2] of word = (651, 671, 691);
-
 const BUILDING_SKIRT_2x2: TBuildingSkirt = (size_x: 2; size_y: 2; rock_tile_x: 17; rock_tile_y: 30; conc_tile_x:  9; conc_tile_y: 32);
 const BUILDING_SKIRT_3x2: TBuildingSkirt = (size_x: 3; size_y: 2; rock_tile_x: 11; rock_tile_y: 30; conc_tile_x:  3; conc_tile_y: 32);
 
 // *****************************************************************************
-// TGraphics class
+// TStructGraphics class
 // *****************************************************************************
 
 type
@@ -100,6 +103,7 @@ type
 
     // DATA.R16 related data
     data_r16_file_contents: array of byte;
+    data_r16_modified: boolean;
     data_r16_file_entry_positions: array of integer;
     data_r16_file_entry_count: integer;
 
@@ -121,7 +125,9 @@ type
     // COLOURS.BIN related procedures
     procedure load_colours_bin;
     // DATA.R16 related procedures
-    procedure load_data_r16;
+    procedure load_data_r16(force: boolean);
+    procedure save_data_r16;
+    procedure process_data_r16_entries;
     procedure clear_structure_image_data;
     procedure clear_last_structure_image(entry_index: integer; is_stealth: boolean);
     procedure load_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean);
@@ -130,6 +136,18 @@ type
     function get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
     // Misc. objects related procedures
     procedure load_graphics_misc_objects;
+
+    // DATA.R16 manipulation procedures
+    function get_image_entry_position(entry_index: integer): integer;
+    function get_image_entries_size(first_entry_index, num_entries: integer): integer;
+    procedure resize_data_r16_contents(position, old_size, new_size: integer);
+    procedure modify_image_data(entry_index: integer; var data; data_size: integer);
+    procedure add_empty_image_entries(entry_index: integer; num_entries: integer);
+    procedure remove_image_entries(entry_index: integer; num_entries: integer);
+    procedure change_image_entry_count(first_entry_index, old_num_entries, new_num_entries: integer);
+    procedure swap_image_entries(src_entry_index, dest_entry_index, src_num_entries, dest_num_entries: integer);
+    procedure export_image_entries(filename: string; entry_index: integer; num_entries: integer);
+    function import_image_entries(filename: string; entry_index: integer; num_entries: integer): boolean;
   end;
 
 var
@@ -137,14 +155,14 @@ var
 
 implementation
 
-uses Forms, SysUtils, _settings, _dispatcher, _missionini;
+uses Forms, SysUtils, _settings, _dispatcher, _missionini, Math;
 
 procedure TStructGraphics.init;
 begin
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
   load_colours_bin;
-  load_data_r16;
+  load_data_r16(false);
   load_graphics_misc_objects;
 end;
 
@@ -195,10 +213,44 @@ begin
   Dispatcher.register_event(evFLColoursBin);
 end;
 
-procedure TStructGraphics.load_data_r16;
+procedure TStructGraphics.load_data_r16(force: boolean);
 var
   tmp_filename: String;
   data_r16_file: file of byte;
+  data_r16_file_size: integer;
+begin
+  tmp_filename := find_file('Data\DATA.R16', 'graphics');
+  if (tmp_filename = '') or ((tmp_filename = data_r16_filename) and not force) then
+    exit;
+  data_r16_filename := tmp_filename;
+
+  // Clear all previously loaded data
+  clear_structure_image_data;
+  SetLength(data_r16_file_contents, 0);
+  // Load file into buffer
+  AssignFile(data_r16_file, tmp_filename);
+  Reset(data_r16_file);
+  data_r16_file_size := FileSize(data_r16_file);
+  SetLength(data_r16_file_contents, data_r16_file_size);
+  BlockRead(data_r16_file, data_r16_file_contents[0], data_r16_file_size);
+  CloseFile(data_r16_file);
+  data_r16_modified := false;
+  // Parse file
+  process_data_r16_entries;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLDataR16);
+end;
+
+procedure TStructGraphics.save_data_r16;
+begin
+  if (data_r16_filename = '') or not data_r16_modified then
+    exit;
+  save_binary_file(data_r16_filename, data_r16_file_contents[0], Length(data_r16_file_contents));
+  data_r16_modified := false;
+end;
+
+procedure TStructGraphics.process_data_r16_entries;
+var
   data_r16_file_size: integer;
   index: integer;
   position: integer;
@@ -207,23 +259,9 @@ var
   image_data_size: integer;
   total_entry_size: integer;
 begin
-  tmp_filename := find_file('Data\DATA.R16', 'graphics');
-  if (tmp_filename = '') or (tmp_filename = data_r16_filename) then
-    exit;
-  data_r16_filename := tmp_filename;
-
-  // Clear all previously loaded data
-  clear_structure_image_data;
-  // Load file into buffer
-  AssignFile(data_r16_file, tmp_filename);
-  Reset(data_r16_file);
-  data_r16_file_size := FileSize(data_r16_file);
-  SetLength(data_r16_file_contents, data_r16_file_size);
-  BlockRead(data_r16_file, data_r16_file_contents[0], data_r16_file_size);
-  CloseFile(data_r16_file);
-  // Parse file
   index := 0;
   position := 0;
+  data_r16_file_size := Length(data_r16_file_contents);
   while position < data_r16_file_size do
   begin
     first_byte := data_r16_file_contents[position];
@@ -253,16 +291,13 @@ begin
     structure_image_entry_mapping[index].normal_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
     structure_image_entry_mapping[index].stealth_index := STRUCTURE_IMAGE_ENTRY_NOT_LOADED;
   end;
-  // Register event in dispatcher
-  Dispatcher.register_event(evFLDataR16);
 end;
 
 procedure TStructGraphics.clear_structure_image_data;
 var
   i: integer;
 begin
-  // Clean DATA.R16 file contents
-  SetLength(data_r16_file_contents, 0);
+  // Clean entry position map
   SetLength(data_r16_file_entry_positions, 0);
   data_r16_file_entry_count := 0;
   // Clean structure images
@@ -423,7 +458,7 @@ begin
     tmp_offset_x := (header.FrameWidth div 2 - header.ImageOffsetX) - (header.FrameWidth - 32) div 2;
   if not is_unit then
   begin
-    tmp_offset_y := header.ImageOffsetY;
+    tmp_offset_y := IfThen(entry_index >= NUM_TECHNICAL_GRAPHICAL_ENTRIES, header.ImageOffsetY, height);
   end else
     tmp_offset_y := (header.FrameHeight div 2 - header.ImageOffsetY) - (header.FrameHeight - 32) div 2;
   // Save structure image
@@ -525,6 +560,209 @@ begin
   graphics_misc_objects_mask.Mask(clBlack);
   // Register event in dispatcher
   Dispatcher.register_event(evFLMiscObjectsBmp);
+end;
+
+function TStructGraphics.get_image_entry_position(entry_index: integer): integer;
+begin
+  if (entry_index < data_r16_file_entry_count) and (entry_index >= 0) then
+    result := data_r16_file_entry_positions[entry_index]
+  else if entry_index = data_r16_file_entry_count then
+    result := Length(data_r16_file_contents)
+  else
+    result := -1;
+end;
+
+function TStructGraphics.get_image_entries_size(first_entry_index, num_entries: integer): integer;
+var
+  i: integer;
+begin
+  result := 0;
+  for i := first_entry_index to (first_entry_index + num_entries - 1) do
+    if i < data_r16_file_entry_count then
+      inc(result, get_image_entry_position(i+1) - get_image_entry_position(i))
+    else
+      break;
+end;
+
+procedure TStructGraphics.resize_data_r16_contents(position, old_size, new_size: integer);
+var
+  old_total_size: integer;
+begin
+  if new_size = old_size then
+    exit;
+  old_total_size := Length(data_r16_file_contents);
+  if new_size > old_size then
+  begin
+    SetLength(data_r16_file_contents, old_total_size + new_size - old_size);
+    Move(data_r16_file_contents[position + old_size], data_r16_file_contents[position + new_size], old_total_size - position - old_size);
+  end else
+  begin
+    Move(data_r16_file_contents[position + old_size], data_r16_file_contents[position + new_size], old_total_size - position - old_size);
+    SetLength(data_r16_file_contents, old_total_size + new_size - old_size);
+  end;
+end;
+
+procedure TStructGraphics.modify_image_data(entry_index: integer; var data; data_size: integer);
+var
+  entry_size: integer;
+  entry_position: integer;
+begin
+  entry_size := get_image_entries_size(entry_index, 1);
+  entry_position := get_image_entry_position(entry_index);
+  resize_data_r16_contents(entry_position, entry_size, data_size);
+  Move(data, data_r16_file_contents[entry_position], data_size);
+  if data_size <> entry_size then
+  begin
+    // Invalidate all cached data and re-process them again
+    clear_structure_image_data;
+    process_data_r16_entries;
+  end;
+  data_r16_modified := true;
+end;
+
+procedure TStructGraphics.add_empty_image_entries(entry_index, num_entries: integer);
+var
+  entry_position: integer;
+begin
+  if num_entries = 0 then
+    exit;
+  entry_position := get_image_entry_position(entry_index);
+  resize_data_r16_contents(entry_position, 0, num_entries);
+  FillChar(data_r16_file_contents[entry_position], num_entries, 0);
+  // Invalidate all cached data and re-process them again
+  clear_structure_image_data;
+  process_data_r16_entries;
+  data_r16_modified := true;
+end;
+
+procedure TStructGraphics.remove_image_entries(entry_index, num_entries: integer);
+var
+  entries_size: integer;
+  entry_position: integer;
+begin
+  if num_entries = 0 then
+    exit;
+  entries_size := get_image_entries_size(entry_index, num_entries);
+  entry_position := get_image_entry_position(entry_index);
+  resize_data_r16_contents(entry_position, entries_size, 0);
+  // Invalidate all cached data and re-process them again
+  clear_structure_image_data;
+  process_data_r16_entries;
+  data_r16_modified := true;
+end;
+
+procedure TStructGraphics.change_image_entry_count(first_entry_index, old_num_entries, new_num_entries: integer);
+begin
+  if new_num_entries > old_num_entries then
+    add_empty_image_entries(first_entry_index + old_num_entries, new_num_entries - old_num_entries)
+  else if new_num_entries < old_num_entries then
+    remove_image_entries(first_entry_index + new_num_entries, old_num_entries - new_num_entries);
+end;
+
+procedure TStructGraphics.swap_image_entries(src_entry_index, dest_entry_index, src_num_entries, dest_num_entries: integer);
+var
+  tmp_data: array of byte;
+  src_entries_size, dest_entries_size: integer;
+  src_entry_position, dest_entry_position: integer;
+begin
+  src_entries_size := get_image_entries_size(src_entry_index, src_num_entries);
+  dest_entries_size := get_image_entries_size(dest_entry_index, dest_num_entries);
+  src_entry_position := get_image_entry_position(src_entry_index);
+  dest_entry_position := get_image_entry_position(dest_entry_index);
+  if dest_entry_position < src_entry_position then
+  begin
+    SetLength(tmp_data, dest_entries_size);
+    Move(data_r16_file_contents[dest_entry_position], tmp_data[0], dest_entries_size);
+    Move(data_r16_file_contents[src_entry_position], data_r16_file_contents[dest_entry_position], src_entries_size);
+    Move(tmp_data[0], data_r16_file_contents[dest_entry_position + src_entries_size], dest_entries_size);
+  end else
+  begin
+    SetLength(tmp_data, src_entries_size);
+    Move(data_r16_file_contents[src_entry_position], tmp_data[0], src_entries_size);
+    Move(data_r16_file_contents[dest_entry_position], data_r16_file_contents[src_entry_position], dest_entries_size);
+    Move(tmp_data[0], data_r16_file_contents[src_entry_position + dest_entries_size], src_entries_size);
+  end;
+  SetLength(tmp_data, 0);
+  if (src_num_entries > 1) or (dest_num_entries > 1) or (src_entries_size <> dest_entries_size) then
+  begin
+    // Invalidate all cached data and re-process them again
+    clear_structure_image_data;
+    process_data_r16_entries;
+  end;
+  data_r16_modified := true;
+end;
+
+procedure TStructGraphics.export_image_entries(filename: string; entry_index, num_entries: integer);
+var
+  entries_size: integer;
+  entry_position: integer;
+begin
+  if num_entries = 0 then
+    exit;
+  entries_size := get_image_entries_size(entry_index, num_entries);
+  entry_position := get_image_entry_position(entry_index);
+  save_binary_file(filename, data_r16_file_contents[entry_position], entries_size);
+end;
+
+function TStructGraphics.import_image_entries(filename: string; entry_index, num_entries: integer): boolean;
+var
+  entries_size: integer;
+  entry_position: integer;
+  buffer: array of byte;
+  f: file of byte;
+  size: integer;
+  count, position: integer;
+  first_byte: byte;
+  header: TR16EntryHeaderPtr;
+  image_data_size, total_entry_size: integer;
+begin
+  result := false;
+  if num_entries = 0 then
+    exit;
+  // Read file into buffer
+  AssignFile(f, filename);
+  Reset(f);
+  size := FileSize(f);
+  SetLength(buffer, size);
+  BlockRead(f, buffer[0], size);
+  CloseFile(f);
+  // Get number of image entries present in file
+  count := 0;
+  position := 0;
+  while position < size do
+  begin
+    first_byte := buffer[position];
+    if first_byte = 0 then
+    begin
+      inc(position);
+      inc(count);
+      continue;
+    end;
+    header := Addr(buffer[position]);
+    image_data_size := header.ImageWidth * header.ImageHeight * (header.BitsPerPixel div 8);
+    total_entry_size := sizeof(TR16EntryHeader) + image_data_size;
+    if (header.PaletteHandle <> 0) and (header.BitsPerPixel = 8) and (header.EntryType = 1) then
+      inc(total_entry_size, sizeof(TR16Palette));
+    inc(position, total_entry_size);
+    inc(count);
+  end;
+  // Check if number matches
+  if num_entries <> count then
+  begin
+    Application.MessageBox(PChar(Format('The file you are importing has %d frames, but current art has %d frames. Adjust number of frames in current art first.', [count, num_entries])), 'Cannot import art', MB_ICONERROR or MB_OK);
+    exit;
+  end;
+  // Modify data
+  entries_size := get_image_entries_size(entry_index, num_entries);
+  entry_position := get_image_entry_position(entry_index);
+  resize_data_r16_contents(entry_position, entries_size, size);
+  Move(buffer[0], data_r16_file_contents[entry_position], size);
+  SetLength(buffer, 0);
+  // Invalidate all cached data and re-process them again
+  clear_structure_image_data;
+  process_data_r16_entries;
+  data_r16_modified := true;
+  result := true;
 end;
 
 end.
