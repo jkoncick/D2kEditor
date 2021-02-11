@@ -749,7 +749,7 @@ begin
   // Check if number matches
   if num_entries <> count then
   begin
-    Application.MessageBox(PChar(Format('The file you are importing has %d frames, but current art has %d frames. Adjust number of frames in current art first.', [count, num_entries])), 'Cannot import art', MB_ICONERROR or MB_OK);
+    Application.MessageBox(PChar(Format('The file you are importing has %d frames, but current art has %d frames. Change number of frames in current art first.', [count, num_entries])), 'Cannot import art', MB_ICONERROR or MB_OK);
     exit;
   end;
   // Modify data

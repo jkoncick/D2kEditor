@@ -9,7 +9,6 @@ uses
 
 const side_names: array[0..CNT_PLAYERS-1] of string = ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
 const unit_voices: array[0..8] of string = ('A1', 'A2', 'A3', 'H1', 'H2', 'H3', 'O1', 'O2', 'O3');
-const other_art_frames: array[0..15] of integer = (3, 1, 1, 4, 6, 2, 10, 11, 64, 4, 4, 4, 32, 32, 16, 12);
 const TECHPOS_PREVIEW_SIZE = 7;
 
 type
@@ -17,9 +16,9 @@ type
     fdaAll,
     fdaAllArt,
     fdaBuildingTypeList,
-    fdaBuildingNameList,
+    fdaBuildingList,
     fdaUnitTypeList,
-    fdaUnitNameList,
+    fdaUnitList,
     fdaBuilexpList,
     fdaWeaponList,
     fdaExplosionList,
@@ -28,33 +27,106 @@ type
     fdaSpeedTypeList
   );
 
+// *****************************************************************************
+// Item control group definitions
+// *****************************************************************************
+
+const ICG_BTN_ADD =      0;
+const ICG_BTN_REMOVE =   1;
+const ICG_BTN_RENAME =   2;
+const ICG_BTN_EXPORT =   3;
+const ICG_BTN_IMPORT =   4;
+const ICG_BTN_COPY =     5;
+const ICG_BTN_PASTE =    6;
+const ICG_BTN_MOVEUP =   7;
+const ICG_BTN_MOVEDOWN = 8;
+
+const ICG_BTN_CAPTIONS: array[0..8] of string = ('Add new','Remove last','Rename selected','Export','Import','Copy','Paste','Move up','Move down');
+
 type
-  TListControlGroup = record
-    item_count_byte_ptr: PByte;
-    item_name_list_ptr: TItemNameListPtr;
-    max_item_count: integer;
-    last_item_index_ptr: PInteger;
-    fill_data_action: TFillDataAction;
-    list_control: TListBox;
-    edit_item_name: TEdit;
-    btn_item_add: TButton;
-    btn_item_remove: TButton;
-    btn_item_rename: TButton;
+  TItemControlGroupButtonLayout = record
+    row: byte;
+    left: byte;
+    width: byte;
   end;
 
-  TListControlGroupPtr = ^TListControlGroup;
+type
+  TItemControlGroupLayout = array[0..8] of TItemControlGroupButtonLayout;
+  TItemControlGroupLayoutPtr = ^TItemControlGroupLayout;
 
-const LCG_BUILDING_TYPES    = 0;
-const LCG_UNIT_TYPES        = 1;
-const LCG_WEAPONS           = 2;
-const LCG_EXPLOSIONS        = 3;
-const LCG_ARMOUR_TYPES      = 4;
-const LCG_WARHEADS          = 5;
+const ICG_LAYOUT_BLD_UNT_TYPE: TItemControlGroupLayout = (
+    (row: 1; left: 0;  width: 73),
+    (row: 1; left: 88; width: 73),
+    (row: 2; left: 32; width: 97),
+    (row: 0; left: 0;  width: 0),
+    (row: 0; left: 0;  width: 0),
+    (row: 0; left: 0;  width: 0),
+    (row: 0; left: 0;  width: 0),
+    (row: 0; left: 0;  width: 0),
+    (row: 0; left: 0;  width: 0)
+  );
+
+const ICG_LAYOUT_BLD_UNT: TItemControlGroupLayout = (
+    (row: 1; left: 0;   width: 68),
+    (row: 2; left: 0;   width: 68),
+    (row: 0; left: 0;   width: 0),
+    (row: 1; left: 136; width: 44),
+    (row: 1; left: 180; width: 45),
+    (row: 2; left: 136; width: 44),
+    (row: 2; left: 180; width: 45),
+    (row: 1; left: 68;  width: 68),
+    (row: 2; left: 68;  width: 68)
+  );
+
+const ICG_LAYOUT_WPN_EXP: TItemControlGroupLayout = (
+    (row: 1; left: 0;   width: 73),
+    (row: 2; left: 0;   width: 73),
+    (row: 0; left: 0;   width: 0),
+    (row: 1; left: 73;  width: 44),
+    (row: 1; left: 117; width: 44),
+    (row: 2; left: 73;  width: 44),
+    (row: 2; left: 117; width: 44),
+    (row: 0; left: 0;   width: 0),
+    (row: 0; left: 0;   width: 0)
+  );
+
+const ICG_LAYOUT_ARM_WHD: TItemControlGroupLayout = (
+    (row: 1; left: 0;   width: 68),
+    (row: 2; left: 0;   width: 68),
+    (row: 3; left: 24;  width: 97),
+    (row: 1; left: 68;  width: 39),
+    (row: 1; left: 107; width: 39),
+    (row: 2; left: 68;  width: 39),
+    (row: 2; left: 107; width: 39),
+    (row: 0; left: 0;   width: 0),
+    (row: 0; left: 0;   width: 0)
+  );
+
+type
+  TItemControlGroup = record
+    last_item_index: integer;
+    fill_data_action: TFillDataAction;
+    list_control: TListBox;
+    lbl_header: TLabel;
+    edit_item_name: TEdit;
+    edit_item_name_explicit: boolean;
+    buttons: array[0..8] of TButton;
+  end;
+
+  TItemControlGroupPtr = ^TItemControlGroup;
+
+// *****************************************************************************
+// Art control group definitions
+// *****************************************************************************
 
 type
   TArtControlGroup = record
     first_image_index: integer;
+    last_item_index: integer;
     is_unit: boolean;
+    list_control: TListBox;
+    se_directions: TSpinEdit;
+    se_frames: TSpinEdit;
     view_image: TImage;
     frame_list: TListBox;
     lbl_frame_width: TLabel;
@@ -75,17 +147,15 @@ type
     btn_art_modify: TButton;
     btn_art_export: TButton;
     btn_art_import: TButton;
+    btn_art_move_up: TButton;
+    btn_art_move_down: TButton;
   end;
 
   TArtControlGroupPtr = ^TArtControlGroup;
 
-const ACG_BUIDING_ART       = 0;
-const ACG_BUIDING_ANIMATION = 1;
-const ACG_BUIDUP_ART        = 2;
-const ACG_UNIT_ART          = 3;
-const ACG_PROJECTILE_ART    = 4;
-const ACG_ANIMATION_ART     = 5;
-const ACG_OTHER_ART         = 6;
+// *****************************************************************************
+// TStructuresEditor class
+// *****************************************************************************
 
 type
   TStructuresEditor = class(TForm)
@@ -95,10 +165,8 @@ type
     PageBuildings: TTabSheet;
     PageUnits: TTabSheet;
     pnBuildingTypeList: TPanel;
-    lblBuildingTypeList: TLabel;
     lbBuildingTypeList: TListBox;
     pnBuildingList: TPanel;
-    lblBuildingList: TLabel;
     lbBuildingList: TListBox;
     gbBuildingBasic: TGroupBox;
     gbBuildingBuildRequirements: TGroupBox;
@@ -227,10 +295,8 @@ type
     btnBuildingBuildupArtPlay: TButton;
     tmBuildingBuildupArt: TTimer;
     pnUnitTypeList: TPanel;
-    lblUnitTypeList: TLabel;
     lbUnitTypeList: TListBox;
     pnUnitList: TPanel;
-    lblUnitList: TLabel;
     lbUnitList: TListBox;
     gbUnitBasic: TGroupBox;
     lblUnitOwnerSide: TLabel;
@@ -325,10 +391,6 @@ type
     PageArmour: TTabSheet;
     PageSpeed: TTabSheet;
     sgSpeedValues: TStringGrid;
-    btnBuildingAdd: TButton;
-    btnBuildingRemove: TButton;
-    btnBuildingCopy: TButton;
-    btnBuildingPaste: TButton;
     Applychanges1: TMenuItem;
     Savetofiles1: TMenuItem;
     Saveandtest1: TMenuItem;
@@ -373,16 +435,12 @@ type
     seAnimationArtFrames: TSpinEdit;
     pnAnimationArtControlGroup: TPanel;
     pnWeaponList: TPanel;
-    lblWeaponList: TLabel;
     lbWeaponList: TListBox;
     pnExplosionList: TPanel;
-    lblExplosionList: TLabel;
     lbExplosionList: TListBox;
     pnArmourTypeList: TPanel;
-    lblArmourTypeList: TLabel;
     lbArmourTypeList: TListBox;
     pnWarheadList: TPanel;
-    lblWarheadList: TLabel;
     lbWarheadList: TListBox;
     sgArmourValues: TStringGrid;
     PageBuilExp: TTabSheet;
@@ -456,10 +514,6 @@ type
     cbExplosionFlagEF_RISE_UP: TCheckBox;
     cbExplosionFlagEF_HOUSE_COLORED: TCheckBox;
     cbExplosionFlagEF_FIRING_FLASH: TCheckBox;
-    btnUnitAdd: TButton;
-    btnUnitRemove: TButton;
-    btnUnitCopy: TButton;
-    btnUnitPaste: TButton;
     PageOther: TTabSheet;
     vleTemplatesOther: TValueListEditor;
     cbxTemplatesOtherSelect: TComboBox;
@@ -474,21 +528,17 @@ type
     cbxTechposUnitType: TComboBox;
     tbTechposNumUnits: TTrackBar;
     lblTechposNumUnits: TLabel;
-    btnBuildingExport: TButton;
-    btnBuildingImport: TButton;
     DataExportDialog: TSaveDialog;
     DataImportDialog: TOpenDialog;
-    btnUnitExport: TButton;
-    btnUnitImport: TButton;
-    btnUnitMoveUp: TButton;
-    btnUnitMoveDown: TButton;
-    btnBuildingMoveUp: TButton;
-    btnBuildingMoveDown: TButton;
     ArtImportDialog: TOpenDialog;
     ArtExportDialog: TSaveDialog;
     pnOtherArtControlGroup: TPanel;
     lblOtherArtList: TLabel;
     lbOtherArtList: TListBox;
+    lblWeaponName: TLabel;
+    edWeaponName: TEdit;
+    lblExplosionName: TLabel;
+    edExplosionName: TEdit;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -505,15 +555,6 @@ type
     // Buildings tab events
     procedure lbBuildingTypeListClick(Sender: TObject);
     procedure lbBuildingListClick(Sender: TObject);
-    procedure lbBuildingListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure btnBuildingAddClick(Sender: TObject);
-    procedure btnBuildingRemoveClick(Sender: TObject);
-    procedure btnBuildingCopyClick(Sender: TObject);
-    procedure btnBuildingPasteClick(Sender: TObject);
-    procedure btnBuildingExportClick(Sender: TObject);
-    procedure btnBuildingImportClick(Sender: TObject);
-    procedure btnBuildingMoveUpClick(Sender: TObject);
-    procedure btnBuildingMoveDownClick(Sender: TObject);
     procedure imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure imgBuildingTilesOccupiedSolidMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure edBuildingFlagsChange(Sender: TObject);
@@ -527,15 +568,6 @@ type
     // Units tab events
     procedure lbUnitTypeListClick(Sender: TObject);
     procedure lbUnitListClick(Sender: TObject);
-    procedure lbUnitListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure btnUnitAddClick(Sender: TObject);
-    procedure btnUnitRemoveClick(Sender: TObject);
-    procedure btnUnitCopyClick(Sender: TObject);
-    procedure btnUnitPasteClick(Sender: TObject);
-    procedure btnUnitExportClick(Sender: TObject);
-    procedure btnUnitImportClick(Sender: TObject);
-    procedure btnUnitMoveUpClick(Sender: TObject);
-    procedure btnUnitMoveDownClick(Sender: TObject);
     procedure edUnitFlagsChange(Sender: TObject);
     procedure UnitFlagCheckboxChange(Sender: TObject);
     procedure btnUnitDirectionFramesClick(Sender: TObject);
@@ -579,10 +611,17 @@ type
     procedure cbxTechposUnitTypeChange(Sender: TObject);
     procedure TechposPreviewChange(Sender: TObject);
     procedure imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    // List control group events
-    procedure ListControlGroupAddClick(Sender: TObject);
-    procedure ListControlGroupRemoveClick(Sender: TObject);
-    procedure ListControlGroupRenameClick(Sender: TObject);
+    // Item control group events
+    procedure ItemControlGroupAddClick(Sender: TObject);
+    procedure ItemControlGroupRemoveClick(Sender: TObject);
+    procedure ItemControlGroupRenameClick(Sender: TObject);
+    procedure ItemControlGroupExportClick(Sender: TObject);
+    procedure ItemControlGroupImportClick(Sender: TObject);
+    procedure ItemControlGroupCopyClick(Sender: TObject);
+    procedure ItemControlGroupPasteClick(Sender: TObject);
+    procedure ItemControlGroupMoveUpClick(Sender: TObject);
+    procedure ItemControlGroupMoveDownClick(Sender: TObject);
+    procedure ItemControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     // Art control group events
     procedure ArtControlGroupFrameListClick(Sender: TObject);
     procedure ArtControlGroupAddClick(Sender: TObject);
@@ -590,6 +629,9 @@ type
     procedure ArtControlGroupModifyClick(Sender: TObject);
     procedure ArtControlGroupExportClick(Sender: TObject);
     procedure ArtControlGroupImportClick(Sender: TObject);
+    procedure ArtControlGroupMoveUpClick(Sender: TObject);
+    procedure ArtControlGroupMoveDownClick(Sender: TObject);
+    procedure ArtControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     // Dynamic controls
     cbxUnitVoices: array[0..17] of TComboBox;
@@ -599,23 +641,10 @@ type
     seBuilExpAnimOffsetY: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
     cbxBuilExpAnimExplosion: array[0..MAX_BUILEXP_ANIMATIONS-1] of TComboBox;
     seBuilExpAnimNumFrames: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
-    list_control_groups: array[0..5] of TListControlGroup;
+    item_control_groups: array[0..7] of TItemControlGroup;
     art_control_groups: array[0..6] of TArtControlGroup;
     // Last indexes
-    last_building_type_index: integer;
-    last_building_index: integer;
-    last_unit_type_index: integer;
-    last_unit_index: integer;
-    last_building_art_index: integer;
-    last_building_animation_art_index: integer;
     last_builexp_building_index: integer;
-    last_unit_art_index: integer;
-    last_weapon_index: integer;
-    last_projectile_art_index: integer;
-    last_explosion_index: integer;
-    last_animation_art_index: integer;
-    last_armour_type_index: integer;
-    last_warhead_index: integer;
     last_speed_type_index: integer;
     // Temporary data
     tmp_building_tiles_occupied_all: cardinal;
@@ -634,6 +663,7 @@ type
   private
     // Fill data procedures
     procedure fill_data(action: TFillDataAction);
+    procedure fill_item_list(item_type: integer; tmp_strings: TStringList);
     procedure fill_page_data;
     procedure fill_building_data;
     procedure fill_unit_data;
@@ -649,12 +679,12 @@ type
     procedure store_weapon_data;
     procedure store_explosion_data;
     function get_owner_side_field_value(control: TCheckListBox): byte;
-    // Templates other procedures
+    // Miscellaneous procedures
     function get_templates_other_cell_text(index: integer; value: shortint): string;
-    // List control group procedures
-    procedure create_list_control_group(group_index: integer; item_count_byte_ptr: PByte; item_name_list_ptr: TItemNameListPtr; max_item_count: integer; last_item_index_ptr: PInteger; fill_data_action: TFillDataAction; list_control: TListBox; container: TPanel);
+    // Item control group procedures
+    procedure create_item_control_group(group_index: integer; fill_data_action: TFillDataAction; list_control: TListBox; edit_item_name: TEdit; layout: TItemControlGroupLayoutPtr; container: TPanel);
     // Art control group procedures
-    procedure create_art_control_group(group_index: integer; is_unit: boolean; container, container2: TPanel);
+    procedure create_art_control_group(group_index: integer; is_unit: boolean; list_control: TListBox; se_directions, se_frames: TSpinEdit; container, container2: TPanel);
     procedure fill_art_control_group_frame_list(group_index: integer; first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
     // Drawing procedures
     procedure draw_no_image_sign(img_target: TImage);
@@ -677,7 +707,7 @@ var
 
 implementation
 
-uses Math, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, main;
+uses Math, StrUtils, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, main;
 
 {$R *.dfm}
 
@@ -778,20 +808,22 @@ begin
   sgTechposData.ColWidths[4] := 133;
   sgTechposData.ColWidths[5] := 133;
   // List control groups
-  create_list_control_group(LCG_BUILDING_TYPES, Addr(Structures.templates.BuildingTypeCount), Addr(Structures.templates.BuildingTypeStrings), MAX_BUILDING_TYPES, Addr(last_building_type_index), fdaBuildingTypeList, lbBuildingTypeList, pnBuildingTypeList);
-  create_list_control_group(LCG_UNIT_TYPES,     Addr(Structures.templates.UnitTypeCount),     Addr(Structures.templates.UnitTypeStrings),     MAX_UNIT_TYPES,     Addr(last_unit_type_index),     fdaUnitTypeList,     lbUnitTypeList,     pnUnitTypeList);
-  create_list_control_group(LCG_WEAPONS,        Addr(Structures.templates.WeaponCount),       Addr(Structures.templates.WeaponStrings),       MAX_WEAPONS,        Addr(last_weapon_index),        fdaWeaponList,       lbWeaponList,       pnWeaponList);
-  create_list_control_group(LCG_EXPLOSIONS,     Addr(Structures.templates.ExplosionCount),    Addr(Structures.templates.ExplosionStrings),    MAX_EXPLOSIONS,     Addr(last_explosion_index),     fdaExplosionList,    lbExplosionList,    pnExplosionList);
-  create_list_control_group(LCG_ARMOUR_TYPES,   Addr(Structures.armour.ArmourTypeCount),      Addr(Structures.armour.ArmourTypeStrings),      MAX_ARMOUR_TYPES,   Addr(last_armour_type_index),   fdaArmourTypeList,   lbArmourTypeList,   pnArmourTypeList);
-  create_list_control_group(LCG_WARHEADS,       Addr(Structures.armour.WarheadCount),         Addr(Structures.armour.WarheadStrings),         MAX_WARHEADS,       Addr(last_warhead_index),       fdaWarheadList,      lbWarheadList,      pnWarheadList);
+  create_item_control_group(ITEM_BUILDING,      fdaBuildingList,     lbBuildingList,     edBuildingName,  Addr(ICG_LAYOUT_BLD_UNT),      pnBuildingList);
+  create_item_control_group(ITEM_UNIT,          fdaUnitList,         lbUnitList,         edUnitName,      Addr(ICG_LAYOUT_BLD_UNT),      pnUnitList);
+  create_item_control_group(ITEM_BUILDING_TYPE, fdaBuildingTypeList, lbBuildingTypeList, nil,             Addr(ICG_LAYOUT_BLD_UNT_TYPE), pnBuildingTypeList);
+  create_item_control_group(ITEM_UNIT_TYPE,     fdaUnitTypeList,     lbUnitTypeList,     nil,             Addr(ICG_LAYOUT_BLD_UNT_TYPE), pnUnitTypeList);
+  create_item_control_group(ITEM_WEAPON,        fdaWeaponList,       lbWeaponList,       edWeaponName,    Addr(ICG_LAYOUT_WPN_EXP),      pnWeaponList);
+  create_item_control_group(ITEM_EXPLOSION,     fdaExplosionList,    lbExplosionList,    edExplosionName, Addr(ICG_LAYOUT_WPN_EXP),      pnExplosionList);
+  create_item_control_group(ITEM_ARMOUR_TYPE,   fdaArmourTypeList,   lbArmourTypeList,   nil,             Addr(ICG_LAYOUT_ARM_WHD),      pnArmourTypeList);
+  create_item_control_group(ITEM_WARHEAD,       fdaWarheadList,      lbWarheadList,      nil,             Addr(ICG_LAYOUT_ARM_WHD),      pnWarheadList);
   // Art control groups
-  create_art_control_group(ACG_BUIDING_ART,       false, pnBuildingArtControlGroup,       pnBuildingArtList);
-  create_art_control_group(ACG_BUIDING_ANIMATION, false, pnBuildingAnimationControlGroup, nil);
-  create_art_control_group(ACG_BUIDUP_ART,        false, pnBuildupArtControlGroup,        nil);
-  create_art_control_group(ACG_UNIT_ART,          true,  pnUnitArtControlGroup,           pnUnitArtList);
-  create_art_control_group(ACG_PROJECTILE_ART,    true,  pnProjectileArtControlGroup,     pnProjectileArtList);
-  create_art_control_group(ACG_ANIMATION_ART,     true,  pnAnimationArtControlGroup,      pnAnimationArtList);
-  create_art_control_group(ACG_OTHER_ART,         false, pnOtherArtControlGroup,          nil);
+  create_art_control_group(ART_BUILDING,           false, lbBuildingArtList,          seBuildingArtDirections,   nil,                       pnBuildingArtControlGroup,       pnBuildingArtList);
+  create_art_control_group(ART_BUILDING_ANIMATION, false, lbBuildingAnimationArtList, nil,                       seBuildingAnimationFrames, pnBuildingAnimationControlGroup, nil);
+  create_art_control_group(ART_BUILDUP,            false, lbBuildingAnimationArtList, nil,                       seBuildupArtFrames,        pnBuildupArtControlGroup,        nil);
+  create_art_control_group(ART_UNIT,               true,  lbUnitArtList,              seUnitArtDirectionFrames,  seUnitArtAnimationFrames,  pnUnitArtControlGroup,           pnUnitArtList);
+  create_art_control_group(ART_PROJECTILE,         true,  lbProjectileArtList,        seProjectileArtDirections, nil,                       pnProjectileArtControlGroup,     pnProjectileArtList);
+  create_art_control_group(ART_ANIMATION,          true,  lbAnimationArtList,         nil,                       seAnimationArtFrames,      pnAnimationArtControlGroup,      pnAnimationArtList);
+  create_art_control_group(ART_OTHER,              false, lbOtherArtList,             nil,                       nil,                       pnOtherArtControlGroup,          nil);
 
   tmp_strings.Destroy;
 end;
@@ -859,135 +891,14 @@ end;
 
 procedure TStructuresEditor.lbBuildingTypeListClick(Sender: TObject);
 begin
-  last_building_type_index := lbBuildingTypeList.ItemIndex;
-  list_control_groups[LCG_BUILDING_TYPES].edit_item_name.Text := Structures.templates.BuildingTypeStrings[lbBuildingTypeList.ItemIndex];
+  item_control_groups[ITEM_BUILDING_TYPE].last_item_index := lbBuildingTypeList.ItemIndex;
+  item_control_groups[ITEM_BUILDING_TYPE].edit_item_name.Text := Structures.templates.BuildingTypeStrings[lbBuildingTypeList.ItemIndex];
 end;
 
 procedure TStructuresEditor.lbBuildingListClick(Sender: TObject);
 begin
   store_building_data;
   fill_building_data;
-end;
-
-procedure TStructuresEditor.lbBuildingListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-var
-  matched: boolean;
-begin
-  matched := true;
-  case key of
-    45: btnBuildingAddClick(nil);
-    46: btnBuildingRemoveClick(nil);
-    67: btnBuildingCopyClick(nil);
-    86: btnBuildingPasteClick(nil);
-    69: btnBuildingExportClick(nil);
-    73: btnBuildingImportClick(nil);
-    33: btnBuildingMoveUpClick(nil);
-    34: btnBuildingMoveDownClick(nil);
-    else matched := false;
-  end;
-  if matched then
-    key := 0;
-end;
-
-procedure TStructuresEditor.btnBuildingAddClick(Sender: TObject);
-begin
-  if Structures.templates.BuildingCount = MAX_BUILDING_TYPES then
-    exit;
-  store_data;
-  last_building_index := Structures.templates.BuildingCount;
-  StructGraphics.add_empty_image_entries(Structures.first_building_icon_image_index + Structures.templates.BuildingCount, 1);
-  Inc(Structures.templates.BuildingCount);
-  Structures.compute_image_indexes;
-  fill_data(fdaBuildingNameList);
-end;
-
-procedure TStructuresEditor.btnBuildingRemoveClick(Sender: TObject);
-var
-  index: integer;
-begin
-  if Structures.templates.BuildingCount = 0 then
-    exit;
-  store_data;
-  index := Structures.templates.BuildingCount - 1;
-  if last_building_index = index then
-    Dec(last_building_index);
-  if last_building_animation_art_index = index then
-    Dec(last_building_animation_art_index);
-  if last_builexp_building_index = index then
-    Dec(last_builexp_building_index);
-  Dec(Structures.templates.BuildingCount);
-  FillChar(Structures.templates.BuildingNameStrings[index], Length(Structures.templates.BuildingNameStrings[index]), 0);
-  FillChar(Structures.templates.BuildingDefinitions[index], Sizeof(TBuildingTemplate), 0);
-  FillChar(Structures.builexp[index], Sizeof(TBuilExpEntry), 0);
-  StructGraphics.remove_image_entries(Structures.building_animation_image_indexes[index], Structures.templates.BuildingAnimationFrames[index]);
-  Structures.templates.BuildingAnimationFrames[index] := 0;
-  StructGraphics.remove_image_entries(Structures.buildup_art_image_indexes[index], Structures.templates.BuildupArtFrames[index]);
-  Structures.templates.BuildupArtFrames[index] := 0;
-  StructGraphics.remove_image_entries(Structures.first_building_icon_image_index + index, 1);
-  Structures.compute_image_indexes;
-  fill_data(fdaBuildingNameList);
-end;
-
-procedure TStructuresEditor.btnBuildingCopyClick(Sender: TObject);
-begin
-  if lbBuildingList.ItemIndex < 0 then
-    exit;
-  store_data;
-  Structures.copy_building(lbBuildingList.ItemIndex);
-end;
-
-procedure TStructuresEditor.btnBuildingPasteClick(Sender: TObject);
-begin
-  if lbBuildingList.ItemIndex < 0 then
-    exit;
-  if Structures.paste_building(lbBuildingList.ItemIndex) then
-    fill_data(fdaBuildingNameList);
-end;
-
-procedure TStructuresEditor.btnBuildingExportClick(Sender: TObject);
-begin
-  if lbBuildingList.ItemIndex < 0 then
-    exit;
-  DataExportDialog.Filter := 'Dune2000 building definition (*.d2kbld)|*.d2kbld';
-  DataExportDialog.DefaultExt := 'd2kbld';
-  DataExportDialog.Title := 'Export building';
-  if DataExportDialog.Execute then
-  begin
-    store_data;
-    Structures.export_building(lbBuildingList.ItemIndex, DataExportDialog.FileName);
-  end;
-end;
-
-procedure TStructuresEditor.btnBuildingImportClick(Sender: TObject);
-begin
-  if lbBuildingList.ItemIndex < 0 then
-    exit;
-  DataImportDialog.Filter := 'Dune2000 building definition (*.d2kbld)|*.d2kbld';
-  DataImportDialog.DefaultExt := 'd2kbld';
-  DataImportDialog.Title := 'Import building';
-  if DataImportDialog.Execute then
-  begin
-    Structures.import_building(lbBuildingList.ItemIndex, DataImportDialog.FileName);
-    fill_data(fdaBuildingNameList);
-  end;
-end;
-
-procedure TStructuresEditor.btnBuildingMoveUpClick(Sender: TObject);
-begin
-  if lbBuildingList.ItemIndex <= 0 then
-    exit;
-  Structures.swap_buildings(lbBuildingList.ItemIndex, lbBuildingList.ItemIndex - 1);
-  last_building_index := lbBuildingList.ItemIndex - 1;
-  fill_data(fdaBuildingNameList);
-end;
-
-procedure TStructuresEditor.btnBuildingMoveDownClick(Sender: TObject);
-begin
-  if (lbBuildingList.ItemIndex < 0) or (lbBuildingList.ItemIndex >= Structures.templates.BuildingCount - 1) then
-    exit;
-  Structures.swap_buildings(lbBuildingList.ItemIndex, lbBuildingList.ItemIndex + 1);
-  last_building_index := lbBuildingList.ItemIndex + 1;
-  fill_data(fdaBuildingNameList);
 end;
 
 procedure TStructuresEditor.imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -1143,130 +1054,14 @@ end;
 
 procedure TStructuresEditor.lbUnitTypeListClick(Sender: TObject);
 begin
-  last_unit_type_index := lbUnitTypeList.ItemIndex;
-  list_control_groups[LCG_UNIT_TYPES].edit_item_name.Text := Structures.templates.UnitTypeStrings[lbUnitTypeList.ItemIndex];
+  item_control_groups[ITEM_UNIT_TYPE].last_item_index := lbUnitTypeList.ItemIndex;
+  item_control_groups[ITEM_UNIT_TYPE].edit_item_name.Text := Structures.templates.UnitTypeStrings[lbUnitTypeList.ItemIndex];
 end;
 
 procedure TStructuresEditor.lbUnitListClick(Sender: TObject);
 begin
   store_unit_data;
   fill_unit_data;
-end;
-
-procedure TStructuresEditor.lbUnitListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-var
-  matched: boolean;
-begin
-  matched := true;
-  case key of
-    45: btnUnitAddClick(nil);
-    46: btnUnitRemoveClick(nil);
-    67: btnUnitCopyClick(nil);
-    86: btnUnitPasteClick(nil);
-    69: btnUnitExportClick(nil);
-    73: btnUnitImportClick(nil);
-    33: btnUnitMoveUpClick(nil);
-    34: btnUnitMoveDownClick(nil);
-    else matched := false;
-  end;
-  if matched then
-    key := 0;
-end;
-
-procedure TStructuresEditor.btnUnitAddClick(Sender: TObject);
-begin
-  if Structures.templates.UnitCount = MAX_UNIT_TYPES then
-    exit;
-  store_data;
-  last_unit_index := Structures.templates.UnitCount;
-  StructGraphics.add_empty_image_entries(Structures.first_unit_icon_image_index + Structures.templates.UnitCount, 1);
-  Inc(Structures.templates.UnitCount);
-  Structures.compute_image_indexes;
-  fill_data(fdaUnitNameList);
-  inc(art_control_groups[ACG_BUIDUP_ART].first_image_index);
-  inc(art_control_groups[ACG_BUIDING_ANIMATION].first_image_index);
-end;
-
-procedure TStructuresEditor.btnUnitRemoveClick(Sender: TObject);
-var
-  index: integer;
-begin
-  if Structures.templates.UnitCount = 0 then
-    exit;
-  store_data;
-  index := Structures.templates.UnitCount - 1;
-  if last_unit_index = index then
-    Dec(last_unit_index);
-  Dec(Structures.templates.UnitCount);
-  FillChar(Structures.templates.UnitNameStrings[index], Length(Structures.templates.UnitNameStrings[0]), 0);
-  FillChar(Structures.templates.UnitDefinitions[index], Sizeof(TUnitTemplate), 0);
-  StructGraphics.remove_image_entries(Structures.first_unit_icon_image_index + index, 1);
-  Structures.compute_image_indexes;
-  fill_data(fdaUnitNameList);
-  dec(art_control_groups[ACG_BUIDUP_ART].first_image_index);
-  dec(art_control_groups[ACG_BUIDING_ANIMATION].first_image_index);
-end;
-
-procedure TStructuresEditor.btnUnitCopyClick(Sender: TObject);
-begin
-  if lbUnitList.ItemIndex < 0 then
-    exit;
-  store_data;
-  Structures.copy_unit(lbUnitList.ItemIndex);
-end;
-
-procedure TStructuresEditor.btnUnitPasteClick(Sender: TObject);
-begin
-  if lbUnitList.ItemIndex < 0 then
-    exit;
-  if Structures.paste_unit(lbUnitList.ItemIndex) then
-    fill_data(fdaUnitNameList);
-end;
-
-procedure TStructuresEditor.btnUnitExportClick(Sender: TObject);
-begin
-  if lbUnitList.ItemIndex < 0 then
-    exit;
-  DataExportDialog.Filter := 'Dune2000 unit definition (*.d2kunt)|*.d2kunt';
-  DataExportDialog.DefaultExt := 'd2kunt';
-  DataExportDialog.Title := 'Export unit';
-  if DataExportDialog.Execute then
-  begin
-    store_data;
-    Structures.export_unit(lbUnitList.ItemIndex, DataExportDialog.FileName);
-  end;
-end;
-
-procedure TStructuresEditor.btnUnitImportClick(Sender: TObject);
-begin
-  if lbUnitList.ItemIndex < 0 then
-    exit;
-  DataImportDialog.Filter := 'Dune2000 unit definition (*.d2kunt)|*.d2kunt';
-  DataImportDialog.DefaultExt := 'd2kunt';
-  DataImportDialog.Title := 'Import unit';
-  if DataImportDialog.Execute then
-  begin
-    Structures.import_unit(lbUnitList.ItemIndex, DataImportDialog.FileName);
-    fill_data(fdaUnitNameList);
-  end;
-end;
-
-procedure TStructuresEditor.btnUnitMoveUpClick(Sender: TObject);
-begin
-  if lbUnitList.ItemIndex <= 0 then
-    exit;
-  Structures.swap_units(lbUnitList.ItemIndex, lbUnitList.ItemIndex - 1);
-  last_unit_index := lbUnitList.ItemIndex - 1;
-  fill_data(fdaUnitNameList);
-end;
-
-procedure TStructuresEditor.btnUnitMoveDownClick(Sender: TObject);
-begin
-  if (lbUnitList.ItemIndex < 0) or (lbUnitList.ItemIndex >= Structures.templates.UnitCount - 1) then
-    exit;
-  Structures.swap_units(lbUnitList.ItemIndex, lbUnitList.ItemIndex + 1);
-  last_unit_index := lbUnitList.ItemIndex + 1;
-  fill_data(fdaUnitNameList);
 end;
 
 procedure TStructuresEditor.edUnitFlagsChange(Sender: TObject);
@@ -1343,7 +1138,7 @@ begin
   index := lbBuildingArtList.ItemIndex;
   if index < 0 then
     exit;
-  last_building_art_index := index;
+  art_control_groups[ART_BUILDING].last_item_index := index;
 
   tmp_strings := TStringList.Create;
   first_image_index := Structures.building_art_image_indexes[index];
@@ -1363,7 +1158,7 @@ begin
   header := StructGraphics.get_structure_image_header(first_image_index + 1);
   if (header = nil) or (header.EntryType = 0) then
     selected_frame := 0;
-  fill_art_control_group_frame_list(ACG_BUIDING_ART, first_image_index, directions * 2 + 1, tmp_strings, selected_frame);
+  fill_art_control_group_frame_list(ART_BUILDING, first_image_index, directions * 2 + 1, tmp_strings, selected_frame);
   tmp_strings.Destroy;
   seBuildingArtDirections.Value := directions;
 end;
@@ -1377,27 +1172,23 @@ begin
   index := lbBuildingAnimationArtList.ItemIndex;
   if index < 0 then
     exit;
-  last_building_animation_art_index := index;
+  art_control_groups[ART_BUILDING_ANIMATION].last_item_index := index;
 
   first_image_index := Structures.building_animation_image_indexes[index];
   num_frames := Structures.templates.BuildingAnimationFrames[index];
-  fill_art_control_group_frame_list(ACG_BUIDING_ANIMATION, first_image_index, num_frames, nil, 0);
+  fill_art_control_group_frame_list(ART_BUILDING_ANIMATION, first_image_index, num_frames, nil, 0);
   seBuildingAnimationFrames.Value := num_frames;
 
   first_image_index := Structures.buildup_art_image_indexes[index];
   num_frames := Structures.templates.BuildupArtFrames[index];
-  fill_art_control_group_frame_list(ACG_BUIDUP_ART, first_image_index, num_frames, nil, 0);
+  fill_art_control_group_frame_list(ART_BUILDUP, first_image_index, num_frames, nil, 0);
   seBuildupArtFrames.Value := num_frames;
 end;
 
 procedure TStructuresEditor.btnBuildingAnimationArtModifyClick(Sender: TObject);
 begin
-  store_data;
-  StructGraphics.change_image_entry_count(Structures.building_animation_image_indexes[lbBuildingAnimationArtList.ItemIndex], Structures.templates.BuildingAnimationFrames[lbBuildingAnimationArtList.ItemIndex], seBuildingAnimationFrames.Value);
-  Structures.templates.BuildingAnimationFrames[lbBuildingAnimationArtList.ItemIndex] := seBuildingAnimationFrames.Value;
-  StructGraphics.change_image_entry_count(Structures.buildup_art_image_indexes[lbBuildingAnimationArtList.ItemIndex], Structures.templates.BuildupArtFrames[lbBuildingAnimationArtList.ItemIndex], seBuildupArtFrames.Value);
-  Structures.templates.BuildupArtFrames[lbBuildingAnimationArtList.ItemIndex] := seBuildupArtFrames.Value;
-  Structures.compute_image_indexes;
+  Structures.modify_art(ART_BUILDING_ANIMATION, lbBuildingAnimationArtList.ItemIndex, 0, seBuildingAnimationFrames.Value);
+  Structures.modify_art(ART_BUILDUP,            lbBuildingAnimationArtList.ItemIndex, 0, seBuildupArtFrames.Value);
   fill_data(fdaAllArt);
 end;
 
@@ -1458,7 +1249,7 @@ begin
   index := lbUnitArtList.ItemIndex;
   if index < 0 then
     exit;
-  last_unit_art_index := index;
+  art_control_groups[ART_UNIT].last_item_index:= index;
 
   tmp_strings := TStringList.Create;
   first_image_index := Structures.unit_art_image_indexes[index];
@@ -1468,7 +1259,7 @@ begin
     for j := 0 to directions - 1 do
       tmp_strings.Add(Format('Frame %d  Dir %d ', [i, j]));
 
-  fill_art_control_group_frame_list(ACG_UNIT_ART, first_image_index, frames * directions, tmp_strings, 0);
+  fill_art_control_group_frame_list(ART_UNIT, first_image_index, frames * directions, tmp_strings, 0);
   tmp_strings.Destroy;
   seUnitArtAnimationFrames.Value := frames;
   seUnitArtDirectionFrames.Value := directions;
@@ -1478,7 +1269,6 @@ procedure TStructuresEditor.lbWeaponListClick(Sender: TObject);
 begin
   store_weapon_data;
   fill_weapon_data;
-  cbxWeaponProjectileArtChange(nil);
 end;
 
 procedure TStructuresEditor.edWeaponFlagsChange(Sender: TObject);
@@ -1520,6 +1310,8 @@ end;
 
 procedure TStructuresEditor.cbxWeaponProjectileArtChange(Sender: TObject);
 begin
+  if lbProjectileArtList.ItemIndex = cbxWeaponProjectileArt.ItemIndex then
+    exit;
   lbProjectileArtList.ItemIndex := cbxWeaponProjectileArt.ItemIndex;
   lbProjectileArtListClick(nil);
 end;
@@ -1531,9 +1323,9 @@ begin
   index := lbProjectileArtList.ItemIndex;
   if index < 0 then
     exit;
-  last_projectile_art_index := index;
+  art_control_groups[ART_PROJECTILE].last_item_index := index;
 
-  fill_art_control_group_frame_list(ACG_PROJECTILE_ART, Structures.projectile_art_image_indexes[index], Structures.templates.ProjectileArtDirections[index], nil, 0);
+  fill_art_control_group_frame_list(ART_PROJECTILE, Structures.projectile_art_image_indexes[index], Structures.templates.ProjectileArtDirections[index], nil, 0);
   seProjectileArtDirections.Value := Structures.templates.ProjectileArtDirections[index];
 end;
 
@@ -1541,8 +1333,6 @@ procedure TStructuresEditor.lbExplosionListClick(Sender: TObject);
 begin
   store_explosion_data;
   fill_explosion_data;
-  lbAnimationArtList.ItemIndex := lbExplosionList.ItemIndex;
-  lbAnimationArtListClick(nil);
 end;
 
 procedure TStructuresEditor.edExplosionFlagsChange(Sender: TObject);
@@ -1585,9 +1375,9 @@ begin
   index := lbAnimationArtList.ItemIndex;
   if index < 0 then
     exit;
-  last_animation_art_index := index;
+  art_control_groups[ART_ANIMATION].last_item_index := index;
 
-  fill_art_control_group_frame_list(ACG_ANIMATION_ART, Structures.animation_art_image_indexes[index], Structures.templates.AnimationArtFrames[index], nil, 0);
+  fill_art_control_group_frame_list(ART_ANIMATION, Structures.animation_art_image_indexes[index], Structures.templates.AnimationArtFrames[index], nil, 0);
   seAnimationArtFrames.Value := Structures.templates.AnimationArtFrames[index];
 end;
 
@@ -1598,8 +1388,8 @@ var
   str: string;
 begin
   index := lbArmourTypeList.ItemIndex;
-  last_armour_type_index := index;
-  list_control_groups[LCG_ARMOUR_TYPES].edit_item_name.Text := Structures.armour.ArmourTypeStrings[index];
+  item_control_groups[ITEM_ARMOUR_TYPE].last_item_index := index;
+  item_control_groups[ITEM_ARMOUR_TYPE].edit_item_name.Text := Structures.armour.ArmourTypeStrings[index];
   str := 'Armour type used by: ';
   for i := 0 to Structures.templates.BuildingCount - 1 do
     if Structures.templates.BuildingDefinitions[i].ArmorType = index then
@@ -1617,8 +1407,8 @@ var
   str: string;
 begin
   index := lbWarheadList.ItemIndex;
-  last_warhead_index := index;
-  list_control_groups[LCG_WARHEADS].edit_item_name.Text := Structures.armour.WarheadStrings[index];
+  item_control_groups[ITEM_WARHEAD].last_item_index := index;
+  item_control_groups[ITEM_WARHEAD].edit_item_name.Text := Structures.armour.WarheadStrings[index];
   str := 'Warhead used by: ';
   for i := 0 to Structures.templates.WeaponCount - 1 do
     if Structures.templates.WeaponDefinitions[i].Warhead = index then
@@ -1657,10 +1447,10 @@ begin
   index := ARow - 1;
   item_name_list_combo := nil;
   case Structures.templates_other_byte_types[index] of
-    tobtBuilding:  item_name_list_combo := cbxBuildingPrereq1BuildingType;
-    tobtUnit:      item_name_list_combo := cbxTemplatesOtherUnitSelect;
-    tobtWeapon:    item_name_list_combo := cbxBuildingPrimaryWeapon;
-    tobtExplosion: item_name_list_combo := cbxBuildingDeathExplosion;
+    tobtBuildingType: item_name_list_combo := cbxBuildingPrereq1BuildingType;
+    tobtUnit:         item_name_list_combo := cbxTemplatesOtherUnitSelect;
+    tobtWeapon:       item_name_list_combo := cbxBuildingPrimaryWeapon;
+    tobtExplosion:    item_name_list_combo := cbxBuildingDeathExplosion;
   end;
   cbxTemplatesOtherSelect.Visible := Structures.templates_other_byte_types[index] <> tobtNone;
   cbxTemplatesOtherSelect.Tag := index;
@@ -1700,7 +1490,7 @@ begin
   frame_index := 0;
   for i := 0 to index - 1 do
     inc(frame_index, other_art_frames[i]);
-  fill_art_control_group_frame_list(ACG_OTHER_ART, frame_index, other_art_frames[index], nil, 0);
+  fill_art_control_group_frame_list(ART_OTHER, frame_index, other_art_frames[index], nil, 0);
 end;
 
 procedure TStructuresEditor.rgTechposTechLevelClick(Sender: TObject);
@@ -1800,80 +1590,163 @@ begin
   cbxTechposUnitType.SetFocus;
 end;
 
-procedure TStructuresEditor.ListControlGroupAddClick(Sender: TObject);
+procedure TStructuresEditor.ItemControlGroupAddClick(Sender: TObject);
 var
   group_index: integer;
-  lcg: TListControlGroupPtr;
+  icg: TItemControlGroupPtr;
 begin
-  group_index := (Sender as TButton).Tag;
-  lcg := Addr(list_control_groups[group_index]);
-  if lcg.item_count_byte_ptr^ = lcg.max_item_count then
-    exit;
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
   store_data;
-  // Store item name
-  store_c_string(lcg.edit_item_name.Text, Addr(lcg.item_name_list_ptr[lcg.item_count_byte_ptr^]), 50);
-  // Make the newly added item selected in the list box
-  lcg.last_item_index_ptr^ := lcg.item_count_byte_ptr^;
-  // Set default explosion data
-  if group_index = LCG_EXPLOSIONS then
-  begin
-    Structures.templates.ExplosionDefinitions[lcg.item_count_byte_ptr^].Sound := -1;
-    Structures.templates.ExplosionDefinitions[lcg.item_count_byte_ptr^].MyIndex := lcg.item_count_byte_ptr^;
-  end;
-  // Increase item count by 1
-  Inc(lcg.item_count_byte_ptr^);
-  fill_data(lcg.fill_data_action);
+  if Structures.add_new_item(group_index, IfThen(icg.edit_item_name_explicit, '', icg.edit_item_name.Text), icg.last_item_index) then
+    fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.ListControlGroupRemoveClick(Sender: TObject);
+procedure TStructuresEditor.ItemControlGroupRemoveClick(Sender: TObject);
 var
   group_index: integer;
-  lcg: TListControlGroupPtr;
+  icg: TItemControlGroupPtr;
 begin
-  group_index := (Sender as TButton).Tag;
-  lcg := Addr(list_control_groups[group_index]);
-  if lcg.item_count_byte_ptr^ = 0 then
-    exit;
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
   store_data;
-  // Decrease item count by 1
-  Dec(lcg.item_count_byte_ptr^);
-  // Erase item name
-  FillChar(lcg.item_name_list_ptr[lcg.item_count_byte_ptr^], 50, 0);
-  // If this item was selected last time in the list box, move to the previous item
-  if lcg.last_item_index_ptr^ = lcg.item_count_byte_ptr^ then
-    Dec(lcg.last_item_index_ptr^);
-  case group_index of
-    LCG_WEAPONS:
-      begin
-        // Erase weapon data
-        FillChar(Structures.templates.WeaponDefinitions[lcg.item_count_byte_ptr^], sizeof(TWeaponTemplate), 0);
-      end;
-    LCG_EXPLOSIONS:
-      begin
-        // Erase explosion data
-        FillChar(Structures.templates.ExplosionDefinitions[lcg.item_count_byte_ptr^], sizeof(TExplosionTemplate), 0);
-        Structures.templates.AnimationArtFlags[lcg.item_count_byte_ptr^] := 0;
-      end;
-    LCG_WARHEADS:
-      begin
-        // Erase warhead data
-        FillChar(Structures.armour.WarheadEntries[lcg.item_count_byte_ptr^], sizeof(TWarheadEntry), 0);
-      end;
-  end;
-  fill_data(lcg.fill_data_action);
+  if Structures.remove_last_item(group_index) then
+    fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.ListControlGroupRenameClick(Sender: TObject);
+procedure TStructuresEditor.ItemControlGroupRenameClick(Sender: TObject);
 var
   group_index: integer;
-  lcg: TListControlGroupPtr;
+  icg: TItemControlGroupPtr;
 begin
-  group_index := (Sender as TButton).Tag;
-  lcg := Addr(list_control_groups[group_index]);
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
+  if icg.list_control.ItemIndex < 0 then
+    exit;
   store_data;
   // Store new item name
-  store_c_string(lcg.edit_item_name.Text, Addr(lcg.item_name_list_ptr[lcg.list_control.ItemIndex]), 50);
-  fill_data(lcg.fill_data_action);
+  Structures.rename_item(group_index, icg.list_control.ItemIndex, icg.edit_item_name.Text);
+  fill_data(icg.fill_data_action);
+end;
+
+procedure TStructuresEditor.ItemControlGroupExportClick(Sender: TObject);
+var
+  group_index: integer;
+  icg: TItemControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
+  if icg.list_control.ItemIndex < 0 then
+    exit;
+  DataExportDialog.Filter := Format('Dune2000 %s data (*.%s)|*.%s', [item_type_names[group_index], item_type_file_extensions[group_index], item_type_file_extensions[group_index]]);
+  DataExportDialog.DefaultExt := item_type_file_extensions[group_index];
+  DataExportDialog.Title := 'Export ' + item_type_names[group_index];
+  DataExportDialog.FileName := Format('%s.%s', [icg.edit_item_name.Text, item_type_file_extensions[group_index]]);
+  if DataExportDialog.Execute then
+  begin
+    store_data;
+    Structures.export_item(group_index, icg.list_control.ItemIndex, DataExportDialog.FileName);
+  end;
+end;
+
+procedure TStructuresEditor.ItemControlGroupImportClick(Sender: TObject);
+var
+  group_index: integer;
+  icg: TItemControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
+  if icg.list_control.ItemIndex < 0 then
+    exit;
+  DataImportDialog.Filter := Format('Dune2000 %s data (*.%s)|*.%s', [item_type_names[group_index], item_type_file_extensions[group_index], item_type_file_extensions[group_index]]);
+  DataImportDialog.DefaultExt := item_type_file_extensions[group_index];
+  DataImportDialog.Title := 'Import ' + item_type_names[group_index];
+  DataImportDialog.FileName := '';
+  if DataImportDialog.Execute then
+  begin
+    Structures.import_item(group_index, icg.list_control.ItemIndex, DataImportDialog.FileName);
+    fill_data(fdaAll);
+  end;
+end;
+
+procedure TStructuresEditor.ItemControlGroupCopyClick(Sender: TObject);
+var
+  group_index: integer;
+  icg: TItemControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
+  if icg.list_control.ItemIndex < 0 then
+    exit;
+  store_data;
+  Structures.copy_item(group_index, icg.list_control.ItemIndex);
+end;
+
+procedure TStructuresEditor.ItemControlGroupPasteClick(Sender: TObject);
+var
+  group_index: integer;
+  icg: TItemControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
+  if icg.list_control.ItemIndex < 0 then
+    exit;
+  if Structures.paste_item(group_index, icg.list_control.ItemIndex) then
+    fill_data(fdaAll);
+end;
+
+procedure TStructuresEditor.ItemControlGroupMoveUpClick(Sender: TObject);
+var
+  group_index: integer;
+  icg: TItemControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
+  if icg.list_control.ItemIndex <= 0 then
+    exit;
+  store_data;
+  Structures.swap_items(group_index, icg.list_control.ItemIndex, icg.list_control.ItemIndex - 1);
+  icg.last_item_index := icg.list_control.ItemIndex - 1;
+  fill_data(icg.fill_data_action);
+end;
+
+procedure TStructuresEditor.ItemControlGroupMoveDownClick(Sender: TObject);
+var
+  group_index: integer;
+  icg: TItemControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  icg := Addr(item_control_groups[group_index]);
+  if (icg.list_control.ItemIndex < 0) or (icg.list_control.ItemIndex >= icg.list_control.Count - 1) then
+    exit;
+  store_data;
+  Structures.swap_items(group_index, icg.list_control.ItemIndex, icg.list_control.ItemIndex + 1);
+  icg.last_item_index := icg.list_control.ItemIndex + 1;
+  fill_data(icg.fill_data_action);
+end;
+
+procedure TStructuresEditor.ItemControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  group_index: integer;
+  can_export_import: boolean;
+  matched: boolean;
+begin
+  group_index := (Sender as TListBox).Tag;
+  can_export_import := Structures.item_type_pointers[group_index].export_data_size <> 0;
+  matched := true;
+  case key of
+    45: ItemControlGroupAddClick(Sender);
+    46: ItemControlGroupRemoveClick(Sender);
+    69: if can_export_import then ItemControlGroupExportClick(Sender);
+    73: if can_export_import then ItemControlGroupImportClick(Sender);
+    67: if can_export_import then ItemControlGroupCopyClick(Sender);
+    86: if can_export_import then ItemControlGroupPasteClick(Sender);
+    33: ItemControlGroupMoveUpClick(Sender);
+    34: ItemControlGroupMoveDownClick(Sender);
+    else matched := false;
+  end;
+  if matched then
+    key := 0;
 end;
 
 procedure TStructuresEditor.ArtControlGroupFrameListClick(Sender: TObject);
@@ -1919,157 +1792,94 @@ end;
 procedure TStructuresEditor.ArtControlGroupAddClick(Sender: TObject);
 var
   group_index: integer;
+  acg: TArtControlGroupPtr;
+  directions, frames: integer;
 begin
-  group_index := (Sender as TButton).Tag;
-  store_data;
-  case group_index of
-    ACG_BUIDING_ART:
-      if Structures.templates.BuildingArtCount < MAX_BUILDING_ART then
-      begin
-        StructGraphics.change_image_entry_count(Structures.projectile_art_image_indexes[0], 0, seBuildingArtDirections.Value * 2 + 1);
-        Structures.templates.BuildingArtDirections[Structures.templates.BuildingArtCount] := seBuildingArtDirections.Value;
-        last_building_art_index := Structures.templates.BuildingArtCount;
-        Inc(Structures.templates.BuildingArtCount);
-      end;
-    ACG_UNIT_ART:
-      if Structures.templates.UnitArtCount < MAX_UNIT_ART then
-      begin
-        StructGraphics.change_image_entry_count(Structures.building_art_image_indexes[0], 0, seUnitArtAnimationFrames.Value * seUnitArtDirectionFrames.Value);
-        Structures.templates.UnitArtAnimationFrames[Structures.templates.UnitArtCount] := seUnitArtAnimationFrames.Value;
-        Structures.templates.UnitArtDirectionFrames[Structures.templates.UnitArtCount] := seUnitArtDirectionFrames.Value;
-        last_unit_art_index := Structures.templates.UnitArtCount;
-        Inc(Structures.templates.UnitArtCount);
-      end;
-    ACG_PROJECTILE_ART:
-      if Structures.templates.ProjectileArtCount < MAX_WEAPONS then
-      begin
-        StructGraphics.change_image_entry_count(Structures.animation_art_image_indexes[0], 0, seProjectileArtDirections.Value);
-        Structures.templates.ProjectileArtDirections[Structures.templates.ProjectileArtCount] := seProjectileArtDirections.Value;
-        last_projectile_art_index := Structures.templates.ProjectileArtCount;
-        Inc(Structures.templates.ProjectileArtCount);
-      end;
-    ACG_ANIMATION_ART:
-      if Structures.templates.AnimationArtCount < MAX_EXPLOSIONS then
-      begin
-        StructGraphics.change_image_entry_count(Structures.first_unit_icon_image_index, 0, seAnimationArtFrames.Value);
-        Structures.templates.AnimationArtFrames[Structures.templates.AnimationArtCount] := seAnimationArtFrames.Value;
-        last_animation_art_index := Structures.templates.AnimationArtCount;
-        Inc(Structures.templates.AnimationArtCount);
-      end;
-  end;
-  Structures.compute_image_indexes;
-  fill_data(fdaAllArt);
+  group_index := (Sender as TComponent).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  directions := 1;
+  if acg.se_directions <> nil then
+    directions := acg.se_directions.Value;
+  frames := 1;
+  if acg.se_frames <> nil then
+    frames := acg.se_frames.Value;
+  if Structures.add_new_art(group_index, directions, frames, acg.last_item_index) then
+    fill_data(fdaAllArt);
 end;
 
 procedure TStructuresEditor.ArtControlGroupRemoveClick(Sender: TObject);
-var
-  group_index: integer;
-  i: integer;
 begin
-  group_index := (Sender as TButton).Tag;
-  store_data;
-  case group_index of
-    ACG_BUIDING_ART:
-      if Structures.templates.BuildingArtCount > 0 then
-      begin
-        Dec(Structures.templates.BuildingArtCount);
-        StructGraphics.change_image_entry_count(Structures.building_art_image_indexes[Structures.templates.BuildingArtCount], Structures.templates.BuildingArtDirections[Structures.templates.BuildingArtCount] * 2 + 1, 0);
-        Structures.templates.BuildingArtDirections[Structures.templates.BuildingArtCount] := 0;
-        // Reset building art references in buildings
-        for i := 0 to Structures.templates.BuildingCount - 1 do
-        begin
-          if Structures.templates.BuildingDefinitions[i].BuildingArt = Structures.templates.BuildingArtCount then
-            Structures.templates.BuildingDefinitions[i].BuildingArt := -1;
-          if Structures.templates.BuildingDefinitions[i].BarrelArt = Structures.templates.BuildingArtCount then
-            Structures.templates.BuildingDefinitions[i].BarrelArt := -1;
-        end;
-        if last_building_art_index = Structures.templates.BuildingArtCount then
-          Dec(last_building_art_index);
-      end;
-    ACG_UNIT_ART:
-      if Structures.templates.UnitArtCount > 0 then
-      begin
-        Dec(Structures.templates.UnitArtCount);
-        StructGraphics.change_image_entry_count(Structures.unit_art_image_indexes[Structures.templates.UnitArtCount], Structures.templates.UnitArtAnimationFrames[Structures.templates.UnitArtCount] * Structures.templates.UnitArtDirectionFrames[Structures.templates.UnitArtCount], 0);
-        Structures.templates.UnitArtAnimationFrames[Structures.templates.UnitArtCount] := 0;
-        Structures.templates.UnitArtDirectionFrames[Structures.templates.UnitArtCount] := 0;
-        // Reset unit art references in units
-        for i := 0 to Structures.templates.UnitCount - 1 do
-        begin
-          if Structures.templates.UnitDefinitions[i].UnitArt = Structures.templates.UnitArtCount then
-            Structures.templates.UnitDefinitions[i].UnitArt := -1;
-          if Structures.templates.UnitDefinitions[i].BarrelArt = Structures.templates.UnitArtCount then
-            Structures.templates.UnitDefinitions[i].BarrelArt := -1;
-        end;
-        if last_unit_art_index = Structures.templates.UnitArtCount then
-          Dec(last_unit_art_index);
-      end;
-    ACG_PROJECTILE_ART:
-      if Structures.templates.ProjectileArtCount > 0 then
-      begin
-        Dec(Structures.templates.ProjectileArtCount);
-        StructGraphics.change_image_entry_count(Structures.projectile_art_image_indexes[Structures.templates.ProjectileArtCount], Structures.templates.ProjectileArtDirections[Structures.templates.ProjectileArtCount], 0);
-        Structures.templates.ProjectileArtDirections[Structures.templates.ProjectileArtCount] := 0;
-        // Reset projectile art references in weapons
-        for i := 0 to Structures.templates.WeaponCount - 1 do
-          if Structures.templates.WeaponDefinitions[i].ProjectileArt = Structures.templates.ProjectileArtCount then
-            Structures.templates.WeaponDefinitions[i].ProjectileArt := 0;
-        if last_projectile_art_index = Structures.templates.ProjectileArtCount then
-          Dec(last_projectile_art_index);
-      end;
-    ACG_ANIMATION_ART:
-      if Structures.templates.AnimationArtCount > 0 then
-      begin
-        Dec(Structures.templates.AnimationArtCount);
-        StructGraphics.change_image_entry_count(Structures.animation_art_image_indexes[Structures.templates.AnimationArtCount], Structures.templates.AnimationArtFrames[Structures.templates.AnimationArtCount], 0);
-        Structures.templates.AnimationArtFrames[Structures.templates.AnimationArtCount] := 0;
-        if last_animation_art_index = Structures.templates.AnimationArtCount then
-          Dec(last_animation_art_index);
-      end;
-  end;
-  Structures.compute_image_indexes;
-  fill_data(fdaAllArt);
+  if Structures.remove_last_art((Sender as TComponent).Tag) then
+    fill_data(fdaAllArt);
 end;
 
 procedure TStructuresEditor.ArtControlGroupModifyClick(Sender: TObject);
 var
   group_index: integer;
+  acg: TArtControlGroupPtr;
+  directions, frames: integer;
 begin
-  group_index := (Sender as TButton).Tag;
-  store_data;
-  case group_index of
-    ACG_BUIDING_ART:
-      begin
-        StructGraphics.change_image_entry_count(Structures.building_art_image_indexes[lbBuildingArtList.ItemIndex] + 1 + Structures.templates.BuildingArtDirections[lbBuildingArtList.ItemIndex], Structures.templates.BuildingArtDirections[lbBuildingArtList.ItemIndex], seBuildingArtDirections.Value);
-        StructGraphics.change_image_entry_count(Structures.building_art_image_indexes[lbBuildingArtList.ItemIndex] + 1, Structures.templates.BuildingArtDirections[lbBuildingArtList.ItemIndex], seBuildingArtDirections.Value);
-        Structures.templates.BuildingArtDirections[lbBuildingArtList.ItemIndex] := seBuildingArtDirections.Value;
-      end;
-    ACG_UNIT_ART:
-      begin
-        StructGraphics.change_image_entry_count(Structures.unit_art_image_indexes[lbUnitArtList.ItemIndex], Structures.templates.UnitArtAnimationFrames[lbUnitArtList.ItemIndex] * Structures.templates.UnitArtDirectionFrames[lbUnitArtList.ItemIndex], seUnitArtAnimationFrames.Value * seUnitArtDirectionFrames.Value);
-        Structures.templates.UnitArtAnimationFrames[lbUnitArtList.ItemIndex] := seUnitArtAnimationFrames.Value;
-        Structures.templates.UnitArtDirectionFrames[lbUnitArtList.ItemIndex] := seUnitArtDirectionFrames.Value;
-      end;
-    ACG_PROJECTILE_ART:
-      begin
-        StructGraphics.change_image_entry_count(Structures.projectile_art_image_indexes[lbProjectileArtList.ItemIndex], Structures.templates.ProjectileArtDirections[lbProjectileArtList.ItemIndex], seProjectileArtDirections.Value);
-        Structures.templates.ProjectileArtDirections[lbProjectileArtList.ItemIndex] := seProjectileArtDirections.Value;
-      end;
-    ACG_ANIMATION_ART:
-      begin
-        StructGraphics.change_image_entry_count(Structures.animation_art_image_indexes[lbAnimationArtList.ItemIndex], Structures.templates.AnimationArtFrames[lbAnimationArtList.ItemIndex], seAnimationArtFrames.Value);
-        Structures.templates.AnimationArtFrames[lbAnimationArtList.ItemIndex] := seAnimationArtFrames.Value;
-      end;
-  end;
-  Structures.compute_image_indexes;
+  group_index := (Sender as TComponent).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  directions := 1;
+  if acg.se_directions <> nil then
+    directions := acg.se_directions.Value;
+  frames := 1;
+  if acg.se_frames <> nil then
+    frames := acg.se_frames.Value;
+  Structures.modify_art(group_index, acg.list_control.ItemIndex, directions, frames);
   fill_data(fdaAllArt);
 end;
 
 procedure TStructuresEditor.ArtControlGroupExportClick(Sender: TObject);
 var
   group_index: integer;
+  i: integer;
+  filename: string;
 begin
-  group_index := (Sender as TButton).Tag;
+  group_index := (Sender as TComponent).Tag;
+  filename := '';
+  case group_index of
+    ART_BUILDING:
+      for i := 0 to Structures.templates.BuildingCount - 1 do
+      begin
+        if Structures.templates.BuildingDefinitions[i].BuildingArt = lbBuildingArtList.ItemIndex then
+        begin
+          filename := Structures.templates.BuildingNameStrings[i];
+          break;
+        end;
+        if Structures.templates.BuildingDefinitions[i].BarrelArt = lbBuildingArtList.ItemIndex then
+        begin
+          filename := Structures.templates.BuildingNameStrings[i] + '_BARREL';
+          break;
+        end;
+      end;
+    ART_BUILDING_ANIMATION:
+      filename := Structures.templates.BuildingNameStrings[lbBuildingAnimationArtList.ItemIndex] + '_ANIMATION';
+    ART_BUILDUP:
+      filename := Structures.templates.BuildingNameStrings[lbBuildingAnimationArtList.ItemIndex] + '_BUILDUP';
+    ART_UNIT:
+      for i := 0 to Structures.templates.UnitCount - 1 do
+      begin
+        if Structures.templates.UnitDefinitions[i].UnitArt = lbUnitArtList.ItemIndex then
+        begin
+          filename := Structures.templates.UnitNameStrings[i];
+          break;
+        end;
+        if Structures.templates.UnitDefinitions[i].BarrelArt = lbUnitArtList.ItemIndex then
+        begin
+          filename := Structures.templates.UnitNameStrings[i] + '_BARREL';
+          break;
+        end;
+      end;
+    ART_PROJECTILE:
+      filename := Structures.templates.WeaponStrings[lbProjectileArtList.ItemIndex];
+    ART_ANIMATION:
+      filename := Structures.templates.ExplosionStrings[lbAnimationArtList.ItemIndex];
+    ART_OTHER:
+      filename := lbOtherArtList.Items[lbOtherArtList.ItemIndex];
+  end;
+  ArtExportDialog.FileName := filename;
   if ArtExportDialog.Execute then
     StructGraphics.export_image_entries(ArtExportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count);
 end;
@@ -2078,20 +1888,71 @@ procedure TStructuresEditor.ArtControlGroupImportClick(Sender: TObject);
 var
   group_index: integer;
 begin
-  group_index := (Sender as TButton).Tag;
+  group_index := (Sender as TComponent).Tag;
+  ArtImportDialog.FileName := '';
   if ArtImportDialog.Execute then
   begin
     if StructGraphics.import_image_entries(ArtImportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count) then
       case group_index of
-        ACG_BUIDING_ART: lbBuildingArtListClick(nil);
-        ACG_BUIDING_ANIMATION: lbBuildingAnimationArtListClick(nil);
-        ACG_BUIDUP_ART: lbBuildingAnimationArtListClick(nil);
-        ACG_UNIT_ART: lbUnitArtListClick(nil);
-        ACG_PROJECTILE_ART: lbProjectileArtListClick(nil);
-        ACG_ANIMATION_ART: lbAnimationArtListClick(nil);
-        ACG_OTHER_ART: lbOtherArtListClick(nil);
+        ART_BUILDING: lbBuildingArtListClick(nil);
+        ART_BUILDING_ANIMATION: lbBuildingAnimationArtListClick(nil);
+        ART_BUILDUP: lbBuildingAnimationArtListClick(nil);
+        ART_UNIT: lbUnitArtListClick(nil);
+        ART_PROJECTILE: lbProjectileArtListClick(nil);
+        ART_ANIMATION: lbAnimationArtListClick(nil);
+        ART_OTHER: lbOtherArtListClick(nil);
       end;
   end;
+end;
+
+procedure TStructuresEditor.ArtControlGroupMoveUpClick(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if acg.list_control.ItemIndex <= 0 then
+    exit;
+  Structures.swap_arts(group_index, acg.list_control.ItemIndex, acg.list_control.ItemIndex - 1);
+  acg.last_item_index := acg.list_control.ItemIndex - 1;
+  fill_data(fdaAllArt);
+end;
+
+procedure TStructuresEditor.ArtControlGroupMoveDownClick(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+begin
+  group_index := (Sender as TComponent).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if (acg.list_control.ItemIndex < 0) or (acg.list_control.ItemIndex >= acg.list_control.Count - 1) then
+    exit;
+  Structures.swap_arts(group_index, acg.list_control.ItemIndex, acg.list_control.ItemIndex + 1);
+  acg.last_item_index := acg.list_control.ItemIndex + 1;
+  fill_data(fdaAllArt);
+end;
+
+procedure TStructuresEditor.ArtControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+  matched: boolean;
+begin
+  group_index := (Sender as TListBox).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  matched := true;
+  case key of
+    45: if acg.btn_art_add <> nil then       ArtControlGroupAddClick(Sender);
+    46: if acg.btn_art_remove <> nil then    ArtControlGroupRemoveClick(Sender);
+    69: if acg.btn_art_export <> nil then    ArtControlGroupExportClick(Sender);
+    73: if acg.btn_art_import <> nil then    ArtControlGroupImportClick(Sender);
+    33: if acg.btn_art_move_up <> nil then   ArtControlGroupMoveUpClick(Sender);
+    34: if acg.btn_art_move_down <> nil then ArtControlGroupMoveDownClick(Sender);
+    else matched := false;
+  end;
+  if matched then
+    key := 0;
 end;
 
 procedure TStructuresEditor.update_contents;
@@ -2150,53 +2011,38 @@ begin
   if (action = fdaBuildingTypeList) or (action = fdaAll) then
   begin
     // Building type list
-    for i := 0 to Structures.templates.BuildingTypeCount - 1 do
-      tmp_strings.Add(Format('%.*d %s', [2, i, Structures.templates.BuildingTypeStrings[i]]));
-    lbBuildingTypeList.Items := tmp_strings;
+    fill_item_list(ITEM_BUILDING_TYPE, tmp_strings);
     cbxBuildingType.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
     cbxBuildingPrereq1BuildingType.Items := tmp_strings;
     cbxBuildingPrereq2BuildingType.Items := tmp_strings;
     cbxUnitPrereq1BuildingType.Items := tmp_strings;
     cbxUnitPrereq2BuildingType.Items := tmp_strings;
-    lbBuildingTypeList.ItemIndex := last_building_type_index;
     lbBuildingTypeListClick(nil);
   end;
 
-  if (action = fdaBuildingNameList) or (action = fdaAll) then
+  if (action = fdaBuildingList) or (action = fdaAll) then
   begin
-    // Building name list
-    tmp_strings.Clear;
-    for i := 0 to Structures.templates.BuildingCount - 1 do
-      tmp_strings.Add(Format('%.*d %s', [2, i, Structures.templates.BuildingNameStrings[i]]));
-    lbBuildingList.Items := tmp_strings;
-    lbBuildingList.ItemIndex := last_building_index;
+    // Building list
+    fill_item_list(ITEM_BUILDING, tmp_strings);
   end;
 
   if (action = fdaUnitTypeList) or (action = fdaAll) then
   begin
     // Unit type list
-    tmp_strings.Clear;
-    for i := 0 to Structures.templates.UnitTypeCount - 1 do
-      tmp_strings.Add(Format('%.*d %s', [2, i, Structures.templates.UnitTypeStrings[i]]));
-    lbUnitTypeList.Items := tmp_strings;
+    fill_item_list(ITEM_UNIT_TYPE, tmp_strings);
     cbxUnitType.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
     cbxTechposUnitType.Items := tmp_strings;
-    lbUnitTypeList.ItemIndex := last_unit_type_index;
     lbUnitTypeListClick(nil);
   end;
 
-  if (action = fdaUnitNameList) or (action = fdaAll) then
+  if (action = fdaUnitList) or (action = fdaAll) then
   begin
-    // Unit name list
-    tmp_strings.Clear;
-    for i := 0 to Structures.templates.UnitCount - 1 do
-      tmp_strings.Add(Format('%.*d %s', [2, i, Structures.templates.UnitNameStrings[i]]));
-    lbUnitList.Items := tmp_strings;
+    // Unit list
+    fill_item_list(ITEM_UNIT, tmp_strings);
     tmp_strings.Insert(0, '(none)');
     cbxTemplatesOtherUnitSelect.Items := tmp_strings;
-    lbUnitList.ItemIndex := last_unit_index;
   end;
 
   if (action = fdaAllArt) or (action = fdaAll) then
@@ -2209,18 +2055,19 @@ begin
     tmp_strings.Insert(0, '(none)');
     cbxBuildingBuildingArt.Items := tmp_strings;
     cbxBuildingBarrelArt.Items := tmp_strings;
-    lbBuildingArtList.ItemIndex := last_building_art_index;
+    lbBuildingArtList.ItemIndex := Min(art_control_groups[ART_BUILDING].last_item_index, Structures.templates.BuildingArtCount - 1);
     lbBuildingArtListClick(nil);
+    lblBuildingArtList.Caption := Format('Building art (%d of %d)', [Structures.templates.BuildingArtCount, MAX_BUILDING_ART]);
   end;
 
-  if (action = fdaAllArt) or (action = fdaBuildingNameList) or (action = fdaAll) then
+  if (action = fdaAllArt) or (action = fdaBuildingList) or (action = fdaUnitList) or (action = fdaAll) then
   begin
     // Building animation art list
     tmp_strings.Clear;
     for i := 0 to Structures.templates.BuildingCount - 1 do
       tmp_strings.Add(Format('[ %.*d / %.*d ] %.*d %s', [2, Structures.templates.BuildingAnimationFrames[i], 2, Structures.templates.BuildupArtFrames[i], 2, i, Structures.templates.BuildingNameStrings[i]]));
     lbBuildingAnimationArtList.Items := tmp_strings;
-    lbBuildingAnimationArtList.ItemIndex := last_building_animation_art_index;
+    lbBuildingAnimationArtList.ItemIndex := Min(art_control_groups[ART_BUILDING_ANIMATION].last_item_index, Structures.templates.BuildingCount - 1);
     lbBuildingAnimationArtListClick(nil);
 
     // Building animation selection
@@ -2236,14 +2083,14 @@ begin
     cbxBuildingBuildupArt.Items := tmp_strings;
   end;
 
-  if (action = fdaBuilexpList) or (action = fdaBuildingNameList) or (action = fdaAll) then
+  if (action = fdaBuilexpList) or (action = fdaBuildingList) or (action = fdaAll) then
   begin
     // BuilExp building list
     tmp_strings.Clear;
     for i := 0 to Structures.templates.BuildingCount - 1 do
       tmp_strings.Add(Format('[ %d ] %.*d %s', [Structures.builexp[i].NumAnimations, 2, i, Structures.templates.BuildingNameStrings[i]]));
     lbBuilExpBuildingList.Items := tmp_strings;
-    lbBuilExpBuildingList.ItemIndex := last_builexp_building_index;
+    lbBuilExpBuildingList.ItemIndex := Min(last_builexp_building_index, Structures.templates.BuildingCount - 1);
   end;
 
   if (action = fdaAllArt) or (action = fdaAll) then
@@ -2256,26 +2103,23 @@ begin
     tmp_strings.Insert(0, '(none)');
     cbxUnitUnitArt.Items := tmp_strings;
     cbxUnitBarrelArt.Items := tmp_strings;
-    lbUnitArtList.ItemIndex := last_unit_art_index;
+    lbUnitArtList.ItemIndex := Min(art_control_groups[ART_UNIT].last_item_index, Structures.templates.UnitArtCount - 1);
     lbUnitArtListClick(nil);
+    lblUnitArtList.Caption := Format('Unit art (%d of %d)', [Structures.templates.UnitArtCount, MAX_UNIT_ART]);
   end;
 
   if (action = fdaWeaponList) or (action = fdaAll) then
   begin
     // Weapon list
-    tmp_strings.Clear;
-    for i := 0 to Structures.templates.WeaponCount - 1 do
-      tmp_strings.Add(Format('%.*d - %s', [2, i, Structures.templates.WeaponStrings[i]]));
-    lbWeaponList.Items := tmp_strings;
+    fill_item_list(ITEM_WEAPON, tmp_strings);
     tmp_strings.Insert(0, '(none)');
     cbxBuildingPrimaryWeapon.Items := tmp_strings;
     cbxBuildingSecondaryWeapon.Items := tmp_strings;
     cbxUnitPrimaryWeapon.Items := tmp_strings;
     cbxUnitSecondaryWeapon.Items := tmp_strings;
-    lbWeaponList.ItemIndex := last_weapon_index;
   end;
 
-  if (action = fdaAllArt) or (action = fdaAll) then
+  if (action = fdaWeaponList) or (action = fdaAllArt) or (action = fdaAll) then
   begin
     // Projectile art list
     tmp_strings.Clear;
@@ -2283,17 +2127,14 @@ begin
       tmp_strings.Add(Format('%.*d - %4d (%dd)', [2, i, Structures.projectile_art_image_indexes[i], Structures.templates.ProjectileArtDirections[i]]));
     lbProjectileArtList.Items := tmp_strings;
     cbxWeaponProjectileArt.Items := tmp_strings;
-    lbProjectileArtList.ItemIndex := last_projectile_art_index;
+    lbProjectileArtList.ItemIndex := Min(art_control_groups[ART_PROJECTILE].last_item_index, Structures.templates.ProjectileArtCount - 1);
     lbProjectileArtListClick(nil);
   end;
 
   if (action = fdaExplosionList) or (action = fdaAll) then
   begin
     // Explosion list
-    tmp_strings.Clear;
-    for i := 0 to Structures.templates.ExplosionCount - 1 do
-      tmp_strings.Add(Format('%.*d - %s', [2, i, Structures.templates.ExplosionStrings[i]]));
-    lbExplosionList.Items := tmp_strings;
+    fill_item_list(ITEM_EXPLOSION, tmp_strings);
     for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
       cbxBuilExpAnimExplosion[i].Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
@@ -2303,42 +2144,33 @@ begin
     cbxUnitFiringExplosion.Items := tmp_strings;
     cbxWeaponHitExplosion.Items := tmp_strings;
     cbxWeaponTrailExplosion.Items := tmp_strings;
-    lbExplosionList.ItemIndex := last_explosion_index;
   end;
 
-  if (action = fdaAllArt) or (action = fdaAll) then
+  if (action = fdaExplosionList) or (action = fdaAllArt) or (action = fdaAll) then
   begin
     // Animation art list
     tmp_strings.Clear;
     for i := 0 to Structures.templates.AnimationArtCount - 1 do
       tmp_strings.Add(Format('%.*d - %4d (%df)', [2, i, Structures.animation_art_image_indexes[i], Structures.templates.AnimationArtFrames[i]]));
     lbAnimationArtList.Items := tmp_strings;
-    lbAnimationArtList.ItemIndex := last_animation_art_index;
+    lbAnimationArtList.ItemIndex := Min(art_control_groups[ART_ANIMATION].last_item_index, Structures.templates.AnimationArtCount - 1);
     lbAnimationArtListClick(nil);
   end;
 
   if (action = fdaArmourTypeList) or (action = fdaAll) then
   begin
     // Armour type list
-    tmp_strings.Clear;
-    for i := 0 to Structures.armour.ArmourTypeCount - 1 do
-      tmp_strings.Add(Format('%.*d - %s', [2, i, Structures.armour.ArmourTypeStrings[i]]));
-    lbArmourTypeList.Items := tmp_strings;
+    fill_item_list(ITEM_ARMOUR_TYPE, tmp_strings);
     cbxBuildingArmorType.Items := tmp_strings;
     cbxUnitArmorType.Items := tmp_strings;
-    lbArmourTypeList.ItemIndex := last_armour_type_index;
     lbArmourTypeListClick(nil);
   end;
 
   if (action = fdaWarheadList) or (action = fdaAll) then
   begin
     // Warhead list
-    tmp_strings.Clear;
-    for i := 0 to Structures.armour.WarheadCount - 1 do
-      tmp_strings.Add(Format('%.*d - %s', [2, i, Structures.armour.WarheadStrings[i]]));
-    lbWarheadList.Items := tmp_strings;
+    fill_item_list(ITEM_WARHEAD, tmp_strings);
     cbxWeaponWarhead.Items := tmp_strings;
-    lbWarheadList.ItemIndex := last_warhead_index;
     lbWarheadListClick(nil);
   end;
 
@@ -2358,6 +2190,26 @@ begin
 
   // Fill specific page data
   fill_page_data;
+end;
+
+procedure TStructuresEditor.fill_item_list(item_type: integer; tmp_strings: TStringList);
+var
+  i: integer;
+  ptrs: TItemTypePointersPtr;
+  icg: TItemControlGroupPtr;
+  s: TDummyStringRecPtr;
+begin
+  tmp_strings.Clear;
+  ptrs := Addr(Structures.item_type_pointers[item_type]);
+  icg := Addr(item_control_groups[item_type]);
+  for i := 0 to ptrs.item_count_byte_ptr^ - 1 do
+  begin
+    s := Addr(ptrs.item_name_list_ptr[i * ptrs.item_name_length]);
+    tmp_strings.Add(Format('%.*d %s%s', [2, i, IfThen(item_type < ITEM_WEAPON, '', '- '), s.str]));
+  end;
+  icg.list_control.Items := tmp_strings;
+  icg.list_control.ItemIndex := Min(icg.last_item_index, ptrs.item_count_byte_ptr^ - 1);
+  icg.lbl_header.Caption := Format('%ss (%d of %d)', [item_type_names[item_type], ptrs.item_count_byte_ptr^, ptrs.max_item_count]);
 end;
 
 procedure TStructuresEditor.fill_page_data;
@@ -2441,7 +2293,7 @@ begin
   if index < 0 then
     exit;
   loading := true;
-  last_building_index := index;
+  item_control_groups[ITEM_BUILDING].last_item_index := index;
   bld := Addr(Structures.templates.BuildingDefinitions[index]);
   // Basic group box
   edBuildingName.Text := Structures.templates.BuildingNameStrings[index];
@@ -2529,7 +2381,7 @@ begin
   index := lbUnitList.ItemIndex;
   if index < 0 then
     exit;
-  last_unit_index := index;
+  item_control_groups[ITEM_UNIT].last_item_index := index;
   loading := true;
   unt := Addr(Structures.templates.UnitDefinitions[index]);
   // Basic group box
@@ -2628,12 +2480,12 @@ begin
   index := lbWeaponList.ItemIndex;
   if index < 0 then
     exit;
-  last_weapon_index := index;
+  item_control_groups[ITEM_WEAPON].last_item_index := index;
   loading := true;
   wpn := Addr(Structures.templates.WeaponDefinitions[index]);
 
-  list_control_groups[LCG_WEAPONS].edit_item_name.Text := Structures.templates.WeaponStrings[index];
   // Properties and behavior tab
+  edWeaponName.Text := Structures.templates.WeaponStrings[index];
   edWeaponDamage.Text := IntToStr(wpn.Damage);
   cbxWeaponWarhead.ItemIndex := wpn.Warhead;
   edWeaponRange.Text := IntToStr(wpn.Range);
@@ -2642,6 +2494,7 @@ begin
   edWeaponProjectileSpeed.Text := IntToStr(wpn.ProjectileSpeed shr 10);
   // Visuals and sounds tab
   cbxWeaponProjectileArt.ItemIndex := wpn.ProjectileArt;
+  cbxWeaponProjectileArtChange(nil);
   cbxWeaponFiringSound.ItemIndex := wpn.FiringSound + 1;
   cbxWeaponHitExplosion.ItemIndex := wpn.HitExplosion + 1;
   cbxWeaponTrailExplosion.ItemIndex := wpn.TrailExplosion + 1;
@@ -2684,11 +2537,11 @@ begin
   index := lbExplosionList.ItemIndex;
   if index < 0 then
     exit;
-  last_explosion_index := index;
+  item_control_groups[ITEM_EXPLOSION].last_item_index := index;
   loading := true;
   exp := Addr(Structures.templates.ExplosionDefinitions[index]);
 
-  list_control_groups[LCG_EXPLOSIONS].edit_item_name.Text := Structures.templates.ExplosionStrings[index];
+  edExplosionName.Text := Structures.templates.ExplosionStrings[index];
   edExplosionMyIndex.Text := IntToStr(exp.MyIndex);
   edExplosionFiringPattern.Text := IntToBin(exp.FiringPattern, 7);
   cbxExplosionSound.ItemIndex := exp.Sound + 1;
@@ -2730,6 +2583,11 @@ begin
 
   loading := false;
   edExplosionFlagsChange(nil);
+
+  if lbAnimationArtList.ItemIndex = lbExplosionList.ItemIndex then
+    exit;
+  lbAnimationArtList.ItemIndex := lbExplosionList.ItemIndex;
+  lbAnimationArtListClick(nil);
 end;
 
 procedure TStructuresEditor.set_owner_side_field_value(control: TCheckListBox; value: byte);
@@ -2787,7 +2645,7 @@ var
   i: integer;
   bld: TBuildingTemplatePtr;
 begin
-  index := last_building_index;
+  index := item_control_groups[ITEM_BUILDING].last_item_index;
   if index < 0 then
     exit;
   bld := Addr(Structures.templates.BuildingDefinitions[index]);
@@ -2854,9 +2712,9 @@ begin
   // Store building name
   if edBuildingName.Text <> Structures.templates.BuildingNameStrings[index] then
   begin
-    store_c_string(edBuildingName.Text, Addr(Structures.templates.BuildingNameStrings[index]), Length(Structures.templates.BuildingNameStrings[index]));
-    last_building_index := lbBuildingList.ItemIndex;
-    fill_data(fdaBuildingNameList);
+    Structures.rename_item(ITEM_BUILDING, index, edBuildingName.Text);
+    item_control_groups[ITEM_BUILDING].last_item_index := lbBuildingList.ItemIndex;
+    fill_data(fdaBuildingList);
   end;
 end;
 
@@ -2866,7 +2724,7 @@ var
   i: integer;
   unt: TUnitTemplatePtr;
 begin
-  index := last_unit_index;
+  index := item_control_groups[ITEM_UNIT].last_item_index;
   if index < 0 then
     exit;
   unt := Addr(Structures.templates.UnitDefinitions[index]);
@@ -2920,9 +2778,9 @@ begin
   // Store unit name
   if edUnitName.Text <> Structures.templates.UnitNameStrings[index] then
   begin
-    store_c_string(edUnitName.Text, Addr(Structures.templates.UnitNameStrings[index]), Length(Structures.templates.UnitNameStrings[index]));
-    last_unit_index := lbUnitList.ItemIndex;
-    fill_data(fdaUnitNameList);
+    Structures.rename_item(ITEM_UNIT, index, edUnitName.Text);
+    item_control_groups[ITEM_UNIT].last_item_index := lbUnitList.ItemIndex;
+    fill_data(fdaUnitList);
   end;
 end;
 
@@ -2956,7 +2814,7 @@ var
   index: integer;
   wpn: TWeaponTemplatePtr;
 begin
-  index := last_weapon_index;
+  index := item_control_groups[ITEM_WEAPON].last_item_index;
   if index < 0 then
     exit;
   wpn := Addr(Structures.templates.WeaponDefinitions[index]);
@@ -2976,6 +2834,13 @@ begin
   // Others and unknown tab
   wpn.Unknown19 := seWeaponUnknown19.Value;
   wpn.Flags := StrToIntDef('$' + edWeaponFlags.Text, 0);
+  // Store weapon name
+  if edWeaponName.Text <> Structures.templates.WeaponStrings[index] then
+  begin
+    Structures.rename_item(ITEM_WEAPON, index, edWeaponName.Text);
+    item_control_groups[ITEM_WEAPON].last_item_index := lbWeaponList.ItemIndex;
+    fill_data(fdaWeaponList);
+  end;
 end;
 
 procedure TStructuresEditor.store_explosion_data;
@@ -2983,7 +2848,7 @@ var
   index: integer;
   exp: TExplosionTemplatePtr;
 begin
-  index := last_explosion_index;
+  index := item_control_groups[ITEM_EXPLOSION].last_item_index;
   if index < 0 then
     exit;
   exp := Addr(Structures.templates.ExplosionDefinitions[index]);
@@ -2992,6 +2857,13 @@ begin
   exp.FiringPattern := BinToInt(edExplosionFiringPattern.Text);
   exp.Sound := cbxExplosionSound.ItemIndex - 1;
   Structures.templates.AnimationArtFlags[index] := StrToIntDef('$' + edExplosionFlags.Text, 0);
+  // Store explosion name
+  if edExplosionName.Text <> Structures.templates.ExplosionStrings[index] then
+  begin
+    Structures.rename_item(ITEM_EXPLOSION, index, edExplosionName.Text);
+    item_control_groups[ITEM_EXPLOSION].last_item_index := lbExplosionList.ItemIndex;
+    fill_data(fdaExplosionList);
+  end;
 end;
 
 function TStructuresEditor.get_owner_side_field_value(control: TCheckListBox): byte;
@@ -3010,10 +2882,10 @@ var
 begin
   item_name_list_combo := nil;
   case Structures.templates_other_byte_types[index] of
-    tobtBuilding:  item_name_list_combo := cbxBuildingPrereq1BuildingType;
-    tobtUnit:      item_name_list_combo := cbxTemplatesOtherUnitSelect;
-    tobtWeapon:    item_name_list_combo := cbxBuildingPrimaryWeapon;
-    tobtExplosion: item_name_list_combo := cbxBuildingDeathExplosion;
+    tobtBuildingType: item_name_list_combo := cbxBuildingPrereq1BuildingType;
+    tobtUnit:         item_name_list_combo := cbxTemplatesOtherUnitSelect;
+    tobtWeapon:       item_name_list_combo := cbxBuildingPrimaryWeapon;
+    tobtExplosion:    item_name_list_combo := cbxBuildingDeathExplosion;
   end;
   if item_name_list_combo <> nil then
     result := item_name_list_combo.Items[value + 1]
@@ -3021,53 +2893,70 @@ begin
     result := inttostr(value);
 end;
 
-procedure TStructuresEditor.create_list_control_group(group_index: integer; item_count_byte_ptr: PByte; item_name_list_ptr: TItemNameListPtr; max_item_count: integer; last_item_index_ptr: PInteger; fill_data_action: TFillDataAction; list_control: TListBox; container: TPanel);
+procedure TStructuresEditor.create_item_control_group(group_index: integer; fill_data_action: TFillDataAction; list_control: TListBox; edit_item_name: TEdit; layout: TItemControlGroupLayoutPtr; container: TPanel);
 var
-  lcg: TListControlGroupPtr;
+  icg: TItemControlGroupPtr;
+  base_top: integer;
+  i: integer;
 begin
-  lcg := Addr(list_control_groups[group_index]);
-  lcg.item_count_byte_ptr := item_count_byte_ptr;
-  lcg.item_name_list_ptr := item_name_list_ptr;
-  lcg.max_item_count := max_item_count;
-  lcg.last_item_index_ptr := last_item_index_ptr;
-  lcg.fill_data_action := fill_data_action;
-  lcg.list_control := list_control;
-  lcg.edit_item_name := TEdit.Create(self);
-  lcg.edit_item_name.Width := container.Width;
-  lcg.edit_item_name.Top := container.Height - 77;
-  lcg.edit_item_name.MaxLength := 49;
-  lcg.edit_item_name.Parent := container;
-  lcg.btn_item_add := TButton.Create(self);
-  lcg.btn_item_add.Top := container.Height - 53;
-  lcg.btn_item_add.Width := 73;
-  lcg.btn_item_add.Caption := 'Add new';
-  lcg.btn_item_add.Tag := group_index;
-  lcg.btn_item_add.OnClick := ListControlGroupAddClick;
-  lcg.btn_item_add.Parent := container;
-  lcg.btn_item_remove := TButton.Create(self);
-  lcg.btn_item_remove.Top := container.Height - 53;
-  lcg.btn_item_remove.Left := container.Width - 73;
-  lcg.btn_item_remove.Width := 73;
-  lcg.btn_item_remove.Caption := 'Remove last';
-  lcg.btn_item_remove.Tag := group_index;
-  lcg.btn_item_remove.OnClick := ListControlGroupRemoveClick;
-  lcg.btn_item_remove.Parent := container;
-  lcg.btn_item_rename := TButton.Create(self);
-  lcg.btn_item_rename.Top := container.Height - 25;
-  lcg.btn_item_rename.Left := (container.Width - 97) div 2;
-  lcg.btn_item_rename.Width := 97;
-  lcg.btn_item_rename.Caption := 'Rename selected';
-  lcg.btn_item_rename.Tag := group_index;
-  lcg.btn_item_rename.OnClick := ListControlGroupRenameClick;
-  lcg.btn_item_rename.Parent := container;
+  icg := Addr(item_control_groups[group_index]);
+  icg.last_item_index := 0;
+  icg.fill_data_action := fill_data_action;
+  icg.list_control := list_control;
+  icg.lbl_header := TLabel.Create(self);
+  icg.lbl_header.Parent := container;
+  base_top := list_control.Height + list_control.Top + 7;
+  if edit_item_name = nil then
+  begin
+    icg.edit_item_name := TEdit.Create(self);
+    icg.edit_item_name.Width := container.Width;
+    icg.edit_item_name.Top := base_top;
+    icg.edit_item_name.MaxLength := 49;
+    icg.edit_item_name.Parent := container;
+    icg.edit_item_name_explicit := false;
+    base_top := base_top + 27;
+  end else
+  begin
+    icg.edit_item_name := edit_item_name;
+    icg.edit_item_name_explicit := true;
+  end;
+  for i := 0 to Length(icg.buttons) - 1 do
+  begin
+    if layout[i].row = 0 then
+    begin
+      icg.buttons[i] := nil;
+      continue;
+    end;
+    icg.buttons[i] := TButton.Create(self);
+    icg.buttons[i].Left := layout[i].left;
+    icg.buttons[i].Top := (layout[i].row - 1) * 25 + base_top;
+    icg.buttons[i].Width := layout[i].width;
+    icg.buttons[i].Tag := group_index;
+    icg.buttons[i].Caption := ICG_BTN_CAPTIONS[i];
+    case i of
+      ICG_BTN_ADD:       icg.buttons[i].OnClick := ItemControlGroupAddClick;
+      ICG_BTN_REMOVE:    icg.buttons[i].OnClick := ItemControlGroupRemoveClick;
+      ICG_BTN_RENAME:    icg.buttons[i].OnClick := ItemControlGroupRenameClick;
+      ICG_BTN_EXPORT:    icg.buttons[i].OnClick := ItemControlGroupExportClick;
+      ICG_BTN_IMPORT:    icg.buttons[i].OnClick := ItemControlGroupImportClick;
+      ICG_BTN_COPY:      icg.buttons[i].OnClick := ItemControlGroupCopyClick;
+      ICG_BTN_PASTE:     icg.buttons[i].OnClick := ItemControlGroupPasteClick;
+      ICG_BTN_MOVEUP:    icg.buttons[i].OnClick := ItemControlGroupMoveUpClick;
+      ICG_BTN_MOVEDOWN:  icg.buttons[i].OnClick := ItemControlGroupMoveDownClick;
+    end;
+    icg.buttons[i].Parent := container;
+  end;
 end;
 
-procedure TStructuresEditor.create_art_control_group(group_index: integer; is_unit: boolean; container, container2: TPanel);
+procedure TStructuresEditor.create_art_control_group(group_index: integer; is_unit: boolean; list_control: TListBox; se_directions, se_frames: TSpinEdit; container, container2: TPanel);
 var
   acg: TArtControlGroupPtr;
 begin
   acg := Addr(art_control_groups[group_index]);
   acg.is_unit := is_unit;
+  acg.list_control := list_control;
+  acg.se_directions := se_directions;
+  acg.se_frames := se_frames;
   acg.view_image := TImage.Create(self);
   acg.view_image.Parent := container;
   acg.view_image.Width := IfThen(is_unit, 160, 128);
@@ -3163,21 +3052,6 @@ begin
   acg.btn_art_import.Parent := container;
   if container2 = nil then
     exit;
-  acg.btn_art_add := TButton.Create(self);
-  acg.btn_art_add.Top := 584;
-  acg.btn_art_add.Width := 73;
-  acg.btn_art_add.Caption := 'Add new';
-  acg.btn_art_add.Tag := group_index;
-  acg.btn_art_add.OnClick := ArtControlGroupAddClick;
-  acg.btn_art_add.Parent := container2;
-  acg.btn_art_remove := TButton.Create(self);
-  acg.btn_art_remove.Top := 584;
-  acg.btn_art_remove.Left := 88;
-  acg.btn_art_remove.Width := 73;
-  acg.btn_art_remove.Caption := 'Remove last';
-  acg.btn_art_remove.Tag := group_index;
-  acg.btn_art_remove.OnClick := ArtControlGroupRemoveClick;
-  acg.btn_art_remove.Parent := container2;
   acg.btn_art_modify := TButton.Create(self);
   acg.btn_art_modify.Top := 612;
   acg.btn_art_modify.Left := 32;
@@ -3186,6 +3060,38 @@ begin
   acg.btn_art_modify.Tag := group_index;
   acg.btn_art_modify.OnClick := ArtControlGroupModifyClick;
   acg.btn_art_modify.Parent := container2;
+  if (group_index = ART_PROJECTILE) or (group_index = ART_ANIMATION) then
+    exit;
+  acg.btn_art_add := TButton.Create(self);
+  acg.btn_art_add.Top := 562;
+  acg.btn_art_add.Width := 73;
+  acg.btn_art_add.Caption := 'Add new';
+  acg.btn_art_add.Tag := group_index;
+  acg.btn_art_add.OnClick := ArtControlGroupAddClick;
+  acg.btn_art_add.Parent := container2;
+  acg.btn_art_remove := TButton.Create(self);
+  acg.btn_art_remove.Top := 587;
+  acg.btn_art_remove.Width := 73;
+  acg.btn_art_remove.Caption := 'Remove last';
+  acg.btn_art_remove.Tag := group_index;
+  acg.btn_art_remove.OnClick := ArtControlGroupRemoveClick;
+  acg.btn_art_remove.Parent := container2;
+  acg.btn_art_move_up := TButton.Create(self);
+  acg.btn_art_move_up.Top := 562;
+  acg.btn_art_move_up.Left := 88;
+  acg.btn_art_move_up.Width := 73;
+  acg.btn_art_move_up.Caption := 'Move up';
+  acg.btn_art_move_up.Tag := group_index;
+  acg.btn_art_move_up.OnClick := ArtControlGroupMoveUpClick;
+  acg.btn_art_move_up.Parent := container2;
+  acg.btn_art_move_down := TButton.Create(self);
+  acg.btn_art_move_down.Top := 587;
+  acg.btn_art_move_down.Left := 88;
+  acg.btn_art_move_down.Width := 73;
+  acg.btn_art_move_down.Caption := 'Move down';
+  acg.btn_art_move_down.Tag := group_index;
+  acg.btn_art_move_down.OnClick := ArtControlGroupMoveDownClick;
+  acg.btn_art_move_down.Parent := container2;
 end;
 
 procedure TStructuresEditor.fill_art_control_group_frame_list(group_index, first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);

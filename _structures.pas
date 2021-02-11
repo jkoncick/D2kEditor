@@ -327,7 +327,7 @@ type TObjectStatsGroup = (sgNone, sgWormSpawners, sgPlayerStarts, sgSpiceBlooms)
 // *****************************************************************************
 
 type
-  TTemplatesOtherByteType = (tobtNone, tobtBuilding, tobtUnit, tobtWeapon, tobtExplosion);
+  TTemplatesOtherByteType = (tobtNone, tobtBuildingType, tobtUnit, tobtWeapon, tobtExplosion);
 
 // *****************************************************************************
 // Auxiliary constants and types
@@ -335,49 +335,158 @@ type
 
 const MAX_BUILDING_SIZE = 4;
 
+const ITEM_BUILDING         = 0;
+const ITEM_UNIT             = 1;
+const ITEM_BUILDING_TYPE    = 2;
+const ITEM_UNIT_TYPE        = 3;
+const ITEM_WEAPON           = 4;
+const ITEM_EXPLOSION        = 5;
+const ITEM_ARMOUR_TYPE      = 6;
+const ITEM_WARHEAD          = 7;
+
+const item_type_names: array[0..7] of string = ('Building', 'Unit', 'Building type', 'Unit type', 'Weapon', 'Explosion', 'Armour type', 'Warhead');
+const item_type_file_extensions: array[0..7] of string = ('d2kbld', 'd2kunt', '', '', 'd2kwpn', 'd2kexp', 'd2karm', 'd2kwhd');
+
 type
-  TItemNameList = array[0..0, 0..49] of char;
-  TItemNameListPtr = ^TItemNameList;
+  TItemDataPointers = record
+    data_ptr: TByteArrayPtr;
+    data_size: integer;
+  end;
+
+  TItemDataPointersPtr = ^TItemDataPointers;
+
+type
+  TItemTypePointers = record
+    item_count_byte_ptr: PByte;
+    item_name_list_ptr: TByteArrayPtr;
+    item_name_length: integer;
+    max_item_count: integer;
+    item_data_pointers_first: integer;
+    item_data_pointers_count: integer;
+    export_data_size: integer;
+    clipboard_format: cardinal;
+  end;
+
+  TItemTypePointersPtr = ^TItemTypePointers;
+
+  TDummyStringRec = record
+    str: array[0..49] of char;
+  end;
+
+  TDummyStringRecPtr = ^TDummyStringRec;
+
+const ART_BUILDING           = 0;
+const ART_BUILDING_ANIMATION = 1;
+const ART_BUILDUP            = 2;
+const ART_UNIT               = 3;
+const ART_PROJECTILE         = 4;
+const ART_ANIMATION          = 5;
+const ART_OTHER              = 6;
+
+const art_type_names: array[0..5] of string = ('Building', 'Building animation', 'Buildup', 'Unit', 'Projectile', 'Animation');
+const other_art_frames: array[0..15] of byte = (3, 1, 1, 4, 6, 2, 10, 11, 64, 4, 4, 4, 32, 32, 16, 12);
+
+type
+  TArtTypePointers = record
+    art_count_byte_ptr: PByte;
+    directions_list_ptr: TByteArrayPtr;
+    frames_list_ptr: TByteArrayPtr;
+    frames_size: integer;
+    max_art_count: integer;
+    image_indexes_list_ptr: TWordArrayPtr;
+    next_free_image_index_ptr: PWord;
+  end;
+
+  TArtTypePointersPtr = ^TArtTypePointers;
 
 // *****************************************************************************
 // Data Export / Import structures
 // *****************************************************************************
 
 type
-  TBuildingExportData = record
-    building_name:             array[0..449] of char;
-    building_template:         TBuildingTemplate;
-    builexp_entry:             TBuilExpEntry;
-    buildup_art_frames:        integer;
-    ref_building_type:         array[0..49] of char;
-    ref_prereq1_building_type: array[0..49] of char;
-    ref_prereq2_building_type: array[0..49] of char;
-    ref_armour_type:           array[0..49] of char;
-    ref_primary_weapon:        array[0..49] of char;
-    ref_secondary_weapon:      array[0..49] of char;
-    ref_death_explosion:       array[0..49] of char;
-    ref_firing_explosion:      array[0..49] of char;
-    icon_data:                 array[0..3368] of byte;
+  TItemReference = record
+    item_name: array[0..49] of char;
+  end;
+
+type
+  TArtReference = record
+    directions: integer;
+    frames: integer;
+    art_size: integer;
+    checksum: integer;
+  end;
+
+type
+  TSoundReference = record
+    key: array[0..19] of char;
+    value: array[0..9] of char;
+  end;
+
+type
+  TBuildingExportData = packed record
+    building_name:      array[0..449] of char;
+    building_template:  TBuildingTemplate;
+    builexp_entry:      TBuilExpEntry;
+    icon_data:          array[0..3368] of byte;
+    item_references:    array[0..15] of TItemReference;
+    art_references:     array[0..3] of TArtReference;
+    building_type_str:  array[0..49] of char;
   end;
 
   TBuildingExportDataPtr = ^TBuildingExportData;
 
 type
-  TUnitExportData = record
-    unit_name:                 array[0..449] of char;
-    unit_template:             TUnitTemplate;
-    ref_unit_type:             array[0..49] of char;
-    ref_prereq1_building_type: array[0..49] of char;
-    ref_prereq2_building_type: array[0..49] of char;
-    ref_armour_type:           array[0..49] of char;
-    ref_primary_weapon:        array[0..49] of char;
-    ref_secondary_weapon:      array[0..49] of char;
-    ref_death_explosion:       array[0..49] of char;
-    ref_firing_explosion:      array[0..49] of char;
-    icon_data:                 array[0..3368] of byte;
+  TUnitExportData = packed record
+    unit_name:        array[0..449] of char;
+    unit_template:    TUnitTemplate;
+    icon_data:        array[0..3368] of byte;
+    item_references:  array[0..7] of TItemReference;
+    art_references:   array[0..1] of TArtReference;
+    sound_references: array[0..17] of TSoundReference;
+    unit_type_str:    array[0..49] of char;
   end;
 
   TUnitExportDataPtr = ^TUnitExportData;
+
+type
+  TWeaponExportData = packed record
+    weapon_name:     array[0..49] of char;
+    weapon_template: TWeaponTemplate;
+    item_references: array[0..2] of TItemReference;
+    art_reference:   TArtReference;
+    sound_reference: TSoundReference;
+  end;
+
+  TWeaponExportDataPtr = ^TWeaponExportData;
+
+type
+  TExplosionExportData = packed record
+    explosion_name:      array[0..49] of char;
+    explosion_template:  TExplosionTemplate;
+    animation_art_flags: cardinal;
+    art_reference:       TArtReference;
+    sound_reference:     TSoundReference;
+  end;
+
+  TExplosionExportDataPtr = ^TExplosionExportData;
+
+type
+  TArmourTypeExportData = packed record
+    armour_type_name:      array[0..49] of char;
+    versus_warhead_values: array[0..MAX_WARHEADS-1] of byte;
+    warhead_references:    array[0..MAX_WARHEADS-1] of TItemReference;
+  end;
+
+  TArmourTypeExportDataPtr = ^TArmourTypeExportData;
+
+type
+  TWarheadExportData = packed record
+    warhead_name:           array[0..49] of char;
+    warhead_entry:          TWarheadEntry;
+    armour_type_references: array[0..MAX_ARMOUR_TYPES-1] of TItemReference;
+  end;
+
+  TWarheadExportDataPtr = ^TWarheadExportData;
 
 // *****************************************************************************
 // TStructures class
@@ -409,7 +518,7 @@ type
     first_unit_icon_image_index:      word;
     first_building_icon_image_index:  word;
     buildup_art_image_indexes:        array[0..MAX_BUILDING_TYPES-1] of word;
-    building_animation_image_indexes: array[0..MAX_BUILDING_ART-1] of word;
+    building_animation_image_indexes: array[0..MAX_BUILDING_TYPES-1] of word;
 
     unit_side_versions:     array[0..MAX_UNIT_TYPES-1,     0..CNT_PLAYERS-1] of shortint;
     building_side_versions: array[0..MAX_BUILDING_TYPES-1, 0..CNT_PLAYERS-1] of shortint;
@@ -449,9 +558,10 @@ type
     templates_other: TStringList;
     templates_other_byte_types: array[0..85] of TTemplatesOtherByteType;
 
-    // Clipboard formats
-    clipboard_format_building: cardinal;
-    clipboard_format_unit: cardinal;
+    // Auxiliary variables
+    item_data_pointers: array[0..36] of TItemDataPointers;
+    item_type_pointers: array[0..7] of TItemTypePointers;
+    art_type_pointers: array[0..5] of TArtTypePointers;
   public
     // General procedures
     procedure init;
@@ -496,24 +606,66 @@ type
     // Templates other related procedures
     procedure load_templates_other_txt;
 
-    // Data Export/Import, Copy/Paste and other manipulation procedures
-    procedure store_item_reference(var data; item_index: integer; item_list: TItemNameListPtr);
+  private
+    // Auxiliary procedures
+    procedure fix_reference(var value: integer;  v1, v2: integer; swap: boolean); overload;
+    procedure fix_reference(var value: shortint; v1, v2: integer; swap: boolean); overload;
+    procedure fix_reference(var value: byte;     v1, v2: integer; swap: boolean); overload;
+    procedure fix_templates_other_reference(byte_type: TTemplatesOtherByteType; v1, v2: integer; swap: boolean);
+    procedure swap_data(data: TByteArrayPtr; data_size, index1, index2: integer);
 
-    procedure store_building_data(index: integer; data: TBuildingExportDataPtr);
-    procedure restore_building_data(index: integer; data: TBuildingExportDataPtr);
-    procedure copy_building(index: integer);
-    function paste_building(index: integer): boolean;
-    procedure export_building(index: integer; filename: string);
-    procedure import_building(index: integer; filename: string);
-    procedure swap_buildings(index1, index2: integer);
+    // Item manipulation procedures
+  private
+    procedure init_item_data_pointers(item_data_type: integer; data_ptr: TByteArrayPtr; data_size: integer);
+    procedure init_item_type_pointers(item_type: integer; item_count_byte_ptr: PByte; item_name_list_ptr: TByteArrayPtr; item_name_length, max_item_count, item_data_pointers_first, item_data_pointers_count, export_data_size: integer);
+    procedure fix_item_references(item_type: integer; v1, v2: integer; swap: boolean);
+  public
+    function add_new_item(item_type: integer; name: string; var index: integer): boolean;
+    function remove_last_item(item_type: integer): boolean;
+    procedure rename_item(item_type, index: integer; name: string);
+    procedure swap_items(item_type, index1, index2: integer);
 
-    procedure store_unit_data(index: integer; data: TUnitExportDataPtr);
-    procedure restore_unit_data(index: integer; data: TUnitExportDataPtr);
-    procedure copy_unit(index: integer);
-    function paste_unit(index: integer): boolean;
-    procedure export_unit(index: integer; filename: string);
-    procedure import_unit(index: integer; filename: string);
-    procedure swap_units(index1, index2: integer);
+    // Art manipulation procedures
+  private
+    procedure init_art_type_pointers(art_type: integer; art_count_byte_ptr: PByte; directions_list_ptr, frames_list_ptr: TByteArrayPtr; frames_size, max_art_count: integer; image_indexes_list_ptr: TWordArrayPtr; next_free_image_index_ptr: PWord);
+    function get_art_num_images(art_type, index: integer): integer;
+    procedure fix_art_references(art_type: integer; v1, v2: integer; swap: boolean);
+  public
+    function add_new_art(art_type, directions, frames: integer; var index: integer): boolean;
+    function remove_last_art(art_type: integer): boolean;
+    procedure modify_art(art_type, index, directions, frames: integer);
+    procedure swap_arts(art_type, index1, index2: integer);
+
+    // Data Export/Import, Copy/Paste related procedures
+  private
+    procedure store_item_reference   (var ref: TItemReference; item_type, index: integer);
+    function  restore_item_reference (var ref: TItemReference; item_type, index: integer; import_path: string): integer;
+    procedure store_art_reference    (var ref: TArtReference; art_type, index: integer);
+    function  restore_art_reference  (var ref: TArtReference; art_type, ref_index, fixed_index: integer; import_filename: string): integer;
+    procedure store_sound_reference  (var ref: TSoundReference; index: integer);
+    function  restore_sound_reference(var ref: TSoundReference; index: integer): integer;
+
+    procedure store_building_export_data     (index: integer; data: TBuildingExportDataPtr);
+    procedure restore_building_export_data   (index: integer; data: TBuildingExportDataPtr; import_path: string);
+    procedure store_unit_export_data         (index: integer; data: TUnitExportDataPtr);
+    procedure restore_unit_export_data       (index: integer; data: TUnitExportDataPtr; import_path: string);
+    procedure store_weapon_export_data       (index: integer; data: TWeaponExportDataPtr);
+    procedure restore_weapon_export_data     (index: integer; data: TWeaponExportDataPtr; import_path: string);
+    procedure store_explosion_export_data    (index: integer; data: TExplosionExportDataPtr);
+    procedure restore_explosion_export_data  (index: integer; data: TExplosionExportDataPtr; import_path: string);
+    procedure store_armour_type_export_data  (index: integer; data: TArmourTypeExportDataPtr);
+    procedure restore_armour_type_export_data(index: integer; data: TArmourTypeExportDataPtr);
+    procedure store_warhead_export_data      (index: integer; data: TWarheadExportDataPtr);
+    procedure restore_warhead_export_data    (index: integer; data: TWarheadExportDataPtr);
+
+    procedure store_item_export_data  (item_type, index: integer; data: TByteArrayPtr);
+    procedure restore_item_export_data(item_type, index: integer; data: TByteArrayPtr; import_path: string);
+  public
+    procedure export_item(item_type, index: integer; filename: string);
+    procedure import_item(item_type, index: integer; filename: string);
+    procedure copy_item  (item_type, index: integer);
+    function  paste_item (item_type, index: integer): boolean;
+
   end;
 
 var
@@ -524,8 +676,11 @@ implementation
 uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _graphics, _stringtable, _dispatcher;
 
 procedure TStructures.init;
+var
+  i: integer;
 begin
   templates_other := TStringList.Create;
+  // Load all files
   load_templates_bin(false);
   load_builexp_bin(false);
   load_armour_bin(false);
@@ -536,8 +691,32 @@ begin
   load_players_ini;
   load_limits_ini;
   load_templates_other_txt;
-  clipboard_format_building := RegisterClipboardFormat('D2kEditorBuildingExportData');
-  clipboard_format_unit := RegisterClipboardFormat('D2kEditorUnitExportData');
+  // Initialize item data pointers
+  init_item_data_pointers(0, Addr(templates.BuildingDefinitions),  sizeof(TBuildingTemplate));
+  init_item_data_pointers(1, Addr(builexp),                        sizeof(TBuilExpEntry));
+  init_item_data_pointers(2, Addr(templates.UnitDefinitions),      sizeof(TUnitTemplate));
+  init_item_data_pointers(3, Addr(templates.WeaponDefinitions),    sizeof(TWeaponTemplate));
+  init_item_data_pointers(4, Addr(templates.ExplosionDefinitions), sizeof(TExplosionTemplate));
+  init_item_data_pointers(5, Addr(templates.AnimationArtFlags),    4);
+  init_item_data_pointers(6, Addr(armour.WarheadEntries),          sizeof(TWarheadEntry));
+  for i := 0 to MAX_WARHEADS - 1 do
+    init_item_data_pointers(7 + i, Addr(armour.WarheadEntries[i].VersusArmorType), 1);
+  // Initialize item type pointers
+  init_item_type_pointers(ITEM_BUILDING,      Addr(Structures.templates.BuildingCount),     Addr(Structures.templates.BuildingNameStrings), 450, MAX_BUILDING_TYPES, 0, 2, sizeof(TBuildingExportData));
+  init_item_type_pointers(ITEM_UNIT,          Addr(Structures.templates.UnitCount),         Addr(Structures.templates.UnitNameStrings),     450, MAX_UNIT_TYPES,     2, 1, sizeof(TUnitExportData));
+  init_item_type_pointers(ITEM_BUILDING_TYPE, Addr(Structures.templates.BuildingTypeCount), Addr(Structures.templates.BuildingTypeStrings), 50,  MAX_BUILDING_TYPES, 0, 0, 0);
+  init_item_type_pointers(ITEM_UNIT_TYPE,     Addr(Structures.templates.UnitTypeCount),     Addr(Structures.templates.UnitTypeStrings),     50,  MAX_UNIT_TYPES,     0, 0, 0);
+  init_item_type_pointers(ITEM_WEAPON,        Addr(Structures.templates.WeaponCount),       Addr(Structures.templates.WeaponStrings),       50,  MAX_WEAPONS,        3, 1, sizeof(TWeaponExportData));
+  init_item_type_pointers(ITEM_EXPLOSION,     Addr(Structures.templates.ExplosionCount),    Addr(Structures.templates.ExplosionStrings),    50,  MAX_EXPLOSIONS,     4, 2, sizeof(TExplosionExportData));
+  init_item_type_pointers(ITEM_ARMOUR_TYPE,   Addr(Structures.armour.ArmourTypeCount),      Addr(Structures.armour.ArmourTypeStrings),      50,  MAX_ARMOUR_TYPES,   7, MAX_WARHEADS, sizeof(TArmourTypeExportData));
+  init_item_type_pointers(ITEM_WARHEAD,       Addr(Structures.armour.WarheadCount),         Addr(Structures.armour.WarheadStrings),         50,  MAX_WARHEADS,       6, 1, sizeof(TWarheadExportData));
+  // Initialize art type pointers
+  init_art_type_pointers(ART_BUILDING,           Addr(templates.BuildingArtCount),   Addr(templates.BuildingArtDirections),   nil,                                     0, MAX_BUILDING_ART,   Addr(building_art_image_indexes),       Addr(projectile_art_image_indexes[0]));
+  init_art_type_pointers(ART_BUILDING_ANIMATION, Addr(templates.BuildingCount),      nil,                                     Addr(templates.BuildingAnimationFrames), 1, MAX_BUILDING_TYPES, Addr(building_animation_image_indexes), nil);
+  init_art_type_pointers(ART_BUILDUP,            Addr(templates.BuildingCount),      nil,                                     Addr(templates.BuildupArtFrames),        1, MAX_BUILDING_TYPES, Addr(buildup_art_image_indexes),        nil);
+  init_art_type_pointers(ART_UNIT,               Addr(templates.UnitArtCount),       Addr(templates.UnitArtDirectionFrames),  Addr(templates.UnitArtAnimationFrames),  4, MAX_UNIT_ART,       Addr(unit_art_image_indexes),           Addr(building_art_image_indexes[0]));
+  init_art_type_pointers(ART_PROJECTILE,         Addr(templates.ProjectileArtCount), Addr(templates.ProjectileArtDirections), nil,                                     0, MAX_WEAPONS,        Addr(projectile_art_image_indexes),     Addr(animation_art_image_indexes[0]));
+  init_art_type_pointers(ART_ANIMATION,          Addr(templates.AnimationArtCount),  nil,                                     Addr(templates.AnimationArtFrames),      4, MAX_EXPLOSIONS,     Addr(animation_art_image_indexes),      Addr(first_unit_icon_image_index));
 end;
 
 procedure TStructures.load_templates_bin(force: boolean);
@@ -1046,7 +1225,7 @@ begin
   begin
     prefix := Copy(templates_other[i], 1, 2);
     if prefix = 'B ' then
-      templates_other_byte_types[i] := tobtBuilding
+      templates_other_byte_types[i] := tobtBuildingType
     else if prefix = 'U ' then
       templates_other_byte_types[i] := tobtUnit
     else if prefix = 'W ' then
@@ -1058,277 +1237,982 @@ begin
   end;
 end;
 
-procedure TStructures.store_item_reference(var data; item_index: integer; item_list: TItemNameListPtr);
+procedure TStructures.fix_reference(var value: integer; v1, v2: integer; swap: boolean);
 begin
-  if item_index = -1 then
-    FillChar(data, 50, 0)
-  else
-    Move(item_list[item_index], data, 50);
+  if value = v1 then
+    value := v2
+  else if swap and (value = v2) then
+    value := v1;
 end;
 
-procedure TStructures.store_building_data(index: integer; data: TBuildingExportDataPtr);
+procedure TStructures.fix_reference(var value: shortint; v1, v2: integer; swap: boolean);
+begin
+  if value = v1 then
+    value := v2
+  else if swap and (value = v2) then
+    value := v1;
+end;
+
+procedure TStructures.fix_reference(var value: byte; v1, v2: integer; swap: boolean);
+begin
+  if value = v1 then
+    value := Max(v2, 0)
+  else if swap and (value = v2) then
+    value := v1;
+end;
+
+procedure TStructures.fix_templates_other_reference(byte_type: TTemplatesOtherByteType; v1, v2: integer; swap: boolean);
+var
+  i: integer;
+begin
+  for i := 0 to Length(templates.Other) - 1 do
+    if templates_other_byte_types[i] = byte_type then
+      fix_reference(templates.Other[i], v1, v2, swap);
+end;
+
+procedure TStructures.swap_data(data: TByteArrayPtr; data_size, index1, index2: integer);
+var
+  tmp_data: array[0..1023] of byte;
+begin
+  move(data[index1 * data_size], tmp_data[0], data_size);
+  move(data[index2 * data_size], data[index1 * data_size], data_size);
+  move(tmp_data[0], data[index2 * data_size], data_size);
+end;
+
+procedure TStructures.init_item_data_pointers(item_data_type: integer; data_ptr: TByteArrayPtr; data_size: integer);
+begin
+  item_data_pointers[item_data_type].data_ptr := data_ptr;
+  item_data_pointers[item_data_type].data_size := data_size;
+end;
+
+procedure TStructures.init_item_type_pointers(item_type: integer; item_count_byte_ptr: PByte; item_name_list_ptr: TByteArrayPtr; item_name_length, max_item_count, item_data_pointers_first, item_data_pointers_count, export_data_size: integer);
+begin
+  item_type_pointers[item_type].item_count_byte_ptr := item_count_byte_ptr;
+  item_type_pointers[item_type].item_name_list_ptr := item_name_list_ptr;
+  item_type_pointers[item_type].item_name_length := item_name_length;
+  item_type_pointers[item_type].max_item_count := max_item_count;
+  item_type_pointers[item_type].item_data_pointers_first := item_data_pointers_first;
+  item_type_pointers[item_type].item_data_pointers_count := item_data_pointers_count;
+  item_type_pointers[item_type].export_data_size := export_data_size;
+  if export_data_size <> 0 then
+    item_type_pointers[item_type].clipboard_format := RegisterClipboardFormat(PChar(Format('D2kEditor%sExportData', [item_type_names[item_type]])));
+end;
+
+procedure TStructures.fix_item_references(item_type, v1, v2: integer; swap: boolean);
+var
+  i, j: integer;
+begin
+  case item_type of
+    ITEM_UNIT:
+      fix_templates_other_reference(tobtUnit, v1, v2, swap);
+    ITEM_BUILDING_TYPE:
+      begin
+        for i := 0 to templates.BuildingCount - 1 do
+        begin
+          fix_reference(templates.BuildingDefinitions[i].BuildingType, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].Prereq1BuildingType, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].Prereq2BuildingType, v1, v2, swap);
+        end;
+        for i := 0 to templates.UnitCount - 1 do
+        begin
+          fix_reference(templates.UnitDefinitions[i].Prereq1BuildingType, v1, v2, swap);
+          fix_reference(templates.UnitDefinitions[i].Prereq2BuildingType, v1, v2, swap);
+        end;
+        fix_templates_other_reference(tobtBuildingType, v1, v2, swap);
+      end;
+    ITEM_UNIT_TYPE:
+      for i := 0 to templates.UnitCount - 1 do
+        fix_reference(templates.UnitDefinitions[i].UnitType, v1, v2, swap);
+    ITEM_WEAPON:
+      begin
+        for i := 0 to templates.BuildingCount - 1 do
+        begin
+          fix_reference(templates.BuildingDefinitions[i].PrimaryWeapon, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].SecondaryWeapon, v1, v2, swap);
+        end;
+        for i := 0 to templates.UnitCount - 1 do
+        begin
+          fix_reference(templates.UnitDefinitions[i].PrimaryWeapon, v1, v2, swap);
+          fix_reference(templates.UnitDefinitions[i].SecondaryWeapon, v1, v2, swap);
+        end;
+        fix_templates_other_reference(tobtWeapon, v1, v2, swap);
+      end;
+    ITEM_EXPLOSION:
+      begin
+        for i := 0 to templates.BuildingCount - 1 do
+        begin
+          fix_reference(templates.BuildingDefinitions[i].DeathExplosion, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].FiringExplosion, v1, v2, swap);
+          for j := 0 to builexp[i].NumAnimations - 1 do
+            fix_reference(builexp[i].AnimExplosion[j], v1, v2, swap);
+        end;
+        for i := 0 to templates.UnitCount - 1 do
+        begin
+          fix_reference(templates.UnitDefinitions[i].DeathExplosion, v1, v2, swap);
+          fix_reference(templates.UnitDefinitions[i].FiringExplosion, v1, v2, swap);
+        end;
+        for i := 0 to templates.WeaponCount - 1 do
+        begin
+          fix_reference(templates.WeaponDefinitions[i].HitExplosion, v1, v2, swap);
+          fix_reference(templates.WeaponDefinitions[i].TrailExplosion, v1, v2, swap);
+        end;
+        for i := 0 to templates.ExplosionCount - 1 do
+          fix_reference(templates.ExplosionDefinitions[i].MyIndex, v1, v2, swap);
+        fix_templates_other_reference(tobtExplosion, v1, v2, swap)
+      end;
+    ITEM_WARHEAD:
+      for i := 0 to templates.WeaponCount - 1 do
+        fix_reference(templates.WeaponDefinitions[i].Warhead, v1, v2, swap);
+    ITEM_ARMOUR_TYPE:
+      begin
+        for i := 0 to templates.BuildingCount - 1 do
+          fix_reference(templates.BuildingDefinitions[i].ArmorType, v1, v2, swap);
+        for i := 0 to templates.UnitCount - 1 do
+          fix_reference(templates.UnitDefinitions[i].ArmorType, v1, v2, swap);
+      end;
+  end;
+end;
+
+function TStructures.add_new_item(item_type: integer; name: string; var index: integer): boolean;
+var
+  ptrs: TItemTypePointersPtr;
+  dummy: integer;
+  need_compute_image_indexes: boolean;
+begin
+  result := false;
+  ptrs := Addr(item_type_pointers[item_type]);
+  if ptrs.item_count_byte_ptr^ = ptrs.max_item_count then
+    exit;
+  need_compute_image_indexes := false;
+  // Store item name
+  store_c_string(name, Addr(ptrs.item_name_list_ptr[ptrs.item_count_byte_ptr^ * ptrs.item_name_length]), ptrs.item_name_length);
+  // Return index of newly created item
+  index := ptrs.item_count_byte_ptr^;
+  // Perform item-type-specific action
+  case item_type of
+    ITEM_BUILDING:
+      begin
+        // Set default building data
+        with templates.BuildingDefinitions[templates.BuildingCount] do
+        begin
+          PrimaryWeapon := -1;
+          SecondaryWeapon := -1;
+          BarrelArt := -1;
+          Prereq2BuildingType := -1;
+          DeathExplosion := -1;
+          BuildupArt := templates.BuildingCount;
+          BuildingAnimation := templates.BuildingCount;
+          FiringExplosion := -1;
+        end;
+        // Add building icon
+        StructGraphics.add_empty_image_entries(first_building_icon_image_index + templates.BuildingCount, 1);
+        need_compute_image_indexes := true;
+      end;
+    ITEM_UNIT:
+      begin
+        // Set default unit data
+        with templates.UnitDefinitions[templates.UnitCount] do
+        begin
+          PrimaryWeapon := -1;
+          SecondaryWeapon := -1;
+          BarrelArt := -1;
+          Prereq2BuildingType := -1;
+          DeathExplosion := -1;
+          FiringExplosion := -1;
+        end;
+        // Add unit icon
+        StructGraphics.add_empty_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
+        need_compute_image_indexes := true;
+      end;
+    ITEM_WEAPON:
+      begin
+        // Set default weapon data
+        with templates.WeaponDefinitions[templates.WeaponCount] do
+        begin
+          FiringSound := -1;
+          ProjectileArt := templates.WeaponCount;
+          HitExplosion := -1;
+          TrailExplosion := -1;
+        end;
+        // Add new projectile art
+        add_new_art(ART_PROJECTILE, 1, 0, dummy);
+      end;
+    ITEM_EXPLOSION:
+      begin
+        // Set default explosion data
+        templates.ExplosionDefinitions[templates.ExplosionCount].Sound := -1;
+        templates.ExplosionDefinitions[templates.ExplosionCount].MyIndex := templates.ExplosionCount;
+        // Add new animation art
+        add_new_art(ART_ANIMATION, 0, 1, dummy);
+      end;
+  end;
+  // Increase item count by 1
+  Inc(ptrs.item_count_byte_ptr^);
+  // Compute image indexes if needed
+  if need_compute_image_indexes then
+    compute_image_indexes;
+  result := true;
+end;
+
+function TStructures.remove_last_item(item_type: integer): boolean;
+var
+  ptrs: TItemTypePointersPtr;
+  data_ptrs: TItemDataPointersPtr;
+  i: integer;
+begin
+  result := false;
+  ptrs := Addr(item_type_pointers[item_type]);
+  if ptrs.item_count_byte_ptr^ = 0 then
+    exit;
+  // Decrease item count by 1
+  Dec(ptrs.item_count_byte_ptr^);
+  // Erase item name
+  FillChar(ptrs.item_name_list_ptr[ptrs.item_count_byte_ptr^ * ptrs.item_name_length], ptrs.item_name_length, 0);
+  // Erase item data
+  for i := 0 to ptrs.item_data_pointers_count - 1 do
+  begin
+    data_ptrs := Addr(item_data_pointers[ptrs.item_data_pointers_first + i]);
+    FillChar(data_ptrs.data_ptr[ptrs.item_count_byte_ptr^ * data_ptrs.data_size], data_ptrs.data_size, 0);
+  end;
+  // Perform item-type-specific action
+  case item_type of
+    ITEM_BUILDING:
+      begin
+        // Remove animation art, buildup art and building icon
+        remove_last_art(ART_BUILDING_ANIMATION);
+        remove_last_art(ART_BUILDUP);
+        StructGraphics.remove_image_entries(first_building_icon_image_index + templates.BuildingCount, 1);
+        compute_image_indexes;
+      end;
+    ITEM_UNIT:
+      begin
+        // Remove building icon
+        StructGraphics.remove_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
+        compute_image_indexes;
+      end;
+    ITEM_WEAPON:
+      // Remove projectile art
+      remove_last_art(ART_PROJECTILE);
+    ITEM_EXPLOSION:
+      // Remove animation art
+      remove_last_art(ART_ANIMATION);
+  end;
+  // Fix item references
+  fix_item_references(item_type, ptrs.item_count_byte_ptr^, -1, false);
+  result := true;
+end;
+
+procedure TStructures.rename_item(item_type, index: integer; name: string);
+var
+  ptrs: TItemTypePointersPtr;
+begin
+  if index < 0 then
+    exit;
+  ptrs := Addr(item_type_pointers[item_type]);
+  store_c_string(name, Addr(ptrs.item_name_list_ptr[index * ptrs.item_name_length]), ptrs.item_name_length);
+end;
+
+procedure TStructures.swap_items(item_type, index1, index2: integer);
+var
+  ptrs: TItemTypePointersPtr;
+  data_ptrs: TItemDataPointersPtr;
+  i: integer;
+begin
+  ptrs := Addr(item_type_pointers[item_type]);
+  // Swap item name
+  swap_data(ptrs.item_name_list_ptr, ptrs.item_name_length, index1, index2);
+  // Swap item data
+  for i := 0 to ptrs.item_data_pointers_count - 1 do
+  begin
+    data_ptrs := Addr(item_data_pointers[ptrs.item_data_pointers_first + i]);
+    swap_data(data_ptrs.data_ptr, data_ptrs.data_size, index1, index2);
+  end;
+  // Perform item-type-specific action
+  case item_type of
+    ITEM_BUILDING:
+      begin
+        // Swap animation art, buildup art and building icon
+        swap_arts(ART_BUILDING_ANIMATION, index1, index2);
+        swap_arts(ART_BUILDUP, index1, index2);
+        StructGraphics.swap_image_entries(first_building_icon_image_index + index1, first_building_icon_image_index + index2, 1, 1);
+       end;
+    ITEM_UNIT:
+      // Swap unit icon
+      StructGraphics.swap_image_entries(first_unit_icon_image_index + index1, first_unit_icon_image_index + index2, 1, 1);
+    ITEM_WEAPON:
+      // Swap projectile art
+      swap_arts(ART_PROJECTILE, index1, index2);
+    ITEM_EXPLOSION:
+      // Swap animation art
+      swap_arts(ART_ANIMATION, index1, index2);
+  end;
+  // Fix item references
+  fix_item_references(item_type, index1, index2, true);
+end;
+
+procedure TStructures.init_art_type_pointers(art_type: integer; art_count_byte_ptr: PByte; directions_list_ptr, frames_list_ptr: TByteArrayPtr; frames_size, max_art_count: integer; image_indexes_list_ptr: TWordArrayPtr; next_free_image_index_ptr: PWord);
+begin
+  art_type_pointers[art_type].art_count_byte_ptr := art_count_byte_ptr;
+  art_type_pointers[art_type].directions_list_ptr := directions_list_ptr;
+  art_type_pointers[art_type].frames_list_ptr := frames_list_ptr;
+  art_type_pointers[art_type].frames_size := frames_size;
+  art_type_pointers[art_type].max_art_count := max_art_count;
+  art_type_pointers[art_type].image_indexes_list_ptr := image_indexes_list_ptr;
+  art_type_pointers[art_type].next_free_image_index_ptr := next_free_image_index_ptr;
+end;
+
+function TStructures.get_art_num_images(art_type, index: integer): integer;
+var
+  ptrs: TArtTypePointersPtr;
+  directions, frames: integer;
+begin
+  ptrs := Addr(art_type_pointers[art_type]);
+  directions := 1;
+  if ptrs.directions_list_ptr <> nil then
+    directions := ptrs.directions_list_ptr[index * 4];
+  frames := 1;
+  if ptrs.frames_list_ptr <> nil then
+    frames := ptrs.frames_list_ptr[index * ptrs.frames_size];
+  result := IfThen(art_type = ART_BUILDING, directions * 2 + 1, directions * frames);
+end;
+
+procedure TStructures.fix_art_references(art_type, v1, v2: integer; swap: boolean);
+var
+  i: integer;
+begin
+  case art_type of
+    ART_BUILDING:
+      // Reset building art references in buildings
+      for i := 0 to templates.BuildingCount - 1 do
+      begin
+        fix_reference(templates.BuildingDefinitions[i].BuildingArt, v1, v2, swap);
+        fix_reference(templates.BuildingDefinitions[i].BarrelArt, v1, v2, swap);
+      end;
+    ART_BUILDING_ANIMATION:
+      // Reset building animation art references in buildings
+      for i := 0 to templates.BuildingCount - 1 do
+        if (templates.BuildingDefinitions[i].Flags and BF_HAS_ANIMATION) <> 0 then
+          fix_reference(templates.BuildingDefinitions[i].BuildingAnimation, v1, IfThen(v2 = -1, i, v2), swap);
+    ART_BUILDUP:
+      // Reset buildup art references in buildings
+      for i := 0 to templates.BuildingCount - 1 do
+        if templates.BuildupArtFrames[i] <> 0 then
+          fix_reference(templates.BuildingDefinitions[i].BuildupArt, v1, IfThen(v2 = -1, i, v2), swap);
+    ART_UNIT:
+      // Reset unit art references in units
+      for i := 0 to templates.UnitCount - 1 do
+      begin
+        fix_reference(templates.UnitDefinitions[i].UnitArt, v1, v2, swap);
+        fix_reference(templates.UnitDefinitions[i].BarrelArt, v1, v2, swap);
+      end;
+    ART_PROJECTILE:
+      // Reset projectile art references in weapons
+      for i := 0 to templates.WeaponCount - 1 do
+        fix_reference(templates.WeaponDefinitions[i].ProjectileArt, v1, IfThen(v2 = -1, i, v2), swap);
+  end;
+end;
+
+function TStructures.add_new_art(art_type, directions, frames: integer; var index: integer): boolean;
+var
+  ptrs: TArtTypePointersPtr;
+  num_images: integer;
+begin
+  result := false;
+  ptrs := Addr(art_type_pointers[art_type]);
+  if ptrs.art_count_byte_ptr^ = ptrs.max_art_count then
+    exit;
+  // Add new empty image entries
+  directions := IfThen(ptrs.directions_list_ptr <> nil, directions, 1);
+  frames := IfThen(ptrs.frames_list_ptr <> nil, frames, 1);
+  num_images := IfThen(art_type = ART_BUILDING, directions * 2 + 1, directions * frames);
+  StructGraphics.add_empty_image_entries(ptrs.next_free_image_index_ptr^, num_images);
+  // Store number of directions and frames
+  if ptrs.directions_list_ptr <> nil then
+    ptrs.directions_list_ptr[ptrs.art_count_byte_ptr^ * 4] := directions;
+  if ptrs.frames_list_ptr <> nil then
+    ptrs.frames_list_ptr[ptrs.art_count_byte_ptr^ * ptrs.frames_size] := frames;
+  // Return index of newly added art
+  index := ptrs.art_count_byte_ptr^;
+  // Increase number of arts
+  Inc(ptrs.art_count_byte_ptr^);
+  compute_image_indexes;
+  result := true;
+end;
+
+function TStructures.remove_last_art(art_type: integer): boolean;
+var
+  ptrs: TArtTypePointersPtr;
+  use_art_count: boolean;
+begin
+  result := false;
+  ptrs := Addr(art_type_pointers[art_type]);
+  use_art_count := (art_type <> ART_BUILDING_ANIMATION) and (art_type <> ART_BUILDUP);
+  if (use_art_count) and (ptrs.art_count_byte_ptr^ = 0) then
+    exit;
+  // Decrease number of arts
+  if use_art_count then
+    Dec(ptrs.art_count_byte_ptr^);
+  // Remove image entries
+  StructGraphics.remove_image_entries(ptrs.image_indexes_list_ptr[ptrs.art_count_byte_ptr^], get_art_num_images(art_type, ptrs.art_count_byte_ptr^));
+  // Reset number of directions and frames
+  if ptrs.directions_list_ptr <> nil then
+    ptrs.directions_list_ptr[ptrs.art_count_byte_ptr^ * 4] := 0;
+  if ptrs.frames_list_ptr <> nil then
+    ptrs.frames_list_ptr[ptrs.art_count_byte_ptr^ * ptrs.frames_size] := 0;
+  // Fix art references
+  fix_art_references(art_type, ptrs.art_count_byte_ptr^, -1, false);
+  compute_image_indexes;
+  result := true;
+end;
+
+procedure TStructures.modify_art(art_type, index, directions, frames: integer);
+var
+  ptrs: TArtTypePointersPtr;
+begin
+  if index < 0 then
+    exit;
+  ptrs := Addr(art_type_pointers[art_type]);
+  // Get new number of frames
+  directions := IfThen(ptrs.directions_list_ptr <> nil, directions, 1);
+  frames := IfThen(ptrs.frames_list_ptr <> nil, frames, 1);
+  // Modify number of image entries
+  if art_type = ART_BUILDING then
+  begin
+    StructGraphics.change_image_entry_count(building_art_image_indexes[index] + 1 + templates.BuildingArtDirections[index], templates.BuildingArtDirections[index], directions);
+    StructGraphics.change_image_entry_count(building_art_image_indexes[index] + 1, templates.BuildingArtDirections[index], directions);
+  end else
+    StructGraphics.change_image_entry_count(ptrs.image_indexes_list_ptr[index], get_art_num_images(art_type, index), directions * frames);
+  // Store new number of directions and frames
+  if ptrs.directions_list_ptr <> nil then
+    ptrs.directions_list_ptr[index * 4] := directions;
+  if ptrs.frames_list_ptr <> nil then
+    ptrs.frames_list_ptr[index * ptrs.frames_size] := frames;
+  compute_image_indexes;
+end;
+
+procedure TStructures.swap_arts(art_type, index1, index2: integer);
+var
+  ptrs: TArtTypePointersPtr;
+begin
+  ptrs := Addr(art_type_pointers[art_type]);
+  // Swap image entries
+  StructGraphics.swap_image_entries(ptrs.image_indexes_list_ptr[index1], ptrs.image_indexes_list_ptr[index2], get_art_num_images(art_type, index1), get_art_num_images(art_type, index2));
+  // Swap directions and frames count
+  if ptrs.directions_list_ptr <> nil then
+    swap_data(ptrs.directions_list_ptr, 4, index1, index2);
+  if ptrs.frames_list_ptr <> nil then
+    swap_data(ptrs.frames_list_ptr, ptrs.frames_size, index1, index2);
+  // Fix art references
+  fix_art_references(art_type, index1, index2, true);
+  compute_image_indexes;
+end;
+
+procedure TStructures.store_item_reference(var ref: TItemReference; item_type, index: integer);
+begin
+  if index = -1 then
+    FillChar(ref.item_name, 50, 0)
+  else
+    Move(item_type_pointers[item_type].item_name_list_ptr[index * 50], ref.item_name, 50);
+end;
+
+function TStructures.restore_item_reference(var ref: TItemReference; item_type, index: integer; import_path: string): integer;
+var
+  ptrs: TItemTypePointersPtr;
+  srec: TDummyStringRecPtr;
+  i: integer;
+  new_item_added: boolean;
+  import_filename: string;
+begin
+  result := index;
+  if index = -1 then
+    exit; // No item is referenced
+  ptrs := Addr(item_type_pointers[item_type]);
+  // Check if name of referenced item matches with name of existing item on referenced index
+  srec := Addr(ptrs.item_name_list_ptr[index * ptrs.item_name_length]);
+  if (index >= ptrs.item_count_byte_ptr^) or (ref.item_name <> srec.str) then
+  begin
+    // Name does not match. Try to find referenced item among list of existing items.
+    result := -1;
+    for i := 0 to ptrs.item_count_byte_ptr^ - 1 do
+    begin
+      srec := Addr(ptrs.item_name_list_ptr[i * ptrs.item_name_length]);
+      if ref.item_name = srec.str then
+      begin
+        // Referenced item found
+        result := i;
+        break;
+      end;
+    end;
+  end;
+  // If referenced item does not exist among existing items, add new item with this name
+  new_item_added := false;
+  if result = -1 then
+  begin
+    if not add_new_item(item_type, ref.item_name, result) then
+    begin
+      Application.MessageBox(PChar(Format('Could not add new %s %s because there is no more room for it.', [item_type_names[item_type], ref.item_name])), 'Import item', MB_ICONERROR or MB_OK);
+      result := 0;
+      exit;
+    end;
+    new_item_added := true;
+  end;
+  // Try to import referenced item from file, if it exists
+  if ptrs.export_data_size = 0 then
+  begin
+    // Item of this type cannot be imported
+    if new_item_added then
+      Application.MessageBox(PChar(Format('New %s %s was added at position %d.', [item_type_names[item_type], ref.item_name, result])), 'Import item', MB_ICONINFORMATION or MB_OK);
+    exit;
+  end;
+  import_filename := import_path + ref.item_name + '.' + item_type_file_extensions[item_type];
+  if FileExists(import_filename) then
+  begin
+    if new_item_added then
+      Application.MessageBox(PChar(Format('New %s %s was added at position %d and it is being imported from file %s.', [item_type_names[item_type], ref.item_name, result, import_filename])), 'Import item', MB_ICONINFORMATION or MB_OK)
+    else
+      Application.MessageBox(PChar(Format('Importing %s %s from file %s.', [item_type_names[item_type], ref.item_name, import_filename])), 'Import item', MB_ICONINFORMATION or MB_OK);
+    import_item(item_type, result, import_filename);
+  end
+  else if new_item_added then
+    Application.MessageBox(PChar(Format('New %s %s was added at position %d but is empty. You should set it up or import it.', [item_type_names[item_type], ref.item_name, result])), 'Import item', MB_ICONWARNING or MB_OK);
+end;
+
+procedure TStructures.store_art_reference(var ref: TArtReference; art_type, index: integer);
+var
+  ptrs: TArtTypePointersPtr;
+  i: integer;
+  art_bytes: TByteArrayPtr;
+begin
+  FillChar(ref, sizeof(TArtReference), 0);
+  ptrs := Addr(art_type_pointers[art_type]);
+  if (index = -1) or (index >= ptrs.art_count_byte_ptr^) then
+    exit;
+  if ptrs.directions_list_ptr <> nil then
+    ref.directions := ptrs.directions_list_ptr[index * 4];
+  if ptrs.frames_list_ptr <> nil then
+    ref.frames := ptrs.frames_list_ptr[index * ptrs.frames_size];
+  ref.art_size := StructGraphics.get_image_entries_size(ptrs.image_indexes_list_ptr[index], get_art_num_images(art_type, index));
+  art_bytes := TByteArrayPtr(StructGraphics.get_structure_image_header(ptrs.image_indexes_list_ptr[index]));
+  for i := 0 to ref.art_size - 1 do
+    inc(ref.checksum, art_bytes[i]);
+end;
+
+function TStructures.restore_art_reference(var ref: TArtReference; art_type, ref_index, fixed_index: integer; import_filename: string): integer;
+var
+  ptrs: TArtTypePointersPtr;
+  cmp_art_ref: TArtReference;
+  i: integer;
+  referenced_art_found: boolean;
+  import_file_exists: boolean;
+begin
+  result := ref_index;
+  if ref_index = -1 then
+    exit; // No art is referenced
+  ptrs := Addr(art_type_pointers[art_type]);
+  // Check if referenced art matches with existing art on referenced index
+  store_art_reference(cmp_art_ref, art_type, ref_index);
+  if (ref_index >= ptrs.art_count_byte_ptr^) or (ref.directions <> cmp_art_ref.directions) or (ref.frames <> cmp_art_ref.frames) or (ref.art_size <> cmp_art_ref.art_size) or (ref.checksum <> cmp_art_ref.checksum) then
+  begin
+    // Art does not match. Try to find referenced art among list of existing arts.
+    result := -1;
+    for i := 0 to ptrs.art_count_byte_ptr^ - 1 do
+    begin
+      store_art_reference(cmp_art_ref, art_type, i);
+      if (ref.directions = cmp_art_ref.directions) and (ref.frames = cmp_art_ref.frames) and (ref.art_size = cmp_art_ref.art_size) and (ref.checksum = cmp_art_ref.checksum) then
+      begin
+        // Referenced art found
+        result := i;
+        break;
+      end;
+    end;
+  end;
+  // If referenced art does not exist among existing arts, use new art with same amount of directions and frames
+  referenced_art_found := result <> -1;
+  if result = -1 then
+  begin
+    if fixed_index = -1 then
+    begin
+      // Add new art if there's no fixed index (building and unit art)
+      if not add_new_art(art_type, ref.directions, ref.frames, result) then
+      begin
+        Application.MessageBox(PChar(Format('Could not add new %s art because there is no more room for it.', [art_type_names[art_type]])), 'Import art', MB_ICONERROR or MB_OK);
+        result := 0;
+        exit;
+      end;
+    end else
+    begin
+      // Otherwise use art on fixed index
+      modify_art(art_type, fixed_index, ref.directions, ref.frames);
+      result := fixed_index;
+    end;
+  end;
+  // If referenced art was found among existing arts, it's not needed to import it
+  import_filename := import_filename + '.R16';
+  import_file_exists := FileExists(import_filename);
+  if referenced_art_found then
+  begin
+    if import_file_exists then
+      Application.MessageBox(PChar(Format('Skipping art import from file %s because such art already exists.', [import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK);
+    exit;
+  end;
+  // Import art from file
+  if import_file_exists then
+  begin
+    if fixed_index = -1 then
+      Application.MessageBox(PChar(Format('New %s art was added at position %d and it is being imported from file %s.', [art_type_names[art_type], result, import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK)
+    else
+      Application.MessageBox(PChar(Format('Importing %s art from file %s.', [art_type_names[art_type], import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK);
+    StructGraphics.import_image_entries(import_filename, ptrs.image_indexes_list_ptr[result], get_art_num_images(art_type, result));
+  end else
+    Application.MessageBox(PChar(Format('New %s art was added at position %d but is empty. You should set it up or import it.', [art_type_names[art_type], result])), 'Import art', MB_ICONWARNING or MB_OK);
+end;
+
+procedure TStructures.store_sound_reference(var ref: TSoundReference; index: integer);
+begin
+  FillChar(ref, sizeof(TSoundReference), 0);
+  if index = -1 then
+    exit;
+  store_c_string(StringTable.samples_uib.Names[index], Addr(ref.key), Length(ref.key));
+  store_c_string(StringTable.samples_uib.ValueFromIndex[index], Addr(ref.value), Length(ref.value));
+end;
+
+function TStructures.restore_sound_reference(var ref: TSoundReference; index: integer): integer;
+begin
+  result := index;
+end;
+
+procedure TStructures.store_building_export_data(index: integer; data: TBuildingExportDataPtr);
 var
   icon_ptr: TR16EntryHeaderPtr;
+  i: integer;
 begin
-  // Actual building data
-  Move(templates.BuildingNameStrings[index], data.building_name, Length(data.building_name));
-  Move(templates.BuildingDefinitions[index], data.building_template, sizeof(TBuildingTemplate));
-  Move(builexp[index], data.builexp_entry, sizeof(TBuilExpEntry));
-  // Buildup art frames
-  data.buildup_art_frames := templates.BuildupArtFrames[index];
-  // References
-  store_item_reference(data.ref_building_type, data.building_template.BuildingType, Addr(templates.BuildingTypeStrings));
-  store_item_reference(data.ref_prereq1_building_type, data.building_template.Prereq1BuildingType, Addr(templates.BuildingTypeStrings));
-  store_item_reference(data.ref_prereq2_building_type, data.building_template.Prereq2BuildingType, Addr(templates.BuildingTypeStrings));
-  store_item_reference(data.ref_armour_type, data.building_template.ArmorType, Addr(armour.ArmourTypeStrings));
-  store_item_reference(data.ref_primary_weapon, data.building_template.PrimaryWeapon, Addr(templates.WeaponStrings));
-  store_item_reference(data.ref_secondary_weapon, data.building_template.SecondaryWeapon, Addr(templates.WeaponStrings));
-  store_item_reference(data.ref_death_explosion, data.building_template.DeathExplosion, Addr(templates.ExplosionStrings));
-  store_item_reference(data.ref_firing_explosion, data.building_template.FiringExplosion, Addr(templates.ExplosionStrings));
   // Building icon
   icon_ptr := StructGraphics.get_structure_image_header(first_building_icon_image_index + index);
   if icon_ptr.EntryType <> 0 then
     Move(icon_ptr.EntryType, data.icon_data, sizeof(data.icon_data))
   else
     FillChar(data.icon_data, sizeof(data.icon_data), 0);
+  // Item references
+  store_item_reference(data.item_references[0], ITEM_BUILDING_TYPE, data.building_template.BuildingType);
+  store_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.building_template.Prereq1BuildingType);
+  store_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.building_template.Prereq2BuildingType);
+  store_item_reference(data.item_references[3], ITEM_WEAPON,        data.building_template.PrimaryWeapon);
+  store_item_reference(data.item_references[4], ITEM_WEAPON,        data.building_template.SecondaryWeapon);
+  store_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.building_template.DeathExplosion);
+  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.FiringExplosion);
+  store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.building_template.ArmorType);
+  for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
+    store_item_reference(data.item_references[8+i], ITEM_EXPLOSION, IfThen(i < data.builexp_entry.NumAnimations, data.builexp_entry.AnimExplosion[i], -1));
+  // Art references
+  store_art_reference(data.art_references[0], ART_BUILDING,           data.building_template.BuildingArt);
+  store_art_reference(data.art_references[1], ART_BUILDING,           data.building_template.BarrelArt);
+  store_art_reference(data.art_references[2], ART_BUILDING_ANIMATION, data.building_template.BuildingAnimation);
+  store_art_reference(data.art_references[3], ART_BUILDUP,            data.building_template.BuildupArt);
+  // Building type string
+  store_c_string(StringTable.text_uib.Values[templates.BuildingTypeStrings[data.building_template.BuildingType]], Addr(data.building_type_str), Length(data.building_type_str));
 end;
 
-procedure TStructures.restore_building_data(index: integer; data: TBuildingExportDataPtr);
+procedure TStructures.restore_building_export_data(index: integer; data: TBuildingExportDataPtr; import_path: string);
+var
+  i: integer;
 begin
-  // Actual building data
-  Move(data.building_name, templates.BuildingNameStrings[index], Length(data.building_name));
-  Move(data.building_template, templates.BuildingDefinitions[index], sizeof(TBuildingTemplate));
-  Move(data.builexp_entry, builexp[index], sizeof(TBuilExpEntry));
-  // Buildup art frames
-  if templates.BuildupArtFrames[index] <> data.buildup_art_frames then
-  begin
-    StructGraphics.change_image_entry_count(buildup_art_image_indexes[index], templates.BuildupArtFrames[index], data.buildup_art_frames);
-    templates.BuildupArtFrames[index] := data.buildup_art_frames;
-    compute_image_indexes;
-  end;
   // Building icon
   if data.icon_data[0] <> 0 then
     StructGraphics.modify_image_data(first_building_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
   else
-    StructGraphics.modify_image_data(first_building_icon_image_index + index, data.icon_data, 1)
-end;
-
-procedure TStructures.copy_building(index: integer);
-var
-  handle: THandle;
-  pointer: TBuildingExportDataPtr;
-begin
-  OpenClipboard(Application.Handle);
-  EmptyClipboard;
-
-  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, SizeOf(TBuildingExportData));
-  pointer := GlobalLock(handle);
-
-  store_building_data(index, pointer);
-
-  GlobalUnLock(handle);
-  SetClipboardData(clipboard_format_building, handle);
-  CloseClipboard;
-end;
-
-function TStructures.paste_building(index: integer): boolean;
-var
-  handle: THandle;
-  pointer: TBuildingExportDataPtr;
-begin
-  result := false;
-  if not Clipboard.HasFormat(clipboard_format_building) then
-    exit;
-  OpenClipboard(Application.Handle);
-  handle := GetClipboardData(clipboard_format_building);
-  pointer := GlobalLock(handle);
-
-  restore_building_data(index, pointer);
-
-  GlobalUnLock(handle);
-  CloseClipboard;
-  result := true;
-end;
-
-procedure TStructures.export_building(index: integer; filename: string);
-var
-  building_data: TBuildingExportData;
-begin
-  store_building_data(index, Addr(building_data));
-  save_binary_file(filename, building_data, sizeof(building_data));
-end;
-
-procedure TStructures.import_building(index: integer; filename: string);
-var
-  building_data: TBuildingExportData;
-begin
-  load_binary_file(filename, building_data, sizeof(building_data));
-  restore_building_data(index, Addr(building_data));
-end;
-
-procedure TStructures.swap_buildings(index1, index2: integer);
-var
-  tmp_building_name: array[0..449] of char;
-  tmp_building_template: TBuildingTemplate;
-  tmp_builexp_entry: TBuilExpEntry;
-  tmp_buildup_art_frames: integer;
-  tmp_building_animation_frames: integer;
-  i: integer;
-begin
-  // Swap building data
-  move(templates.BuildingNameStrings[index1,0], tmp_building_name[0], Length(tmp_building_name));
-  move(templates.BuildingNameStrings[index2,0], templates.BuildingNameStrings[index1,0], Length(tmp_building_name));
-  move(tmp_building_name[0], templates.BuildingNameStrings[index2,0], Length(tmp_building_name));
-  tmp_building_template := templates.BuildingDefinitions[index1];
-  templates.BuildingDefinitions[index1] := templates.BuildingDefinitions[index2];
-  templates.BuildingDefinitions[index2] := tmp_building_template;
-  tmp_builexp_entry := builexp[index1];
-  builexp[index1] := builexp[index2];
-  builexp[index2] := tmp_builexp_entry;
-  StructGraphics.swap_image_entries(first_building_icon_image_index + index1, first_building_icon_image_index + index2, 1, 1);
-  // Swap building animations
-  StructGraphics.swap_image_entries(building_animation_image_indexes[index1], building_animation_image_indexes[index2], templates.BuildingAnimationFrames[index1], templates.BuildingAnimationFrames[index2]);
-  tmp_building_animation_frames := templates.BuildingAnimationFrames[index1];
-  templates.BuildingAnimationFrames[index1] := templates.BuildingAnimationFrames[index2];
-  templates.BuildingAnimationFrames[index2] := tmp_building_animation_frames;
-  for i := 0 to templates.BuildingCount - 1 do
+    StructGraphics.modify_image_data(first_building_icon_image_index + index, data.icon_data, 1);
+  // Buildup art frames
+  if templates.BuildupArtFrames[index] <> data.art_references[3].frames then
   begin
-    if (templates.BuildingDefinitions[i].Flags and BF_HAS_ANIMATION) = 0 then
-      continue;
-    if templates.BuildingDefinitions[i].BuildingAnimation = index1 then
-      templates.BuildingDefinitions[i].BuildingAnimation := index2
-    else if templates.BuildingDefinitions[i].BuildingAnimation = index2 then
-      templates.BuildingDefinitions[i].BuildingAnimation := index1;
+    StructGraphics.change_image_entry_count(buildup_art_image_indexes[index], templates.BuildupArtFrames[index], data.art_references[3].frames);
+    templates.BuildupArtFrames[index] := data.art_references[3].frames;
+    compute_image_indexes;
   end;
-  // Swap buildup animations
-  StructGraphics.swap_image_entries(buildup_art_image_indexes[index1], buildup_art_image_indexes[index2], templates.BuildupArtFrames[index1], templates.BuildupArtFrames[index2]);
-  tmp_buildup_art_frames := templates.BuildupArtFrames[index1];
-  templates.BuildupArtFrames[index1] := templates.BuildupArtFrames[index2];
-  templates.BuildupArtFrames[index2] := tmp_buildup_art_frames;
-  for i := 0 to templates.BuildingCount - 1 do
-  begin
-    if templates.BuildupArtFrames[i] = 0 then
-      continue;
-    if templates.BuildingDefinitions[i].BuildupArt = index1 then
-      templates.BuildingDefinitions[i].BuildupArt := index2
-    else if templates.BuildingDefinitions[i].BuildupArt = index2 then
-      templates.BuildingDefinitions[i].BuildupArt := index1;
-  end;
-  compute_image_indexes;
+  // Item references
+  data.building_template.BuildingType :=        restore_item_reference(data.item_references[0], ITEM_BUILDING_TYPE, data.building_template.BuildingType,        import_path);
+  data.building_template.Prereq1BuildingType := restore_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.building_template.Prereq1BuildingType, import_path);
+  data.building_template.Prereq2BuildingType := restore_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.building_template.Prereq2BuildingType, import_path);
+  data.building_template.PrimaryWeapon :=       restore_item_reference(data.item_references[3], ITEM_WEAPON,        data.building_template.PrimaryWeapon,       import_path);
+  data.building_template.SecondaryWeapon :=     restore_item_reference(data.item_references[4], ITEM_WEAPON,        data.building_template.SecondaryWeapon,     import_path);
+  data.building_template.DeathExplosion :=      restore_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.building_template.DeathExplosion,      import_path);
+  data.building_template.FiringExplosion :=     restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.FiringExplosion,     import_path);
+  data.building_template.ArmorType :=           restore_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.building_template.ArmorType,           import_path);
+  for i := 0 to data.builexp_entry.NumAnimations - 1 do
+    data.builexp_entry.AnimExplosion[i] := restore_item_reference(data.item_references[8+i], ITEM_EXPLOSION, data.builexp_entry.AnimExplosion[i], import_path);
+  // Art references
+  data.building_template.BuildingArt :=       restore_art_reference(data.art_references[0], ART_BUILDING,           data.building_template.BuildingArt,       -1,    import_path + data.building_name);
+  data.building_template.BarrelArt :=         restore_art_reference(data.art_references[1], ART_BUILDING,           data.building_template.BarrelArt,         -1,    import_path + data.building_name + '_BARREL');
+  data.building_template.BuildingAnimation := restore_art_reference(data.art_references[2], ART_BUILDING_ANIMATION, data.building_template.BuildingAnimation, index, import_path + data.building_name + '_ANIMATION');
+  modify_art(ART_BUILDUP, index, 0, data.art_references[3].frames);
+  data.building_template.BuildupArt :=        restore_art_reference(data.art_references[3], ART_BUILDUP,            data.building_template.BuildupArt,        index, import_path + data.building_name + '_BUILDUP');
+  // Building type string
+  if (Ord(data.building_type_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
+    Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the building name appears in game.', [data.item_references[0].item_name, data.building_type_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
 end;
 
-procedure TStructures.store_unit_data(index: integer; data: TUnitExportDataPtr);
+procedure TStructures.store_unit_export_data(index: integer; data: TUnitExportDataPtr);
 var
   icon_ptr: TR16EntryHeaderPtr;
+  i: integer;
 begin
-  // Actual unit data
-  Move(templates.UnitNameStrings[index], data.unit_name, Length(data.unit_name));
-  Move(templates.UnitDefinitions[index], data.unit_template, sizeof(TUnitTemplate));
-  // References
-  store_item_reference(data.ref_unit_type, data.unit_template.UnitType, Addr(templates.UnitTypeStrings));
-  store_item_reference(data.ref_prereq1_building_type, data.unit_template.Prereq1BuildingType, Addr(templates.BuildingTypeStrings));
-  store_item_reference(data.ref_prereq2_building_type, data.unit_template.Prereq2BuildingType, Addr(templates.BuildingTypeStrings));
-  store_item_reference(data.ref_armour_type, data.unit_template.ArmorType, Addr(armour.ArmourTypeStrings));
-  store_item_reference(data.ref_primary_weapon, data.unit_template.PrimaryWeapon, Addr(templates.WeaponStrings));
-  store_item_reference(data.ref_secondary_weapon, data.unit_template.SecondaryWeapon, Addr(templates.WeaponStrings));
-  store_item_reference(data.ref_death_explosion, data.unit_template.DeathExplosion, Addr(templates.ExplosionStrings));
-  store_item_reference(data.ref_firing_explosion, data.unit_template.FiringExplosion, Addr(templates.ExplosionStrings));
   // Unit icon
   icon_ptr := StructGraphics.get_structure_image_header(first_unit_icon_image_index + index);
   if icon_ptr.EntryType <> 0 then
     Move(icon_ptr.EntryType, data.icon_data, sizeof(data.icon_data))
   else
     FillChar(data.icon_data, sizeof(data.icon_data), 0);
+  // Item references
+  store_item_reference(data.item_references[0], ITEM_UNIT_TYPE,     data.unit_template.UnitType);
+  store_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.unit_template.Prereq1BuildingType);
+  store_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.unit_template.Prereq2BuildingType);
+  store_item_reference(data.item_references[3], ITEM_WEAPON,        data.unit_template.PrimaryWeapon);
+  store_item_reference(data.item_references[4], ITEM_WEAPON,        data.unit_template.SecondaryWeapon);
+  store_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.unit_template.DeathExplosion);
+  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.FiringExplosion);
+  store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.unit_template.ArmorType);
+  // Art references
+  store_art_reference(data.art_references[0], ART_UNIT, data.unit_template.UnitArt);
+  store_art_reference(data.art_references[1], ART_UNIT, data.unit_template.BarrelArt);
+  // Sound references
+  for i := 0 to Length(data.sound_references) - 1 do
+    store_sound_reference(data.sound_references[i], data.unit_template.Voices[i]);
+  // Unit type string
+  store_c_string(StringTable.text_uib.Values[templates.UnitTypeStrings[data.unit_template.UnitType]], Addr(data.unit_type_str), Length(data.unit_type_str));
 end;
 
-procedure TStructures.restore_unit_data(index: integer; data: TUnitExportDataPtr);
+procedure TStructures.restore_unit_export_data(index: integer; data: TUnitExportDataPtr; import_path: string);
+var
+  i: integer;
 begin
-  // Actual unit data
-  Move(data.unit_name, templates.UnitNameStrings[index], Length(data.unit_name));
-  Move(data.unit_template, templates.UnitDefinitions[index], sizeof(TUnitTemplate));
   // Unit icon
   if data.icon_data[0] <> 0 then
     StructGraphics.modify_image_data(first_unit_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
   else
     StructGraphics.modify_image_data(first_unit_icon_image_index + index, data.icon_data, 1);
+  // Item references
+  data.unit_template.UnitType :=            restore_item_reference(data.item_references[0], ITEM_UNIT_TYPE,     data.unit_template.UnitType,            import_path);
+  data.unit_template.Prereq1BuildingType := restore_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.unit_template.Prereq1BuildingType, import_path);
+  data.unit_template.Prereq2BuildingType := restore_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.unit_template.Prereq2BuildingType, import_path);
+  data.unit_template.PrimaryWeapon :=       restore_item_reference(data.item_references[3], ITEM_WEAPON,        data.unit_template.PrimaryWeapon,       import_path);
+  data.unit_template.SecondaryWeapon :=     restore_item_reference(data.item_references[4], ITEM_WEAPON,        data.unit_template.SecondaryWeapon,     import_path);
+  data.unit_template.DeathExplosion :=      restore_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.unit_template.DeathExplosion,      import_path);
+  data.unit_template.FiringExplosion :=     restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.FiringExplosion,     import_path);
+  data.unit_template.ArmorType :=           restore_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.unit_template.ArmorType,           import_path);
+  // Art references
+  data.unit_template.UnitArt   := restore_art_reference(data.art_references[0], ART_UNIT, data.unit_template.UnitArt,   -1, import_path + data.unit_name);
+  data.unit_template.BarrelArt := restore_art_reference(data.art_references[1], ART_UNIT, data.unit_template.BarrelArt, -1, import_path + data.unit_name + '_BARREL');
+  // Sound references
+  for i := 0 to Length(data.sound_references) - 1 do
+    data.unit_template.Voices[i] := restore_sound_reference(data.sound_references[i], data.unit_template.Voices[i]);
+  // Unit type string
+  if (Ord(data.unit_type_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
+    Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the unit name appears in game.', [data.item_references[0].item_name, data.unit_type_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
 end;
 
-procedure TStructures.copy_unit(index: integer);
-var
-  handle: THandle;
-  pointer: TUnitExportDataPtr;
+procedure TStructures.store_weapon_export_data(index: integer; data: TWeaponExportDataPtr);
 begin
+  store_item_reference(data.item_references[0], ITEM_EXPLOSION, data.weapon_template.HitExplosion);
+  store_item_reference(data.item_references[1], ITEM_EXPLOSION, data.weapon_template.TrailExplosion);
+  store_item_reference(data.item_references[2], ITEM_WARHEAD,   data.weapon_template.Warhead);
+  store_art_reference(data.art_reference, ART_PROJECTILE, data.weapon_template.ProjectileArt);
+  store_sound_reference(data.sound_reference, data.weapon_template.FiringSound);
+end;
+
+procedure TStructures.restore_weapon_export_data(index: integer; data: TWeaponExportDataPtr; import_path: string);
+begin
+  data.weapon_template.HitExplosion :=   restore_item_reference(data.item_references[0], ITEM_EXPLOSION, data.weapon_template.HitExplosion,   import_path);
+  data.weapon_template.TrailExplosion := restore_item_reference(data.item_references[1], ITEM_EXPLOSION, data.weapon_template.TrailExplosion, import_path);
+  data.weapon_template.Warhead :=        restore_item_reference(data.item_references[2], ITEM_WARHEAD,   data.weapon_template.Warhead,        import_path);
+  modify_art(ART_PROJECTILE, index, data.art_reference.directions, 0);
+  data.weapon_template.ProjectileArt :=  restore_art_reference(data.art_reference, ART_PROJECTILE, data.weapon_template.ProjectileArt, index, import_path + data.weapon_name);
+  data.weapon_template.FiringSound :=    restore_sound_reference(data.sound_reference, data.weapon_template.FiringSound);
+end;
+
+procedure TStructures.store_explosion_export_data(index: integer; data: TExplosionExportDataPtr);
+begin
+  store_art_reference(data.art_reference, ART_ANIMATION, index);
+  store_sound_reference(data.sound_reference, data.explosion_template.Sound);
+end;
+
+procedure TStructures.restore_explosion_export_data(index: integer; data: TExplosionExportDataPtr; import_path: string);
+begin
+  restore_art_reference(data.art_reference, ART_ANIMATION, index, index, import_path + data.explosion_name);
+  data.explosion_template.Sound := restore_sound_reference(data.sound_reference, data.explosion_template.Sound);
+  data.explosion_template.MyIndex := index;
+end;
+
+procedure TStructures.store_armour_type_export_data(index: integer; data: TArmourTypeExportDataPtr);
+var
+  i: integer;
+begin
+  for i := 0 to MAX_WARHEADS - 1 do
+    store_item_reference(data.warhead_references[i], ITEM_WARHEAD, i);
+end;
+
+procedure TStructures.restore_armour_type_export_data(index: integer; data: TArmourTypeExportDataPtr);
+var
+  tmp_versus_warhead_values: array[0..MAX_WARHEADS-1] of byte;
+  i, j: integer;
+begin
+  FillChar(tmp_versus_warhead_values[0], MAX_WARHEADS, 0);
+  for i := 0 to MAX_WARHEADS - 1 do
+  begin
+    if data.warhead_references[i].item_name = '' then
+      break;
+    for j := 0 to armour.WarheadCount - 1 do
+      if data.warhead_references[i].item_name = armour.WarheadStrings[j] then
+      begin
+        tmp_versus_warhead_values[j] := data.versus_warhead_values[i];
+        break;
+      end;
+  end;
+  Move(tmp_versus_warhead_values[0], data.versus_warhead_values[0], MAX_WARHEADS);
+end;
+
+procedure TStructures.store_warhead_export_data(index: integer; data: TWarheadExportDataPtr);
+var
+  i: integer;
+begin
+  for i := 0 to MAX_ARMOUR_TYPES - 1 do
+    store_item_reference(data.armour_type_references[i], ITEM_ARMOUR_TYPE, i);
+end;
+
+procedure TStructures.restore_warhead_export_data(index: integer; data: TWarheadExportDataPtr);
+var
+  tmp_versus_armor_type: array[0..MAX_ARMOUR_TYPES-1] of byte;
+  i, j: integer;
+begin
+  FillChar(tmp_versus_armor_type[0], MAX_ARMOUR_TYPES, 0);
+  for i := 0 to MAX_ARMOUR_TYPES - 1 do
+  begin
+    if data.armour_type_references[i].item_name = '' then
+      break;
+    for j := 0 to armour.ArmourTypeCount - 1 do
+      if data.armour_type_references[i].item_name = armour.ArmourTypeStrings[j] then
+      begin
+        tmp_versus_armor_type[j] := data.warhead_entry.VersusArmorType[i];
+        break;
+      end;
+  end;
+  Move(tmp_versus_armor_type[0], data.warhead_entry.VersusArmorType[0], MAX_ARMOUR_TYPES);
+end;
+
+procedure TStructures.store_item_export_data(item_type, index: integer; data: TByteArrayPtr);
+var
+  offset: integer;
+  ptrs: TItemTypePointersPtr;
+  data_ptrs: TItemDataPointersPtr;
+  i: integer;
+begin
+  ptrs := Addr(item_type_pointers[item_type]);
+  // Store item name
+  Move(ptrs.item_name_list_ptr[index * ptrs.item_name_length], data[0], ptrs.item_name_length);
+  offset := ptrs.item_name_length;
+  // Store item data
+  for i := 0 to ptrs.item_data_pointers_count - 1 do
+  begin
+    data_ptrs := Addr(item_data_pointers[ptrs.item_data_pointers_first + i]);
+    Move(data_ptrs.data_ptr[index * data_ptrs.data_size], data[offset], data_ptrs.data_size);
+    Inc(offset, data_ptrs.data_size);
+  end;
+  // Store item-specific data
+  case item_type of
+    ITEM_BUILDING:    store_building_export_data   (index, Addr(data[0]));
+    ITEM_UNIT:        store_unit_export_data       (index, Addr(data[0]));
+    ITEM_WEAPON:      store_weapon_export_data     (index, Addr(data[0]));
+    ITEM_EXPLOSION:   store_explosion_export_data  (index, Addr(data[0]));
+    ITEM_ARMOUR_TYPE: store_armour_type_export_data(index, Addr(data[0]));
+    ITEM_WARHEAD:     store_warhead_export_data    (index, Addr(data[0]));
+  end;
+end;
+
+procedure TStructures.restore_item_export_data(item_type, index: integer; data: TByteArrayPtr; import_path: string);
+var
+  offset: integer;
+  ptrs: TItemTypePointersPtr;
+  data_ptrs: TItemDataPointersPtr;
+  i: integer;
+begin
+  ptrs := Addr(item_type_pointers[item_type]);
+  // Retore item name
+  Move(data[0], ptrs.item_name_list_ptr[index * ptrs.item_name_length], ptrs.item_name_length);
+  offset := ptrs.item_name_length;
+  // Restore item-specific data
+  case item_type of
+    ITEM_BUILDING:    restore_building_export_data   (index, Addr(data[0]), import_path);
+    ITEM_UNIT:        restore_unit_export_data       (index, Addr(data[0]), import_path);
+    ITEM_WEAPON:      restore_weapon_export_data     (index, Addr(data[0]), import_path);
+    ITEM_EXPLOSION:   restore_explosion_export_data  (index, Addr(data[0]), import_path);
+    ITEM_ARMOUR_TYPE: restore_armour_type_export_data(index, Addr(data[0]));
+    ITEM_WARHEAD:     restore_warhead_export_data    (index, Addr(data[0]));
+  end;
+  // Restore item data
+  for i := 0 to ptrs.item_data_pointers_count - 1 do
+  begin
+    data_ptrs := Addr(item_data_pointers[ptrs.item_data_pointers_first + i]);
+    Move(data[offset], data_ptrs.data_ptr[index * data_ptrs.data_size], data_ptrs.data_size);
+    Inc(offset, data_ptrs.data_size);
+  end;
+end;
+
+procedure TStructures.export_item(item_type, index: integer; filename: string);
+var
+  ptrs: TItemTypePointersPtr;
+  data: array of byte;
+begin
+  ptrs := Addr(item_type_pointers[item_type]);
+  SetLength(data, ptrs.export_data_size);
+  store_item_export_data(item_type, index, Addr(data[0]));
+  save_binary_file(filename, data[0], ptrs.export_data_size);
+  SetLength(data, 0);
+end;
+
+procedure TStructures.import_item(item_type, index: integer; filename: string);
+var
+  ptrs: TItemTypePointersPtr;
+  data: array of byte;
+begin
+  ptrs := Addr(item_type_pointers[item_type]);
+  SetLength(data, ptrs.export_data_size);
+  load_binary_file(filename, data[0], ptrs.export_data_size);
+  restore_item_export_data(item_type, index, Addr(data[0]), ExtractFilePath(filename));
+  SetLength(data, 0);
+end;
+
+procedure TStructures.copy_item(item_type, index: integer);
+var
+  ptrs: TItemTypePointersPtr;
+  handle: THandle;
+  data_ptr: Pointer;
+begin
+  ptrs := Addr(item_type_pointers[item_type]);
   OpenClipboard(Application.Handle);
   EmptyClipboard;
-
-  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, SizeOf(TUnitExportData));
-  pointer := GlobalLock(handle);
-
-  store_unit_data(index, pointer);
-
+  handle := GlobalAlloc(GMEM_DDESHARE or GMEM_MOVEABLE, ptrs.export_data_size);
+  data_ptr := GlobalLock(handle);
+  store_item_export_data(item_type, index, data_ptr);
   GlobalUnLock(handle);
-  SetClipboardData(clipboard_format_unit, handle);
+  SetClipboardData(ptrs.clipboard_format, handle);
   CloseClipboard;
 end;
 
-function TStructures.paste_unit(index: integer): boolean;
+function TStructures.paste_item(item_type, index: integer): boolean;
 var
+  ptrs: TItemTypePointersPtr;
   handle: THandle;
-  pointer: TUnitExportDataPtr;
+  data_ptr: Pointer;
 begin
   result := false;
-  if not Clipboard.HasFormat(clipboard_format_unit) then
+  ptrs := Addr(item_type_pointers[item_type]);
+  if not Clipboard.HasFormat(ptrs.clipboard_format) then
     exit;
   OpenClipboard(Application.Handle);
-  handle := GetClipboardData(clipboard_format_unit);
-  pointer := GlobalLock(handle);
-
-  restore_unit_data(index, pointer);
-
+  handle := GetClipboardData(ptrs.clipboard_format);
+  data_ptr := GlobalLock(handle);
+  restore_item_export_data(item_type, index, data_ptr, '');
   GlobalUnLock(handle);
   CloseClipboard;
   result := true;
-end;
-
-procedure TStructures.export_unit(index: integer; filename: string);
-var
-  unit_data: TUnitExportData;
-begin
-  store_unit_data(index, Addr(unit_data));
-  save_binary_file(filename, unit_data, sizeof(unit_data));
-end;
-
-procedure TStructures.import_unit(index: integer; filename: string);
-var
-  unit_data: TUnitExportData;
-begin
-  load_binary_file(filename, unit_data, sizeof(unit_data));
-  restore_unit_data(index, Addr(unit_data));
-end;
-
-procedure TStructures.swap_units(index1, index2: integer);
-var
-  tmp_unit_name: array[0..449] of char;
-  tmp_unit_template: TUnitTemplate;
-  i: integer;
-begin
-  // Swap unit data
-  move(templates.UnitNameStrings[index1,0], tmp_unit_name[0], Length(tmp_unit_name));
-  move(templates.UnitNameStrings[index2,0], templates.UnitNameStrings[index1,0], Length(tmp_unit_name));
-  move(tmp_unit_name[0], templates.UnitNameStrings[index2,0], Length(tmp_unit_name));
-  tmp_unit_template := templates.UnitDefinitions[index1];
-  templates.UnitDefinitions[index1] := templates.UnitDefinitions[index2];
-  templates.UnitDefinitions[index2] := tmp_unit_template;
-  StructGraphics.swap_image_entries(first_unit_icon_image_index + index1, first_unit_icon_image_index + index2, 1, 1);
-  // Adjust templates other
-  for i := 0 to Length(templates.Other) - 1 do
-    if templates_other_byte_types[i] = tobtUnit then
-    begin
-      if templates.Other[i] = index1 then
-        templates.Other[i] := index2
-      else if templates.Other[i] = index2 then
-        templates.Other[i] := index1;
-    end;
 end;
 
 end.
