@@ -27,8 +27,8 @@ type
     BarrelRotationSpeed:   byte;
     SightRadius:           byte;
     IsInfantry:            byte;
-    Unknown18:             byte;
-    Unknown19:             byte;
+    _ZeroPadding18:        byte;
+    _ZeroPadding19:        byte;
     UnitArt:               integer;
     BarrelArt:             integer;
     Cost:                  cardinal;
@@ -40,21 +40,21 @@ type
     Prereq1BuildingType:   integer;
     Prereq1OwnerSide:      byte;
     SpecialBehavior:       byte;
-    Unknown46:             byte;
+    _ProbablyUnused46:     byte;
     DeathExplosion:        shortint;
     Prereq2BuildingType:   integer;
-    Unknown52:             byte;
+    _ProbablyUnused52:     byte;
     CanCrushInfantry:      byte;
     HealthBarSize:         byte;
-    Unknown55:             byte;
+    ProjectileShootOffset: shortint;
     Flags:                 cardinal;
     DirectionFrames:       array[0..31] of byte;
     Voices:                array[0..17] of cardinal;
-    Unknown164:            cardinal;
+    VoicePriority:         cardinal;
     FiringExplosion:       shortint;
     SpeedType:             byte;
     MultiplayerOnly:       byte;
-    ZeroBytes:             array[0..84] of byte;
+    _ZeroBytes:            array[0..84] of byte;
   end;
 
   TUnitTemplatePtr = ^TUnitTemplate;
@@ -78,7 +78,7 @@ type
     ArmorType:             byte;
     BarrelRotationSpeed:   byte;
     RateOfFire:            byte;
-    Unknown8:              cardinal;
+    ScreenShake:           cardinal;
     PrimaryWeapon:         shortint;
     SecondaryWeapon:       shortint;
     SightRadius:           byte;
@@ -101,8 +101,8 @@ type
     Prereq1BuildingType:   integer;
     Prereq1OwnerSide:      byte;
     Prereq1UpgradesNeeded: byte;
-    Unknown70:             byte;
-    Unknown71:             byte;
+    _ZeroPadding70:        byte;
+    _ZeroPadding71:        byte;
     Prereq2BuildingType:   integer;
     Prereq2OwnerSide:      byte;
     Prereq2UpgradesNeeded: byte;
@@ -112,15 +112,15 @@ type
     TilesOccupiedSolid:    cardinal;
     Flags:                 cardinal;
     SpecialBehavior:       byte;
-    Unknown93:             byte;
-    Unknown94:             byte;
+    SellPriority:          byte;
+    _ProbablyUnused94:     byte;
     HealthBarSize:         byte;
     ExitPoint1X:           shortint;
     ExitPoint1Y:           shortint;
     ExitPoint2X:           shortint;
     ExitPoint2Y:           shortint;
     DirectionFrames:       array[0..31] of byte;
-    Unknown132:            byte;
+    _ProbablyUnused132:    byte;
     AnimationSpeed:        byte;
     ArtHeight:             byte;
     ArtWidth:              byte;
@@ -129,7 +129,7 @@ type
     BuildupArt:            byte;
     BuildingAnimation:     byte;
     FiringExplosion:       shortint;
-    ZeroBytes:             array[0..126] of byte;
+    _ZeroBytes:            array[0..126] of byte;
   end;
 
   TBuildingTemplatePtr = ^TBuildingTemplate;
@@ -154,11 +154,11 @@ type
     ProjectileArt:         byte;
     HitExplosion:          shortint;
     TrailExplosion:        shortint;
-    Unknown19:             byte;
+    _Unknown19:            byte;
     AntiAircraft:          byte;
     Warhead:               byte;
-    Unknown22:             byte;
-    Unknown23:             byte;
+    _ZeroPadding22:        byte;
+    _ZeroPadding23:        byte;
     Range:                 cardinal;
   end;
 
@@ -179,8 +179,8 @@ type
   TExplosionTemplate = packed record
     MyIndex:               byte;
     FiringPattern:         byte;
-    Unknown2:              byte;
-    Unknown3:              byte;
+    _ZeroPadding2:         byte;
+    _ZeroPadding3:         byte;
     Sound:                 integer;
   end;
 
@@ -243,6 +243,8 @@ type
 
   TBuilExpEntryPtr = ^TBuilExpEntry;
 
+  TBuilExpBinFile = array[0..MAX_BUILDING_TYPES-1] of TBuilExpEntry;
+
 // *****************************************************************************
 // ARMOUR.BIN file definitions
 // *****************************************************************************
@@ -253,8 +255,8 @@ const MAX_ARMOUR_TYPES = 12;
 type
   TWarheadEntry = packed record
     VersusArmorType: array[0..MAX_ARMOUR_TYPES-1] of byte;
-    Unknown12:       cardinal;
-    Unknown16:       cardinal;
+    Radius:          cardinal;
+    InfDeath:        cardinal;
   end;
 
   TArmourBinFile = packed record
@@ -273,7 +275,7 @@ type
   TSpeedBinFile = packed record
     Values: array[0..7, 0..3] of Single;
     SpeedNameStrings: array[0..3, 0..31] of char;
-    ZeroBytes: array[0..127] of byte;
+    _ZeroBytes: array[0..127] of byte;
   end;
 
 // *****************************************************************************
@@ -286,6 +288,8 @@ type
     PosX: shortint;
     PosY: shortint;
   end;
+
+  TTechposBinFile = array[0..9,0..9] of TTechposUnitEntry;
 
 // *****************************************************************************
 // TILEDATA.BIN file definitions
@@ -305,6 +309,8 @@ type
   end;
 
   TTileDataEntryPtr = ^TTileDataEntry;
+
+  TTileDataBinFile = array[0..CNT_TILEDATA_ENTRIES-1] of TTileDataEntry;
 
 const EMPTY_TILEDATA_ENTRY: TTileDataEntry = (index: 0; player: 0; stype: ST_NOTHING);
 
@@ -521,7 +527,7 @@ type
     building_type_mapping_count:      integer;
 
     // BUILEXP.BIN related data
-    builexp: array[0..MAX_BUILDING_TYPES-1] of TBuilExpEntry;
+    builexp: TBuilExpBinFile;
 
     // ARMOUR.BIN related data
     armour: TArmourBinFile;
@@ -530,10 +536,10 @@ type
     speed: TSpeedBinFile;
 
     // TECHPOS.BIN related data
-    techpos: array[0..9,0..9] of TTechposUnitEntry;
+    techpos: TTechposBinFile;
 
     // TILEDATA.BIN related data
-    tiledata: array[0..CNT_TILEDATA_ENTRIES-1] of TTileDataEntry;
+    tiledata: TTileDataBinFile;
 
     // Misc. objects related data
     misc_object_info: array of TMiscObjectInfo;

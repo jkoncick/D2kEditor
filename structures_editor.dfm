@@ -1087,37 +1087,30 @@ object StructuresEditor: TStructuresEditor
           OnClick = btnBuildingBuildupArtPlayClick
         end
       end
-      object gbBuildingOtherUnknown: TGroupBox
+      object gbBuildingOther: TGroupBox
         Left = 400
         Top = 576
         Width = 289
         Height = 61
-        Caption = 'Others and unknown'
+        Caption = 'Others'
         TabOrder = 8
-        object lblBuildingUnknown93: TLabel
-          Left = 64
+        object lblBuildingSellPriority: TLabel
+          Left = 88
           Top = 16
-          Width = 39
+          Width = 53
           Height = 13
-          Caption = 'Byte 93:'
+          Caption = 'Sell priority:'
         end
         object lblBuildingFlags: TLabel
-          Left = 120
+          Left = 8
           Top = 16
           Width = 28
           Height = 13
           Caption = 'Flags:'
         end
-        object lblBuildingUnknown8: TLabel
-          Left = 8
+        object seBuildingSellPriority: TSpinEdit
+          Left = 144
           Top = 16
-          Width = 33
-          Height = 13
-          Caption = 'Byte 8:'
-        end
-        object seBuildingUnknown93: TSpinEdit
-          Left = 64
-          Top = 32
           Width = 49
           Height = 22
           MaxLength = 3
@@ -1127,7 +1120,7 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object edBuildingFlags: TEdit
-          Left = 120
+          Left = 8
           Top = 32
           Width = 73
           Height = 21
@@ -1140,7 +1133,7 @@ object StructuresEditor: TStructuresEditor
           Top = 38
           Width = 81
           Height = 17
-          Caption = 'Autorepair'
+          Caption = 'Repairing'
           TabOrder = 2
           OnClick = BuildingFlagCheckboxChange
         end
@@ -1154,15 +1147,13 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 3
           OnClick = BuildingFlagCheckboxChange
         end
-        object seBuildingUnknown8: TSpinEdit
-          Left = 8
-          Top = 32
-          Width = 49
-          Height = 22
-          MaxValue = 255
-          MinValue = 0
+        object cbBuildingScreenShake: TCheckBox
+          Left = 88
+          Top = 38
+          Width = 97
+          Height = 17
+          Caption = 'Screen shake'
           TabOrder = 4
-          Value = 0
         end
       end
     end
@@ -1415,7 +1406,7 @@ object StructuresEditor: TStructuresEditor
         Left = 400
         Top = 352
         Width = 289
-        Height = 269
+        Height = 285
         Caption = 'Voices'
         TabOrder = 4
         object lblUnitReportingSounds: TLabel
@@ -1431,6 +1422,24 @@ object StructuresEditor: TStructuresEditor
           Width = 87
           Height = 13
           Caption = 'Confirmed sounds:'
+        end
+        object lblUnitVoicePriority: TLabel
+          Left = 8
+          Top = 256
+          Width = 63
+          Height = 13
+          Caption = 'Voice priority:'
+        end
+        object seUnitVoicePriority: TSpinEdit
+          Left = 80
+          Top = 256
+          Width = 61
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 0
+          Value = 0
         end
       end
       object gbUnitProperties: TGroupBox
@@ -1653,7 +1662,7 @@ object StructuresEditor: TStructuresEditor
         Left = 696
         Top = 200
         Width = 305
-        Height = 121
+        Height = 145
         Caption = 'Weapons'
         TabOrder = 7
         object lblUnitPrimaryWeapon: TLabel
@@ -1683,6 +1692,13 @@ object StructuresEditor: TStructuresEditor
           Width = 83
           Height = 13
           Caption = 'Barrel turn speed:'
+        end
+        object lblUnitProjectileShootOffset: TLabel
+          Left = 8
+          Top = 116
+          Width = 104
+          Height = 13
+          Caption = 'Projectile shoot offset:'
         end
         object cbUnitHasBarrel: TCheckBox
           Left = 8
@@ -1742,10 +1758,21 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 5
           Value = 0
         end
+        object seUnitProjectileShootOffset: TSpinEdit
+          Left = 120
+          Top = 116
+          Width = 65
+          Height = 22
+          MaxLength = 3
+          MaxValue = 127
+          MinValue = -128
+          TabOrder = 6
+          Value = 0
+        end
       end
       object gbUnitVisuals: TGroupBox
         Left = 696
-        Top = 328
+        Top = 352
         Width = 305
         Height = 225
         Caption = 'Visuals'
@@ -1873,51 +1900,37 @@ object StructuresEditor: TStructuresEditor
           OnClick = btnUnitDirectionFramesClick
         end
       end
-      object gbUnitOtherUnknown: TGroupBox
+      object gbUnitOther: TGroupBox
         Left = 696
-        Top = 560
+        Top = 584
         Width = 305
-        Height = 61
-        Caption = 'Others and unknown'
+        Height = 53
+        Caption = 'Others'
         TabOrder = 9
         object lblUnitUnknown52: TLabel
-          Left = 62
-          Top = 16
-          Width = 39
+          Left = 216
+          Top = 24
+          Width = 22
           Height = 13
-          Caption = 'Byte 52:'
+          Caption = 'B52:'
         end
         object lblUnitFlags: TLabel
-          Left = 224
-          Top = 16
+          Left = 8
+          Top = 24
           Width = 28
           Height = 13
           Caption = 'Flags:'
         end
         object lblUnitUnknown46: TLabel
-          Left = 8
-          Top = 16
-          Width = 39
+          Left = 128
+          Top = 24
+          Width = 22
           Height = 13
-          Caption = 'Byte 46:'
-        end
-        object lblUnitUnknown55: TLabel
-          Left = 116
-          Top = 16
-          Width = 39
-          Height = 13
-          Caption = 'Byte 55:'
-        end
-        object lblUnitUnknown164: TLabel
-          Left = 170
-          Top = 16
-          Width = 45
-          Height = 13
-          Caption = 'Byte 164:'
+          Caption = 'B46:'
         end
         object seUnitUnknown52: TSpinEdit
-          Left = 62
-          Top = 32
+          Left = 248
+          Top = 24
           Width = 49
           Height = 22
           MaxLength = 3
@@ -1927,42 +1940,21 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object edUnitFlags: TEdit
-          Left = 224
-          Top = 32
+          Left = 40
+          Top = 24
           Width = 73
           Height = 21
           TabOrder = 1
           OnChange = edUnitFlagsChange
         end
         object seUnitUnknown46: TSpinEdit
-          Left = 8
-          Top = 32
+          Left = 160
+          Top = 24
           Width = 49
           Height = 22
           MaxValue = 255
           MinValue = 0
           TabOrder = 2
-          Value = 0
-        end
-        object seUnitUnknown55: TSpinEdit
-          Left = 116
-          Top = 31
-          Width = 49
-          Height = 22
-          MaxValue = 255
-          MinValue = 0
-          TabOrder = 3
-          Value = 0
-        end
-        object seUnitUnknown164: TSpinEdit
-          Left = 170
-          Top = 31
-          Width = 49
-          Height = 22
-          MaxLength = 3
-          MaxValue = 255
-          MinValue = 0
-          TabOrder = 4
           Value = 0
         end
       end

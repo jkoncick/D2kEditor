@@ -278,16 +278,14 @@ type
     cbxBuildingFiringExplosion: TComboBox;
     sgBuildingDirectionFrames: TStringGrid;
     lblBuildingDirectionFrames: TLabel;
-    gbBuildingOtherUnknown: TGroupBox;
-    lblBuildingUnknown93: TLabel;
-    seBuildingUnknown93: TSpinEdit;
+    gbBuildingOther: TGroupBox;
+    lblBuildingSellPriority: TLabel;
+    seBuildingSellPriority: TSpinEdit;
     lblBuildingFlags: TLabel;
     edBuildingFlags: TEdit;
     cbBuildingFlagAUTOREPAIR: TCheckBox;
     cbBuildingFlagUNKNOWN9: TCheckBox;
     cbBuildingFlagANIM_ALPHA: TCheckBox;
-    seBuildingUnknown8: TSpinEdit;
-    lblBuildingUnknown8: TLabel;
     btnBuildingDirectionFrames0: TButton;
     btnBuildingDirectionFrames8: TButton;
     btnBuildingDirectionFrames32: TButton;
@@ -372,17 +370,13 @@ type
     btnUnitDirectionFrames0: TButton;
     btnUnitDirectionFrames8: TButton;
     btnUnitDirectionFrames32: TButton;
-    gbUnitOtherUnknown: TGroupBox;
+    gbUnitOther: TGroupBox;
     lblUnitUnknown52: TLabel;
     lblUnitFlags: TLabel;
     lblUnitUnknown46: TLabel;
     seUnitUnknown52: TSpinEdit;
     edUnitFlags: TEdit;
     seUnitUnknown46: TSpinEdit;
-    lblUnitUnknown55: TLabel;
-    seUnitUnknown55: TSpinEdit;
-    seUnitUnknown164: TSpinEdit;
-    lblUnitUnknown164: TLabel;
     cbUnitCanCrushInfantry: TCheckBox;
     lblUnitReportingSounds: TLabel;
     lblUnitConfirmedSounds: TLabel;
@@ -554,6 +548,11 @@ type
     btnSoundRsRemoveLast: TButton;
     btnWeaponFiringSoundPlay: TButton;
     btnExplosionSoundPlay: TButton;
+    lblUnitVoicePriority: TLabel;
+    seUnitVoicePriority: TSpinEdit;
+    lblUnitProjectileShootOffset: TLabel;
+    seUnitProjectileShootOffset: TSpinEdit;
+    cbBuildingScreenShake: TCheckBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -2356,8 +2355,8 @@ begin
     begin
       for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
         sgArmourValues.Cells[j + 1, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].VersusArmorType[j]);
-      sgArmourValues.Cells[13, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown12);
-      sgArmourValues.Cells[14, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown16);
+      sgArmourValues.Cells[13, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Radius);
+      sgArmourValues.Cells[14, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].InfDeath);
     end;
   end else
   if PageControl.ActivePage = PageSpeed then
@@ -2505,9 +2504,9 @@ begin
   seBuildingExitPoint2X.Value := bld.ExitPoint2X;
   seBuildingExitPoint2Y.Value := bld.ExitPoint2Y;
   // Others and unknown group box
-  seBuildingUnknown8.Value := bld.Unknown8;
-  seBuildingUnknown93.Value := bld.Unknown93;
   edBuildingFlags.Text := IntToHex(bld.Flags, 8);
+  seBuildingSellPriority.Value := bld.SellPriority;
+  cbBuildingScreenShake.Checked := bld.ScreenShake <> 0;
 
   loading := false;
   edBuildingFlagsChange(nil);
@@ -2551,6 +2550,7 @@ begin
   // Voices group box
   for i := 0 to Length(unt.Voices) - 1 do
     cbxUnitVoices[i].ItemIndex := unt.Voices[i];
+  seUnitVoicePriority.Value := unt.VoicePriority;
   // Properties and behavior group box
   edUnitHitPoints.Text := inttostr(unt.HitPoints);
   cbxUnitArmorType.ItemIndex := unt.ArmorType;
@@ -2569,6 +2569,7 @@ begin
   cbUnitHasBarrel.Checked := unt.HasBarrel <> 0;
   seUnitRateOfFire.Value := unt.RateOfFire;
   seUnitBarrelRotationSpeed.Value := unt.BarrelRotationSpeed;
+  seUnitProjectileShootOffset.Value := unt.ProjectileShootOffset;
   // Visuals and animations group box
   cbxUnitUnitArt.ItemIndex := unt.UnitArt + 1;
   cbxUnitBarrelArt.ItemIndex := unt.BarrelArt + 1;
@@ -2577,10 +2578,8 @@ begin
   for i := 0 to 31 do
     sgUnitDirectionFrames.Cells[i mod 8, i div 8] := inttostr(unt.DirectionFrames[i]);
   // Others and unknown group box
-  seUnitUnknown46.Value := unt.Unknown46;
-  seUnitUnknown52.Value := unt.Unknown52;
-  seUnitUnknown55.Value := unt.Unknown55;
-  seUnitUnknown164.Value := unt.Unknown164;
+  seUnitUnknown46.Value := unt._ProbablyUnused46;
+  seUnitUnknown52.Value := unt._ProbablyUnused52;
   edUnitFlags.Text := IntToHex(unt.Flags, 8);
 
   loading := false;
@@ -2642,7 +2641,7 @@ begin
   cbxWeaponHitExplosion.ItemIndex := wpn.HitExplosion + 1;
   cbxWeaponTrailExplosion.ItemIndex := wpn.TrailExplosion + 1;
   // Others and unknown tab
-  seWeaponUnknown19.Value := wpn.Unknown19;
+  seWeaponUnknown19.Value := wpn._Unknown19;
   edWeaponFlags.Text := IntToHex(wpn.Flags, 8);
   // Used by label
   str := 'Used by: ';
@@ -2762,8 +2761,8 @@ begin
     begin
       for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
         Structures.armour.WarheadEntries[i].VersusArmorType[j] := StrToIntDef(sgArmourValues.Cells[j + 1, i + 1], 0);
-      Structures.armour.WarheadEntries[i].Unknown12 := StrToIntDef(sgArmourValues.Cells[13, i + 1], 0);
-      Structures.armour.WarheadEntries[i].Unknown16 := StrToIntDef(sgArmourValues.Cells[14, i + 1], 0);
+      Structures.armour.WarheadEntries[i].Radius := StrToIntDef(sgArmourValues.Cells[13, i + 1], 0);
+      Structures.armour.WarheadEntries[i].InfDeath := StrToIntDef(sgArmourValues.Cells[14, i + 1], 0);
     end;
   end else
   if PageControl.ActivePage = PageSpeed then
@@ -2849,9 +2848,9 @@ begin
   bld.ExitPoint2X := seBuildingExitPoint2X.Value;
   bld.ExitPoint2Y := seBuildingExitPoint2Y.Value;
   // Others and unknown group box
-  bld.Unknown8 := seBuildingUnknown8.Value;
-  bld.Unknown93 := seBuildingUnknown93.Value;
   bld.Flags := strtointdef('$' + edBuildingFlags.Text, 0);
+  bld.SellPriority := seBuildingSellPriority.Value;
+  bld.ScreenShake := IfThen(cbBuildingScreenShake.Checked, 1, 0);
   // Store building name
   if edBuildingName.Text <> Structures.templates.BuildingNameStrings[index] then
   begin
@@ -2887,6 +2886,7 @@ begin
   // Voices group box
   for i := 0 to Length(unt.Voices) - 1 do
     unt.Voices[i] := cbxUnitVoices[i].ItemIndex;
+  unt.VoicePriority := seUnitVoicePriority.Value;
   // Properties and behavior group box
   unt.HitPoints := strtointdef(edUnitHitPoints.Text, 0);
   unt.ArmorType := cbxUnitArmorType.ItemIndex;
@@ -2905,6 +2905,7 @@ begin
   unt.HasBarrel := IfThen(cbUnitHasBarrel.Checked, 1, 0);
   unt.RateOfFire := seUnitRateOfFire.Value;
   unt.BarrelRotationSpeed := seUnitBarrelRotationSpeed.Value;
+  unt.ProjectileShootOffset := seUnitProjectileShootOffset.Value;
   // Visuals and animations group box
   unt.UnitArt := cbxUnitUnitArt.ItemIndex - 1;
   unt.BarrelArt := cbxUnitBarrelArt.ItemIndex - 1;
@@ -2913,10 +2914,8 @@ begin
   for i := 0 to 31 do
     unt.DirectionFrames[i] := strtointdef(sgUnitDirectionFrames.Cells[i mod 8, i div 8], 0);
   // Others and unknown group box
-  unt.Unknown46 := seUnitUnknown46.Value;
-  unt.Unknown52 := seUnitUnknown52.Value;
-  unt.Unknown55 := seUnitUnknown55.Value;
-  unt.Unknown164 := seUnitUnknown164.Value;
+  unt._ProbablyUnused46 := seUnitUnknown46.Value;
+  unt._ProbablyUnused52 := seUnitUnknown52.Value;
   unt.Flags := strtointdef('$' + edUnitFlags.Text, 0);
   // Store unit name
   if edUnitName.Text <> Structures.templates.UnitNameStrings[index] then
@@ -2975,7 +2974,7 @@ begin
   wpn.HitExplosion := cbxWeaponHitExplosion.ItemIndex - 1;
   wpn.TrailExplosion := cbxWeaponTrailExplosion.ItemIndex - 1;
   // Others and unknown tab
-  wpn.Unknown19 := seWeaponUnknown19.Value;
+  wpn._Unknown19 := seWeaponUnknown19.Value;
   wpn.Flags := StrToIntDef('$' + edWeaponFlags.Text, 0);
   // Store weapon name
   if edWeaponName.Text <> Structures.templates.WeaponStrings[index] then
