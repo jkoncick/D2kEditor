@@ -148,19 +148,21 @@ begin
   load_window_position(StructuresEditor);
   load_window_position(DebugWindow);
   // Load file dialog paths
-  load_file_dialog_initial_dir(MainWindow.MapOpenDialog,          MissionsPath);
-  load_file_dialog_initial_dir(MainWindow.MapSaveDialog,          MissionsPath);
-  load_file_dialog_initial_dir(MainWindow.TilesetOpenDialog,      GamePath + '\Data');
-  load_file_dialog_initial_dir(MainWindow.TileatrOpenDialog,      GamePath + '\Data\bin');
-  load_file_dialog_initial_dir(MainWindow.MapImageSaveDialog,     '');
-  load_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog,   current_dir);
-  load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,      current_dir + 'AI_templates');
-  load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,      current_dir + 'AI_templates');
-  load_file_dialog_initial_dir(TileAtrEditor.SaveTileAtrDialog,   GamePath + '\Data\bin');
-  load_file_dialog_initial_dir(StructuresEditor.DataExportDialog, '');
-  load_file_dialog_initial_dir(StructuresEditor.DataImportDialog, '');
-  load_file_dialog_initial_dir(StructuresEditor.ArtExportDialog,  '');
-  load_file_dialog_initial_dir(StructuresEditor.ArtImportDialog,  '');
+  load_file_dialog_initial_dir(MainWindow.MapOpenDialog,           MissionsPath);
+  load_file_dialog_initial_dir(MainWindow.MapSaveDialog,           MissionsPath);
+  load_file_dialog_initial_dir(MainWindow.TilesetOpenDialog,       GamePath + '\Data');
+  load_file_dialog_initial_dir(MainWindow.TileatrOpenDialog,       GamePath + '\Data\bin');
+  load_file_dialog_initial_dir(MainWindow.MapImageSaveDialog,      '');
+  load_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog,    current_dir);
+  load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,       current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,       current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(TileAtrEditor.SaveTileAtrDialog,    GamePath + '\Data\bin');
+  load_file_dialog_initial_dir(StructuresEditor.ItemExportDialog,  '');
+  load_file_dialog_initial_dir(StructuresEditor.ItemImportDialog,  '');
+  load_file_dialog_initial_dir(StructuresEditor.ArtExportDialog,   '');
+  load_file_dialog_initial_dir(StructuresEditor.ArtImportDialog,   '');
+  load_file_dialog_initial_dir(StructuresEditor.SoundExportDialog, '');
+  load_file_dialog_initial_dir(StructuresEditor.SoundImportDialog, '');
 
   ini.Destroy;
   ini := nil;
@@ -239,10 +241,12 @@ begin
   save_file_dialog_initial_dir(MissionDialog.ExportAIDialog);
   save_file_dialog_initial_dir(MissionDialog.ImportAIDialog);
   save_file_dialog_initial_dir(TileAtrEditor.SaveTileAtrDialog);
-  save_file_dialog_initial_dir(StructuresEditor.DataExportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.DataImportDialog);
+  save_file_dialog_initial_dir(StructuresEditor.ItemExportDialog);
+  save_file_dialog_initial_dir(StructuresEditor.ItemImportDialog);
   save_file_dialog_initial_dir(StructuresEditor.ArtExportDialog);
   save_file_dialog_initial_dir(StructuresEditor.ArtImportDialog);
+  save_file_dialog_initial_dir(StructuresEditor.SoundExportDialog);
+  save_file_dialog_initial_dir(StructuresEditor.SoundImportDialog);
 
   ini.UpdateFile;
   ini.Destroy;

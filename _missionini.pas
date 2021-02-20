@@ -77,7 +77,7 @@ var
 
 implementation
 
-uses SysUtils, StrUtils, _utils, _dispatcher, _tileset, _structures, _graphics, _stringtable, _launcher;
+uses SysUtils, StrUtils, _utils, _dispatcher, _tileset, _structures, _graphics, _sounds, _stringtable, _launcher;
 
 { TMissionIni }
 
@@ -403,6 +403,7 @@ begin
   StructGraphics.load_colours_bin;
   StructGraphics.load_data_r16(false);
   StructGraphics.load_graphics_misc_objects;
+  Sounds.load_sound_rs(false);
   StringTable.load_text_uib(TextUib);
   StringTable.load_samples_uib;
 end;

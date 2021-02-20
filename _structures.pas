@@ -369,12 +369,6 @@ type
 
   TItemTypePointersPtr = ^TItemTypePointers;
 
-  TDummyStringRec = record
-    str: array[0..49] of char;
-  end;
-
-  TDummyStringRecPtr = ^TDummyStringRec;
-
 const ART_BUILDING           = 0;
 const ART_BUILDING_ANIMATION = 1;
 const ART_BUILDUP            = 2;
@@ -643,7 +637,7 @@ type
     procedure store_art_reference    (var ref: TArtReference; art_type, index: integer);
     function  restore_art_reference  (var ref: TArtReference; art_type, ref_index, fixed_index: integer; import_filename: string): integer;
     procedure store_sound_reference  (var ref: TSoundReference; index: integer);
-    function  restore_sound_reference(var ref: TSoundReference; index: integer): integer;
+    function  restore_sound_reference(var ref: TSoundReference; index: integer; import_path: string; from_sound_rs: boolean): integer;
 
     procedure store_building_export_data     (index: integer; data: TBuildingExportDataPtr);
     procedure restore_building_export_data   (index: integer; data: TBuildingExportDataPtr; import_path: string);
@@ -673,7 +667,7 @@ var
 
 implementation
 
-uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _graphics, _stringtable, _dispatcher;
+uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _graphics, _sounds, _stringtable, _dispatcher;
 
 procedure TStructures.init;
 var
@@ -1770,7 +1764,7 @@ begin
     if new_item_added then
       Application.MessageBox(PChar(Format('New %s %s was added at position %d and it is being imported from file %s.', [item_type_names[item_type], ref.item_name, result, import_filename])), 'Import item', MB_ICONINFORMATION or MB_OK)
     else
-      Application.MessageBox(PChar(Format('Importing %s %s from file %s.', [item_type_names[item_type], ref.item_name, import_filename])), 'Import item', MB_ICONINFORMATION or MB_OK);
+      Application.MessageBox(PChar(Format('Replacing %s %s by import from file %s.', [item_type_names[item_type], ref.item_name, import_filename])), 'Import item', MB_ICONINFORMATION or MB_OK);
     import_item(item_type, result, import_filename);
   end
   else if new_item_added then
@@ -1861,7 +1855,7 @@ begin
     if fixed_index = -1 then
       Application.MessageBox(PChar(Format('New %s art was added at position %d and it is being imported from file %s.', [art_type_names[art_type], result, import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK)
     else
-      Application.MessageBox(PChar(Format('Importing %s art from file %s.', [art_type_names[art_type], import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK);
+      Application.MessageBox(PChar(Format('Replacing %s art by import from file %s.', [art_type_names[art_type], import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK);
     StructGraphics.import_image_entries(import_filename, ptrs.image_indexes_list_ptr[result], get_art_num_images(art_type, result));
   end else
     Application.MessageBox(PChar(Format('New %s art was added at position %d but is empty. You should set it up or import it.', [art_type_names[art_type], result])), 'Import art', MB_ICONWARNING or MB_OK);
@@ -1876,9 +1870,35 @@ begin
   store_c_string(StringTable.samples_uib.ValueFromIndex[index], Addr(ref.value), Length(ref.value));
 end;
 
-function TStructures.restore_sound_reference(var ref: TSoundReference; index: integer): integer;
+function TStructures.restore_sound_reference(var ref: TSoundReference; index: integer; import_path: string; from_sound_rs: boolean): integer;
+var
+  sound_name: string;
+  import_filename: string;
+  import_file_exists: boolean;
+  sound_rs_index: integer;
 begin
   result := index;
+  // Deal with SOUND.RS entries
+  if not from_sound_rs then
+    exit;
+  sound_name := UpperCase(ref.value);
+  import_filename := import_path + sound_name + '.WAV';
+  import_file_exists := FileExists(import_filename);
+  sound_rs_index := Sounds.find_sound(sound_name);
+  if import_file_exists then
+  begin
+    if sound_rs_index = -1 then
+    begin
+      Application.MessageBox(PChar(Format('New sound %s was added into SOUND.RS and it is being imported from file %s.', [sound_name, import_filename])), 'Import sound', MB_ICONINFORMATION or MB_OK);
+      Sounds.add_new_sound(import_filename);
+    end else
+    begin
+      Application.MessageBox(PChar(Format('Replacing sound %s by import from file %s.', [sound_name, import_filename])), 'Import sound', MB_ICONINFORMATION or MB_OK);
+      Sounds.replace_sound(sound_rs_index, import_filename);
+    end;
+  end
+  else if sound_rs_index = -1 then
+    Application.MessageBox(PChar(Format('Referenced sound %s does not exist in SOUND.RS file. You should import it.', [sound_name])), 'Import sound', MB_ICONWARNING or MB_OK);
 end;
 
 procedure TStructures.store_building_export_data(index: integer; data: TBuildingExportDataPtr);
@@ -2003,7 +2023,7 @@ begin
   data.unit_template.BarrelArt := restore_art_reference(data.art_references[1], ART_UNIT, data.unit_template.BarrelArt, -1, import_path + data.unit_name + '_BARREL');
   // Sound references
   for i := 0 to Length(data.sound_references) - 1 do
-    data.unit_template.Voices[i] := restore_sound_reference(data.sound_references[i], data.unit_template.Voices[i]);
+    data.unit_template.Voices[i] := restore_sound_reference(data.sound_references[i], data.unit_template.Voices[i], import_path, false);
   // Unit type string
   if (Ord(data.unit_type_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
     Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the unit name appears in game.', [data.item_references[0].item_name, data.unit_type_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
@@ -2025,7 +2045,7 @@ begin
   data.weapon_template.Warhead :=        restore_item_reference(data.item_references[2], ITEM_WARHEAD,   data.weapon_template.Warhead,        import_path);
   modify_art(ART_PROJECTILE, index, data.art_reference.directions, 0);
   data.weapon_template.ProjectileArt :=  restore_art_reference(data.art_reference, ART_PROJECTILE, data.weapon_template.ProjectileArt, index, import_path + data.weapon_name);
-  data.weapon_template.FiringSound :=    restore_sound_reference(data.sound_reference, data.weapon_template.FiringSound);
+  data.weapon_template.FiringSound :=    restore_sound_reference(data.sound_reference, data.weapon_template.FiringSound, import_path, true);
 end;
 
 procedure TStructures.store_explosion_export_data(index: integer; data: TExplosionExportDataPtr);
@@ -2037,7 +2057,7 @@ end;
 procedure TStructures.restore_explosion_export_data(index: integer; data: TExplosionExportDataPtr; import_path: string);
 begin
   restore_art_reference(data.art_reference, ART_ANIMATION, index, index, import_path + data.explosion_name);
-  data.explosion_template.Sound := restore_sound_reference(data.sound_reference, data.explosion_template.Sound);
+  data.explosion_template.Sound := restore_sound_reference(data.sound_reference, data.explosion_template.Sound, import_path, true);
   data.explosion_template.MyIndex := index;
 end;
 

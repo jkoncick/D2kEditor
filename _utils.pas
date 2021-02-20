@@ -15,6 +15,12 @@ type
   TCardinalArray = array[0..0] of cardinal;
   TCardinalArrayPtr = ^TCardinalArray;
 
+  TDummyStringRec = record
+    str: array[0..49] of char;
+  end;
+
+  TDummyStringRecPtr = ^TDummyStringRec;
+
 type
   TImage = class(ExtCtrls.TImage)
     protected

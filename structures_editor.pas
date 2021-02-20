@@ -13,6 +13,7 @@ const TECHPOS_PREVIEW_SIZE = 7;
 
 type
   TFillDataAction = (
+    fdaNone,
     fdaAll,
     fdaAllArt,
     fdaBuildingTypeList,
@@ -528,8 +529,8 @@ type
     cbxTechposUnitType: TComboBox;
     tbTechposNumUnits: TTrackBar;
     lblTechposNumUnits: TLabel;
-    DataExportDialog: TSaveDialog;
-    DataImportDialog: TOpenDialog;
+    ItemExportDialog: TSaveDialog;
+    ItemImportDialog: TOpenDialog;
     ArtImportDialog: TOpenDialog;
     ArtExportDialog: TSaveDialog;
     pnOtherArtControlGroup: TPanel;
@@ -539,6 +540,20 @@ type
     edWeaponName: TEdit;
     lblExplosionName: TLabel;
     edExplosionName: TEdit;
+    PageSounds: TTabSheet;
+    sgSamplesUib: TStringGrid;
+    lblSamplesUib: TLabel;
+    sgSoundRs: TStringGrid;
+    lblSoundRs: TLabel;
+    btnSoundRsPlay: TButton;
+    btnSoundRsExport: TButton;
+    brnSoundRsReplace: TButton;
+    btnSoundRsAddNew: TButton;
+    SoundImportDialog: TOpenDialog;
+    SoundExportDialog: TSaveDialog;
+    btnSoundRsRemoveLast: TButton;
+    btnWeaponFiringSoundPlay: TButton;
+    btnExplosionSoundPlay: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -587,11 +602,13 @@ type
     procedure edWeaponFlagsChange(Sender: TObject);
     procedure WeaponFlagCheckboxChange(Sender: TObject);
     procedure cbxWeaponProjectileArtChange(Sender: TObject);
+    procedure btnWeaponFiringSoundPlayClick(Sender: TObject);
     procedure lbProjectileArtListClick(Sender: TObject);
     // Explosions tab events
     procedure lbExplosionListClick(Sender: TObject);
     procedure edExplosionFlagsChange(Sender: TObject);
     procedure ExplosionFlagCheckboxChange(Sender: TObject);
+    procedure btnExplosionSoundPlayClick(Sender: TObject);
     procedure lbAnimationArtListClick(Sender: TObject);
     // Armour tab events
     procedure lbArmourTypeListClick(Sender: TObject);
@@ -611,6 +628,13 @@ type
     procedure cbxTechposUnitTypeChange(Sender: TObject);
     procedure TechposPreviewChange(Sender: TObject);
     procedure imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    // Sounds tab events
+    procedure sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure btnSoundRsPlayClick(Sender: TObject);
+    procedure btnSoundRsExportClick(Sender: TObject);
+    procedure brnSoundRsReplaceClick(Sender: TObject);
+    procedure btnSoundRsAddNewClick(Sender: TObject);
+    procedure btnSoundRsRemoveLastClick(Sender: TObject);
     // Item control group events
     procedure ItemControlGroupAddClick(Sender: TObject);
     procedure ItemControlGroupRemoveClick(Sender: TObject);
@@ -652,19 +676,20 @@ type
     // Loading flag
     loading: boolean;
     // Pending action flags
-    pending_update_contents: boolean;
     pending_update_sound_list: boolean;
+    pending_update_contents: boolean;
     pending_update_tileset: boolean;
   public
     // Dispatcher procedures
-    procedure update_contents;
     procedure update_sound_list;
+    procedure update_contents;
     procedure update_tileset;
   private
     // Fill data procedures
     procedure fill_data(action: TFillDataAction);
     procedure fill_item_list(item_type: integer; tmp_strings: TStringList);
     procedure fill_page_data;
+    procedure fill_status_bar;
     procedure fill_building_data;
     procedure fill_unit_data;
     procedure fill_builexp_data;
@@ -707,7 +732,7 @@ var
 
 implementation
 
-uses Math, StrUtils, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, main;
+uses Math, StrUtils, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, main;
 
 {$R *.dfm}
 
@@ -807,6 +832,19 @@ begin
   sgTechposData.ColWidths[3] := 133;
   sgTechposData.ColWidths[4] := 133;
   sgTechposData.ColWidths[5] := 133;
+  // Sounds
+  sgSamplesUib.Cells[0, 0] := '#';
+  sgSamplesUib.Cells[1, 0] := 'Key';
+  sgSamplesUib.Cells[2, 0] := 'Value';
+  sgSamplesUib.ColWidths[0] := 32;
+  sgSamplesUib.ColWidths[1] := 132;
+  sgSamplesUib.ColWidths[2] := 132;
+  sgSoundRs.Cells[0, 0] := '#';
+  sgSoundRs.Cells[1, 0] := 'File name';
+  sgSoundRs.Cells[2, 0] := 'File size';
+  sgSoundRs.ColWidths[0] := 32;
+  sgSoundRs.ColWidths[1] := 132;
+  sgSoundRs.ColWidths[2] := 132;
   // List control groups
   create_item_control_group(ITEM_BUILDING,      fdaBuildingList,     lbBuildingList,     edBuildingName,  Addr(ICG_LAYOUT_BLD_UNT),      pnBuildingList);
   create_item_control_group(ITEM_UNIT,          fdaUnitList,         lbUnitList,         edUnitName,      Addr(ICG_LAYOUT_BLD_UNT),      pnUnitList);
@@ -830,10 +868,10 @@ end;
 
 procedure TStructuresEditor.FormShow(Sender: TObject);
 begin
-  if pending_update_contents then
-    update_contents;
   if pending_update_sound_list then
     update_sound_list;
+  if pending_update_contents then
+    update_contents;
   if pending_update_tileset then
     update_tileset;
 end;
@@ -872,6 +910,7 @@ begin
   Structures.load_techpos_bin(true);
   Structures.load_speed_bin(true);
   StructGraphics.load_data_r16(true);
+  Sounds.load_sound_rs(true);
 end;
 
 procedure TStructuresEditor.CopyfilestoModsfolder1Click(Sender: TObject);
@@ -887,6 +926,7 @@ end;
 procedure TStructuresEditor.PageControlChange(Sender: TObject);
 begin
   fill_page_data;
+  fill_status_bar;
 end;
 
 procedure TStructuresEditor.lbBuildingTypeListClick(Sender: TObject);
@@ -1316,6 +1356,12 @@ begin
   lbProjectileArtListClick(nil);
 end;
 
+procedure TStructuresEditor.btnWeaponFiringSoundPlayClick(Sender: TObject);
+begin
+  if cbxWeaponFiringSound.ItemIndex > 0 then
+    Sounds.play_sound(Sounds.find_sound(StringTable.samples_uib.ValueFromIndex[cbxWeaponFiringSound.ItemIndex - 1]));
+end;
+
 procedure TStructuresEditor.lbProjectileArtListClick(Sender: TObject);
 var
   index: integer;
@@ -1366,6 +1412,12 @@ begin
   loading := true;
   edExplosionFlags.Text := IntToHex(value, 8);
   loading := false;
+end;
+
+procedure TStructuresEditor.btnExplosionSoundPlayClick(Sender: TObject);
+begin
+  if cbxExplosionSound.ItemIndex > 0 then
+    Sounds.play_sound(Sounds.find_sound(StringTable.samples_uib.ValueFromIndex[cbxExplosionSound.ItemIndex - 1]));
 end;
 
 procedure TStructuresEditor.lbAnimationArtListClick(Sender: TObject);
@@ -1590,6 +1642,64 @@ begin
   cbxTechposUnitType.SetFocus;
 end;
 
+procedure TStructuresEditor.sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+const
+  Selection: TGridRect = (Left: 1; Top: 0; Right: 2; Bottom: 0);
+  NoSelection: TGridRect = (Left: -1; Top: -1; Right: -1; Bottom: -1);
+var
+  index: integer;
+begin
+  index := Sounds.find_sound(sgSamplesUib.Cells[2, ARow]);
+  if index <> -1 then
+  begin
+    sgSoundRs.Selection := Selection;
+    sgSoundRs.Row := index + 1;;
+  end else
+    sgSoundRs.Selection := NoSelection;
+end;
+
+procedure TStructuresEditor.btnSoundRsPlayClick(Sender: TObject);
+begin
+  if sgSoundRs.Row > 0 then
+    Sounds.play_sound(sgSoundRs.Row - 1);
+end;
+
+procedure TStructuresEditor.btnSoundRsExportClick(Sender: TObject);
+begin
+  if sgSoundRs.Row <= 0 then
+    exit;
+  SoundExportDialog.FileName := sgSoundRs.Cells[1, sgSoundRs.Row];
+  if SoundExportDialog.Execute then
+    Sounds.export_sound(sgSoundRs.Row - 1, SoundExportDialog.FileName);
+end;
+
+procedure TStructuresEditor.brnSoundRsReplaceClick(Sender: TObject);
+begin
+  if sgSoundRs.Row <= 0 then
+    exit;
+  if SoundImportDialog.Execute then
+  begin
+    Sounds.replace_sound(sgSoundRs.Row - 1, SoundImportDialog.FileName);
+    fill_data(fdaNone);
+  end;
+end;
+
+procedure TStructuresEditor.btnSoundRsAddNewClick(Sender: TObject);
+begin
+  if SoundImportDialog.Execute then
+  begin
+    Sounds.add_new_sound(SoundImportDialog.FileName);
+    fill_data(fdaNone);
+    sgSoundRs.Row := sgSoundRs.RowCount - 1;
+  end;
+end;
+
+procedure TStructuresEditor.btnSoundRsRemoveLastClick(Sender: TObject);
+begin
+  Sounds.remove_last_sound;
+  fill_data(fdaNone);
+end;
+
 procedure TStructuresEditor.ItemControlGroupAddClick(Sender: TObject);
 var
   group_index: integer;
@@ -1638,14 +1748,14 @@ begin
   icg := Addr(item_control_groups[group_index]);
   if icg.list_control.ItemIndex < 0 then
     exit;
-  DataExportDialog.Filter := Format('Dune2000 %s data (*.%s)|*.%s', [item_type_names[group_index], item_type_file_extensions[group_index], item_type_file_extensions[group_index]]);
-  DataExportDialog.DefaultExt := item_type_file_extensions[group_index];
-  DataExportDialog.Title := 'Export ' + item_type_names[group_index];
-  DataExportDialog.FileName := Format('%s.%s', [icg.edit_item_name.Text, item_type_file_extensions[group_index]]);
-  if DataExportDialog.Execute then
+  ItemExportDialog.Filter := Format('Dune2000 %s data (*.%s)|*.%s', [item_type_names[group_index], item_type_file_extensions[group_index], item_type_file_extensions[group_index]]);
+  ItemExportDialog.DefaultExt := item_type_file_extensions[group_index];
+  ItemExportDialog.Title := 'Export ' + item_type_names[group_index];
+  ItemExportDialog.FileName := Format('%s.%s', [icg.edit_item_name.Text, item_type_file_extensions[group_index]]);
+  if ItemExportDialog.Execute then
   begin
     store_data;
-    Structures.export_item(group_index, icg.list_control.ItemIndex, DataExportDialog.FileName);
+    Structures.export_item(group_index, icg.list_control.ItemIndex, ItemExportDialog.FileName);
   end;
 end;
 
@@ -1658,13 +1768,13 @@ begin
   icg := Addr(item_control_groups[group_index]);
   if icg.list_control.ItemIndex < 0 then
     exit;
-  DataImportDialog.Filter := Format('Dune2000 %s data (*.%s)|*.%s', [item_type_names[group_index], item_type_file_extensions[group_index], item_type_file_extensions[group_index]]);
-  DataImportDialog.DefaultExt := item_type_file_extensions[group_index];
-  DataImportDialog.Title := 'Import ' + item_type_names[group_index];
-  DataImportDialog.FileName := '';
-  if DataImportDialog.Execute then
+  ItemImportDialog.Filter := Format('Dune2000 %s data (*.%s)|*.%s', [item_type_names[group_index], item_type_file_extensions[group_index], item_type_file_extensions[group_index]]);
+  ItemImportDialog.DefaultExt := item_type_file_extensions[group_index];
+  ItemImportDialog.Title := 'Import ' + item_type_names[group_index];
+  ItemImportDialog.FileName := '';
+  if ItemImportDialog.Execute then
   begin
-    Structures.import_item(group_index, icg.list_control.ItemIndex, DataImportDialog.FileName);
+    Structures.import_item(group_index, icg.list_control.ItemIndex, ItemImportDialog.FileName);
     fill_data(fdaAll);
   end;
 end;
@@ -1955,18 +2065,6 @@ begin
     key := 0;
 end;
 
-procedure TStructuresEditor.update_contents;
-begin
-  if not Visible then
-  begin
-    pending_update_contents := true;
-    exit;
-  end;
-  pending_update_contents := false;
-  fill_data(fdaAll);
-  StatusBar.Panels[1].Text := StructGraphics.data_r16_filename;
-end;
-
 procedure TStructuresEditor.update_sound_list;
 var
   tmp_strings: TStringList;
@@ -1979,8 +2077,15 @@ begin
   end;
   pending_update_sound_list := false;
   tmp_strings := TStringList.Create;
+  tmp_strings.Capacity := StringTable.samples_uib.Count;
+  sgSamplesUib.RowCount := StringTable.samples_uib.Count + 1;
   for i := 0 to StringTable.samples_uib.Count - 1 do
+  begin
     tmp_strings.Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
+    sgSamplesUib.Cells[0, i + 1] := inttostr(i);
+    sgSamplesUib.Cells[1, i + 1] := StringTable.samples_uib.Names[i];
+    sgSamplesUib.Cells[2, i + 1] := StringTable.samples_uib.ValueFromIndex[i];
+  end;
   // Unit voices combo boxes
   for i := 0 to 17 do
     cbxUnitVoices[i].Items := tmp_strings;
@@ -1988,6 +2093,18 @@ begin
   cbxWeaponFiringSound.Items := tmp_strings;
   cbxExplosionSound.Items := tmp_strings;
   tmp_strings.Destroy;
+end;
+
+procedure TStructuresEditor.update_contents;
+begin
+  if not Visible then
+  begin
+    pending_update_contents := true;
+    exit;
+  end;
+  pending_update_contents := false;
+  fill_data(fdaAll);
+  fill_status_bar;
 end;
 
 procedure TStructuresEditor.update_tileset;
@@ -2216,9 +2333,7 @@ procedure TStructuresEditor.fill_page_data;
 var
   tmp_strings: TStringList;
   i, j: integer;
-  statusbar_text: string;
 begin
-  statusbar_text := Structures.templates_bin_filename;
   if PageControl.ActivePage = PageBuildings then
     fill_building_data
   else if PageControl.ActivePage = PageUnits then
@@ -2228,10 +2343,7 @@ begin
   else if PageControl.ActivePage = PageExplosions then
     fill_explosion_data
   else if PageControl.ActivePage = PageBuilExp then
-  begin
-    fill_builexp_data;
-    statusbar_text := Structures.builexp_bin_filename;
-  end
+    fill_builexp_data
   else if PageControl.ActivePage = PageArmour then
   begin
     // Armour
@@ -2247,7 +2359,6 @@ begin
       sgArmourValues.Cells[13, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown12);
       sgArmourValues.Cells[14, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Unknown16);
     end;
-    statusbar_text := Structures.armour_bin_filename;
   end else
   if PageControl.ActivePage = PageSpeed then
   begin
@@ -2257,7 +2368,6 @@ begin
     for i := 0 to Length(Structures.speed.Values) - 1 do
       for j := 0 to Length(Structures.speed.Values[i]) - 1 do
         sgSpeedValues.Cells[j+1, i+1] := floattostr(Round(Structures.speed.Values[i, j] * 100)/100);
-    statusbar_text := Structures.speed_bin_filename;
   end else
   if PageControl.ActivePage = PageOther then
   begin
@@ -2274,11 +2384,44 @@ begin
   begin
     // Techpos
     rgTechposTechLevelClick(nil);
-    statusbar_text := Structures.techpos_bin_filename;
+  end else
+  if PageControl.ActivePage = PageSounds then
+  begin
+    // Sounds
+    sgSoundRs.RowCount := Length(Sounds.sound_rs_directory) + 1;
+    for i := 0 to Length(Sounds.sound_rs_directory) - 1 do
+    begin
+      sgSoundRs.Cells[0, i+1] := IntToStr(i);
+      sgSoundRs.Cells[1, i+1] := Sounds.sound_rs_directory[i].name;
+      sgSoundRs.Cells[2, i+1] := IntToStr(Sounds.sound_rs_directory[i].size) + ' bytes';
+    end;
   end;
+end;
 
-  // Status bar
-  StatusBar.Panels[0].Text := statusbar_text;
+procedure TStructuresEditor.fill_status_bar;
+var
+  file1, file2: string;
+begin
+  // Set default file names
+  file1 := Structures.templates_bin_filename;
+  file2 := StructGraphics.data_r16_filename;
+  // Override file names per specific tab
+  if PageControl.ActivePage = PageBuilExp then
+    file1 := Structures.builexp_bin_filename
+  else if PageControl.ActivePage = PageArmour then
+    file1 := Structures.armour_bin_filename
+  else if PageControl.ActivePage = PageSpeed then
+    file1 := Structures.speed_bin_filename
+  else if PageControl.ActivePage = PageTechpos then
+    file1 := Structures.techpos_bin_filename
+  else if PageControl.ActivePage = PageSounds then
+  begin
+    file1 := StringTable.samples_uib_filename;
+    file2 := Sounds.sound_rs_filename;
+  end;
+  // Fill status bar
+  StatusBar.Panels[0].Text := file1;
+  StatusBar.Panels[1].Text := file2;
 end;
 
 procedure TStructuresEditor.fill_building_data;
@@ -3537,6 +3680,7 @@ begin
   Structures.save_speed_bin;
   Structures.save_techpos_bin;
   StructGraphics.save_data_r16;
+  Sounds.save_sound_rs;
 end;
 
 end.

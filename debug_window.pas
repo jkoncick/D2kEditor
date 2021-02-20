@@ -32,7 +32,7 @@ var
 
 implementation
 
-uses _settings, _structures, _graphics, _tileset, _stringtable;
+uses _settings, _structures, _graphics, _sounds, _tileset, _stringtable;
 
 {$R *.dfm}
 
@@ -96,6 +96,8 @@ begin
   add_debug_value(s, StructGraphics, 'misc_objects.bmp file', StructGraphics.graphics_misc_objects_filename);
   add_debug_value(s, StructGraphics, 'Structure images loaded', Format('%d / %d', [StructGraphics.structure_images_count, Length(StructGraphics.structure_images)]));
   add_debug_value(s, StructGraphics, 'House color pixel count', Format('%d / %d', [StructGraphics.house_color_pixel_count_total, Length(StructGraphics.house_color_pixel_indexes)]));
+
+  add_debug_value(s, Sounds, 'SOUND.RS file', Sounds.sound_rs_filename);
 
   add_debug_value(s, StringTable, 'text.uib file', StringTable.text_uib_filename);
   add_debug_value(s, StringTable, 'samples.uib file', StringTable.samples_uib_filename);

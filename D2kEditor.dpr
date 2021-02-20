@@ -27,6 +27,7 @@ uses
   _tileset in '_tileset.pas',
   _structures in '_structures.pas',
   _graphics in '_graphics.pas',
+  _sounds in '_sounds.pas',
   _stringtable in '_stringtable.pas',
   _randomgen in '_randomgen.pas',
   _launcher in '_launcher.pas';
@@ -55,6 +56,7 @@ begin
   Tileset := TTileset.Create;
   Structures := TStructures.Create;
   StructGraphics := TStructGraphics.Create;
+  Sounds := TSounds.Create;
   StringTable := TStringTable.Create;
   //--RandomGen := TRandomGen.Create;
   Launcher := TLauncher.Create;
@@ -81,6 +83,7 @@ begin
   Tileset.init;
   Structures.init;
   StructGraphics.init;
+  Sounds.init;
   StringTable.init;
   // Load map given as first parameter
   if ParamCount > 0 then

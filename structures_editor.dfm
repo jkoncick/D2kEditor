@@ -1267,7 +1267,7 @@ object StructuresEditor: TStructuresEditor
           Width = 241
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
       end
@@ -1371,7 +1371,7 @@ object StructuresEditor: TStructuresEditor
           Width = 201
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 4
         end
         object cbxUnitPrereq2BuildingType: TComboBox
@@ -1380,7 +1380,7 @@ object StructuresEditor: TStructuresEditor
           Width = 201
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
         object seUnitPrereq1UpgradesNeeded: TSpinEdit
@@ -1488,7 +1488,7 @@ object StructuresEditor: TStructuresEditor
           Width = 145
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object cbxUnitHealthBarSize: TComboBox
@@ -1626,7 +1626,7 @@ object StructuresEditor: TStructuresEditor
           Width = 113
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object seUnitUnitRotationSpeed: TSpinEdit
@@ -1708,7 +1708,7 @@ object StructuresEditor: TStructuresEditor
           Width = 185
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
         object cbxUnitSecondaryWeapon: TComboBox
@@ -1717,7 +1717,7 @@ object StructuresEditor: TStructuresEditor
           Width = 185
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 3
         end
         object seUnitRateOfFire: TSpinEdit
@@ -1797,7 +1797,7 @@ object StructuresEditor: TStructuresEditor
           Width = 153
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 0
           OnChange = RedrawUnitPreview
         end
@@ -1807,7 +1807,7 @@ object StructuresEditor: TStructuresEditor
           Width = 153
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
           OnChange = RedrawUnitPreview
         end
@@ -1817,7 +1817,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
         object cbxUnitFiringExplosion: TComboBox
@@ -1826,7 +1826,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 3
         end
         object sgUnitDirectionFrames: TStringGrid
@@ -2345,6 +2345,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbWeaponListClick
+          OnDblClick = btnWeaponFiringSoundPlayClick
           OnKeyDown = ItemControlGroupListKeyDown
         end
       end
@@ -2396,7 +2397,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object edWeaponRange: TEdit
@@ -2556,7 +2557,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 0
           OnChange = cbxWeaponProjectileArtChange
         end
@@ -2566,7 +2567,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object cbxWeaponHitExplosion: TComboBox
@@ -2575,7 +2576,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
         object cbxWeaponTrailExplosion: TComboBox
@@ -2584,7 +2585,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 3
         end
         object cbWeaponFlagWF_PROJECTILE_ALPHA: TCheckBox
@@ -2600,7 +2601,7 @@ object StructuresEditor: TStructuresEditor
         object cbWeaponFlagWF_ANIM_PROJECTILE: TCheckBox
           Tag = 128
           Left = 224
-          Top = 48
+          Top = 72
           Width = 109
           Height = 25
           Caption = 'Animated (rotating) projectile'
@@ -2611,12 +2612,21 @@ object StructuresEditor: TStructuresEditor
         object cbWeaponFlagWF_MAKE_TRAIL: TCheckBox
           Tag = 16
           Left = 224
-          Top = 80
+          Top = 102
           Width = 97
           Height = 17
           Caption = 'Makes trail'
           TabOrder = 6
           OnClick = WeaponFlagCheckboxChange
+        end
+        object btnWeaponFiringSoundPlay: TButton
+          Left = 224
+          Top = 48
+          Width = 57
+          Height = 21
+          Caption = 'Play'
+          TabOrder = 7
+          OnClick = btnWeaponFiringSoundPlayClick
         end
       end
       object gbWeaponOtherUnknown: TGroupBox
@@ -2664,8 +2674,8 @@ object StructuresEditor: TStructuresEditor
       Caption = 'Explosions '
       ImageIndex = 3
       object lblExplosionMyIndex: TLabel
-        Left = 384
-        Top = 128
+        Left = 406
+        Top = 48
         Width = 45
         Height = 13
         Caption = 'My index:'
@@ -2679,7 +2689,7 @@ object StructuresEditor: TStructuresEditor
       end
       object lblExplosionFiringPattern: TLabel
         Left = 344
-        Top = 48
+        Top = 128
         Width = 89
         Height = 13
         Caption = 'Firing flash pattern:'
@@ -2773,6 +2783,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbExplosionListClick
+          OnDblClick = btnExplosionSoundPlayClick
           OnKeyDown = ItemControlGroupListKeyDown
         end
       end
@@ -2782,21 +2793,21 @@ object StructuresEditor: TStructuresEditor
         Width = 129
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 3
       end
       object edExplosionFiringPattern: TEdit
         Left = 440
-        Top = 48
+        Top = 128
         Width = 65
         Height = 21
         MaxLength = 7
         TabOrder = 4
       end
       object edExplosionMyIndex: TEdit
-        Left = 440
-        Top = 128
-        Width = 65
+        Left = 456
+        Top = 48
+        Width = 49
         Height = 21
         MaxLength = 3
         TabOrder = 5
@@ -2876,6 +2887,15 @@ object StructuresEditor: TStructuresEditor
         Height = 21
         MaxLength = 499
         TabOrder = 13
+      end
+      object btnExplosionSoundPlay: TButton
+        Left = 344
+        Top = 48
+        Width = 57
+        Height = 21
+        Caption = 'Play'
+        TabOrder = 14
+        OnClick = btnExplosionSoundPlayClick
       end
     end
     object PageArmour: TTabSheet
@@ -3044,7 +3064,7 @@ object StructuresEditor: TStructuresEditor
         Width = 194
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 1
         Visible = False
         OnChange = cbxTemplatesOtherSelectChange
@@ -3055,7 +3075,7 @@ object StructuresEditor: TStructuresEditor
         Width = 145
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 2
         Visible = False
       end
@@ -3172,7 +3192,7 @@ object StructuresEditor: TStructuresEditor
         Width = 135
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 2
         Visible = False
         OnChange = cbxTechposUnitTypeChange
@@ -3186,6 +3206,100 @@ object StructuresEditor: TStructuresEditor
         Position = 10
         TabOrder = 3
         OnChange = TechposPreviewChange
+      end
+    end
+    object PageSounds: TTabSheet
+      Caption = 'Sounds     '
+      ImageIndex = 11
+      object lblSamplesUib: TLabel
+        Left = 0
+        Top = 0
+        Width = 91
+        Height = 13
+        Caption = 'Samples.uib entries'
+      end
+      object lblSoundRs: TLabel
+        Left = 336
+        Top = 0
+        Width = 91
+        Height = 13
+        Caption = 'SOUND.RS entries'
+      end
+      object sgSamplesUib: TStringGrid
+        Left = 0
+        Top = 16
+        Width = 320
+        Height = 585
+        ColCount = 3
+        DefaultColWidth = 96
+        DefaultRowHeight = 19
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goThumbTracking]
+        TabOrder = 0
+        OnDblClick = btnSoundRsPlayClick
+        OnSelectCell = sgSamplesUibSelectCell
+      end
+      object sgSoundRs: TStringGrid
+        Left = 336
+        Top = 16
+        Width = 320
+        Height = 585
+        ColCount = 3
+        DefaultColWidth = 96
+        DefaultRowHeight = 19
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
+        TabOrder = 1
+        OnDblClick = btnSoundRsPlayClick
+        RowHeights = (
+          19
+          19
+          19
+          19
+          19)
+      end
+      object btnSoundRsPlay: TButton
+        Left = 336
+        Top = 608
+        Width = 72
+        Height = 25
+        Caption = 'Play sound'
+        TabOrder = 2
+        OnClick = btnSoundRsPlayClick
+      end
+      object btnSoundRsExport: TButton
+        Left = 408
+        Top = 608
+        Width = 56
+        Height = 25
+        Caption = 'Export'
+        TabOrder = 3
+        OnClick = btnSoundRsExportClick
+      end
+      object brnSoundRsReplace: TButton
+        Left = 464
+        Top = 608
+        Width = 56
+        Height = 25
+        Caption = 'Replace'
+        TabOrder = 4
+        OnClick = brnSoundRsReplaceClick
+      end
+      object btnSoundRsAddNew: TButton
+        Left = 520
+        Top = 608
+        Width = 64
+        Height = 25
+        Caption = 'Add new'
+        TabOrder = 5
+        OnClick = btnSoundRsAddNewClick
+      end
+      object btnSoundRsRemoveLast: TButton
+        Left = 584
+        Top = 608
+        Width = 72
+        Height = 25
+        Caption = 'Remove last'
+        TabOrder = 6
+        OnClick = btnSoundRsRemoveLastClick
       end
     end
   end
@@ -3227,10 +3341,10 @@ object StructuresEditor: TStructuresEditor
     OnTimer = tmBuildingBuildupArtTimer
     Left = 956
   end
-  object DataExportDialog: TSaveDialog
+  object ItemExportDialog: TSaveDialog
     Left = 892
   end
-  object DataImportDialog: TOpenDialog
+  object ItemImportDialog: TOpenDialog
     Left = 924
   end
   object ArtImportDialog: TOpenDialog
@@ -3244,5 +3358,17 @@ object StructuresEditor: TStructuresEditor
     Filter = 'Dune 2000 graphics file (*.R16)|*.R16'
     Title = 'Export Art'
     Left = 828
+  end
+  object SoundImportDialog: TOpenDialog
+    DefaultExt = 'WAV'
+    Filter = 'Wave sound (*.WAV)|*.WAV'
+    Title = 'Import Sound'
+    Left = 796
+  end
+  object SoundExportDialog: TSaveDialog
+    DefaultExt = 'WAV'
+    Filter = 'Wave sound (*.WAV)|*.WAV'
+    Title = 'Export Sound'
+    Left = 764
   end
 end

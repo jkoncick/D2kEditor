@@ -39,6 +39,8 @@ type
     evFLDataR16,
     evFLMiscObjectsBmp,
     evLoadStructureImage,
+    // Sounds events
+    evFLSoundRs,
     // StringTable events
     evFLTextUib,
     evFLSamplesUib,
@@ -157,6 +159,8 @@ begin
     evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsBmp:           pact := pact + [paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evLoadStructureImage:         pact := pact + [paUpdateDebugValues];
+    // Sounds events
+    evFLSoundRs:                  pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
     // StringTable events
     evFLTextUib:
       begin

@@ -2,7 +2,7 @@ object DebugWindow: TDebugWindow
   Left = 192
   Top = 77
   Width = 648
-  Height = 656
+  Height = 680
   Caption = 'Debug window'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -22,7 +22,7 @@ object DebugWindow: TDebugWindow
     Left = 0
     Top = 49
     Width = 640
-    Height = 573
+    Height = 597
     Align = alClient
     DefaultColWidth = 200
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goThumbTracking]
