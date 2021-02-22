@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Version 2.0 (released 2021-01-12)
+Version 2.0 (released 2021-02-22)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
@@ -100,12 +100,14 @@ Ad 1)
 
 Ad 2)
 - Available from main menu under "Structures" -> "Structures editor", or Ctrl+X shortcut
-- Support for editing Templates.bin, BUILEXP.BIN, ARMOUR.BIN, SPEED.BIN, TECHPOS.BIN files
-- More user-friendly user interface than TibEd, many unknown bytes were given corrent meaning
+- Support for editing Templates.bin, BUILEXP.BIN, ARMOUR.BIN, SPEED.BIN, TECHPOS.BIN files + DATA.R16 and SOUND.RS
+- More user-friendly user interface than TibEd, most of unknown bytes were given corrent meaning
 - Live preview of building and unit appearance
-- Support for adding, removing and renaming of buildings, units, weapons, explosions, armour types, warheads...
-- Support for editing building/unit/projectile/animation art count and direction/frame count 
-  (DATA.R16 needs to be edited separately to match proper frame count!)
+- Support for adding, removing, renaming, copy&paste of buildings, units, weapons, explosions, armour types, warheads;
+  export and import into files for easy sharing and storage  
+- Support export and import of arts into files (a group of R16 images) for easy sharing and stogare.
+  It is still needed to use Resource editor to modify actual images.
+- Export and import of sound effects stored in SOUND.RS file into .WAV files
 - Use "Apply changes" to see changes in map and misssion editor
 - Use "Save and test" to immediately test your changes in currently loaded map
 
@@ -147,6 +149,8 @@ Ad 3)
               |- TILEATR*.BIN
            |- DATA.R16
            |- BLOX****.R16
+           |- GAMESFX
+              |- SOUND.RS
            |- UI_DATA
               |- Text.UIB
               |- samples.uib

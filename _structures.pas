@@ -1884,6 +1884,8 @@ var
   sound_rs_index: integer;
 begin
   result := index;
+  if index = -1 then
+    exit;
   // Deal with SOUND.RS entries
   if not from_sound_rs then
     exit;
@@ -2080,7 +2082,8 @@ var
   tmp_versus_warhead_values: array[0..MAX_WARHEADS-1] of byte;
   i, j: integer;
 begin
-  FillChar(tmp_versus_warhead_values[0], MAX_WARHEADS, 0);
+  for i := 0 to MAX_WARHEADS - 1 do
+    tmp_versus_warhead_values[i] := armour.WarheadEntries[i].VersusArmorType[index];
   for i := 0 to MAX_WARHEADS - 1 do
   begin
     if data.warhead_references[i].item_name = '' then
@@ -2108,7 +2111,8 @@ var
   tmp_versus_armor_type: array[0..MAX_ARMOUR_TYPES-1] of byte;
   i, j: integer;
 begin
-  FillChar(tmp_versus_armor_type[0], MAX_ARMOUR_TYPES, 0);
+  for i := 0 to MAX_ARMOUR_TYPES - 1 do
+    tmp_versus_armor_type[i] := armour.WarheadEntries[index].VersusArmorType[i];
   for i := 0 to MAX_ARMOUR_TYPES - 1 do
   begin
     if data.armour_type_references[i].item_name = '' then

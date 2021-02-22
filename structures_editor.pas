@@ -1773,6 +1773,7 @@ begin
   ItemImportDialog.FileName := '';
   if ItemImportDialog.Execute then
   begin
+    store_data;
     Structures.import_item(group_index, icg.list_control.ItemIndex, ItemImportDialog.FileName);
     fill_data(fdaAll);
   end;
