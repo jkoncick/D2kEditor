@@ -51,7 +51,7 @@ type
     DirectionFrames:       array[0..31] of byte;
     Voices:                array[0..17] of cardinal;
     VoicePriority:         cardinal;
-    FiringExplosion:       shortint;
+    MuzzleFlashExplosion:  shortint;
     SpeedType:             byte;
     MultiplayerOnly:       byte;
     _ZeroBytes:            array[0..84] of byte;
@@ -128,7 +128,7 @@ type
     BuildupFramesToShow:   byte;
     BuildupArt:            byte;
     BuildingAnimation:     byte;
-    FiringExplosion:       shortint;
+    MuzzleFlashExplosion:  shortint;
     _ZeroBytes:            array[0..126] of byte;
   end;
 
@@ -172,13 +172,13 @@ const EF_SEMI_TRANSPARENCY = $00000010;
 const EF_RED               = $00000040;
 const EF_GREEN             = $00000080;
 const EF_ADDITIVE_ALPHA    = $00000200;
-const EF_FIRING_FLASH      = $00000400;
+const EF_MUZZLE_FLASH      = $00000400;
 const EF_INVISIBLE         = $00000800;
 
 type
   TExplosionTemplate = packed record
     MyIndex:               byte;
-    FiringPattern:         byte;
+    MuzzleFlashPattern:    byte;
     _ZeroPadding2:         byte;
     _ZeroPadding3:         byte;
     Sound:                 integer;
@@ -1358,14 +1358,14 @@ begin
         for i := 0 to templates.BuildingCount - 1 do
         begin
           fix_reference(templates.BuildingDefinitions[i].DeathExplosion, v1, v2, swap);
-          fix_reference(templates.BuildingDefinitions[i].FiringExplosion, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].MuzzleFlashExplosion, v1, v2, swap);
           for j := 0 to builexp[i].NumAnimations - 1 do
             fix_reference(builexp[i].AnimExplosion[j], v1, v2, swap);
         end;
         for i := 0 to templates.UnitCount - 1 do
         begin
           fix_reference(templates.UnitDefinitions[i].DeathExplosion, v1, v2, swap);
-          fix_reference(templates.UnitDefinitions[i].FiringExplosion, v1, v2, swap);
+          fix_reference(templates.UnitDefinitions[i].MuzzleFlashExplosion, v1, v2, swap);
         end;
         for i := 0 to templates.WeaponCount - 1 do
         begin
@@ -1418,7 +1418,7 @@ begin
           DeathExplosion := -1;
           BuildupArt := templates.BuildingCount;
           BuildingAnimation := templates.BuildingCount;
-          FiringExplosion := -1;
+          MuzzleFlashExplosion := -1;
         end;
         // Add building icon
         StructGraphics.add_empty_image_entries(first_building_icon_image_index + templates.BuildingCount, 1);
@@ -1434,7 +1434,7 @@ begin
           BarrelArt := -1;
           Prereq2BuildingType := -1;
           DeathExplosion := -1;
-          FiringExplosion := -1;
+          MuzzleFlashExplosion := -1;
         end;
         // Add unit icon
         StructGraphics.add_empty_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
@@ -1943,7 +1943,7 @@ begin
   store_item_reference(data.item_references[3], ITEM_WEAPON,        data.building_template.PrimaryWeapon);
   store_item_reference(data.item_references[4], ITEM_WEAPON,        data.building_template.SecondaryWeapon);
   store_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.building_template.DeathExplosion);
-  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.FiringExplosion);
+  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.MuzzleFlashExplosion);
   store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.building_template.ArmorType);
   for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
     store_item_reference(data.item_references[8+i], ITEM_EXPLOSION, IfThen(i < data.builexp_entry.NumAnimations, data.builexp_entry.AnimExplosion[i], -1));
@@ -1979,7 +1979,7 @@ begin
   data.building_template.PrimaryWeapon :=       restore_item_reference(data.item_references[3], ITEM_WEAPON,        data.building_template.PrimaryWeapon,       import_path);
   data.building_template.SecondaryWeapon :=     restore_item_reference(data.item_references[4], ITEM_WEAPON,        data.building_template.SecondaryWeapon,     import_path);
   data.building_template.DeathExplosion :=      restore_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.building_template.DeathExplosion,      import_path);
-  data.building_template.FiringExplosion :=     restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.FiringExplosion,     import_path);
+  data.building_template.MuzzleFlashExplosion :=restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.MuzzleFlashExplosion,import_path);
   data.building_template.ArmorType :=           restore_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.building_template.ArmorType,           import_path);
   for i := 0 to data.builexp_entry.NumAnimations - 1 do
     data.builexp_entry.AnimExplosion[i] := restore_item_reference(data.item_references[8+i], ITEM_EXPLOSION, data.builexp_entry.AnimExplosion[i], import_path);
@@ -2012,7 +2012,7 @@ begin
   store_item_reference(data.item_references[3], ITEM_WEAPON,        data.unit_template.PrimaryWeapon);
   store_item_reference(data.item_references[4], ITEM_WEAPON,        data.unit_template.SecondaryWeapon);
   store_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.unit_template.DeathExplosion);
-  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.FiringExplosion);
+  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.MuzzleFlashExplosion);
   store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.unit_template.ArmorType);
   // Art references
   store_art_reference(data.art_references[0], ART_UNIT, data.unit_template.UnitArt);
@@ -2040,7 +2040,7 @@ begin
   data.unit_template.PrimaryWeapon :=       restore_item_reference(data.item_references[3], ITEM_WEAPON,        data.unit_template.PrimaryWeapon,       import_path);
   data.unit_template.SecondaryWeapon :=     restore_item_reference(data.item_references[4], ITEM_WEAPON,        data.unit_template.SecondaryWeapon,     import_path);
   data.unit_template.DeathExplosion :=      restore_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.unit_template.DeathExplosion,      import_path);
-  data.unit_template.FiringExplosion :=     restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.FiringExplosion,     import_path);
+  data.unit_template.MuzzleFlashExplosion :=restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.MuzzleFlashExplosion,import_path);
   data.unit_template.ArmorType :=           restore_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.unit_template.ArmorType,           import_path);
   // Art references
   data.unit_template.UnitArt   := restore_art_reference(data.art_references[0], ART_UNIT, data.unit_template.UnitArt,   -1, import_path + data.unit_name);

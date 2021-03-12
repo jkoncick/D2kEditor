@@ -887,12 +887,12 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Destruction explosion:'
         end
-        object lblBuildingFiringExplosion: TLabel
+        object lblBuildingMuzzleFlashExplosion: TLabel
           Left = 160
           Top = 248
-          Width = 100
+          Width = 108
           Height = 13
-          Caption = 'Firing flash explosion:'
+          Caption = 'Muzzle flash explosion:'
         end
         object lblBuildingDirectionFrames: TLabel
           Left = 8
@@ -1006,7 +1006,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 10
         end
-        object cbxBuildingFiringExplosion: TComboBox
+        object cbxBuildingMuzzleFlashExplosion: TComboBox
           Left = 160
           Top = 264
           Width = 137
@@ -1804,12 +1804,12 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Destruction explosion:'
         end
-        object lblUnitFiringExplosion: TLabel
+        object lblUnitMuzzleFlashExplosion: TLabel
           Left = 160
           Top = 104
-          Width = 100
+          Width = 108
           Height = 13
-          Caption = 'Firing flash explosion:'
+          Caption = 'Muzzle flash explosion:'
         end
         object lblUnitDirectionFrames: TLabel
           Left = 8
@@ -1847,7 +1847,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 2
         end
-        object cbxUnitFiringExplosion: TComboBox
+        object cbxUnitMuzzleFlashExplosion: TComboBox
           Left = 160
           Top = 120
           Width = 137
@@ -2679,12 +2679,12 @@ object StructuresEditor: TStructuresEditor
         Height = 13
         Caption = 'Sound:'
       end
-      object lblExplosionFiringPattern: TLabel
-        Left = 344
+      object lblExplosionMuzzleFlashPattern: TLabel
+        Left = 336
         Top = 128
-        Width = 89
+        Width = 97
         Height = 13
-        Caption = 'Firing flash pattern:'
+        Caption = 'Muzzle flash pattern:'
       end
       object lblExplosionUsedBy: TLabel
         Left = 168
@@ -2788,7 +2788,7 @@ object StructuresEditor: TStructuresEditor
         ItemHeight = 13
         TabOrder = 3
       end
-      object edExplosionFiringPattern: TEdit
+      object edExplosionMuzzleFlashPattern: TEdit
         Left = 440
         Top = 128
         Width = 65
@@ -2862,13 +2862,13 @@ object StructuresEditor: TStructuresEditor
         TabOrder = 11
         OnClick = ExplosionFlagCheckboxChange
       end
-      object cbExplosionFlagEF_FIRING_FLASH: TCheckBox
+      object cbExplosionFlagEF_MUZZLE_FLASH: TCheckBox
         Tag = 1024
         Left = 168
         Top = 104
         Width = 97
         Height = 17
-        Caption = 'Firing flash'
+        Caption = 'Muzzle flash'
         TabOrder = 12
         OnClick = ExplosionFlagCheckboxChange
       end

@@ -273,9 +273,9 @@ type
     cbBuildingFlagHAS_SKIRT: TCheckBox;
     cbBuildingFlagNO_CONCRETE: TCheckBox;
     lblBuildingDeathExplosion: TLabel;
-    lblBuildingFiringExplosion: TLabel;
+    lblBuildingMuzzleFlashExplosion: TLabel;
     cbxBuildingDeathExplosion: TComboBox;
-    cbxBuildingFiringExplosion: TComboBox;
+    cbxBuildingMuzzleFlashExplosion: TComboBox;
     sgBuildingDirectionFrames: TStringGrid;
     lblBuildingDirectionFrames: TLabel;
     gbBuildingOther: TGroupBox;
@@ -360,12 +360,12 @@ type
     lblUnitUnitArt: TLabel;
     lblUnitBarrelArt: TLabel;
     lblUnitDeathExplosion: TLabel;
-    lblUnitFiringExplosion: TLabel;
+    lblUnitMuzzleFlashExplosion: TLabel;
     lblUnitDirectionFrames: TLabel;
     cbxUnitUnitArt: TComboBox;
     cbxUnitBarrelArt: TComboBox;
     cbxUnitDeathExplosion: TComboBox;
-    cbxUnitFiringExplosion: TComboBox;
+    cbxUnitMuzzleFlashExplosion: TComboBox;
     sgUnitDirectionFrames: TStringGrid;
     btnUnitDirectionFrames0: TButton;
     btnUnitDirectionFrames8: TButton;
@@ -488,9 +488,9 @@ type
     lblExplosionMyIndex: TLabel;
     lblExplosionSound: TLabel;
     cbxExplosionSound: TComboBox;
-    lblExplosionFiringPattern: TLabel;
+    lblExplosionMuzzleFlashPattern: TLabel;
     lblWeaponUsedBy: TLabel;
-    edExplosionFiringPattern: TEdit;
+    edExplosionMuzzleFlashPattern: TEdit;
     lblExplosionUsedBy: TLabel;
     edExplosionMyIndex: TEdit;
     lblWarheadUsedBy: TLabel;
@@ -508,7 +508,7 @@ type
     cbExplosionFlagEF_SEMI_TRANSPARENCY: TCheckBox;
     cbExplosionFlagEF_RISE_UP: TCheckBox;
     cbExplosionFlagEF_HOUSE_COLORED: TCheckBox;
-    cbExplosionFlagEF_FIRING_FLASH: TCheckBox;
+    cbExplosionFlagEF_MUZZLE_FLASH: TCheckBox;
     PageOther: TTabSheet;
     vleTemplatesOther: TValueListEditor;
     cbxTemplatesOtherSelect: TComboBox;
@@ -1396,7 +1396,7 @@ begin
   cbExplosionFlagEF_SEMI_TRANSPARENCY.Checked := (value and EF_SEMI_TRANSPARENCY) <> 0;
   cbExplosionFlagEF_RISE_UP.Checked := (value and EF_RISE_UP) <> 0;
   cbExplosionFlagEF_HOUSE_COLORED.Checked := (value and EF_HOUSE_COLORED) <> 0;
-  cbExplosionFlagEF_FIRING_FLASH.Checked := (value and EF_FIRING_FLASH) <> 0;
+  cbExplosionFlagEF_MUZZLE_FLASH.Checked := (value and EF_MUZZLE_FLASH) <> 0;
   loading := false;
 end;
 
@@ -2264,9 +2264,9 @@ begin
       cbxBuilExpAnimExplosion[i].Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
     cbxBuildingDeathExplosion.Items := tmp_strings;
-    cbxBuildingFiringExplosion.Items := tmp_strings;
+    cbxBuildingMuzzleFlashExplosion.Items := tmp_strings;
     cbxUnitDeathExplosion.Items := tmp_strings;
-    cbxUnitFiringExplosion.Items := tmp_strings;
+    cbxUnitMuzzleFlashExplosion.Items := tmp_strings;
     cbxWeaponHitExplosion.Items := tmp_strings;
     cbxWeaponTrailExplosion.Items := tmp_strings;
   end;
@@ -2501,7 +2501,7 @@ begin
   cbxBuildingBuildupArt.ItemIndex := bld.BuildupArt;
   seBuildingBuildupFramesToShow.Value := bld.BuildupFramesToShow;
   cbxBuildingDeathExplosion.ItemIndex := bld.DeathExplosion + 1;
-  cbxBuildingFiringExplosion.ItemIndex := bld.FiringExplosion + 1;
+  cbxBuildingMuzzleFlashExplosion.ItemIndex := bld.MuzzleFlashExplosion + 1;
   for i := 0 to 31 do
     sgBuildingDirectionFrames.Cells[i mod 8, i div 8] := inttostr(bld.DirectionFrames[i]);
   // Space requirements group box
@@ -2584,7 +2584,7 @@ begin
   cbxUnitUnitArt.ItemIndex := unt.UnitArt + 1;
   cbxUnitBarrelArt.ItemIndex := unt.BarrelArt + 1;
   cbxUnitDeathExplosion.ItemIndex := unt.DeathExplosion + 1;
-  cbxUnitFiringExplosion.ItemIndex := unt.FiringExplosion + 1;
+  cbxUnitMuzzleFlashExplosion.ItemIndex := unt.MuzzleFlashExplosion + 1;
   for i := 0 to 31 do
     sgUnitDirectionFrames.Cells[i mod 8, i div 8] := inttostr(unt.DirectionFrames[i]);
   // Others and unknown group box
@@ -2695,7 +2695,7 @@ begin
 
   edExplosionName.Text := Structures.templates.ExplosionStrings[index];
   edExplosionMyIndex.Text := IntToStr(exp.MyIndex);
-  edExplosionFiringPattern.Text := IntToBin(exp.FiringPattern, 7);
+  edExplosionMuzzleFlashPattern.Text := IntToBin(exp.MuzzleFlashPattern, 7);
   cbxExplosionSound.ItemIndex := exp.Sound + 1;
   edExplosionFlags.Text := IntToHex(Structures.templates.AnimationArtFlags[index], 8);
   // Used by label
@@ -2704,15 +2704,15 @@ begin
   begin
     if Structures.templates.BuildingDefinitions[i].DeathExplosion = index then
       str := str + Structures.templates.BuildingNameStrings[i] + ' (death) ';
-    if Structures.templates.BuildingDefinitions[i].FiringExplosion = index then
-      str := str + Structures.templates.BuildingNameStrings[i] + ' (firing) ';
+    if Structures.templates.BuildingDefinitions[i].MuzzleFlashExplosion = index then
+      str := str + Structures.templates.BuildingNameStrings[i] + ' (muzzle) ';
   end;
   for i := 0 to Structures.templates.UnitCount - 1 do
   begin
     if Structures.templates.UnitDefinitions[i].DeathExplosion = index then
       str := str + Structures.templates.UnitNameStrings[i] + ' (death) ';
-    if Structures.templates.UnitDefinitions[i].FiringExplosion = index then
-      str := str + Structures.templates.UnitNameStrings[i] + ' (firing) ';
+    if Structures.templates.UnitDefinitions[i].MuzzleFlashExplosion = index then
+      str := str + Structures.templates.UnitNameStrings[i] + ' (muzzle) ';
   end;
   for i := 0 to Structures.templates.WeaponCount - 1 do
   begin
@@ -2853,7 +2853,7 @@ begin
   bld.BuildupArt := cbxBuildingBuildupArt.ItemIndex;
   bld.BuildupFramesToShow := seBuildingBuildupFramesToShow.Value;
   bld.DeathExplosion := cbxBuildingDeathExplosion.ItemIndex - 1;
-  bld.FiringExplosion := cbxBuildingFiringExplosion.ItemIndex - 1;
+  bld.MuzzleFlashExplosion := cbxBuildingMuzzleFlashExplosion.ItemIndex - 1;
   for i := 0 to 31 do
     bld.DirectionFrames[i] := strtointdef(sgBuildingDirectionFrames.Cells[i mod 8, i div 8], 0);
   // Space requirements group box
@@ -2926,7 +2926,7 @@ begin
   unt.UnitArt := cbxUnitUnitArt.ItemIndex - 1;
   unt.BarrelArt := cbxUnitBarrelArt.ItemIndex - 1;
   unt.DeathExplosion := cbxUnitDeathExplosion.ItemIndex - 1;
-  unt.FiringExplosion := cbxUnitFiringExplosion.ItemIndex - 1;
+  unt.MuzzleFlashExplosion := cbxUnitMuzzleFlashExplosion.ItemIndex - 1;
   for i := 0 to 31 do
     unt.DirectionFrames[i] := strtointdef(sgUnitDirectionFrames.Cells[i mod 8, i div 8], 0);
   // Others and unknown group box
@@ -3012,7 +3012,7 @@ begin
   exp := Addr(Structures.templates.ExplosionDefinitions[index]);
 
   exp.MyIndex := StrToIntDef(edExplosionMyIndex.Text, 0);
-  exp.FiringPattern := BinToInt(edExplosionFiringPattern.Text);
+  exp.MuzzleFlashPattern := BinToInt(edExplosionMuzzleFlashPattern.Text);
   exp.Sound := cbxExplosionSound.ItemIndex - 1;
   Structures.templates.AnimationArtFlags[index] := StrToIntDef('$' + edExplosionFlags.Text, 0);
   // Store explosion name
