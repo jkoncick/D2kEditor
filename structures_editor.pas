@@ -731,7 +731,7 @@ var
 
 implementation
 
-uses Math, StrUtils, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, main;
+uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, main;
 
 {$R *.dfm}
 
@@ -890,6 +890,7 @@ procedure TStructuresEditor.Savetofiles1Click(Sender: TObject);
 begin
   apply_changes;
   save_to_files;
+  confirm_overwrite_original_file_last_answer := 0;
 end;
 
 procedure TStructuresEditor.Saveandtest1Click(Sender: TObject);
@@ -898,7 +899,9 @@ begin
   if not MainWindow.check_map_can_be_tested then
     exit;
   save_to_files;
-  Launcher.launch_current_mission;
+  if confirm_overwrite_original_file_last_answer <> IDNO then
+    Launcher.launch_current_mission;
+  confirm_overwrite_original_file_last_answer := 0;
 end;
 
 procedure TStructuresEditor.Reloadfiles1Click(Sender: TObject);
@@ -1487,6 +1490,7 @@ procedure TStructuresEditor.btnSpeedTypeRenameClick(Sender: TObject);
 begin
   store_data;
   store_c_string(edSpeedTypeName.Text, Addr(Structures.speed.SpeedNameStrings[lbSpeedTypeList.ItemIndex]), Length(Structures.speed.SpeedNameStrings[0]));
+  Structures.speed_bin_modified := true;
   fill_data(fdaSpeedTypeList);
 end;
 
@@ -1593,6 +1597,8 @@ begin
     Structures.techpos[tech, unitnum].PosX := int_value
   else
     Structures.techpos[tech, unitnum].PosY := int_value;
+  Structures.techpos_bin_modified := true;
+  fill_status_bar;
   draw_techpos_preview;
 end;
 
@@ -1604,6 +1610,8 @@ begin
   unitnum := cbxTechposUnitType.Tag mod 10;
   tech := rgTechposTechLevel.ItemIndex;
   Structures.techpos[tech, unitnum].Units[side] := cbxTechposUnitType.ItemIndex - 1;
+  Structures.techpos_bin_modified := true;
+  fill_status_bar;
   sgTechposData.Cells[3 + side, 1 + unitnum] := cbxTechposUnitType.Items[Structures.techpos[tech, unitnum].Units[side] + 1];
   draw_techpos_preview;
 end;
@@ -2012,6 +2020,7 @@ begin
         ART_ANIMATION: lbAnimationArtListClick(nil);
         ART_OTHER: lbOtherArtListClick(nil);
       end;
+    fill_status_bar;
   end;
 end;
 
@@ -2104,7 +2113,6 @@ begin
   end;
   pending_update_contents := false;
   fill_data(fdaAll);
-  fill_status_bar;
 end;
 
 procedure TStructuresEditor.update_tileset;
@@ -2307,6 +2315,7 @@ begin
 
   // Fill specific page data
   fill_page_data;
+  fill_status_bar;
 end;
 
 procedure TStructuresEditor.fill_item_list(item_type: integer; tmp_strings: TStringList);
@@ -2404,20 +2413,20 @@ var
 begin
   // Set default file names
   file1 := Structures.templates_bin_filename;
-  file2 := StructGraphics.data_r16_filename;
+  file2 := IfThen(StructGraphics.data_r16_modified, '*', '') + StructGraphics.data_r16_filename;
   // Override file names per specific tab
   if PageControl.ActivePage = PageBuilExp then
     file1 := Structures.builexp_bin_filename
   else if PageControl.ActivePage = PageArmour then
     file1 := Structures.armour_bin_filename
   else if PageControl.ActivePage = PageSpeed then
-    file1 := Structures.speed_bin_filename
+    file1 := IfThen(Structures.speed_bin_modified, '*', '') + Structures.speed_bin_filename
   else if PageControl.ActivePage = PageTechpos then
-    file1 := Structures.techpos_bin_filename
+    file1 := IfThen(Structures.techpos_bin_modified, '*', '') + Structures.techpos_bin_filename
   else if PageControl.ActivePage = PageSounds then
   begin
     file1 := StringTable.samples_uib_filename;
-    file2 := Sounds.sound_rs_filename;
+    file2 := IfThen(Sounds.sound_rs_modified, '*', '') + Sounds.sound_rs_filename;
   end;
   // Fill status bar
   StatusBar.Panels[0].Text := file1;
@@ -2744,6 +2753,7 @@ end;
 procedure TStructuresEditor.store_data;
 var
   i, j: integer;
+  sp: single;
 begin
   if PageControl.ActivePage = PageBuildings then
     store_building_data
@@ -2771,7 +2781,12 @@ begin
     // Speed
     for i := 0 to Length(Structures.speed.Values) - 1 do
       for j := 0 to Length(Structures.speed.Values[i]) - 1 do
-        Structures.speed.Values[i, j] := StrToFloatDef(sgSpeedValues.Cells[j+1, i+1], 1.0);
+        begin
+          sp := StrToFloatDef(sgSpeedValues.Cells[j+1, i+1], 1.0);
+          if Structures.speed.Values[i, j] <> sp then
+            Structures.speed_bin_modified := true;
+          Structures.speed.Values[i, j] := sp;
+        end;
   end else
   if PageControl.ActivePage = PageOther then
   begin
@@ -3681,6 +3696,7 @@ begin
   Structures.save_techpos_bin;
   StructGraphics.save_data_r16;
   Sounds.save_sound_rs;
+  fill_status_bar;
 end;
 
 end.

@@ -534,9 +534,11 @@ type
 
     // SPEED.BIN related data
     speed: TSpeedBinFile;
+    speed_bin_modified: boolean;
 
     // TECHPOS.BIN related data
     techpos: TTechposBinFile;
+    techpos_bin_modified: boolean;
 
     // TILEDATA.BIN related data
     tiledata: TTileDataBinFile;
@@ -741,6 +743,8 @@ end;
 procedure TStructures.save_templates_bin;
 begin
   if templates_bin_filename = '' then
+    exit;
+  if not manage_filesave(templates_bin_filename, 'Data\bin\Templates.bin', evStructuresFilenameChange) then
     exit;
   save_binary_file(templates_bin_filename, templates, sizeof(templates));
 end;
@@ -1012,6 +1016,8 @@ procedure TStructures.save_builexp_bin;
 begin
   if builexp_bin_filename = '' then
     exit;
+  if not manage_filesave(builexp_bin_filename, 'Data\bin\BUILEXP.BIN', evStructuresFilenameChange) then
+    exit;
   save_binary_file(builexp_bin_filename, builexp, sizeof(builexp));
 end;
 
@@ -1034,6 +1040,8 @@ procedure TStructures.save_armour_bin;
 begin
   if armour_bin_filename = '' then
     exit;
+  if not manage_filesave(armour_bin_filename, 'Data\bin\ARMOUR.BIN', evStructuresFilenameChange) then
+    exit;
   save_binary_file(armour_bin_filename, armour, sizeof(armour));
 end;
 
@@ -1047,15 +1055,19 @@ begin
   speed_bin_filename := tmp_filename;
   // Read SPEED.BIN file
   load_binary_file(tmp_filename, speed, sizeof(speed));
+  speed_bin_modified := false;
   // Register event in dispatcher
   Dispatcher.register_event(evFLSpeedBin);
 end;
 
 procedure TStructures.save_speed_bin;
 begin
-  if speed_bin_filename = '' then
+  if (speed_bin_filename = '') or not speed_bin_modified then
+    exit;
+  if not manage_filesave(speed_bin_filename, 'Data\bin\SPEED.BIN', evStructuresFilenameChange) then
     exit;
   save_binary_file(speed_bin_filename, speed, sizeof(speed));
+  speed_bin_modified := false;
 end;
 
 procedure TStructures.load_techpos_bin(force: boolean);
@@ -1068,15 +1080,19 @@ begin
   techpos_bin_filename := tmp_filename;
   // Read TECHPOS.BIN file
   load_binary_file(tmp_filename, techpos, sizeof(techpos));
+  techpos_bin_modified := false;
   // Register event in dispatcher
   Dispatcher.register_event(evFLTechposBin);
 end;
 
 procedure TStructures.save_techpos_bin;
 begin
-  if techpos_bin_filename = '' then
+  if (techpos_bin_filename = '') or not techpos_bin_modified then
+    exit;
+  if not manage_filesave(techpos_bin_filename, 'Data\bin\TECHPOS.BIN', evStructuresFilenameChange) then
     exit;
   save_binary_file(techpos_bin_filename, techpos, sizeof(techpos));
+  techpos_bin_modified := false;
 end;
 
 procedure TStructures.load_tiledata_bin;

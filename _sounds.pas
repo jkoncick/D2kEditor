@@ -109,6 +109,8 @@ var
 begin
   if (sound_rs_filename = '') or not sound_rs_modified then
     exit;
+  if not manage_filesave(sound_rs_filename, 'Data\GAMESFX\SOUND.RS', evStructuresFilenameChange) then
+    exit;
   // Determine directory size
   directory_size := 0;
   for i := 0 to Length(sound_rs_directory) - 1 do

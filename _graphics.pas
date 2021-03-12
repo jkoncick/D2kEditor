@@ -245,6 +245,8 @@ procedure TStructGraphics.save_data_r16;
 begin
   if (data_r16_filename = '') or not data_r16_modified then
     exit;
+  if not manage_filesave(data_r16_filename, 'Data\DATA.R16', evStructuresFilenameChange) then
+    exit;
   save_binary_file(data_r16_filename, data_r16_file_contents[0], Length(data_r16_file_contents));
   data_r16_modified := false;
 end;

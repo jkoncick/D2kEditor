@@ -235,7 +235,6 @@ type
     procedure set_tile_attribute_rule(value, not_value: int64);
     function get_tile_attribute_color(value: int64): cardinal;
     procedure set_tile_attributes(tile_index: integer; single_op: boolean);
-    function confirm_overwrite_original_file(filename: string): boolean;
   end;
 
 var
@@ -243,7 +242,7 @@ var
 
 implementation
 
-uses main, _utils, _stringtable, _settings, _structures, _graphics, _dispatcher;
+uses main, _utils, _stringtable, _settings, _structures, _graphics, _dispatcher, _launcher;
 
 {$R *.dfm}
 
@@ -358,29 +357,35 @@ end;
 
 procedure TTileAtrEditor.SaveTileAtr1Click(Sender: TObject);
 begin
-  if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
-  begin
-    Tileset.save_tileatr;
-    Dispatcher.register_event(evTileatrModify);
-  end;
+  if Tileset.tileatr_filename = '' then
+    exit;
+  Applychanges1Click(nil);
+  Tileset.save_tileatr;
+  confirm_overwrite_original_file_last_answer := 0;
 end;
 
 procedure TTileAtrEditor.Saveandtest1Click(Sender: TObject);
 begin
-  if (Tileset.tileatr_filename <> '') and confirm_overwrite_original_file(Tileset.tileatr_filename) then
-  begin
-    Tileset.save_tileatr;
-    Dispatcher.register_event(evTileatrModify);
-    MainWindow.Quicklaunch1Click(Sender);
-  end;
+  if Tileset.tileatr_filename = '' then
+    exit;
+  if not MainWindow.check_map_can_be_tested then
+    exit;
+  Applychanges1Click(nil);
+  Tileset.save_tileatr;
+  if confirm_overwrite_original_file_last_answer <> IDNO then
+    Launcher.launch_current_mission;
+  confirm_overwrite_original_file_last_answer := 0;
 end;
 
 procedure TTileAtrEditor.SaveTileAtras1Click(Sender: TObject);
 begin
-  if (Tileset.tileatr_filename <> '') and SaveTileAtrDialog.Execute and confirm_overwrite_original_file(SaveTileAtrDialog.FileName) then
+  if Tileset.tileatr_filename = '' then
+    exit;
+  if SaveTileAtrDialog.Execute then
   begin
+    Applychanges1Click(nil);
     Tileset.save_tileatr_to_file(SaveTileAtrDialog.FileName);
-    Dispatcher.register_event(evTileatrModify);
+    confirm_overwrite_original_file_last_answer := 0;
   end;
 end;
 
@@ -1172,34 +1177,6 @@ begin
   Redo1.Enabled := false;
   // Save new tileatr value
   Tileset.set_tile_attributes(tile_index, target_value);
-end;
-
-function TTileAtrEditor.confirm_overwrite_original_file(filename: string): boolean;
-var
-  f: string;
-  modified_date: TDateTime;
-  year, month, day: word;
-  dialog_result: integer;
-begin
-  result := true;
-  if AnsiCompareText(ExtractFilePath(filename), Settings.GamePath + '\DATA\BIN\') <> 0 then
-    exit;
-  f := UpperCase(ExtractFileName(filename));
-  if (f <> 'TILEATR1.BIN') and (f <> 'TILEATR2.BIN') and (f <> 'TILEATR3.BIN') and (f <> 'TILEATR4.BIN') and (f <> 'TILEATR5.BIN') and (f <> 'TILEATR6.BIN') and (f <> 'TILEATR7.BIN') then
-    exit;
-  modified_date := FileDateToDateTime(FileAge(filename));
-  DecodeDate(modified_date, year, month, day);
-  if year <> 1998 then
-    exit;
-  // At this point we know the file is original game's file - show confirmation dialog
-  dialog_result := Application.MessageBox(
-    PChar(
-    'You are about to modify an original Dune 2000 game file, which can break your game!'#13+
-    'It is recommended to use CustomCampaignData Mods folder or save file under different name.'#13+
-    'If you still want to overwrite the file '''+filename+''' make sure you have a backup!'#13#13+
-    'Do you really want to proceed and save over the file?'),
-    'Save Tile Attributes Warning', MB_YESNO or MB_ICONWARNING);
-  result := dialog_result = IDYES;
 end;
 
 end.

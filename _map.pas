@@ -206,7 +206,15 @@ var
   buffer: array of word;
   pos: integer;
   x, y: integer;
+  can_save: boolean;
 begin
+  can_save := true;
+  can_save := can_save and confirm_overwrite_original_file(filename, Settings.GamePath + '\Missions\' + ExtractFileName(filename), false);
+  can_save := can_save and confirm_overwrite_original_file(filename, Settings.GamePath + '\Data\Missions\' + ExtractFileName(filename), false);
+  can_save := can_save and confirm_overwrite_original_file(filename, Settings.GamePath + '\Data\maps\' + ExtractFileName(filename), false);
+  confirm_overwrite_original_file_last_answer := 0;
+  if not can_save then
+    exit;
   AssignFile(map_file, filename);
   ReWrite(map_file);
   map_file_size := map_width * map_height * 2 + 2;

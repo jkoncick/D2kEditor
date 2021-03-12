@@ -3,7 +3,7 @@ unit _utils;
 interface
 
 uses
-  Controls, Messages, ExtCtrls, SysUtils;
+  Controls, Messages, ExtCtrls, SysUtils, _dispatcher;
 
 const CNT_PLAYERS = 8;
 
@@ -34,18 +34,23 @@ procedure set_float_value  (var arr: array of byte; pos: integer; value: single)
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);
 function IntToBin(val: integer; width: integer): string;
 function BinToInt(bin: string): integer;
-function find_file(name_pattern: String; description: String): String;
 procedure load_binary_file(filename: String; var data; size: integer);
 procedure save_binary_file(filename: String; var data; size: integer);
+
+function find_file(name_pattern: String; description: String): String;
+function manage_filesave(var filename: string; name_pattern: string; filename_change_event: TDispatcherRegisteredEvent): boolean;
+function confirm_overwrite_original_file(actual_filename, orig_filename: string; mods_folder_allowed: boolean): boolean;
+
 
 var
   current_dir: String;
   performance_frequency: Int64;
+  confirm_overwrite_original_file_last_answer: integer;
 
 implementation
 
 uses
-  Forms, Windows, _settings, main, _missionini;
+  Forms, Windows, StrUtils, Math, _settings, main, _mission, _missionini;
 
 procedure TImage.CMMouseLeave(var Message: TMessage);
 begin
@@ -115,6 +120,26 @@ begin
     end;
 end;
 
+procedure load_binary_file(filename: String; var data; size: integer);
+var
+  f: file of byte;
+begin
+  AssignFile(f, filename);
+  Reset(f);
+  BlockRead(f, data, size);
+  CloseFile(f);
+end;
+
+procedure save_binary_file(filename: String; var data; size: integer);
+var
+  f: file of byte;
+begin
+  AssignFile(f, filename);
+  Rewrite(f);
+  BlockWrite(f, data, size);
+  CloseFile(f);
+end;
+
 function find_file(name_pattern: String; description: String): String;
 var
   tmp_filename, tmp_filename2: String;
@@ -139,24 +164,54 @@ begin
   result := tmp_filename;
 end;
 
-procedure load_binary_file(filename: String; var data; size: integer);
+function manage_filesave(var filename: string; name_pattern: string; filename_change_event: TDispatcherRegisteredEvent): boolean;
 var
-  f: file of byte;
+  tmp_filename: string;
+  tmp_dir: string;
 begin
-  AssignFile(f, filename);
-  Reset(f);
-  BlockRead(f, data, size);
-  CloseFile(f);
+  result := true;
+  if (MissionIni.CampaignFolder <> '') and (MissionIni.ModsFolder <> '') then
+  begin
+    tmp_filename := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\' + MissionIni.ModsFolder + '\' + name_pattern;
+    if AnsiCompareText(filename, tmp_filename) <> 0 then
+    begin
+      Application.MessageBox(PChar(Format('Saved a modified copy of original game file ''%s'' into'#13'''%s''', [filename, tmp_filename])), 'Saving a new copy into CustomCampaignData', MB_ICONINFORMATION or MB_OK);
+      filename := tmp_filename;
+      Dispatcher.register_event(filename_change_event);
+      // Create directories if they don't exist
+      tmp_dir := ExtractFileDir(tmp_filename);
+      if not DirectoryExists(tmp_dir) then
+        ForceDirectories(tmp_dir);
+    end;
+  end;
+  if not confirm_overwrite_original_file(filename, Settings.GamePath + '\' + name_pattern, Mission.mis_assigned) then
+    result := false;
 end;
 
-procedure save_binary_file(filename: String; var data; size: integer);
+function confirm_overwrite_original_file(actual_filename, orig_filename: string; mods_folder_allowed: boolean): boolean;
 var
-  f: file of byte;
+  modified_date: TDateTime;
+  year, month, day: word;
 begin
-  AssignFile(f, filename);
-  Rewrite(f);
-  BlockWrite(f, data, size);
-  CloseFile(f);
+  result := true;
+  if AnsiCompareText(actual_filename, orig_filename) <> 0 then
+    exit;
+  if not FileExists(actual_filename) then
+    exit;
+  modified_date := FileDateToDateTime(FileAge(actual_filename));
+  DecodeDate(modified_date, year, month, day);
+  if year <> 1998 then
+    exit;
+  if confirm_overwrite_original_file_last_answer = 0 then
+    confirm_overwrite_original_file_last_answer := Application.MessageBox(
+      PChar(
+      'You are going to modify an original Dune 2000 game file, which can break your game!'#13+
+      IfThen(mods_folder_allowed, 'If you want to make modifications, it is recommended to save the file under CustomCampaignData folder. Go to current mission settings and configure Campaign and Mods folder, then a copy will be created there automatically upon saving.'#13, '') +
+      #13+
+      'Do you '+IfThen(mods_folder_allowed, 'still', 'really')+' want to overwrite the '+IfThen(mods_folder_allowed, 'original ', '')+'file '''+actual_filename+'''?'#13+
+      'If yes, make sure you have a backup!'),
+      'Overwrite original game file warning', MB_YESNO or MB_ICONWARNING);
+  result := confirm_overwrite_original_file_last_answer = IDYES;
 end;
 
 end.

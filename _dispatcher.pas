@@ -34,6 +34,7 @@ type
     evFLTiledataBin,
     evFLMiscObjectsIni,
     evFLPlayersIni,
+    evStructuresFilenameChange,
     // StructGraphics events
     evFLColoursBin,
     evFLDataR16,
@@ -154,6 +155,7 @@ begin
     evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLPlayersIni:               pact := pact + [paUpdatePlayerList, paUpdateEventDialog, paUpdateDebugValues];
+    evStructuresFilenameChange:   pact := pact + [paUpdateDebugValues];
     // StructGraphics events
     evFLColoursBin:               pact := pact + [paUpdatePlayerColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];

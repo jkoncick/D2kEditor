@@ -942,13 +942,15 @@ begin
   // Save TILEATR*.BIN file
   if tileatr_filename = '' then
     exit;
+  if not manage_filesave(tileatr_filename, 'Data\bin\' + tileatr_name + '.BIN', evTileatrFilenameChange) then
+    exit;
   AssignFile(tileatr_file, tileatr_filename);
   ReWrite(tileatr_file);
   BlockWrite(tileatr_file, attributes, cnt_tileset_tiles);
   BlockWrite(tileatr_file, tile_hint_text, cnt_tileset_tiles);
   CloseFile(tileatr_file);
   // Save editor attributes into tileset .ini file
-  if (config_filename = '') or (AnsiCompareText(tileatr_name, matching_tileatr_name) <> 0) then
+  if (config_filename = '') or (AnsiCompareText(tileatr_filename, Settings.GamePath + '\Data\bin\' + matching_tileatr_name + '.BIN') <> 0) then
     exit;
   lines_input := TStringList.Create;
   lines_output := TStringList.Create;
