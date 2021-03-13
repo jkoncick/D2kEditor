@@ -3307,18 +3307,27 @@ object StructuresEditor: TStructuresEditor
       OnClick = Savetofiles1Click
     end
     object Saveandtest1: TMenuItem
-      Caption = 'Save and test (F8)'
-      ShortCut = 119
-      OnClick = Saveandtest1Click
+      Caption = 'Save and test'
+      object Launchgame1: TMenuItem
+        Caption = 'Launch game'
+        ShortCut = 118
+        OnClick = Launchgame1Click
+      end
+      object Launchmission1: TMenuItem
+        Caption = 'Launch mission'
+        ShortCut = 119
+        OnClick = Launchmission1Click
+      end
+      object Launchwithsettings1: TMenuItem
+        Caption = 'Launch with settings'
+        ShortCut = 120
+        OnClick = Launchwithsettings1Click
+      end
     end
     object Reloadfiles1: TMenuItem
       Caption = 'Reload files (Ctrl+R)'
       ShortCut = 16466
       OnClick = Reloadfiles1Click
-    end
-    object CopyfilestoModsfolder1: TMenuItem
-      Caption = 'Copy files to Mods folder'
-      OnClick = CopyfilestoModsfolder1Click
     end
   end
   object tmBuildingBuildingAnimation: TTimer

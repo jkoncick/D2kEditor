@@ -44,6 +44,7 @@ type
     procedure launch_mission(mission_index: integer; difficulty_level: integer);
     procedure get_map_test_settings(map_filename: String);
     procedure launch_current_mission;
+    procedure launch_game;
 
   end;
 
@@ -198,6 +199,11 @@ begin
   Map.save_map(Settings.MissionsPath + '\TESTMAP.MAP', true);
   // Launch game
   ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), PChar('-SPAWN ' + TestMapParameters), PChar(Settings.GamePath), SW_SHOWNORMAL);
+end;
+
+procedure TLauncher.launch_game;
+begin
+  ShellExecuteA(0, 'open', PChar(Settings.GameExecutable), nil, PChar(Settings.GamePath), SW_SHOWNORMAL);
 end;
 
 end.

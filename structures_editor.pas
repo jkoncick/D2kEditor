@@ -390,7 +390,6 @@ type
     Savetofiles1: TMenuItem;
     Saveandtest1: TMenuItem;
     Reloadfiles1: TMenuItem;
-    CopyfilestoModsfolder1: TMenuItem;
     PageBuildingArt: TTabSheet;
     PageUnitArt: TTabSheet;
     pnBuildingArtList: TPanel;
@@ -553,6 +552,9 @@ type
     lblUnitProjectileShootOffset: TLabel;
     seUnitProjectileShootOffset: TSpinEdit;
     cbBuildingScreenShake: TCheckBox;
+    Launchgame1: TMenuItem;
+    Launchmission1: TMenuItem;
+    Launchwithsettings1: TMenuItem;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -560,9 +562,10 @@ type
     // Main menu events
     procedure Applychanges1Click(Sender: TObject);
     procedure Savetofiles1Click(Sender: TObject);
-    procedure Saveandtest1Click(Sender: TObject);
+    procedure Launchgame1Click(Sender: TObject);
+    procedure Launchmission1Click(Sender: TObject);
+    procedure Launchwithsettings1Click(Sender: TObject);
     procedure Reloadfiles1Click(Sender: TObject);
-    procedure CopyfilestoModsfolder1Click(Sender: TObject);
     // Page control events
     procedure PageControlChanging(Sender: TObject; var AllowChange: Boolean);
     procedure PageControlChange(Sender: TObject);
@@ -731,7 +734,7 @@ var
 
 implementation
 
-uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, main;
+uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, main, test_map_dialog;
 
 {$R *.dfm}
 
@@ -893,7 +896,16 @@ begin
   confirm_overwrite_original_file_last_answer := 0;
 end;
 
-procedure TStructuresEditor.Saveandtest1Click(Sender: TObject);
+procedure TStructuresEditor.Launchgame1Click(Sender: TObject);
+begin
+  apply_changes;
+  save_to_files;
+  if confirm_overwrite_original_file_last_answer <> IDNO then
+    Launcher.launch_game;
+  confirm_overwrite_original_file_last_answer := 0;
+end;
+
+procedure TStructuresEditor.Launchmission1Click(Sender: TObject);
 begin
   apply_changes;
   if not MainWindow.check_map_can_be_tested then
@@ -901,6 +913,17 @@ begin
   save_to_files;
   if confirm_overwrite_original_file_last_answer <> IDNO then
     Launcher.launch_current_mission;
+  confirm_overwrite_original_file_last_answer := 0;
+end;
+
+procedure TStructuresEditor.Launchwithsettings1Click(Sender: TObject);
+begin
+  apply_changes;
+  if not MainWindow.check_map_can_be_tested then
+    exit;
+  save_to_files;
+  if confirm_overwrite_original_file_last_answer <> IDNO then
+    TestMapDialog.invoke;
   confirm_overwrite_original_file_last_answer := 0;
 end;
 
@@ -913,11 +936,6 @@ begin
   Structures.load_speed_bin(true);
   StructGraphics.load_data_r16(true);
   Sounds.load_sound_rs(true);
-end;
-
-procedure TStructuresEditor.CopyfilestoModsfolder1Click(Sender: TObject);
-begin
-  ShowMessage('Not implemented.');
 end;
 
 procedure TStructuresEditor.PageControlChanging(Sender: TObject; var AllowChange: Boolean);
