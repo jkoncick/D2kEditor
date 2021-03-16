@@ -122,6 +122,7 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 60
           Height = 47
+          OnMouseDown = imgBuildingIconMouseDown
         end
         object clbBuildingOwnerSide: TCheckListBox
           Left = 120
@@ -1232,6 +1233,7 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 60
           Height = 47
+          OnMouseDown = imgUnitIconMouseDown
         end
         object clbUnitOwnerSide: TCheckListBox
           Left = 120
@@ -3293,6 +3295,21 @@ object StructuresEditor: TStructuresEditor
         TabOrder = 6
         OnClick = btnSoundRsRemoveLastClick
       end
+    end
+  end
+  object pnImagePalette: TPanel
+    Left = 1024
+    Top = 216
+    Width = 265
+    Height = 265
+    TabOrder = 2
+    Visible = False
+    object imgImagePalette: TImage
+      Left = 4
+      Top = 4
+      Width = 257
+      Height = 257
+      OnClick = imgImagePaletteClick
     end
   end
   object MainMenu: TMainMenu

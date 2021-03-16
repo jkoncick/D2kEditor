@@ -125,24 +125,30 @@ type
     first_image_index: integer;
     last_item_index: integer;
     is_unit: boolean;
+    // Referenced controls
     list_control: TListBox;
     se_directions: TSpinEdit;
     se_frames: TSpinEdit;
+    // Dynamically created controls
     view_image: TImage;
-    frame_list: TListBox;
+    btn_view_palette: TButton;
+    lbl_side_color: TLabel;
+    se_side_color: TSpinEdit;
+    cb_raw_image: TCheckBox;
     lbl_frame_width: TLabel;
     lbl_frame_height: TLabel;
     lbl_image_width: TLabel;
     lbl_image_height: TLabel;
     lbl_image_offset_x: TLabel;
     lbl_image_offset_y: TLabel;
-    lbl_art_size: TLabel;
     edit_frame_width: TEdit;
     edit_frame_height: TEdit;
     edit_image_width: TEdit;
     edit_image_height: TEdit;
     edit_image_offset_x: TEdit;
     edit_image_offset_y: TEdit;
+    frame_list: TListBox;
+    lbl_art_size: TLabel;
     btn_art_add: TButton;
     btn_art_remove: TButton;
     btn_art_modify: TButton;
@@ -555,6 +561,8 @@ type
     Launchgame1: TMenuItem;
     Launchmission1: TMenuItem;
     Launchwithsettings1: TMenuItem;
+    pnImagePalette: TPanel;
+    imgImagePalette: TImage;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -572,6 +580,7 @@ type
     // Buildings tab events
     procedure lbBuildingTypeListClick(Sender: TObject);
     procedure lbBuildingListClick(Sender: TObject);
+    procedure imgBuildingIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure imgBuildingTilesOccupiedSolidMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure edBuildingFlagsChange(Sender: TObject);
@@ -585,6 +594,7 @@ type
     // Units tab events
     procedure lbUnitTypeListClick(Sender: TObject);
     procedure lbUnitListClick(Sender: TObject);
+    procedure imgUnitIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure edUnitFlagsChange(Sender: TObject);
     procedure UnitFlagCheckboxChange(Sender: TObject);
     procedure btnUnitDirectionFramesClick(Sender: TObject);
@@ -650,6 +660,7 @@ type
     procedure ItemControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     // Art control group events
     procedure ArtControlGroupFrameListClick(Sender: TObject);
+    procedure ArtControlGroupViewPaletteClick(Sender: TObject);
     procedure ArtControlGroupAddClick(Sender: TObject);
     procedure ArtControlGroupRemoveClick(Sender: TObject);
     procedure ArtControlGroupModifyClick(Sender: TObject);
@@ -658,6 +669,7 @@ type
     procedure ArtControlGroupMoveUpClick(Sender: TObject);
     procedure ArtControlGroupMoveDownClick(Sender: TObject);
     procedure ArtControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure imgImagePaletteClick(Sender: TObject);
   private
     // Dynamic controls
     cbxUnitVoices: array[0..17] of TComboBox;
@@ -715,14 +727,15 @@ type
     procedure fill_art_control_group_frame_list(group_index: integer; first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
     // Drawing procedures
     procedure draw_no_image_sign(img_target: TImage);
+    procedure draw_palette(image_index: integer);
     procedure draw_building_tile_map(img_target: TImage; value: cardinal);
     procedure draw_building_preview(draw_building: boolean);
     procedure draw_building_frame(image_index: integer; alpha, animation: boolean);
     procedure draw_unit_preview;
     procedure draw_unit_frame(image_index, side: integer; is_stealth: boolean);
     procedure draw_builexp_preview;
-    procedure draw_building_art_frame(img_target: TImage; image_index: integer; draw_background: boolean);
-    procedure draw_unit_art_frame(img_target: TImage; image_index: integer);
+    procedure draw_building_art_frame(img_target: TImage; image_index, side: integer; raw, draw_background: boolean);
+    procedure draw_unit_art_frame(img_target: TImage; image_index, side: integer; raw: boolean);
     procedure draw_techpos_preview;
     // General procedures
     procedure apply_changes;
@@ -945,6 +958,7 @@ end;
 
 procedure TStructuresEditor.PageControlChange(Sender: TObject);
 begin
+  pnImagePalette.Visible := false;
   fill_page_data;
   fill_status_bar;
 end;
@@ -959,6 +973,19 @@ procedure TStructuresEditor.lbBuildingListClick(Sender: TObject);
 begin
   store_building_data;
   fill_building_data;
+end;
+
+procedure TStructuresEditor.imgBuildingIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  image_index: integer;
+begin
+  if lbBuildingList.ItemIndex = -1 then
+    exit;
+  image_index := Structures.first_building_icon_image_index + lbBuildingList.ItemIndex;
+  if Button = mbMiddle then
+    draw_palette(image_index);
+  if Button = mbRight then
+    StructGraphics.export_single_image(current_dir + '\test.bmp', image_index);
 end;
 
 procedure TStructuresEditor.imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -1122,6 +1149,19 @@ procedure TStructuresEditor.lbUnitListClick(Sender: TObject);
 begin
   store_unit_data;
   fill_unit_data;
+end;
+
+procedure TStructuresEditor.imgUnitIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  image_index: integer;
+begin
+  if lbUnitList.ItemIndex = -1 then
+    exit;
+  image_index := Structures.first_unit_icon_image_index + lbUnitList.ItemIndex;
+  if Button = mbMiddle then
+    draw_palette(image_index);
+  if Button = mbRight then
+    StructGraphics.export_single_image(current_dir + '\test.bmp', image_index);
 end;
 
 procedure TStructuresEditor.edUnitFlagsChange(Sender: TObject);
@@ -1892,7 +1932,7 @@ var
   image_index: integer;
   header: TR16EntryHeaderPtr;
 begin
-  group_index := (Sender as TListBox).Tag;
+  group_index := (Sender as TControl).Tag;
   acg := Addr(art_control_groups[group_index]);
   image_index := 0;
   header := nil;
@@ -1904,9 +1944,9 @@ begin
   if (header <> nil) and (header.EntryType <> 0) then
   begin
     if acg.is_unit then
-      draw_unit_art_frame(acg.view_image, image_index)
+      draw_unit_art_frame(acg.view_image, image_index, acg.se_side_color.Value, acg.cb_raw_image.Checked)
     else
-      draw_building_art_frame(acg.view_image, image_index, true);
+      draw_building_art_frame(acg.view_image, image_index, acg.se_side_color.Value, acg.cb_raw_image.Checked, true);
     acg.edit_frame_width.Text := inttostr(header.FrameWidth);
     acg.edit_frame_height.Text := inttostr(header.FrameHeight);
     acg.edit_image_width.Text := inttostr(header.ImageWidth);
@@ -1923,6 +1963,20 @@ begin
     acg.edit_image_offset_x.Text := '';
     acg.edit_image_offset_y.Text := '';
   end;
+  if pnImagePalette.Visible then
+    ArtControlGroupViewPaletteClick(Sender);
+end;
+
+procedure TStructuresEditor.ArtControlGroupViewPaletteClick(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+begin
+  group_index := (Sender as TControl).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if acg.frame_list.ItemIndex = -1 then
+    exit;
+  draw_palette(acg.first_image_index + acg.frame_list.ItemIndex);
 end;
 
 procedure TStructuresEditor.ArtControlGroupAddClick(Sender: TObject);
@@ -2090,6 +2144,11 @@ begin
   end;
   if matched then
     key := 0;
+end;
+
+procedure TStructuresEditor.imgImagePaletteClick(Sender: TObject);
+begin
+  pnImagePalette.Visible := false;
 end;
 
 procedure TStructuresEditor.update_sound_list;
@@ -2475,6 +2534,8 @@ begin
     StructGraphics.clear_last_structure_image(Structures.first_building_icon_image_index + index, false);
   end else
     draw_no_image_sign(imgBuildingIcon);
+  if pnImagePalette.Visible then
+    draw_palette(Structures.first_building_icon_image_index + index);
   set_owner_side_field_value(clbBuildingOwnerSide, bld.OwnerSide);
   // Build requirements group box
   seBuildingTechLevelBuild.Value := bld.TechLevelBuild;
@@ -2564,6 +2625,8 @@ begin
     StructGraphics.clear_last_structure_image(Structures.first_unit_icon_image_index + index, false);
   end else
     draw_no_image_sign(imgUnitIcon);
+  if pnImagePalette.Visible then
+    draw_palette(Structures.first_unit_icon_image_index + index);
   set_owner_side_field_value(clbUnitOwnerSide, unt.OwnerSide);
   // Build requirements group box
   seUnitTechLevel.Value := unt.TechLevel;
@@ -3130,87 +3193,119 @@ var
 begin
   acg := Addr(art_control_groups[group_index]);
   acg.is_unit := is_unit;
+  // Store references to referenced controls
   acg.list_control := list_control;
   acg.se_directions := se_directions;
   acg.se_frames := se_frames;
+  // Create dynamic controls
   acg.view_image := TImage.Create(self);
   acg.view_image.Parent := container;
   acg.view_image.Width := IfThen(is_unit, 160, 128);
   acg.view_image.Height := 160;
   acg.view_image.Top := 16;
-  acg.frame_list := TListBox.Create(self);
-  acg.frame_list.Parent := container;
-  acg.frame_list.Width := 169;
-  acg.frame_list.Height := 342;
-  acg.frame_list.Top := 252;
-  acg.frame_list.Tag := group_index;
-  acg.frame_list.OnClick := ArtControlGroupFrameListClick;
+  acg.btn_view_palette := TButton.Create(self);
+  acg.btn_view_palette.Left := 0;
+  acg.btn_view_palette.Top := 180;
+  acg.btn_view_palette.Width := 57;
+  acg.btn_view_palette.Height := 21;
+  acg.btn_view_palette.Caption := 'View pal.';
+  acg.btn_view_palette.Tag := group_index;
+  acg.btn_view_palette.OnClick := ArtControlGroupViewPaletteClick;
+  acg.btn_view_palette.Parent := container;
+  acg.lbl_side_color := TLabel.Create(self);
+  acg.lbl_side_color.Left := 60;
+  acg.lbl_side_color.Top := 180;
+  acg.lbl_side_color.Caption := 'Side';
+  acg.lbl_side_color.Parent := container;
+  acg.se_side_color := TSpinEdit.Create(self);
+  acg.se_side_color.Left := 86;
+  acg.se_side_color.Top := 180;
+  acg.se_side_color.MinValue := 0;
+  acg.se_side_color.MaxValue := 7;
+  acg.se_side_color.Width := 37;
+  acg.se_side_color.Tag := group_index;
+  acg.se_side_color.Parent := container;
+  acg.se_side_color.OnChange := ArtControlGroupFrameListClick;
+  acg.cb_raw_image := TCheckBox.Create(self);
+  acg.cb_raw_image.Left := 130;
+  acg.cb_raw_image.Top := 180;
+  acg.cb_raw_image.Caption := 'Raw';
+  acg.cb_raw_image.Tag := group_index;
+  acg.cb_raw_image.Parent := container;
+  acg.cb_raw_image.OnClick := ArtControlGroupFrameListClick;
   acg.lbl_frame_width := TLabel.Create(self);
   acg.lbl_frame_width.Parent := container;
   acg.lbl_frame_width.Caption := 'Frame W:';
-  acg.lbl_frame_width.Top := 180;
+  acg.lbl_frame_width.Top := 204;
   acg.lbl_frame_height := TLabel.Create(self);
   acg.lbl_frame_height.Parent := container;
   acg.lbl_frame_height.Caption := 'Frame H:';
-  acg.lbl_frame_height.Top := 180;
+  acg.lbl_frame_height.Top := 204;
   acg.lbl_frame_height.Left := 88;
   acg.lbl_image_width := TLabel.Create(self);
   acg.lbl_image_width.Parent := container;
   acg.lbl_image_width.Caption := 'Image W:';
-  acg.lbl_image_width.Top := 204;
+  acg.lbl_image_width.Top := 228;
   acg.lbl_image_height := TLabel.Create(self);
   acg.lbl_image_height.Parent := container;
   acg.lbl_image_height.Caption := 'Image H:';
-  acg.lbl_image_height.Top := 204;
+  acg.lbl_image_height.Top := 228;
   acg.lbl_image_height.Left := 88;
   acg.lbl_image_offset_x := TLabel.Create(self);
   acg.lbl_image_offset_x.Parent := container;
   acg.lbl_image_offset_x.Caption := 'Offset X:';
-  acg.lbl_image_offset_x.Top := 228;
+  acg.lbl_image_offset_x.Top := 252;
   acg.lbl_image_offset_y := TLabel.Create(self);
   acg.lbl_image_offset_y.Parent := container;
   acg.lbl_image_offset_y.Caption := 'Offset Y:';
-  acg.lbl_image_offset_y.Top := 228;
+  acg.lbl_image_offset_y.Top := 252;
   acg.lbl_image_offset_y.Left := 88;
-  acg.lbl_art_size := TLabel.Create(self);
-  acg.lbl_art_size.Parent := container;
-  acg.lbl_art_size.Top := 596;
   acg.edit_frame_width := TEdit.Create(self);
   acg.edit_frame_width.Parent := container;
   acg.edit_frame_width.ReadOnly := true;
   acg.edit_frame_width.Width := 33;
-  acg.edit_frame_width.Top := 180;
+  acg.edit_frame_width.Top := 204;
   acg.edit_frame_width.Left := 48;
   acg.edit_frame_height := TEdit.Create(self);
   acg.edit_frame_height.Parent := container;
   acg.edit_frame_height.ReadOnly := true;
   acg.edit_frame_height.Width := 33;
-  acg.edit_frame_height.Top := 180;
+  acg.edit_frame_height.Top := 204;
   acg.edit_frame_height.Left := 136;
   acg.edit_image_width := TEdit.Create(self);
   acg.edit_image_width.Parent := container;
   acg.edit_image_width.ReadOnly := true;
   acg.edit_image_width.Width := 33;
-  acg.edit_image_width.Top := 204;
+  acg.edit_image_width.Top := 228;
   acg.edit_image_width.Left := 48;
   acg.edit_image_height := TEdit.Create(self);
   acg.edit_image_height.Parent := container;
   acg.edit_image_height.ReadOnly := true;
   acg.edit_image_height.Width := 33;
-  acg.edit_image_height.Top := 204;
+  acg.edit_image_height.Top := 228;
   acg.edit_image_height.Left := 136;
   acg.edit_image_offset_x := TEdit.Create(self);
   acg.edit_image_offset_x.Parent := container;
   acg.edit_image_offset_x.ReadOnly := true;
   acg.edit_image_offset_x.Width := 33;
-  acg.edit_image_offset_x.Top := 228;
+  acg.edit_image_offset_x.Top := 252;
   acg.edit_image_offset_x.Left := 48;
   acg.edit_image_offset_y := TEdit.Create(self);
   acg.edit_image_offset_y.Parent := container;
   acg.edit_image_offset_y.ReadOnly := true;
   acg.edit_image_offset_y.Width := 33;
-  acg.edit_image_offset_y.Top := 228;
+  acg.edit_image_offset_y.Top := 252;
   acg.edit_image_offset_y.Left := 136;
+  acg.frame_list := TListBox.Create(self);
+  acg.frame_list.Parent := container;
+  acg.frame_list.Width := 169;
+  acg.frame_list.Height := 318;
+  acg.frame_list.Top := 276;
+  acg.frame_list.Tag := group_index;
+  acg.frame_list.OnClick := ArtControlGroupFrameListClick;
+  acg.lbl_art_size := TLabel.Create(self);
+  acg.lbl_art_size.Parent := container;
+  acg.lbl_art_size.Top := 596;
   acg.btn_art_export := TButton.Create(self);
   acg.btn_art_export.Top := 612;
   acg.btn_art_export.Width := 81;
@@ -3314,6 +3409,32 @@ begin
   img_target.Canvas.Font.Color := clWhite;
   img_target.Canvas.TextOut((img_target.Width - img_target.Canvas.TextWidth(sign)) div 2, (img_target.Height - img_target.Canvas.TextHeight(sign)) div 2, 'No Image');
   img_target.Canvas.Font.Color := clBlack;
+end;
+
+procedure TStructuresEditor.draw_palette(image_index: integer);
+var
+  palette: TR16PalettePtr;
+  color: Cardinal;
+  i, j: integer;
+begin
+  palette := StructGraphics.get_structure_image_palette(image_index);
+  imgImagePalette.Canvas.Pen.Color := clBlack;
+  imgImagePalette.Canvas.Brush.Color := clBlack;
+  imgImagePalette.Canvas.Brush.Style := bsSolid;
+  if palette = nil then
+  begin
+    imgImagePalette.Canvas.Rectangle(0, 0, imgImagePalette.Width, imgImagePalette.Height);
+    exit;
+  end;
+  for j := 0 to 15 do
+    for i := 0 to 15 do
+      begin
+        color := StructGraphics.colour_16bto32b(palette.Colors[j * 16 + i]);
+        imgImagePalette.Canvas.Brush.Color := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
+        imgImagePalette.Canvas.Rectangle(i * 16, j * 16, i * 16 + 17, j * 16 + 17);
+      end;
+  pnImagePalette.Left := 368;
+  pnImagePalette.Visible := true;
 end;
 
 procedure TStructuresEditor.draw_building_tile_map(img_target: TImage; value: cardinal);
@@ -3545,18 +3666,18 @@ begin
   begin
     // Base frame
     image_index := Structures.building_art_image_indexes[building_template.BuildingArt];
-    draw_building_art_frame(imgBuilExpImage, image_index, false);
+    draw_building_art_frame(imgBuilExpImage, image_index, 0, false, false);
     // Damaged frame
     image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + Structures.templates.BuildingArtDirections[building_template.BuildingArt] + 1;
     header := StructGraphics.get_structure_image_header(image_index);
     if (header = nil) or (header.EntryType = 0) then
       // If damaged frame does not exist, use healthy frame
       image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + 1;
-    draw_building_art_frame(imgBuilExpImage, image_index, false);
+    draw_building_art_frame(imgBuilExpImage, image_index, 0, false, false);
   end;
   if building_template.BarrelArt <> -1 then
   begin
-    draw_building_art_frame(imgBuilExpImage, Structures.building_art_image_indexes[building_template.BarrelArt] + 1, false);
+    draw_building_art_frame(imgBuilExpImage, Structures.building_art_image_indexes[building_template.BarrelArt] + 1, 0, false, false);
   end;
   // Draw animations
   for i := 0 to seBuilExpNumAnimations.Value - 1 do
@@ -3580,14 +3701,15 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index: integer; draw_background: boolean);
+procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index, side: integer; raw, draw_background: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
+  raw_image: TBitmap;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, 0, false, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, side, false, false, was_already_loaded);
   if structure_image = nil then
     exit;
   header := StructGraphics.get_structure_image_header(image_index);
@@ -3604,22 +3726,32 @@ begin
   img_target.Canvas.Brush.Style := bsSolid;
   src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
   dest_rect := Rect(structure_image.offset_x, header.FrameHeight - structure_image.offset_y, structure_image.offset_x + structure_image.bitmap.Width, header.FrameHeight - structure_image.offset_y + structure_image.bitmap.Height);
-  img_target.Canvas.CopyMode := cmSrcAnd;
-  img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap_mask.Canvas, src_rect);
-  img_target.Canvas.CopyMode := cmSrcPaint;
-  img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
+  if not raw then
+  begin
+    img_target.Canvas.CopyMode := cmSrcAnd;
+    img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap_mask.Canvas, src_rect);
+    img_target.Canvas.CopyMode := cmSrcPaint;
+    img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
+  end else
+  begin
+    raw_image := StructGraphics.get_raw_structure_image(image_index);
+    img_target.Canvas.CopyMode := cmSrcCopy;
+    img_target.Canvas.CopyRect(dest_rect, raw_image.Canvas, src_rect);
+    raw_image.Destroy;
+  end;
   if not was_already_loaded then
     StructGraphics.clear_last_structure_image(image_index, false);
 end;
 
-procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index: integer);
+procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index, side: integer; raw: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
+  raw_image: TBitmap;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, 0, true, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, side, true, false, was_already_loaded);
   if structure_image = nil then
     exit;
   header := StructGraphics.get_structure_image_header(image_index);
@@ -3636,10 +3768,19 @@ begin
   img_target.Canvas.Brush.Style := bsSolid;
   src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
   dest_rect := Rect(structure_image.offset_x * 2 + 48, structure_image.offset_y * 2 + 48, structure_image.offset_x * 2 + 48 + structure_image.bitmap.Width * 2, structure_image.offset_y * 2 + 48 + structure_image.bitmap.Height * 2);
-  img_target.Canvas.CopyMode := cmSrcAnd;
-  img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap_mask.Canvas, src_rect);
-  img_target.Canvas.CopyMode := cmSrcPaint;
-  img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
+  if not raw then
+  begin
+    img_target.Canvas.CopyMode := cmSrcAnd;
+    img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap_mask.Canvas, src_rect);
+    img_target.Canvas.CopyMode := cmSrcPaint;
+    img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
+  end else
+  begin
+    raw_image := StructGraphics.get_raw_structure_image(image_index);
+    img_target.Canvas.CopyMode := cmSrcCopy;
+    img_target.Canvas.CopyRect(dest_rect, raw_image.Canvas, src_rect);
+    raw_image.Destroy;
+  end;
   if not was_already_loaded then
     StructGraphics.clear_last_structure_image(image_index, false);
 end;

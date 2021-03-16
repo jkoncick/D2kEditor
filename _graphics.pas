@@ -114,6 +114,8 @@ type
     house_color_pixel_shades: array of byte;
     house_color_pixel_count_total: integer;
 
+    logpalette: PLogPalette;
+
     // Misc. objects graphics related data
     graphics_misc_objects: TBitmap;
     graphics_misc_objects_mask: TBitmap;
@@ -121,6 +123,7 @@ type
   public
     // General procedures
     procedure init;
+    function colour_16bto32b(colour: word): cardinal;
 
     // COLOURS.BIN related procedures
     procedure load_colours_bin;
@@ -134,6 +137,8 @@ type
     procedure recolor_structure_image(image_index, house_index: integer);
     function get_structure_image(entry_index, house_index: integer; is_unit, is_stealth: boolean; var was_already_loaded: boolean): TStructureImagePtr;
     function get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
+    function get_structure_image_palette(entry_index: integer): TR16PalettePtr;
+    function get_raw_structure_image(entry_index: integer): TBitmap;
     // Misc. objects related procedures
     procedure load_graphics_misc_objects;
 
@@ -148,6 +153,7 @@ type
     procedure swap_image_entries(src_entry_index, dest_entry_index, src_num_entries, dest_num_entries: integer);
     procedure export_image_entries(filename: string; entry_index: integer; num_entries: integer);
     function import_image_entries(filename: string; entry_index: integer; num_entries: integer): boolean;
+    procedure export_single_image(filename: string; entry_index: integer);
   end;
 
 var
@@ -159,11 +165,22 @@ uses Forms, SysUtils, _settings, _dispatcher, _missionini, Math;
 
 procedure TStructGraphics.init;
 begin
+  GetMem(logpalette, Sizeof(TLogPalette) + Sizeof(TPaletteEntry) * 255);
+  logpalette.palversion := $300;
+  logpalette.palnumentries := 256;
   graphics_misc_objects := TBitmap.Create;
   graphics_misc_objects_mask := TBitmap.Create;
   load_colours_bin;
   load_data_r16(false);
   load_graphics_misc_objects;
+end;
+
+function TStructGraphics.colour_16bto32b(colour: word): cardinal;
+begin
+  result := 0;
+  result := result or (((colour and $7C00) shr 10) shl 19) or (((colour and $7C00) shr 12) shl 16);
+  result := result or (((colour and $03E0) shr  5) shl 11) or (((colour and $03E0) shr  7) shl  8);
+  result := result or (((colour and $001F) shr  0) shl  3) or (((colour and $001F) shr  2) shl  0);
 end;
 
 procedure TStructGraphics.load_colours_bin;
@@ -199,10 +216,7 @@ begin
   load_binary_file(tmp_filename, colours, sizeof(colours));
   for i := 0 to CNT_PLAYERS - 1 do
   begin
-    color := 0;
-    color := color or (((colours[i, 8] and $7C00) shr 10) shl 19) or (((colours[i, 8] and $7C00) shr 12) shl 16);
-    color := color or (((colours[i, 8] and $03E0) shr  5) shl 11) or (((colours[i, 8] and $03E0) shr  7) shl  8);
-    color := color or (((colours[i, 8] and $001F) shr  0) shl  3) or (((colours[i, 8] and $001F) shr  2) shl  0);
+    color := colour_16bto32b(colours[i, 8]);
     player_colors[i] := color;
     player_colors_inv[i] := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
   end;
@@ -353,8 +367,6 @@ var
   header: TR16EntryHeaderPtr;
   image_data_8bpp: TByteArrayPtr;
   image_data_16bpp: TWordArrayPtr;
-  palette_origin_index: integer;
-  palette_origin_header: TR16EntryHeaderPtr;
   palette: TR16PalettePtr;
   width, height, padded_width: Integer;
   tmp_bitmap, tmp_bitmap_mask: TBitmap;
@@ -388,12 +400,8 @@ begin
   width := header.ImageWidth;
   height := header.ImageHeight;
   padded_width := width + (width mod 2);
-  // Get palette (go back to entry with referenced palette if needed)
-  palette_origin_index := entry_index;
-  while data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index]] <> 1 do
-    dec(palette_origin_index);
-  palette_origin_header := Addr(data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index]]);
-  palette := Addr(data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index] + sizeof(TR16EntryHeader) + palette_origin_header.ImageWidth * palette_origin_header.ImageHeight]);
+  // Get palette
+  palette := get_structure_image_palette(entry_index);
   // Create bitmap for internal image storage
   tmp_bitmap := TBitmap.Create;
   tmp_bitmap.Width := width;
@@ -545,6 +553,96 @@ begin
     result := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]])
   else
     result := nil;
+end;
+
+function TStructGraphics.get_structure_image_palette(entry_index: integer): TR16PalettePtr;
+var
+  palette_origin_index: integer;
+  palette_origin_header: TR16EntryHeaderPtr;
+begin
+  result := nil;
+  // Check if this image is empty
+  if data_r16_file_contents[data_r16_file_entry_positions[entry_index]] = 0 then
+    exit;
+  // Find palette for this image
+  palette_origin_index := entry_index;
+  while data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index]] <> 1 do
+    dec(palette_origin_index);
+  palette_origin_header := Addr(data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index]]);
+  result := Addr(data_r16_file_contents[data_r16_file_entry_positions[palette_origin_index] + sizeof(TR16EntryHeader) + palette_origin_header.ImageWidth * palette_origin_header.ImageHeight]);
+end;
+
+function TStructGraphics.get_raw_structure_image(entry_index: integer): TBitmap;
+var
+  header: TR16EntryHeaderPtr;
+  image_data_8bpp: TByteArrayPtr;
+  image_data_16bpp: TWordArrayPtr;
+  palette: TR16PalettePtr;
+  width, height, padded_width: Integer;
+  tmp_bitmap: TBitmap;
+  tmp_bitmap_data_8bpp: TByteArrayPtr;
+  tmp_bitmap_data_16bpp: TWordArrayPtr;
+  i, x, y, image_pos, bitmap_pos: integer;
+  colour: Cardinal;
+  palette_handle: HPALETTE;
+begin
+  result := nil;
+  // Check if this image is empty
+  if data_r16_file_contents[data_r16_file_entry_positions[entry_index]] = 0 then
+    exit;
+  // Load header and dimensions
+  header := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]]);
+  width := header.ImageWidth;
+  height := header.ImageHeight;
+  // Get palette
+  palette := get_structure_image_palette(entry_index);
+  // Create bitmap for internal image storage
+  tmp_bitmap := TBitmap.Create;
+  tmp_bitmap.Width := width;
+  tmp_bitmap.Height := height;
+  if header.BitsPerPixel = 8 then
+  begin
+    image_data_8bpp := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index] + sizeof(TR16EntryHeader)]);
+    padded_width := ((width + 3) div 4) * 4;
+    // Init palette
+    for i := 0 to 255 do
+    begin
+      colour := colour_16bto32b(palette.colors[i]);
+      logpalette.palPalEntry[i].peRed := (colour shr 16) and $ff;
+      logpalette.palPalEntry[i].peGreen := (colour shr 8) and $ff;
+      logpalette.palPalEntry[i].peBlue := (colour shr 0) and $ff;
+    end;
+    palette_handle := CreatePalette(logpalette^);
+    tmp_bitmap.PixelFormat := pf8bit;
+    tmp_bitmap.Palette := palette_handle;
+    DeleteObject(palette_handle);
+    tmp_bitmap_data_8bpp := tmp_bitmap.ScanLine[height - 1];
+    // Load image pixels
+    image_pos := 0;
+    for y := 0 to height - 1 do
+      for x := 0 to width - 1 do
+      begin
+        bitmap_pos := (height - y - 1) * padded_width + x;
+        tmp_bitmap_data_8bpp[bitmap_pos] := image_data_8bpp[image_pos];
+        inc(image_pos);
+      end;
+  end else
+  begin
+    image_data_16bpp := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index] + sizeof(TR16EntryHeader)]);
+    padded_width := width + (width mod 2);
+    tmp_bitmap.PixelFormat := pf15bit;
+    tmp_bitmap_data_16bpp := tmp_bitmap.ScanLine[height - 1];
+    // Load image pixels
+    image_pos := 0;
+    for y := 0 to height - 1 do
+      for x := 0 to width - 1 do
+      begin
+        bitmap_pos := (height - y - 1) * padded_width + x;
+        tmp_bitmap_data_16bpp[bitmap_pos] := image_data_16bpp[image_pos];
+        inc(image_pos);
+      end;
+  end;
+  result := tmp_bitmap;
 end;
 
 procedure TStructGraphics.load_graphics_misc_objects;
@@ -765,6 +863,17 @@ begin
   process_data_r16_entries;
   data_r16_modified := true;
   result := true;
+end;
+
+procedure TStructGraphics.export_single_image(filename: string; entry_index: integer);
+var
+  tmp_bitmap: TBitmap;
+begin
+  tmp_bitmap := get_raw_structure_image(entry_index);
+  if tmp_bitmap = nil then
+    exit;
+  tmp_bitmap.SaveToFile(filename);
+  tmp_bitmap.Destroy;
 end;
 
 end.
