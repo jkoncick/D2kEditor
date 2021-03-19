@@ -154,6 +154,8 @@ type
     procedure export_image_entries(filename: string; entry_index: integer; num_entries: integer);
     function import_image_entries(filename: string; entry_index: integer; num_entries: integer): boolean;
     procedure export_single_image(filename: string; entry_index: integer);
+    procedure erase_single_image(entry_index: integer);
+    function import_single_image(filename: string; entry_index: integer; is_icon: boolean): boolean;
   end;
 
 var
@@ -874,6 +876,94 @@ begin
     exit;
   tmp_bitmap.SaveToFile(filename);
   tmp_bitmap.Destroy;
+end;
+
+procedure TStructGraphics.erase_single_image(entry_index: integer);
+var
+  zero_byte: byte;
+begin
+  zero_byte := 0;
+  modify_image_data(entry_index, zero_byte, 1);
+end;
+
+function TStructGraphics.import_single_image(filename: string; entry_index: integer; is_icon: boolean): boolean;
+var
+  tmp_bitmap: TBitmap;
+  buffer: array of byte;
+  header, orig_header: TR16EntryHeaderPtr;
+  image_data: TByteArrayPtr;
+  palette: TR16PalettePtr;
+  i, x, y, image_pos, bitmap_pos: integer;
+  padded_width: integer;
+  tmp_bitmap_data: TByteArrayPtr;
+  color: word;
+begin
+  result := false;
+  tmp_bitmap := TBitmap.Create;
+  tmp_bitmap.LoadFromFile(filename);
+  // Perform validation
+  if is_icon and ((tmp_bitmap.Width <> 60) or (tmp_bitmap.Height <> 47)) then
+  begin
+    Application.MessageBox('Icon image must have exact size 60 x 47 pixels.', 'Cannot import image', MB_ICONERROR or MB_OK);
+    tmp_bitmap.Destroy;
+    exit;
+  end;
+  if tmp_bitmap.PixelFormat <> pf8bit then
+  begin
+    Application.MessageBox('Image must be in 8bpp (256-color paletted) format.', 'Cannot import image', MB_ICONERROR or MB_OK);
+    tmp_bitmap.Destroy;
+    exit;
+  end;
+  // Convert image into game format
+  SetLength(buffer, sizeof(TR16EntryHeader) + tmp_bitmap.Width * tmp_bitmap.Height + sizeof(TR16Palette));
+  header := Addr(buffer[0]);
+  image_data := Addr(buffer[sizeof(TR16EntryHeader)]);
+  palette := Addr(buffer[sizeof(TR16EntryHeader) + tmp_bitmap.Width * tmp_bitmap.Height]);
+  // Get original header
+  i := entry_index;
+  repeat
+    orig_header := get_structure_image_header(i);
+    dec(i);
+  until orig_header.EntryType <> 0;
+  // Fill headers
+  header.EntryType := 1;
+  header.ImageWidth := tmp_bitmap.Width;
+  header.ImageHeight := tmp_bitmap.Height;
+  header.ImageOffsetX := orig_header.ImageOffsetX;
+  header.ImageOffsetY := orig_header.ImageOffsetY;
+  header.ImageHandle := orig_header.ImageHandle;
+  header.PaletteHandle := orig_header.PaletteHandle;
+  header.BitsPerPixel := 8;
+  header.FrameHeight := orig_header.FrameHeight;
+  header.FrameWidth := orig_header.FrameWidth;
+  palette.Memory := $00111111;
+  palette.PaletteHandle2 := orig_header.PaletteHandle;
+  // Fill image data
+  padded_width := ((tmp_bitmap.Width + 3) div 4) * 4;
+  tmp_bitmap_data := tmp_bitmap.ScanLine[tmp_bitmap.Height - 1];
+  image_pos := 0;
+  for y := 0 to tmp_bitmap.Height - 1 do
+    for x := 0 to tmp_bitmap.Width - 1 do
+    begin
+      bitmap_pos := (tmp_bitmap.Height - y - 1) * padded_width + x;
+      image_data[image_pos] := tmp_bitmap_data[bitmap_pos];
+      inc(image_pos);
+    end;
+  // Fill palette
+  GetPaletteEntries(tmp_bitmap.Palette, 0, 256, logpalette.palPalEntry[0]);
+  for i := 0 to 255 do
+  begin
+    color := 0;
+    color := color or (logpalette.palPalEntry[i].peBlue  shr 3) shl 0;
+    color := color or (logpalette.palPalEntry[i].peGreen shr 3) shl 5;
+    color := color or (logpalette.palPalEntry[i].peRed   shr 3) shl 10;
+    palette.Colors[i] := color;
+  end;
+  // Store image data
+  modify_image_data(entry_index, buffer[0], Length(buffer));
+  tmp_bitmap.Destroy;
+  SetLength(buffer, 0);
+  result := true;
 end;
 
 end.

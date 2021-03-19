@@ -135,6 +135,9 @@ type
     lbl_side_color: TLabel;
     se_side_color: TSpinEdit;
     cb_raw_image: TCheckBox;
+    btn_image_export: TButton;
+    btn_image_erase: TButton;
+    btn_image_import: TButton;
     lbl_frame_width: TLabel;
     lbl_frame_height: TLabel;
     lbl_image_width: TLabel;
@@ -145,8 +148,8 @@ type
     edit_frame_height: TEdit;
     edit_image_width: TEdit;
     edit_image_height: TEdit;
-    edit_image_offset_x: TEdit;
-    edit_image_offset_y: TEdit;
+    se_image_offset_x: TSpinEdit;
+    se_image_offset_y: TSpinEdit;
     frame_list: TListBox;
     lbl_art_size: TLabel;
     btn_art_add: TButton;
@@ -563,6 +566,8 @@ type
     Launchwithsettings1: TMenuItem;
     pnImagePalette: TPanel;
     imgImagePalette: TImage;
+    ImageImportDialog: TOpenDialog;
+    ImageExportDialog: TSaveDialog;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -648,27 +653,31 @@ type
     procedure btnSoundRsAddNewClick(Sender: TObject);
     procedure btnSoundRsRemoveLastClick(Sender: TObject);
     // Item control group events
-    procedure ItemControlGroupAddClick(Sender: TObject);
-    procedure ItemControlGroupRemoveClick(Sender: TObject);
-    procedure ItemControlGroupRenameClick(Sender: TObject);
-    procedure ItemControlGroupExportClick(Sender: TObject);
-    procedure ItemControlGroupImportClick(Sender: TObject);
-    procedure ItemControlGroupCopyClick(Sender: TObject);
-    procedure ItemControlGroupPasteClick(Sender: TObject);
-    procedure ItemControlGroupMoveUpClick(Sender: TObject);
-    procedure ItemControlGroupMoveDownClick(Sender: TObject);
-    procedure ItemControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure IcgAddClick(Sender: TObject);
+    procedure IcgRemoveClick(Sender: TObject);
+    procedure IcgRenameClick(Sender: TObject);
+    procedure IcgExportClick(Sender: TObject);
+    procedure IcgImportClick(Sender: TObject);
+    procedure IcgCopyClick(Sender: TObject);
+    procedure IcgPasteClick(Sender: TObject);
+    procedure IcgMoveUpClick(Sender: TObject);
+    procedure IcgMoveDownClick(Sender: TObject);
+    procedure IcgListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     // Art control group events
-    procedure ArtControlGroupFrameListClick(Sender: TObject);
-    procedure ArtControlGroupViewPaletteClick(Sender: TObject);
-    procedure ArtControlGroupAddClick(Sender: TObject);
-    procedure ArtControlGroupRemoveClick(Sender: TObject);
-    procedure ArtControlGroupModifyClick(Sender: TObject);
-    procedure ArtControlGroupExportClick(Sender: TObject);
-    procedure ArtControlGroupImportClick(Sender: TObject);
-    procedure ArtControlGroupMoveUpClick(Sender: TObject);
-    procedure ArtControlGroupMoveDownClick(Sender: TObject);
-    procedure ArtControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure AcgFrameListClick(Sender: TObject);
+    procedure AcgViewPaletteClick(Sender: TObject);
+    procedure AcgImagePropertyChange(Sender: TObject);
+    procedure AcgExportImageClick(Sender: TObject);
+    procedure AcgEraseImageClick(Sender: TObject);
+    procedure AcgImportImageClick(Sender: TObject);
+    procedure AcgAddArtClick(Sender: TObject);
+    procedure AcgRemoveArtClick(Sender: TObject);
+    procedure AcgModifyArtClick(Sender: TObject);
+    procedure AcgExportArtClick(Sender: TObject);
+    procedure AcgImportArtClick(Sender: TObject);
+    procedure AcgMoveUpArtClick(Sender: TObject);
+    procedure AcgMoveDownArtClick(Sender: TObject);
+    procedure AcgArtListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure imgImagePaletteClick(Sender: TObject);
   private
     // Dynamic controls
@@ -725,6 +734,7 @@ type
     // Art control group procedures
     procedure create_art_control_group(group_index: integer; is_unit: boolean; list_control: TListBox; se_directions, se_frames: TSpinEdit; container, container2: TPanel);
     procedure fill_art_control_group_frame_list(group_index: integer; first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
+    procedure update_art_control_group_frame_list(group_index: integer);
     // Drawing procedures
     procedure draw_no_image_sign(img_target: TImage);
     procedure draw_palette(image_index: integer);
@@ -949,6 +959,7 @@ begin
   Structures.load_speed_bin(true);
   StructGraphics.load_data_r16(true);
   Sounds.load_sound_rs(true);
+  pnImagePalette.Visible := false;
 end;
 
 procedure TStructuresEditor.PageControlChanging(Sender: TObject; var AllowChange: Boolean);
@@ -982,10 +993,26 @@ begin
   if lbBuildingList.ItemIndex = -1 then
     exit;
   image_index := Structures.first_building_icon_image_index + lbBuildingList.ItemIndex;
-  if Button = mbMiddle then
-    draw_palette(image_index);
-  if Button = mbRight then
-    StructGraphics.export_single_image(current_dir + '\test.bmp', image_index);
+  if Button = mbLeft then
+  begin
+    if ImageImportDialog.Execute then
+    begin
+      if StructGraphics.import_single_image(ImageImportDialog.FileName, image_index, true) then
+      begin
+        store_building_data;
+        fill_building_data;
+        fill_status_bar;
+      end;
+    end;
+  end
+  else if Button = mbMiddle then
+    draw_palette(image_index)
+  else if Button = mbRight then
+  begin
+    ImageExportDialog.FileName := Structures.templates.BuildingNameStrings[lbBuildingList.ItemIndex];
+    if ImageExportDialog.Execute then
+      StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+  end;
 end;
 
 procedure TStructuresEditor.imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -1158,10 +1185,26 @@ begin
   if lbUnitList.ItemIndex = -1 then
     exit;
   image_index := Structures.first_unit_icon_image_index + lbUnitList.ItemIndex;
-  if Button = mbMiddle then
-    draw_palette(image_index);
-  if Button = mbRight then
-    StructGraphics.export_single_image(current_dir + '\test.bmp', image_index);
+  if Button = mbLeft then
+  begin
+    if ImageImportDialog.Execute then
+    begin
+      if StructGraphics.import_single_image(ImageImportDialog.FileName, image_index, true) then
+      begin
+        store_unit_data;
+        fill_unit_data;
+        fill_status_bar;
+      end;
+    end;
+  end
+  else if Button = mbMiddle then
+    draw_palette(image_index)
+  else if Button = mbRight then
+  begin
+    ImageExportDialog.FileName := Structures.templates.UnitNameStrings[lbUnitList.ItemIndex];
+    if ImageExportDialog.Execute then
+      StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+  end;
 end;
 
 procedure TStructuresEditor.edUnitFlagsChange(Sender: TObject);
@@ -1258,7 +1301,7 @@ begin
   header := StructGraphics.get_structure_image_header(first_image_index + 1);
   if (header = nil) or (header.EntryType = 0) then
     selected_frame := 0;
-  fill_art_control_group_frame_list(ART_BUILDING, first_image_index, directions * 2 + 1, tmp_strings, selected_frame);
+  fill_art_control_group_frame_list(ART_BUILDING, first_image_index, directions * 2 + 1, tmp_strings, IfThen(sender <> nil, selected_frame, art_control_groups[ART_BUILDING].frame_list.ItemIndex));
   tmp_strings.Destroy;
   seBuildingArtDirections.Value := directions;
 end;
@@ -1276,12 +1319,12 @@ begin
 
   first_image_index := Structures.building_animation_image_indexes[index];
   num_frames := Structures.templates.BuildingAnimationFrames[index];
-  fill_art_control_group_frame_list(ART_BUILDING_ANIMATION, first_image_index, num_frames, nil, 0);
+  fill_art_control_group_frame_list(ART_BUILDING_ANIMATION, first_image_index, num_frames, nil, IfThen(sender <> nil, 0, art_control_groups[ART_BUILDING_ANIMATION].frame_list.ItemIndex));
   seBuildingAnimationFrames.Value := num_frames;
 
   first_image_index := Structures.buildup_art_image_indexes[index];
   num_frames := Structures.templates.BuildupArtFrames[index];
-  fill_art_control_group_frame_list(ART_BUILDUP, first_image_index, num_frames, nil, 0);
+  fill_art_control_group_frame_list(ART_BUILDUP, first_image_index, num_frames, nil, IfThen(sender <> nil, 0, art_control_groups[ART_BUILDUP].frame_list.ItemIndex));
   seBuildupArtFrames.Value := num_frames;
 end;
 
@@ -1359,7 +1402,7 @@ begin
     for j := 0 to directions - 1 do
       tmp_strings.Add(Format('Frame %d  Dir %d ', [i, j]));
 
-  fill_art_control_group_frame_list(ART_UNIT, first_image_index, frames * directions, tmp_strings, 0);
+  fill_art_control_group_frame_list(ART_UNIT, first_image_index, frames * directions, tmp_strings, IfThen(sender <> nil, 0, art_control_groups[ART_UNIT].frame_list.ItemIndex));
   tmp_strings.Destroy;
   seUnitArtAnimationFrames.Value := frames;
   seUnitArtDirectionFrames.Value := directions;
@@ -1431,7 +1474,7 @@ begin
     exit;
   art_control_groups[ART_PROJECTILE].last_item_index := index;
 
-  fill_art_control_group_frame_list(ART_PROJECTILE, Structures.projectile_art_image_indexes[index], Structures.templates.ProjectileArtDirections[index], nil, 0);
+  fill_art_control_group_frame_list(ART_PROJECTILE, Structures.projectile_art_image_indexes[index], Structures.templates.ProjectileArtDirections[index], nil, IfThen(sender <> nil, 0, art_control_groups[ART_PROJECTILE].frame_list.ItemIndex));
   seProjectileArtDirections.Value := Structures.templates.ProjectileArtDirections[index];
 end;
 
@@ -1489,7 +1532,7 @@ begin
     exit;
   art_control_groups[ART_ANIMATION].last_item_index := index;
 
-  fill_art_control_group_frame_list(ART_ANIMATION, Structures.animation_art_image_indexes[index], Structures.templates.AnimationArtFrames[index], nil, 0);
+  fill_art_control_group_frame_list(ART_ANIMATION, Structures.animation_art_image_indexes[index], Structures.templates.AnimationArtFrames[index], nil, IfThen(sender <> nil, 0, art_control_groups[ART_ANIMATION].frame_list.ItemIndex));
   seAnimationArtFrames.Value := Structures.templates.AnimationArtFrames[index];
 end;
 
@@ -1597,13 +1640,13 @@ begin
   if index = -1 then
   begin
     lbOtherArtList.ItemIndex := 0;
-    lbOtherArtListClick(nil);
+    lbOtherArtListClick(lbOtherArtList);
     exit;
   end;
   frame_index := 0;
   for i := 0 to index - 1 do
     inc(frame_index, other_art_frames[i]);
-  fill_art_control_group_frame_list(ART_OTHER, frame_index, other_art_frames[index], nil, 0);
+  fill_art_control_group_frame_list(ART_OTHER, frame_index, other_art_frames[index], nil, IfThen(sender <> nil, 0, art_control_groups[ART_OTHER].frame_list.ItemIndex));
 end;
 
 procedure TStructuresEditor.rgTechposTechLevelClick(Sender: TObject);
@@ -1765,7 +1808,7 @@ begin
   fill_data(fdaNone);
 end;
 
-procedure TStructuresEditor.ItemControlGroupAddClick(Sender: TObject);
+procedure TStructuresEditor.IcgAddClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1777,7 +1820,7 @@ begin
     fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.ItemControlGroupRemoveClick(Sender: TObject);
+procedure TStructuresEditor.IcgRemoveClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1789,7 +1832,7 @@ begin
     fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.ItemControlGroupRenameClick(Sender: TObject);
+procedure TStructuresEditor.IcgRenameClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1804,7 +1847,7 @@ begin
   fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.ItemControlGroupExportClick(Sender: TObject);
+procedure TStructuresEditor.IcgExportClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1824,7 +1867,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.ItemControlGroupImportClick(Sender: TObject);
+procedure TStructuresEditor.IcgImportClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1845,7 +1888,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.ItemControlGroupCopyClick(Sender: TObject);
+procedure TStructuresEditor.IcgCopyClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1858,7 +1901,7 @@ begin
   Structures.copy_item(group_index, icg.list_control.ItemIndex);
 end;
 
-procedure TStructuresEditor.ItemControlGroupPasteClick(Sender: TObject);
+procedure TStructuresEditor.IcgPasteClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1871,7 +1914,7 @@ begin
     fill_data(fdaAll);
 end;
 
-procedure TStructuresEditor.ItemControlGroupMoveUpClick(Sender: TObject);
+procedure TStructuresEditor.IcgMoveUpClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1886,7 +1929,7 @@ begin
   fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.ItemControlGroupMoveDownClick(Sender: TObject);
+procedure TStructuresEditor.IcgMoveDownClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -1901,7 +1944,7 @@ begin
   fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.ItemControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TStructuresEditor.IcgListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   group_index: integer;
   can_export_import: boolean;
@@ -1911,29 +1954,31 @@ begin
   can_export_import := Structures.item_type_pointers[group_index].export_data_size <> 0;
   matched := true;
   case key of
-    45: ItemControlGroupAddClick(Sender);
-    46: ItemControlGroupRemoveClick(Sender);
-    69: if can_export_import then ItemControlGroupExportClick(Sender);
-    73: if can_export_import then ItemControlGroupImportClick(Sender);
-    67: if can_export_import then ItemControlGroupCopyClick(Sender);
-    86: if can_export_import then ItemControlGroupPasteClick(Sender);
-    33: ItemControlGroupMoveUpClick(Sender);
-    34: ItemControlGroupMoveDownClick(Sender);
+    45: IcgAddClick(Sender);
+    46: IcgRemoveClick(Sender);
+    69: if can_export_import then IcgExportClick(Sender);
+    73: if can_export_import then IcgImportClick(Sender);
+    67: if can_export_import then IcgCopyClick(Sender);
+    86: if can_export_import then IcgPasteClick(Sender);
+    33: IcgMoveUpClick(Sender);
+    34: IcgMoveDownClick(Sender);
     else matched := false;
   end;
   if matched then
     key := 0;
 end;
 
-procedure TStructuresEditor.ArtControlGroupFrameListClick(Sender: TObject);
+procedure TStructuresEditor.AcgFrameListClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
   image_index: integer;
   header: TR16EntryHeaderPtr;
+  image_not_empty: boolean;
 begin
   group_index := (Sender as TControl).Tag;
   acg := Addr(art_control_groups[group_index]);
+  loading := true;
   image_index := 0;
   header := nil;
   if acg.frame_list.ItemIndex <> -1 then
@@ -1941,7 +1986,8 @@ begin
     image_index := acg.first_image_index + acg.frame_list.ItemIndex;
     header := StructGraphics.get_structure_image_header(image_index);
   end;
-  if (header <> nil) and (header.EntryType <> 0) then
+  image_not_empty := (header <> nil) and (header.EntryType <> 0);
+  if image_not_empty then
   begin
     if acg.is_unit then
       draw_unit_art_frame(acg.view_image, image_index, acg.se_side_color.Value, acg.cb_raw_image.Checked)
@@ -1951,8 +1997,8 @@ begin
     acg.edit_frame_height.Text := inttostr(header.FrameHeight);
     acg.edit_image_width.Text := inttostr(header.ImageWidth);
     acg.edit_image_height.Text := inttostr(header.ImageHeight);
-    acg.edit_image_offset_x.Text := inttostr(IfThen(acg.is_unit, header.ImageOffsetX, header.ImageOffsetX * -1));
-    acg.edit_image_offset_y.Text := inttostr(header.ImageOffsetY);
+    acg.se_image_offset_x.Value := IfThen(acg.is_unit, header.ImageOffsetX, header.ImageOffsetX * -1);
+    acg.se_image_offset_y.Value := header.ImageOffsetY;
   end else
   begin
     draw_no_image_sign(acg.view_image);
@@ -1960,14 +2006,19 @@ begin
     acg.edit_frame_height.Text := '';
     acg.edit_image_width.Text := '';
     acg.edit_image_height.Text := '';
-    acg.edit_image_offset_x.Text := '';
-    acg.edit_image_offset_y.Text := '';
+    acg.se_image_offset_x.Text := '';
+    acg.se_image_offset_y.Text := '';
   end;
+  acg.edit_frame_width.Enabled := image_not_empty;
+  acg.edit_frame_height.Enabled := image_not_empty;
+  acg.se_image_offset_x.Enabled := image_not_empty;
+  acg.se_image_offset_y.Enabled := image_not_empty;
   if pnImagePalette.Visible then
-    ArtControlGroupViewPaletteClick(Sender);
+    AcgViewPaletteClick(Sender);
+  loading := false;
 end;
 
-procedure TStructuresEditor.ArtControlGroupViewPaletteClick(Sender: TObject);
+procedure TStructuresEditor.AcgViewPaletteClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -1979,7 +2030,80 @@ begin
   draw_palette(acg.first_image_index + acg.frame_list.ItemIndex);
 end;
 
-procedure TStructuresEditor.ArtControlGroupAddClick(Sender: TObject);
+procedure TStructuresEditor.AcgImagePropertyChange(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+  header: TR16EntryHeaderPtr;
+begin
+  if loading then
+    exit;
+  group_index := (Sender as TControl).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if acg.frame_list.ItemIndex = -1 then
+    exit;
+  header := StructGraphics.get_structure_image_header(acg.first_image_index + acg.frame_list.ItemIndex);
+  if (header = nil) or (header.EntryType = 0) then
+    exit;
+  header.FrameWidth := strtointdef(acg.edit_frame_width.Text, 0);
+  header.FrameHeight := strtointdef(acg.edit_frame_height.Text, 0);
+  header.ImageOffsetX := IfThen(acg.is_unit, acg.se_image_offset_x.Value, acg.se_image_offset_x.Value * -1);
+  header.ImageOffsetY := acg.se_image_offset_y.Value;
+  StructGraphics.data_r16_modified := true;
+  AcgFrameListClick(Sender);
+  fill_status_bar;
+end;
+
+procedure TStructuresEditor.AcgExportImageClick(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+  image_index: integer;
+begin
+  group_index := (Sender as TControl).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if acg.frame_list.ItemIndex = -1 then
+    exit;
+  image_index := acg.first_image_index + acg.frame_list.ItemIndex;
+  ImageExportDialog.FileName := 'Image_' + inttostr(image_index);
+  if ImageExportDialog.Execute then
+    StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+end;
+
+procedure TStructuresEditor.AcgEraseImageClick(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+begin
+  group_index := (Sender as TControl).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if acg.frame_list.ItemIndex = -1 then
+    exit;
+  StructGraphics.erase_single_image(acg.first_image_index + acg.frame_list.ItemIndex);
+  update_art_control_group_frame_list(group_index);
+  fill_status_bar;
+end;
+
+procedure TStructuresEditor.AcgImportImageClick(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+begin
+  group_index := (Sender as TControl).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if acg.frame_list.ItemIndex = -1 then
+    exit;
+  if ImageImportDialog.Execute then
+  begin
+    if StructGraphics.import_single_image(ImageImportDialog.FileName, acg.first_image_index + acg.frame_list.ItemIndex, false) then
+    begin
+      update_art_control_group_frame_list(group_index);
+      fill_status_bar;
+    end;
+  end;
+end;
+
+procedure TStructuresEditor.AcgAddArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -1997,13 +2121,13 @@ begin
     fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.ArtControlGroupRemoveClick(Sender: TObject);
+procedure TStructuresEditor.AcgRemoveArtClick(Sender: TObject);
 begin
   if Structures.remove_last_art((Sender as TComponent).Tag) then
     fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.ArtControlGroupModifyClick(Sender: TObject);
+procedure TStructuresEditor.AcgModifyArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2021,7 +2145,7 @@ begin
   fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.ArtControlGroupExportClick(Sender: TObject);
+procedure TStructuresEditor.AcgExportArtClick(Sender: TObject);
 var
   group_index: integer;
   i: integer;
@@ -2074,7 +2198,7 @@ begin
     StructGraphics.export_image_entries(ArtExportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count);
 end;
 
-procedure TStructuresEditor.ArtControlGroupImportClick(Sender: TObject);
+procedure TStructuresEditor.AcgImportArtClick(Sender: TObject);
 var
   group_index: integer;
 begin
@@ -2083,20 +2207,14 @@ begin
   if ArtImportDialog.Execute then
   begin
     if StructGraphics.import_image_entries(ArtImportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count) then
-      case group_index of
-        ART_BUILDING: lbBuildingArtListClick(nil);
-        ART_BUILDING_ANIMATION: lbBuildingAnimationArtListClick(nil);
-        ART_BUILDUP: lbBuildingAnimationArtListClick(nil);
-        ART_UNIT: lbUnitArtListClick(nil);
-        ART_PROJECTILE: lbProjectileArtListClick(nil);
-        ART_ANIMATION: lbAnimationArtListClick(nil);
-        ART_OTHER: lbOtherArtListClick(nil);
-      end;
-    fill_status_bar;
+    begin
+      update_art_control_group_frame_list(group_index);
+      fill_status_bar;
+    end;
   end;
 end;
 
-procedure TStructuresEditor.ArtControlGroupMoveUpClick(Sender: TObject);
+procedure TStructuresEditor.AcgMoveUpArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2110,7 +2228,7 @@ begin
   fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.ArtControlGroupMoveDownClick(Sender: TObject);
+procedure TStructuresEditor.AcgMoveDownArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2124,7 +2242,7 @@ begin
   fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.ArtControlGroupListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TStructuresEditor.AcgArtListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2134,12 +2252,12 @@ begin
   acg := Addr(art_control_groups[group_index]);
   matched := true;
   case key of
-    45: if acg.btn_art_add <> nil then       ArtControlGroupAddClick(Sender);
-    46: if acg.btn_art_remove <> nil then    ArtControlGroupRemoveClick(Sender);
-    69: if acg.btn_art_export <> nil then    ArtControlGroupExportClick(Sender);
-    73: if acg.btn_art_import <> nil then    ArtControlGroupImportClick(Sender);
-    33: if acg.btn_art_move_up <> nil then   ArtControlGroupMoveUpClick(Sender);
-    34: if acg.btn_art_move_down <> nil then ArtControlGroupMoveDownClick(Sender);
+    45: if acg.btn_art_add <> nil then       AcgAddArtClick(Sender);
+    46: if acg.btn_art_remove <> nil then    AcgRemoveArtClick(Sender);
+    69: if acg.btn_art_export <> nil then    AcgExportArtClick(Sender);
+    73: if acg.btn_art_import <> nil then    AcgImportArtClick(Sender);
+    33: if acg.btn_art_move_up <> nil then   AcgMoveUpArtClick(Sender);
+    34: if acg.btn_art_move_down <> nil then AcgMoveDownArtClick(Sender);
     else matched := false;
   end;
   if matched then
@@ -2258,7 +2376,7 @@ begin
     cbxBuildingBuildingArt.Items := tmp_strings;
     cbxBuildingBarrelArt.Items := tmp_strings;
     lbBuildingArtList.ItemIndex := Min(art_control_groups[ART_BUILDING].last_item_index, Structures.templates.BuildingArtCount - 1);
-    lbBuildingArtListClick(nil);
+    lbBuildingArtListClick(lbBuildingArtList);
     lblBuildingArtList.Caption := Format('Building art (%d of %d)', [Structures.templates.BuildingArtCount, MAX_BUILDING_ART]);
   end;
 
@@ -2270,7 +2388,7 @@ begin
       tmp_strings.Add(Format('[ %.*d / %.*d ] %.*d %s', [2, Structures.templates.BuildingAnimationFrames[i], 2, Structures.templates.BuildupArtFrames[i], 2, i, Structures.templates.BuildingNameStrings[i]]));
     lbBuildingAnimationArtList.Items := tmp_strings;
     lbBuildingAnimationArtList.ItemIndex := Min(art_control_groups[ART_BUILDING_ANIMATION].last_item_index, Structures.templates.BuildingCount - 1);
-    lbBuildingAnimationArtListClick(nil);
+    lbBuildingAnimationArtListClick(lbBuildingAnimationArtList);
 
     // Building animation selection
     tmp_strings.Clear;
@@ -2306,7 +2424,7 @@ begin
     cbxUnitUnitArt.Items := tmp_strings;
     cbxUnitBarrelArt.Items := tmp_strings;
     lbUnitArtList.ItemIndex := Min(art_control_groups[ART_UNIT].last_item_index, Structures.templates.UnitArtCount - 1);
-    lbUnitArtListClick(nil);
+    lbUnitArtListClick(lbUnitArtList);
     lblUnitArtList.Caption := Format('Unit art (%d of %d)', [Structures.templates.UnitArtCount, MAX_UNIT_ART]);
   end;
 
@@ -2330,7 +2448,7 @@ begin
     lbProjectileArtList.Items := tmp_strings;
     cbxWeaponProjectileArt.Items := tmp_strings;
     lbProjectileArtList.ItemIndex := Min(art_control_groups[ART_PROJECTILE].last_item_index, Structures.templates.ProjectileArtCount - 1);
-    lbProjectileArtListClick(nil);
+    lbProjectileArtListClick(lbProjectileArtList);
   end;
 
   if (action = fdaExplosionList) or (action = fdaAll) then
@@ -2356,7 +2474,7 @@ begin
       tmp_strings.Add(Format('%.*d - %4d (%df)', [2, i, Structures.animation_art_image_indexes[i], Structures.templates.AnimationArtFrames[i]]));
     lbAnimationArtList.Items := tmp_strings;
     lbAnimationArtList.ItemIndex := Min(art_control_groups[ART_ANIMATION].last_item_index, Structures.templates.AnimationArtCount - 1);
-    lbAnimationArtListClick(nil);
+    lbAnimationArtListClick(lbAnimationArtList);
   end;
 
   if (action = fdaArmourTypeList) or (action = fdaAll) then
@@ -2515,8 +2633,7 @@ var
   index: integer;
   i: integer;
   bld: TBuildingTemplatePtr;
-  icon: TStructureImagePtr;
-  was_already_loaded: boolean;
+  icon: TBitmap;
 begin
   index := lbBuildingList.ItemIndex;
   if index < 0 then
@@ -2527,11 +2644,11 @@ begin
   // Basic group box
   edBuildingName.Text := Structures.templates.BuildingNameStrings[index];
   cbxBuildingType.ItemIndex := bld.BuildingType;
-  icon := StructGraphics.get_structure_image(Structures.first_building_icon_image_index + index, 0, false, false, was_already_loaded);
+  icon := StructGraphics.get_raw_structure_image(Structures.first_building_icon_image_index + index);
   if icon <> nil then
   begin
-    imgBuildingIcon.Picture.Bitmap.Assign(icon.bitmap);
-    StructGraphics.clear_last_structure_image(Structures.first_building_icon_image_index + index, false);
+    imgBuildingIcon.Picture.Bitmap.Assign(icon);
+    icon.Destroy;
   end else
     draw_no_image_sign(imgBuildingIcon);
   if pnImagePalette.Visible then
@@ -2606,8 +2723,7 @@ var
   index: integer;
   i: integer;
   unt: TUnitTemplatePtr;
-  icon: TStructureImagePtr;
-  was_already_loaded: boolean;
+  icon: TBitmap;
 begin
   index := lbUnitList.ItemIndex;
   if index < 0 then
@@ -2618,11 +2734,11 @@ begin
   // Basic group box
   edUnitName.Text := Structures.templates.UnitNameStrings[index];
   cbxUnitType.ItemIndex := unt.UnitType;
-  icon := StructGraphics.get_structure_image(Structures.first_unit_icon_image_index + index, 0, false, false, was_already_loaded);
+  icon := StructGraphics.get_raw_structure_image(Structures.first_unit_icon_image_index + index);
   if icon <> nil then
   begin
-    imgUnitIcon.Picture.Bitmap.Assign(icon.bitmap);
-    StructGraphics.clear_last_structure_image(Structures.first_unit_icon_image_index + index, false);
+    imgUnitIcon.Picture.Bitmap.Assign(icon);
+    icon.Destroy;
   end else
     draw_no_image_sign(imgUnitIcon);
   if pnImagePalette.Visible then
@@ -3173,15 +3289,15 @@ begin
     icg.buttons[i].Tag := group_index;
     icg.buttons[i].Caption := ICG_BTN_CAPTIONS[i];
     case i of
-      ICG_BTN_ADD:       icg.buttons[i].OnClick := ItemControlGroupAddClick;
-      ICG_BTN_REMOVE:    icg.buttons[i].OnClick := ItemControlGroupRemoveClick;
-      ICG_BTN_RENAME:    icg.buttons[i].OnClick := ItemControlGroupRenameClick;
-      ICG_BTN_EXPORT:    icg.buttons[i].OnClick := ItemControlGroupExportClick;
-      ICG_BTN_IMPORT:    icg.buttons[i].OnClick := ItemControlGroupImportClick;
-      ICG_BTN_COPY:      icg.buttons[i].OnClick := ItemControlGroupCopyClick;
-      ICG_BTN_PASTE:     icg.buttons[i].OnClick := ItemControlGroupPasteClick;
-      ICG_BTN_MOVEUP:    icg.buttons[i].OnClick := ItemControlGroupMoveUpClick;
-      ICG_BTN_MOVEDOWN:  icg.buttons[i].OnClick := ItemControlGroupMoveDownClick;
+      ICG_BTN_ADD:       icg.buttons[i].OnClick := IcgAddClick;
+      ICG_BTN_REMOVE:    icg.buttons[i].OnClick := IcgRemoveClick;
+      ICG_BTN_RENAME:    icg.buttons[i].OnClick := IcgRenameClick;
+      ICG_BTN_EXPORT:    icg.buttons[i].OnClick := IcgExportClick;
+      ICG_BTN_IMPORT:    icg.buttons[i].OnClick := IcgImportClick;
+      ICG_BTN_COPY:      icg.buttons[i].OnClick := IcgCopyClick;
+      ICG_BTN_PASTE:     icg.buttons[i].OnClick := IcgPasteClick;
+      ICG_BTN_MOVEUP:    icg.buttons[i].OnClick := IcgMoveUpClick;
+      ICG_BTN_MOVEDOWN:  icg.buttons[i].OnClick := IcgMoveDownClick;
     end;
     icg.buttons[i].Parent := container;
   end;
@@ -3206,16 +3322,16 @@ begin
   acg.btn_view_palette := TButton.Create(self);
   acg.btn_view_palette.Left := 0;
   acg.btn_view_palette.Top := 180;
-  acg.btn_view_palette.Width := 57;
+  acg.btn_view_palette.Width := 55;
   acg.btn_view_palette.Height := 21;
   acg.btn_view_palette.Caption := 'View pal.';
   acg.btn_view_palette.Tag := group_index;
-  acg.btn_view_palette.OnClick := ArtControlGroupViewPaletteClick;
+  acg.btn_view_palette.OnClick := AcgViewPaletteClick;
   acg.btn_view_palette.Parent := container;
   acg.lbl_side_color := TLabel.Create(self);
-  acg.lbl_side_color.Left := 60;
-  acg.lbl_side_color.Top := 180;
-  acg.lbl_side_color.Caption := 'Side';
+  acg.lbl_side_color.Left := 58;
+  acg.lbl_side_color.Top := 184;
+  acg.lbl_side_color.Caption := 'Side:';
   acg.lbl_side_color.Parent := container;
   acg.se_side_color := TSpinEdit.Create(self);
   acg.se_side_color.Left := 86;
@@ -3225,84 +3341,114 @@ begin
   acg.se_side_color.Width := 37;
   acg.se_side_color.Tag := group_index;
   acg.se_side_color.Parent := container;
-  acg.se_side_color.OnChange := ArtControlGroupFrameListClick;
+  acg.se_side_color.OnChange := AcgFrameListClick;
   acg.cb_raw_image := TCheckBox.Create(self);
   acg.cb_raw_image.Left := 130;
-  acg.cb_raw_image.Top := 180;
+  acg.cb_raw_image.Top := 182;
   acg.cb_raw_image.Caption := 'Raw';
   acg.cb_raw_image.Tag := group_index;
   acg.cb_raw_image.Parent := container;
-  acg.cb_raw_image.OnClick := ArtControlGroupFrameListClick;
+  acg.cb_raw_image.OnClick := AcgFrameListClick;
+  acg.btn_image_export := TButton.Create(self);
+  acg.btn_image_export.Top := 204;
+  acg.btn_image_export.Width := 55;
+  acg.btn_image_export.Height := 21;
+  acg.btn_image_export.Caption := 'Export';
+  acg.btn_image_export.Tag := group_index;
+  acg.btn_image_export.OnClick := AcgExportImageClick;
+  acg.btn_image_export.Parent := container;
+  acg.btn_image_erase := TButton.Create(self);
+  acg.btn_image_erase.Left := 57;
+  acg.btn_image_erase.Top := 204;
+  acg.btn_image_erase.Width := 55;
+  acg.btn_image_erase.Height := 21;
+  acg.btn_image_erase.Caption := 'Erase';
+  acg.btn_image_erase.Tag := group_index;
+  acg.btn_image_erase.OnClick := AcgEraseImageClick;
+  acg.btn_image_erase.Parent := container;
+  acg.btn_image_import := TButton.Create(self);
+  acg.btn_image_import.Left := 114;
+  acg.btn_image_import.Top := 204;
+  acg.btn_image_import.Width := 55;
+  acg.btn_image_import.Height := 21;
+  acg.btn_image_import.Caption := 'Import';
+  acg.btn_image_import.Tag := group_index;
+  acg.btn_image_import.OnClick := AcgImportImageClick;
+  acg.btn_image_import.Parent := container;
   acg.lbl_frame_width := TLabel.Create(self);
   acg.lbl_frame_width.Parent := container;
   acg.lbl_frame_width.Caption := 'Frame W:';
-  acg.lbl_frame_width.Top := 204;
+  acg.lbl_frame_width.Top := 228;
   acg.lbl_frame_height := TLabel.Create(self);
   acg.lbl_frame_height.Parent := container;
   acg.lbl_frame_height.Caption := 'Frame H:';
-  acg.lbl_frame_height.Top := 204;
+  acg.lbl_frame_height.Top := 228;
   acg.lbl_frame_height.Left := 88;
   acg.lbl_image_width := TLabel.Create(self);
   acg.lbl_image_width.Parent := container;
   acg.lbl_image_width.Caption := 'Image W:';
-  acg.lbl_image_width.Top := 228;
+  acg.lbl_image_width.Top := 252;
   acg.lbl_image_height := TLabel.Create(self);
   acg.lbl_image_height.Parent := container;
   acg.lbl_image_height.Caption := 'Image H:';
-  acg.lbl_image_height.Top := 228;
+  acg.lbl_image_height.Top := 252;
   acg.lbl_image_height.Left := 88;
   acg.lbl_image_offset_x := TLabel.Create(self);
   acg.lbl_image_offset_x.Parent := container;
-  acg.lbl_image_offset_x.Caption := 'Offset X:';
-  acg.lbl_image_offset_x.Top := 252;
+  acg.lbl_image_offset_x.Caption := 'Offs.X:';
+  acg.lbl_image_offset_x.Top := 276;
   acg.lbl_image_offset_y := TLabel.Create(self);
   acg.lbl_image_offset_y.Parent := container;
-  acg.lbl_image_offset_y.Caption := 'Offset Y:';
-  acg.lbl_image_offset_y.Top := 252;
+  acg.lbl_image_offset_y.Caption := 'Offs.Y:';
+  acg.lbl_image_offset_y.Top := 276;
   acg.lbl_image_offset_y.Left := 88;
   acg.edit_frame_width := TEdit.Create(self);
-  acg.edit_frame_width.Parent := container;
-  acg.edit_frame_width.ReadOnly := true;
   acg.edit_frame_width.Width := 33;
-  acg.edit_frame_width.Top := 204;
+  acg.edit_frame_width.Top := 228;
   acg.edit_frame_width.Left := 48;
+  acg.edit_frame_width.Tag := group_index;
+  acg.edit_frame_width.Parent := container;
+  acg.edit_frame_width.OnChange := AcgImagePropertyChange;
   acg.edit_frame_height := TEdit.Create(self);
-  acg.edit_frame_height.Parent := container;
-  acg.edit_frame_height.ReadOnly := true;
   acg.edit_frame_height.Width := 33;
-  acg.edit_frame_height.Top := 204;
+  acg.edit_frame_height.Top := 228;
   acg.edit_frame_height.Left := 136;
+  acg.edit_frame_height.Tag := group_index;
+  acg.edit_frame_height.Parent := container;
+  acg.edit_frame_height.OnChange := AcgImagePropertyChange;
   acg.edit_image_width := TEdit.Create(self);
   acg.edit_image_width.Parent := container;
   acg.edit_image_width.ReadOnly := true;
   acg.edit_image_width.Width := 33;
-  acg.edit_image_width.Top := 228;
+  acg.edit_image_width.Top := 252;
   acg.edit_image_width.Left := 48;
   acg.edit_image_height := TEdit.Create(self);
   acg.edit_image_height.Parent := container;
   acg.edit_image_height.ReadOnly := true;
   acg.edit_image_height.Width := 33;
-  acg.edit_image_height.Top := 228;
+  acg.edit_image_height.Top := 252;
   acg.edit_image_height.Left := 136;
-  acg.edit_image_offset_x := TEdit.Create(self);
-  acg.edit_image_offset_x.Parent := container;
-  acg.edit_image_offset_x.ReadOnly := true;
-  acg.edit_image_offset_x.Width := 33;
-  acg.edit_image_offset_x.Top := 252;
-  acg.edit_image_offset_x.Left := 48;
-  acg.edit_image_offset_y := TEdit.Create(self);
-  acg.edit_image_offset_y.Parent := container;
-  acg.edit_image_offset_y.ReadOnly := true;
-  acg.edit_image_offset_y.Width := 33;
-  acg.edit_image_offset_y.Top := 252;
-  acg.edit_image_offset_y.Left := 136;
+  acg.se_image_offset_x := TSpinEdit.Create(self);
+  acg.se_image_offset_x.Width := 45;
+  acg.se_image_offset_x.Top := 276;
+  acg.se_image_offset_x.Left := 36;
+  acg.se_image_offset_x.Tag := group_index;
+  acg.se_image_offset_x.Parent := container;
+  acg.se_image_offset_x.OnChange := AcgImagePropertyChange;
+  acg.se_image_offset_y := TSpinEdit.Create(self);
+  acg.se_image_offset_y.Width := 45;
+  acg.se_image_offset_y.Top := 276;
+  acg.se_image_offset_y.Left := 124;
+  acg.se_image_offset_y.Tag := group_index;
+  acg.se_image_offset_y.Parent := container;
+  acg.se_image_offset_y.OnChange := AcgImagePropertyChange;
   acg.frame_list := TListBox.Create(self);
   acg.frame_list.Parent := container;
   acg.frame_list.Width := 169;
-  acg.frame_list.Height := 318;
-  acg.frame_list.Top := 276;
+  acg.frame_list.Height := 292;
+  acg.frame_list.Top := 300;
   acg.frame_list.Tag := group_index;
-  acg.frame_list.OnClick := ArtControlGroupFrameListClick;
+  acg.frame_list.OnClick := AcgFrameListClick;
   acg.lbl_art_size := TLabel.Create(self);
   acg.lbl_art_size.Parent := container;
   acg.lbl_art_size.Top := 596;
@@ -3311,7 +3457,7 @@ begin
   acg.btn_art_export.Width := 81;
   acg.btn_art_export.Caption := 'Export art';
   acg.btn_art_export.Tag := group_index;
-  acg.btn_art_export.OnClick := ArtControlGroupExportClick;
+  acg.btn_art_export.OnClick := AcgExportArtClick;
   acg.btn_art_export.Parent := container;
   acg.btn_art_import := TButton.Create(self);
   acg.btn_art_import.Top := 612;
@@ -3319,7 +3465,7 @@ begin
   acg.btn_art_import.Width := 81;
   acg.btn_art_import.Caption := 'Import art';
   acg.btn_art_import.Tag := group_index;
-  acg.btn_art_import.OnClick := ArtControlGroupImportClick;
+  acg.btn_art_import.OnClick := AcgImportArtClick;
   acg.btn_art_import.Parent := container;
   if container2 = nil then
     exit;
@@ -3329,7 +3475,7 @@ begin
   acg.btn_art_modify.Width := 97;
   acg.btn_art_modify.Caption := 'Modify selected';
   acg.btn_art_modify.Tag := group_index;
-  acg.btn_art_modify.OnClick := ArtControlGroupModifyClick;
+  acg.btn_art_modify.OnClick := AcgModifyArtClick;
   acg.btn_art_modify.Parent := container2;
   if (group_index = ART_PROJECTILE) or (group_index = ART_ANIMATION) then
     exit;
@@ -3338,14 +3484,14 @@ begin
   acg.btn_art_add.Width := 73;
   acg.btn_art_add.Caption := 'Add new';
   acg.btn_art_add.Tag := group_index;
-  acg.btn_art_add.OnClick := ArtControlGroupAddClick;
+  acg.btn_art_add.OnClick := AcgAddArtClick;
   acg.btn_art_add.Parent := container2;
   acg.btn_art_remove := TButton.Create(self);
   acg.btn_art_remove.Top := 587;
   acg.btn_art_remove.Width := 73;
   acg.btn_art_remove.Caption := 'Remove last';
   acg.btn_art_remove.Tag := group_index;
-  acg.btn_art_remove.OnClick := ArtControlGroupRemoveClick;
+  acg.btn_art_remove.OnClick := AcgRemoveArtClick;
   acg.btn_art_remove.Parent := container2;
   acg.btn_art_move_up := TButton.Create(self);
   acg.btn_art_move_up.Top := 562;
@@ -3353,7 +3499,7 @@ begin
   acg.btn_art_move_up.Width := 73;
   acg.btn_art_move_up.Caption := 'Move up';
   acg.btn_art_move_up.Tag := group_index;
-  acg.btn_art_move_up.OnClick := ArtControlGroupMoveUpClick;
+  acg.btn_art_move_up.OnClick := AcgMoveUpArtClick;
   acg.btn_art_move_up.Parent := container2;
   acg.btn_art_move_down := TButton.Create(self);
   acg.btn_art_move_down.Top := 587;
@@ -3361,7 +3507,7 @@ begin
   acg.btn_art_move_down.Width := 73;
   acg.btn_art_move_down.Caption := 'Move down';
   acg.btn_art_move_down.Tag := group_index;
-  acg.btn_art_move_down.OnClick := ArtControlGroupMoveDownClick;
+  acg.btn_art_move_down.OnClick := AcgMoveDownArtClick;
   acg.btn_art_move_down.Parent := container2;
 end;
 
@@ -3394,7 +3540,20 @@ begin
   tmp_strings.Destroy;
   acg.lbl_art_size.Caption := Format('Art size: %d bytes', [StructGraphics.get_image_entries_size(first_image_index, num_frames)]);
   acg.frame_list.ItemIndex := selected_frame;
-  ArtControlGroupFrameListClick(acg.frame_list);
+  AcgFrameListClick(acg.frame_list);
+end;
+
+procedure TStructuresEditor.update_art_control_group_frame_list(group_index: integer);
+begin
+  case group_index of
+    ART_BUILDING: lbBuildingArtListClick(nil);
+    ART_BUILDING_ANIMATION: lbBuildingAnimationArtListClick(nil);
+    ART_BUILDUP: lbBuildingAnimationArtListClick(nil);
+    ART_UNIT: lbUnitArtListClick(nil);
+    ART_PROJECTILE: lbProjectileArtListClick(nil);
+    ART_ANIMATION: lbAnimationArtListClick(nil);
+    ART_OTHER: lbOtherArtListClick(nil);
+  end;
 end;
 
 procedure TStructuresEditor.draw_no_image_sign(img_target: TImage);

@@ -67,7 +67,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbBuildingTypeListClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
       object pnBuildingList: TPanel
@@ -85,7 +85,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbBuildingListClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
       object gbBuildingBasic: TGroupBox
@@ -122,6 +122,9 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 60
           Height = 47
+          Hint = 'Left = import image, Right = export image, Middle = view palette'
+          ParentShowHint = False
+          ShowHint = True
           OnMouseDown = imgBuildingIconMouseDown
         end
         object clbBuildingOwnerSide: TCheckListBox
@@ -1177,7 +1180,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbUnitTypeListClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
       object pnUnitList: TPanel
@@ -1196,7 +1199,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbUnitListClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
       object gbUnitBasic: TGroupBox
@@ -1233,6 +1236,9 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 60
           Height = 47
+          Hint = 'Left = import image, Right = export image, Middle = view palette'
+          ParentShowHint = False
+          ShowHint = True
           OnMouseDown = imgUnitIconMouseDown
         end
         object clbUnitOwnerSide: TCheckListBox
@@ -1993,7 +1999,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbBuildingArtListClick
-          OnKeyDown = ArtControlGroupListKeyDown
+          OnKeyDown = AcgArtListKeyDown
         end
         object seBuildingArtDirections: TSpinEdit
           Left = 88
@@ -2051,7 +2057,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbBuildingAnimationArtListClick
-          OnKeyDown = ArtControlGroupListKeyDown
+          OnKeyDown = AcgArtListKeyDown
         end
         object btnBuildingAnimationArtModify: TButton
           Left = 192
@@ -2229,7 +2235,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbUnitArtListClick
-          OnKeyDown = ArtControlGroupListKeyDown
+          OnKeyDown = AcgArtListKeyDown
         end
         object seUnitArtAnimationFrames: TSpinEdit
           Left = 88
@@ -2302,7 +2308,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbProjectileArtListClick
-          OnKeyDown = ArtControlGroupListKeyDown
+          OnKeyDown = AcgArtListKeyDown
         end
         object seProjectileArtDirections: TSpinEdit
           Left = 88
@@ -2340,7 +2346,7 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
           OnClick = lbWeaponListClick
           OnDblClick = btnWeaponFiringSoundPlayClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
       object gbWeaponProperties: TGroupBox
@@ -2740,7 +2746,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbAnimationArtListClick
-          OnKeyDown = ArtControlGroupListKeyDown
+          OnKeyDown = AcgArtListKeyDown
         end
         object seAnimationArtFrames: TSpinEdit
           Left = 88
@@ -2778,7 +2784,7 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
           OnClick = lbExplosionListClick
           OnDblClick = btnExplosionSoundPlayClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
       object cbxExplosionSound: TComboBox
@@ -2938,7 +2944,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbArmourTypeListClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
       object pnWarheadList: TPanel
@@ -2957,7 +2963,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 0
           OnClick = lbWarheadListClick
-          OnKeyDown = ItemControlGroupListKeyDown
+          OnKeyDown = IcgListKeyDown
         end
       end
     end
@@ -3107,7 +3113,7 @@ object StructuresEditor: TStructuresEditor
           'Stealth reveal mask')
         TabOrder = 4
         OnClick = lbOtherArtListClick
-        OnKeyDown = ArtControlGroupListKeyDown
+        OnKeyDown = AcgArtListKeyDown
       end
     end
     object PageTechpos: TTabSheet
@@ -3388,5 +3394,19 @@ object StructuresEditor: TStructuresEditor
     Filter = 'Wave sound (*.WAV)|*.WAV'
     Title = 'Export Sound'
     Left = 764
+  end
+  object ImageImportDialog: TOpenDialog
+    DefaultExt = 'bmp'
+    Filter = 'BMP image (*.BMP)|*.bmp'
+    Title = 'Import Image'
+    Left = 860
+    Top = 32
+  end
+  object ImageExportDialog: TSaveDialog
+    DefaultExt = 'bmp'
+    Filter = 'BMP image (*.BMP)|*.bmp'
+    Title = 'Export Image'
+    Left = 828
+    Top = 32
   end
 end

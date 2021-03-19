@@ -161,6 +161,8 @@ begin
   load_file_dialog_initial_dir(StructuresEditor.ItemImportDialog,  '');
   load_file_dialog_initial_dir(StructuresEditor.ArtExportDialog,   '');
   load_file_dialog_initial_dir(StructuresEditor.ArtImportDialog,   '');
+  load_file_dialog_initial_dir(StructuresEditor.ImageExportDialog, '');
+  load_file_dialog_initial_dir(StructuresEditor.ImageImportDialog, '');
   load_file_dialog_initial_dir(StructuresEditor.SoundExportDialog, '');
   load_file_dialog_initial_dir(StructuresEditor.SoundImportDialog, '');
 
@@ -245,6 +247,8 @@ begin
   save_file_dialog_initial_dir(StructuresEditor.ItemImportDialog);
   save_file_dialog_initial_dir(StructuresEditor.ArtExportDialog);
   save_file_dialog_initial_dir(StructuresEditor.ArtImportDialog);
+  save_file_dialog_initial_dir(StructuresEditor.ImageExportDialog);
+  save_file_dialog_initial_dir(StructuresEditor.ImageImportDialog);
   save_file_dialog_initial_dir(StructuresEditor.SoundExportDialog);
   save_file_dialog_initial_dir(StructuresEditor.SoundImportDialog);
 
