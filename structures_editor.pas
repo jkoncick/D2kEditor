@@ -572,6 +572,8 @@ type
     btnSoundRsRename: TButton;
     btnSamplesUibAdd: TButton;
     btnSamplesUibRemove: TButton;
+    btnUnitVoicesExport: TButton;
+    btnUnitVoicesImport: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -697,7 +699,7 @@ type
     seBuilExpAnimOffsetY: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
     cbxBuilExpAnimExplosion: array[0..MAX_BUILEXP_ANIMATIONS-1] of TComboBox;
     seBuilExpAnimNumFrames: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
-    item_control_groups: array[0..7] of TItemControlGroup;
+    item_control_groups: array[0..8] of TItemControlGroup;
     art_control_groups: array[0..6] of TArtControlGroup;
     // Last indexes
     last_builexp_building_index: integer;
@@ -890,6 +892,8 @@ begin
   create_item_control_group(ITEM_EXPLOSION,     fdaExplosionList,    lbExplosionList,    edExplosionName, Addr(ICG_LAYOUT_WPN_EXP),      pnExplosionList);
   create_item_control_group(ITEM_ARMOUR_TYPE,   fdaArmourTypeList,   lbArmourTypeList,   nil,             Addr(ICG_LAYOUT_ARM_WHD),      pnArmourTypeList);
   create_item_control_group(ITEM_WARHEAD,       fdaWarheadList,      lbWarheadList,      nil,             Addr(ICG_LAYOUT_ARM_WHD),      pnWarheadList);
+  item_control_groups[ITEM_UNIT_VOICES].list_control := lbUnitList;
+  item_control_groups[ITEM_UNIT_VOICES].edit_item_name := edUnitName;
   // Art control groups
   create_art_control_group(ART_BUILDING,           false, lbBuildingArtList,          seBuildingArtDirections,   nil,                       pnBuildingArtControlGroup,       pnBuildingArtList);
   create_art_control_group(ART_BUILDING_ANIMATION, false, lbBuildingAnimationArtList, nil,                       seBuildingAnimationFrames, pnBuildingAnimationControlGroup, nil);

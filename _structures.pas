@@ -349,9 +349,10 @@ const ITEM_WEAPON           = 4;
 const ITEM_EXPLOSION        = 5;
 const ITEM_ARMOUR_TYPE      = 6;
 const ITEM_WARHEAD          = 7;
+const ITEM_UNIT_VOICES      = 8;
 
-const item_type_names: array[0..7] of string = ('Building', 'Unit', 'Building type', 'Unit type', 'Weapon', 'Explosion', 'Armour type', 'Warhead');
-const item_type_file_extensions: array[0..7] of string = ('d2kbld', 'd2kunt', '', '', 'd2kwpn', 'd2kexp', 'd2karm', 'd2kwhd');
+const item_type_names: array[0..8] of string = ('Building', 'Unit', 'Building type', 'Unit type', 'Weapon', 'Explosion', 'Armour type', 'Warhead', 'Unit voices');
+const item_type_file_extensions: array[0..8] of string = ('d2kbld', 'd2kunt', '', '', 'd2kwpn', 'd2kexp', 'd2karm', 'd2kwhd', 'd2kvcs');
 
 type
   TItemDataPointers = record
@@ -488,6 +489,14 @@ type
 
   TWarheadExportDataPtr = ^TWarheadExportData;
 
+type
+  TUnitVoicesExportData = packed record
+    voices:           array[0..17] of cardinal;
+    sound_references: array[0..17] of TSoundReference;
+  end;
+
+  TUnitVoicesExportDataPtr = ^TUnitVoicesExportData;
+
 // *****************************************************************************
 // TStructures class
 // *****************************************************************************
@@ -562,7 +571,7 @@ type
 
     // Auxiliary variables
     item_data_pointers: array[0..36] of TItemDataPointers;
-    item_type_pointers: array[0..7] of TItemTypePointers;
+    item_type_pointers: array[0..8] of TItemTypePointers;
     art_type_pointers: array[0..5] of TArtTypePointers;
   public
     // General procedures
@@ -659,6 +668,8 @@ type
     procedure restore_armour_type_export_data(index: integer; data: TArmourTypeExportDataPtr);
     procedure store_warhead_export_data      (index: integer; data: TWarheadExportDataPtr);
     procedure restore_warhead_export_data    (index: integer; data: TWarheadExportDataPtr);
+    procedure store_unit_voices_export_data  (index: integer; data: TUnitVoicesExportDataPtr);
+    procedure restore_unit_voices_export_data(index: integer; data: TUnitVoicesExportDataPtr; import_path: string);
 
     procedure store_item_export_data  (item_type, index: integer; data: TByteArrayPtr);
     procedure restore_item_export_data(item_type, index: integer; data: TByteArrayPtr; import_path: string);
@@ -712,6 +723,7 @@ begin
   init_item_type_pointers(ITEM_EXPLOSION,     Addr(Structures.templates.ExplosionCount),    Addr(Structures.templates.ExplosionStrings),    50,  MAX_EXPLOSIONS,     4, 2, sizeof(TExplosionExportData));
   init_item_type_pointers(ITEM_ARMOUR_TYPE,   Addr(Structures.armour.ArmourTypeCount),      Addr(Structures.armour.ArmourTypeStrings),      50,  MAX_ARMOUR_TYPES,   7, MAX_WARHEADS, sizeof(TArmourTypeExportData));
   init_item_type_pointers(ITEM_WARHEAD,       Addr(Structures.armour.WarheadCount),         Addr(Structures.armour.WarheadStrings),         50,  MAX_WARHEADS,       6, 1, sizeof(TWarheadExportData));
+  init_item_type_pointers(ITEM_UNIT_VOICES,   nil,                                          nil,                                            0,   0,                  0, 0, sizeof(TUnitVoicesExportData));
   // Initialize art type pointers
   init_art_type_pointers(ART_BUILDING,           Addr(templates.BuildingArtCount),   Addr(templates.BuildingArtDirections),   nil,                                     0, MAX_BUILDING_ART,   Addr(building_art_image_indexes),       Addr(projectile_art_image_indexes[0]));
   init_art_type_pointers(ART_BUILDING_ANIMATION, Addr(templates.BuildingCount),      nil,                                     Addr(templates.BuildingAnimationFrames), 1, MAX_BUILDING_TYPES, Addr(building_animation_image_indexes), nil);
@@ -2152,6 +2164,24 @@ begin
   Move(tmp_versus_armor_type[0], data.warhead_entry.VersusArmorType[0], MAX_ARMOUR_TYPES);
 end;
 
+procedure TStructures.store_unit_voices_export_data(index: integer; data: TUnitVoicesExportDataPtr);
+var
+  i: integer;
+begin
+  Move(templates.UnitDefinitions[index].Voices[0], data.voices[0], Length(data.voices) * sizeof(Cardinal));
+  for i := 0 to Length(data.sound_references) - 1 do
+    store_sound_reference(data.sound_references[i], data.voices[i]);
+end;
+
+procedure TStructures.restore_unit_voices_export_data(index: integer; data: TUnitVoicesExportDataPtr; import_path: string);
+var
+  i: integer;
+begin
+  for i := 0 to Length(data.sound_references) - 1 do
+    data.voices[i] := restore_sound_reference(data.sound_references[i], data.voices[i], import_path, true);
+  Move(data.voices[0], templates.UnitDefinitions[index].Voices[0], Length(data.voices) * sizeof(Cardinal));
+end;
+
 procedure TStructures.store_item_export_data(item_type, index: integer; data: TByteArrayPtr);
 var
   offset: integer;
@@ -2178,6 +2208,7 @@ begin
     ITEM_EXPLOSION:   store_explosion_export_data  (index, Addr(data[0]));
     ITEM_ARMOUR_TYPE: store_armour_type_export_data(index, Addr(data[0]));
     ITEM_WARHEAD:     store_warhead_export_data    (index, Addr(data[0]));
+    ITEM_UNIT_VOICES: store_unit_voices_export_data(index, Addr(data[0]));
   end;
 end;
 
@@ -2200,6 +2231,7 @@ begin
     ITEM_EXPLOSION:   restore_explosion_export_data  (index, Addr(data[0]), import_path);
     ITEM_ARMOUR_TYPE: restore_armour_type_export_data(index, Addr(data[0]));
     ITEM_WARHEAD:     restore_warhead_export_data    (index, Addr(data[0]));
+    ITEM_UNIT_VOICES: restore_unit_voices_export_data(index, Addr(data[0]), import_path);
   end;
   // Restore item data
   for i := 0 to ptrs.item_data_pointers_count - 1 do

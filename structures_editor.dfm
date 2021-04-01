@@ -1449,6 +1449,26 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
           Value = 0
         end
+        object btnUnitVoicesExport: TButton
+          Tag = 8
+          Left = 152
+          Top = 256
+          Width = 64
+          Height = 21
+          Caption = 'Export'
+          TabOrder = 1
+          OnClick = IcgExportClick
+        end
+        object btnUnitVoicesImport: TButton
+          Tag = 8
+          Left = 216
+          Top = 256
+          Width = 64
+          Height = 21
+          Caption = 'Import'
+          TabOrder = 2
+          OnClick = IcgImportClick
+        end
       end
       object gbUnitProperties: TGroupBox
         Left = 696
