@@ -645,7 +645,7 @@ type
     procedure store_art_reference    (var ref: TArtReference; art_type, index: integer);
     function  restore_art_reference  (var ref: TArtReference; art_type, ref_index, fixed_index: integer; import_filename: string): integer;
     procedure store_sound_reference  (var ref: TSoundReference; index: integer);
-    function  restore_sound_reference(var ref: TSoundReference; index: integer; import_path: string; from_sound_rs: boolean): integer;
+    function  restore_sound_reference(var ref: TSoundReference; index: integer; import_path: string; allow_aud_files: boolean): integer;
 
     procedure store_building_export_data     (index: integer; data: TBuildingExportDataPtr);
     procedure restore_building_export_data   (index: integer; data: TBuildingExportDataPtr; import_path: string);
@@ -666,7 +666,7 @@ type
     procedure export_item(item_type, index: integer; filename: string);
     procedure import_item(item_type, index: integer; filename: string);
     procedure copy_item  (item_type, index: integer);
-    function  paste_item (item_type, index: integer): boolean;
+    procedure paste_item (item_type, index: integer);
 
   end;
 
@@ -1892,33 +1892,42 @@ begin
   store_c_string(StringTable.samples_uib.ValueFromIndex[index], Addr(ref.value), Length(ref.value));
 end;
 
-function TStructures.restore_sound_reference(var ref: TSoundReference; index: integer; import_path: string; from_sound_rs: boolean): integer;
+function TStructures.restore_sound_reference(var ref: TSoundReference; index: integer; import_path: string; allow_aud_files: boolean): integer;
 var
   sound_name: string;
-  import_filename: string;
-  import_file_exists: boolean;
+  game_aud_filename: string;
+  import_wav_filename: string;
+  import_wav_file_exists: boolean;
   sound_rs_index: integer;
 begin
   result := index;
   if index = -1 then
     exit;
-  // Deal with SOUND.RS entries
-  if not from_sound_rs then
-    exit;
+  // Deal with samples.uib entries
+  result := StringTable.find_samples_uib_value(ref.value, index);
+  if result = -1 then
+  begin
+    result := StringTable.add_samples_uib_entry(ref.key, ref.value);
+    Application.MessageBox(PChar(Format('New entry %s=%s was added into samples.uib file.', [ref.key, ref.value])), 'Import sound', MB_ICONINFORMATION or MB_OK);
+  end;
+  // Deal with sounds and SOUND.RS entries
   sound_name := UpperCase(ref.value);
-  import_filename := import_path + sound_name + '.WAV';
-  import_file_exists := FileExists(import_filename);
+  game_aud_filename := Settings.GamePath + '\Data\GAMESFX\' + sound_name + '.AUD';
+  import_wav_filename := import_path + sound_name + '.WAV';
+  import_wav_file_exists := FileExists(import_wav_filename);
+  if (not import_wav_file_exists) and allow_aud_files and FileExists(game_aud_filename) then
+    exit;
   sound_rs_index := Sounds.find_sound(sound_name);
-  if import_file_exists then
+  if import_wav_file_exists then
   begin
     if sound_rs_index = -1 then
     begin
-      Application.MessageBox(PChar(Format('New sound %s was added into SOUND.RS and it is being imported from file %s.', [sound_name, import_filename])), 'Import sound', MB_ICONINFORMATION or MB_OK);
-      Sounds.add_new_sound(import_filename);
+      Application.MessageBox(PChar(Format('New sound %s was added into SOUND.RS and it is being imported from file %s.', [sound_name, import_wav_filename])), 'Import sound', MB_ICONINFORMATION or MB_OK);
+      Sounds.add_new_sound(import_wav_filename);
     end else
     begin
-      Application.MessageBox(PChar(Format('Replacing sound %s by import from file %s.', [sound_name, import_filename])), 'Import sound', MB_ICONINFORMATION or MB_OK);
-      Sounds.replace_sound(sound_rs_index, import_filename);
+      Application.MessageBox(PChar(Format('Replacing sound %s by import from file %s.', [sound_name, import_wav_filename])), 'Import sound', MB_ICONINFORMATION or MB_OK);
+      Sounds.replace_sound(sound_rs_index, import_wav_filename);
     end;
   end
   else if sound_rs_index = -1 then
@@ -2047,7 +2056,7 @@ begin
   data.unit_template.BarrelArt := restore_art_reference(data.art_references[1], ART_UNIT, data.unit_template.BarrelArt, -1, import_path + data.unit_name + '_BARREL');
   // Sound references
   for i := 0 to Length(data.sound_references) - 1 do
-    data.unit_template.Voices[i] := restore_sound_reference(data.sound_references[i], data.unit_template.Voices[i], import_path, false);
+    data.unit_template.Voices[i] := restore_sound_reference(data.sound_references[i], data.unit_template.Voices[i], import_path, true);
   // Unit type string
   if (Ord(data.unit_type_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
     Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the unit name appears in game.', [data.item_references[0].item_name, data.unit_type_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
@@ -2069,7 +2078,7 @@ begin
   data.weapon_template.Warhead :=        restore_item_reference(data.item_references[2], ITEM_WARHEAD,   data.weapon_template.Warhead,        import_path);
   modify_art(ART_PROJECTILE, index, data.art_reference.directions, 0);
   data.weapon_template.ProjectileArt :=  restore_art_reference(data.art_reference, ART_PROJECTILE, data.weapon_template.ProjectileArt, index, import_path + data.weapon_name);
-  data.weapon_template.FiringSound :=    restore_sound_reference(data.sound_reference, data.weapon_template.FiringSound, import_path, true);
+  data.weapon_template.FiringSound :=    restore_sound_reference(data.sound_reference, data.weapon_template.FiringSound, import_path, false);
 end;
 
 procedure TStructures.store_explosion_export_data(index: integer; data: TExplosionExportDataPtr);
@@ -2081,7 +2090,7 @@ end;
 procedure TStructures.restore_explosion_export_data(index: integer; data: TExplosionExportDataPtr; import_path: string);
 begin
   restore_art_reference(data.art_reference, ART_ANIMATION, index, index, import_path + data.explosion_name);
-  data.explosion_template.Sound := restore_sound_reference(data.sound_reference, data.explosion_template.Sound, import_path, true);
+  data.explosion_template.Sound := restore_sound_reference(data.sound_reference, data.explosion_template.Sound, import_path, false);
   data.explosion_template.MyIndex := index;
 end;
 
@@ -2223,6 +2232,7 @@ begin
   load_binary_file(filename, data[0], ptrs.export_data_size);
   restore_item_export_data(item_type, index, Addr(data[0]), ExtractFilePath(filename));
   SetLength(data, 0);
+  Dispatcher.register_event(evStructuresImportItem);
 end;
 
 procedure TStructures.copy_item(item_type, index: integer);
@@ -2242,13 +2252,12 @@ begin
   CloseClipboard;
 end;
 
-function TStructures.paste_item(item_type, index: integer): boolean;
+procedure TStructures.paste_item(item_type, index: integer);
 var
   ptrs: TItemTypePointersPtr;
   handle: THandle;
   data_ptr: Pointer;
 begin
-  result := false;
   ptrs := Addr(item_type_pointers[item_type]);
   if not Clipboard.HasFormat(ptrs.clipboard_format) then
     exit;
@@ -2258,7 +2267,7 @@ begin
   restore_item_export_data(item_type, index, data_ptr, '');
   GlobalUnLock(handle);
   CloseClipboard;
-  result := true;
+  Dispatcher.register_event(evStructuresImportItem);
 end;
 
 end.

@@ -35,6 +35,7 @@ type
     evFLMiscObjectsIni,
     evFLPlayersIni,
     evStructuresFilenameChange,
+    evStructuresImportItem,
     // StructGraphics events
     evFLColoursBin,
     evFLDataR16,
@@ -45,6 +46,7 @@ type
     // StringTable events
     evFLTextUib,
     evFLSamplesUib,
+    evSamplesUibModify,
     // Setting change events
     evSCTranslateStructureNames,
     // Apply changes events
@@ -156,6 +158,7 @@ begin
     evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLPlayersIni:               pact := pact + [paUpdatePlayerList, paUpdateEventDialog, paUpdateDebugValues];
     evStructuresFilenameChange:   pact := pact + [paUpdateDebugValues];
+    evStructuresImportItem:       pact := pact + [paUpdateStructuresEditor];
     // StructGraphics events
     evFLColoursBin:               pact := pact + [paUpdatePlayerColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
@@ -171,6 +174,7 @@ begin
                                   pact := pact + [paUpdateStructuresListTranslated];
       end;
     evFLSamplesUib:               pact := pact + [paUpdateSoundList, paUpdateDebugValues];
+    evSamplesUibModify:           pact := pact + [paUpdateSoundList];
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events

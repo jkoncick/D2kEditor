@@ -405,7 +405,7 @@ begin
   StructGraphics.load_graphics_misc_objects;
   Sounds.load_sound_rs(false);
   StringTable.load_text_uib(TextUib);
-  StringTable.load_samples_uib;
+  StringTable.load_samples_uib(false);
 end;
 
 end.

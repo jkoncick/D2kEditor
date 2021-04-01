@@ -3233,22 +3233,30 @@ object StructuresEditor: TStructuresEditor
         ColCount = 3
         DefaultColWidth = 96
         DefaultRowHeight = 19
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goThumbTracking]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goAlwaysShowEditor, goThumbTracking]
         TabOrder = 0
         OnDblClick = btnSoundRsPlayClick
         OnSelectCell = sgSamplesUibSelectCell
+        OnSetEditText = sgSamplesUibSetEditText
+        RowHeights = (
+          19
+          19
+          19
+          19
+          19)
       end
       object sgSoundRs: TStringGrid
         Left = 336
         Top = 16
         Width = 320
-        Height = 585
+        Height = 564
         ColCount = 3
         DefaultColWidth = 96
         DefaultRowHeight = 19
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
         TabOrder = 1
         OnDblClick = btnSoundRsPlayClick
+        OnSelectCell = sgSoundRsSelectCell
         RowHeights = (
           19
           19
@@ -3283,23 +3291,57 @@ object StructuresEditor: TStructuresEditor
         TabOrder = 4
         OnClick = brnSoundRsReplaceClick
       end
-      object btnSoundRsAddNew: TButton
+      object btnSoundRsAdd: TButton
         Left = 520
         Top = 608
         Width = 64
         Height = 25
         Caption = 'Add new'
         TabOrder = 5
-        OnClick = btnSoundRsAddNewClick
+        OnClick = btnSoundRsAddClick
       end
-      object btnSoundRsRemoveLast: TButton
+      object btnSoundRsRemove: TButton
         Left = 584
         Top = 608
         Width = 72
         Height = 25
         Caption = 'Remove last'
         TabOrder = 6
-        OnClick = btnSoundRsRemoveLastClick
+        OnClick = btnSoundRsRemoveClick
+      end
+      object edSoundRsName: TEdit
+        Left = 370
+        Top = 584
+        Width = 134
+        Height = 21
+        TabOrder = 7
+      end
+      object btnSoundRsRename: TButton
+        Left = 508
+        Top = 584
+        Width = 57
+        Height = 21
+        Caption = 'Rename'
+        TabOrder = 8
+        OnClick = btnSoundRsRenameClick
+      end
+      object btnSamplesUibRemove: TButton
+        Left = 160
+        Top = 608
+        Width = 100
+        Height = 25
+        Caption = 'Remove last'
+        TabOrder = 9
+        OnClick = btnSamplesUibRemoveClick
+      end
+      object btnSamplesUibAdd: TButton
+        Left = 60
+        Top = 608
+        Width = 100
+        Height = 25
+        Caption = 'Add new'
+        TabOrder = 10
+        OnClick = btnSamplesUibAddClick
       end
     end
   end

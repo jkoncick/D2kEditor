@@ -30,6 +30,7 @@ type
     procedure replace_sound(index: integer; filename: string);
     procedure add_new_sound(filename: string);
     procedure remove_last_sound;
+    procedure rename_sound(index: integer; name: string);
 
   end;
 
@@ -270,6 +271,12 @@ begin
   cache_sound_rs_data;
   SetLength(sound_rs_data, Length(sound_rs_data) - sound_rs_directory[Length(sound_rs_directory) - 1].size);
   SetLength(sound_rs_directory, Length(sound_rs_directory) - 1);
+  sound_rs_modified := true;
+end;
+
+procedure TSounds.rename_sound(index: integer; name: string);
+begin
+  sound_rs_directory[index].name := name;
   sound_rs_modified := true;
 end;
 

@@ -550,10 +550,10 @@ type
     btnSoundRsPlay: TButton;
     btnSoundRsExport: TButton;
     brnSoundRsReplace: TButton;
-    btnSoundRsAddNew: TButton;
+    btnSoundRsAdd: TButton;
     SoundImportDialog: TOpenDialog;
     SoundExportDialog: TSaveDialog;
-    btnSoundRsRemoveLast: TButton;
+    btnSoundRsRemove: TButton;
     btnWeaponFiringSoundPlay: TButton;
     btnExplosionSoundPlay: TButton;
     lblUnitVoicePriority: TLabel;
@@ -568,6 +568,10 @@ type
     imgImagePalette: TImage;
     ImageImportDialog: TOpenDialog;
     ImageExportDialog: TSaveDialog;
+    edSoundRsName: TEdit;
+    btnSoundRsRename: TButton;
+    btnSamplesUibAdd: TButton;
+    btnSamplesUibRemove: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -647,11 +651,16 @@ type
     procedure imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     // Sounds tab events
     procedure sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure sgSamplesUibSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+    procedure btnSamplesUibAddClick(Sender: TObject);
+    procedure btnSamplesUibRemoveClick(Sender: TObject);
+    procedure sgSoundRsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure btnSoundRsPlayClick(Sender: TObject);
     procedure btnSoundRsExportClick(Sender: TObject);
     procedure brnSoundRsReplaceClick(Sender: TObject);
-    procedure btnSoundRsAddNewClick(Sender: TObject);
-    procedure btnSoundRsRemoveLastClick(Sender: TObject);
+    procedure btnSoundRsAddClick(Sender: TObject);
+    procedure btnSoundRsRemoveClick(Sender: TObject);
+    procedure btnSoundRsRenameClick(Sender: TObject);
     // Item control group events
     procedure IcgAddClick(Sender: TObject);
     procedure IcgRemoveClick(Sender: TObject);
@@ -696,6 +705,8 @@ type
     // Temporary data
     tmp_building_tiles_occupied_all: cardinal;
     tmp_building_tiles_occupied_solid: cardinal;
+    // Modified flags
+    samples_uib_ui_modified: boolean;
     // Loading flag
     loading: boolean;
     // Pending action flags
@@ -959,6 +970,8 @@ begin
   Structures.load_speed_bin(true);
   StructGraphics.load_data_r16(true);
   Sounds.load_sound_rs(true);
+  if StringTable.samples_uib_modified or samples_uib_ui_modified then
+    StringTable.load_samples_uib(true);
   pnImagePalette.Visible := false;
 end;
 
@@ -1757,13 +1770,67 @@ const
 var
   index: integer;
 begin
-  index := Sounds.find_sound(sgSamplesUib.Cells[2, ARow]);
-  if index <> -1 then
+  if ARow > 0 then
+    index := Sounds.find_sound(sgSamplesUib.Cells[2, ARow])
+  else
+    index := -1;
+  if (index <> -1) and (index < sgSoundRs.RowCount) then
   begin
     sgSoundRs.Selection := Selection;
     sgSoundRs.Row := index + 1;;
   end else
     sgSoundRs.Selection := NoSelection;
+end;
+
+procedure TStructuresEditor.sgSamplesUibSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+var
+  cmp_value: string;
+  dummy: boolean;
+begin
+  if ARow <> sgSamplesUib.Row then
+    exit;
+  if ARow - 1 >= StringTable.samples_uib.Count then
+    exit;
+  if ACol = 1 then
+    cmp_value := StringTable.samples_uib.Names[ARow - 1]
+  else
+    cmp_value := StringTable.samples_uib.ValueFromIndex[ARow - 1];
+  if cmp_value = Value then
+    exit;
+  if not samples_uib_ui_modified then
+  begin
+    samples_uib_ui_modified := true;
+    fill_status_bar;
+  end;
+  sgSamplesUibSelectCell(sender, ACol, ARow, dummy);
+end;
+
+procedure TStructuresEditor.btnSamplesUibAddClick(Sender: TObject);
+begin
+  sgSamplesUib.RowCount := sgSamplesUib.RowCount + 1;
+  sgSamplesUib.Cells[0, sgSamplesUib.RowCount - 1] := IntToStr(sgSamplesUib.RowCount - 2);
+  sgSamplesUib.Row := sgSamplesUib.RowCount - 1;
+  samples_uib_ui_modified := true;
+  fill_status_bar;
+end;
+
+procedure TStructuresEditor.btnSamplesUibRemoveClick(Sender: TObject);
+begin
+  if sgSamplesUib.Row = sgSamplesUib.RowCount - 1 then
+    sgSamplesUib.Row := sgSamplesUib.RowCount - 2;
+  sgSamplesUib.RowCount := sgSamplesUib.RowCount - 1;
+  sgSamplesUib.Cells[1, sgSamplesUib.RowCount] := '';
+  sgSamplesUib.Cells[2, sgSamplesUib.RowCount] := '';
+  samples_uib_ui_modified := true;
+  fill_status_bar;
+end;
+
+procedure TStructuresEditor.sgSoundRsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+begin
+  if ARow > 0 then
+    edSoundRsName.Text := Sounds.sound_rs_directory[ARow-1].name
+  else
+    edSoundRsName.Text := '';
 end;
 
 procedure TStructuresEditor.btnSoundRsPlayClick(Sender: TObject);
@@ -1792,7 +1859,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.btnSoundRsAddNewClick(Sender: TObject);
+procedure TStructuresEditor.btnSoundRsAddClick(Sender: TObject);
 begin
   if SoundImportDialog.Execute then
   begin
@@ -1802,9 +1869,17 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.btnSoundRsRemoveLastClick(Sender: TObject);
+procedure TStructuresEditor.btnSoundRsRemoveClick(Sender: TObject);
 begin
   Sounds.remove_last_sound;
+  fill_data(fdaNone);
+end;
+
+procedure TStructuresEditor.btnSoundRsRenameClick(Sender: TObject);
+begin
+  if sgSoundRs.Row <= 0 then
+    exit;
+  Sounds.rename_sound(sgSoundRs.Row - 1, edSoundRsName.Text);
   fill_data(fdaNone);
 end;
 
@@ -1884,7 +1959,6 @@ begin
   begin
     store_data;
     Structures.import_item(group_index, icg.list_control.ItemIndex, ItemImportDialog.FileName);
-    fill_data(fdaAll);
   end;
 end;
 
@@ -1910,8 +1984,8 @@ begin
   icg := Addr(item_control_groups[group_index]);
   if icg.list_control.ItemIndex < 0 then
     exit;
-  if Structures.paste_item(group_index, icg.list_control.ItemIndex) then
-    fill_data(fdaAll);
+  store_data;
+  Structures.paste_item(group_index, icg.list_control.ItemIndex);
 end;
 
 procedure TStructuresEditor.IcgMoveUpClick(Sender: TObject);
@@ -2273,6 +2347,7 @@ procedure TStructuresEditor.update_sound_list;
 var
   tmp_strings: TStringList;
   i: integer;
+  last_index: integer;
 begin
   if not Visible then
   begin
@@ -2290,9 +2365,14 @@ begin
     sgSamplesUib.Cells[1, i + 1] := StringTable.samples_uib.Names[i];
     sgSamplesUib.Cells[2, i + 1] := StringTable.samples_uib.ValueFromIndex[i];
   end;
+  samples_uib_ui_modified := false;
   // Unit voices combo boxes
   for i := 0 to 17 do
+  begin
+    last_index := cbxUnitVoices[i].ItemIndex;
     cbxUnitVoices[i].Items := tmp_strings;
+    cbxUnitVoices[i].ItemIndex := last_index;
+  end;
   tmp_strings.Insert(0, '(none)');
   cbxWeaponFiringSound.Items := tmp_strings;
   cbxExplosionSound.Items := tmp_strings;
@@ -2620,7 +2700,7 @@ begin
     file1 := IfThen(Structures.techpos_bin_modified, '*', '') + Structures.techpos_bin_filename
   else if PageControl.ActivePage = PageSounds then
   begin
-    file1 := StringTable.samples_uib_filename;
+    file1 := IfThen(StringTable.samples_uib_modified or samples_uib_ui_modified, '*', '') + StringTable.samples_uib_filename;
     file2 := IfThen(Sounds.sound_rs_modified, '*', '') + Sounds.sound_rs_filename;
   end;
   // Fill status bar
@@ -2991,6 +3071,12 @@ begin
     for i := 0 to Length(Structures.templates.Other) - 1 do
       if Structures.templates_other_byte_types[i] = tobtNone then
         Structures.templates.Other[i] := StrToIntDef(vleTemplatesOther.Cells[1, i+1], 0);
+  end else
+  if PageControl.ActivePage = PageSounds then
+  begin
+    // Sounds
+    if samples_uib_ui_modified then
+      StringTable.store_samples_uib_data_from_stringgrid(sgSamplesUib);
   end;
 end;
 
@@ -4014,6 +4100,7 @@ begin
   Structures.save_techpos_bin;
   StructGraphics.save_data_r16;
   Sounds.save_sound_rs;
+  StringTable.save_samples_uib;
   fill_status_bar;
 end;
 
