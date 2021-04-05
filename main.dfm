@@ -713,6 +713,9 @@ object MainWindow: TMainWindow
     end
     object Help1: TMenuItem
       Caption = 'Help'
+      object N12: TMenuItem
+        Caption = '-'
+      end
       object KeyShortcuts1: TMenuItem
         Caption = 'Key Shortcuts'
         OnClick = KeyShortcuts1Click

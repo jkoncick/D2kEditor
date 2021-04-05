@@ -147,6 +147,7 @@ type
     Translatestructurenames1: TMenuItem;
     N15: TMenuItem;
     Debugwindow1: TMenuItem;
+    N12: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -196,6 +197,7 @@ type
     procedure Assignmisfile1Click(Sender: TObject);
     procedure Quicklaunch1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
+    procedure OpenHelpDoc(Sender: TObject);
     procedure KeyShortcuts1Click(Sender: TObject);
     procedure Mouseactions1Click(Sender: TObject);
     procedure Debugwindow1Click(Sender: TObject);
@@ -285,6 +287,7 @@ type
 
     // Dynamic menu items
     recent_files_menuitems: array[1..cnt_recent_files] of TMenuItem;
+    help_doc_filenames: TStringList;
 
     // Others
     special_value_changing: boolean;
@@ -348,6 +351,8 @@ var
   i: integer;
   btn: TSpeedButton;
   tmp_strings: TStringList;
+  SR: TSearchRec;
+  menuitem: TMenuItem;
 begin
   // Load GUI setings
   Settings.load_window_position(self);
@@ -447,6 +452,20 @@ begin
   Restrictpainting1.Checked := Settings.RestrictPainting;
   Userandompaintmap1.Checked := Settings.UseRandomPaintMap;
   Translatestructurenames1.Checked := Settings.TranslateStructureNames;
+  // Initialize documents in help menu
+  help_doc_filenames := TStringList.Create;
+  if FindFirst(current_dir + 'doc\*', 0, SR) = 0 then
+  begin
+    repeat
+      menuitem := TMenuItem.Create(Help1);
+      menuitem.Caption := ChangeFileExt(SR.Name, '');
+      menuitem.Tag := help_doc_filenames.Count;
+      menuitem.OnClick := OpenHelpDoc;
+      Help1.Insert(0, menuitem);
+      help_doc_filenames.Add(SR.Name);
+    until FindNext(SR) <> 0;
+    FindClose(SR);
+  end;
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -1047,6 +1066,11 @@ begin
   if not check_map_can_be_tested then
     exit;
   TestMapDialog.invoke;
+end;
+
+procedure TMainWindow.OpenHelpDoc(Sender: TObject);
+begin
+  ShellExecuteA(0, 'open', PChar(current_dir + 'doc\' + help_doc_filenames[(Sender as TMenuItem).Tag]), '', PChar(current_dir), SW_SHOWNORMAL);
 end;
 
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
