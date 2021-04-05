@@ -323,6 +323,8 @@ type
     name: String;
     value: word;
     color: Cardinal;
+    image: integer;
+    mark: string;
     stats_group: word;
   end;
 
@@ -1158,6 +1160,8 @@ begin
       name := sname;
       value := ini.ReadInteger(sname, 'value', 0);
       color := ini.ReadInteger(sname, 'color', $0);
+      image := ini.ReadInteger(sname, 'image', 0);
+      mark := ini.ReadString(sname, 'mark', '');
       stats_group := ini.ReadInteger(sname, 'stats_group', 0);
     end;
   end;

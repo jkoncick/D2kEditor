@@ -188,6 +188,7 @@ begin
   map_filename := filename;
   map_modified := false;
   reset_undo_history;
+  search_last_special := 65535;
   // Update recent files list
   Settings.update_recent_files(map_filename);
   Settings.determine_game_paths_from_path(map_filename);
@@ -276,6 +277,7 @@ begin
   map_loaded := true;
   map_modified := false;
   reset_undo_history;
+  search_last_special := 65535;
   // Reset random generator
   //--RandomGen.reset;
   // Get test map settings

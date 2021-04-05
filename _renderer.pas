@@ -154,6 +154,7 @@ var
   spice_tile_value: word;
   dest_rect: TRect;
   src_rect: TRect;
+  src_bitmap, src_bitmap_mask: TBitmap;
   tile_type: TileType;
   tile_attr: Cardinal;
   building_template: TBuildingTemplatePtr;
@@ -166,6 +167,7 @@ var
   house_color_pixels: integer;
   is_stealth: boolean;
   defence_area: TDefenceAreaPtr;
+  misc_obj_info: ^TMiscObjectInfo;
 begin
   if not Map.loaded then
     exit;
@@ -352,14 +354,29 @@ begin
         // Structure is Misc object
         if (x < min_x) or (x > max_x) or (y < min_y) or (y > max_y) then
           continue; // Do not draw it outside of rendering area
-        src_rect := rect((tiledata_entry.index)*32,0,(tiledata_entry.index)*32+32,32);
+        misc_obj_info := Addr(Structures.misc_object_info[tiledata_entry.index]);
+        if misc_obj_info.image < 0 then
+        begin
+          src_bitmap := StructGraphics.graphics_misc_objects;
+          src_bitmap_mask := StructGraphics.graphics_misc_objects_mask;
+          src_rect := rect((misc_obj_info.image * -1 - 1)*32,0,(misc_obj_info.image * -1 - 1)*32+32,32);
+        end else
+        begin
+          structure_image := StructGraphics.get_structure_image(misc_obj_info.image, 0, false, false, was_already_loaded);
+          src_bitmap := structure_image.bitmap;
+          src_bitmap_mask := structure_image.bitmap_mask;
+          src_rect := rect(0, 0, 32, 32);
+        end;
         dest_rect := rect(x*32,y*32,x*32+32,y*32+32);
         cnv_target.Brush.Style := bsSolid;
         cnv_target.CopyMode := cmSrcAnd;
-        cnv_target.CopyRect(dest_rect,StructGraphics.graphics_misc_objects_mask.Canvas,src_rect);
+        cnv_target.CopyRect(dest_rect, src_bitmap_mask.Canvas, src_rect);
         cnv_target.CopyMode := cmSrcPaint;
-        cnv_target.CopyRect(dest_rect,StructGraphics.graphics_misc_objects.Canvas,src_rect);
+        cnv_target.CopyRect(dest_rect, src_bitmap.Canvas, src_rect);
         cnv_target.CopyMode := cmSrcCopy;
+        cnv_target.Brush.Style := bsClear;
+        if misc_obj_info.mark <> '' then
+          cnv_target.TextOut(x*32 + 15 - cnv_target.TextWidth(misc_obj_info.mark) div 2, y * 32 + 2, misc_obj_info.mark);
       end else
       if tiledata_entry.stype = ST_BUILDING then
       begin
