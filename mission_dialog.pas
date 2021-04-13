@@ -242,7 +242,7 @@ begin
   if FindFirst(Settings.GamePath + '\CustomCampaignData\*', faDirectory, SR) = 0 then
   begin
     repeat
-      if (SR.Name <> '.') and (SR.Name <> '..') then
+      if ((SR.Attr and faDirectory) <> 0) and (SR.Name <> '.') and (SR.Name <> '..') then
         tmp_strings.Add(SR.Name);
     until FindNext(SR) <> 0;
       FindClose(SR);
@@ -531,7 +531,7 @@ begin
   if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\*', faDirectory, SR) = 0 then
   begin
     repeat
-      if (SR.Name <> '.') and (SR.Name <> '..') and (AnsiCompareText(SR.Name,'colours') <> 0) and (AnsiCompareText(SR.Name,'intel') <> 0) and (AnsiCompareText(SR.Name,'players') <> 0) then
+      if ((SR.Attr and faDirectory) <> 0) and (SR.Name <> '.') and (SR.Name <> '..') and (AnsiCompareText(SR.Name,'colours') <> 0) and (AnsiCompareText(SR.Name,'intel') <> 0) and (AnsiCompareText(SR.Name,'players') <> 0) then
         tmp_strings.Add(SR.Name);
     until FindNext(SR) <> 0;
       FindClose(SR);

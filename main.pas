@@ -127,7 +127,6 @@ type
     Alwaysaskonquit1: TMenuItem;
     Hidepresetwindow1: TMenuItem;
     More1: TMenuItem;
-    Memo1: TMemo;
     TileAttributeseditor1: TMenuItem;
     Restrictpainting1: TMenuItem;
     Saveminimapimage1: TMenuItem;
@@ -477,6 +476,11 @@ procedure TMainWindow.FormClose(Sender: TObject; var Action: TCloseAction);
 var
   dialog_result: integer;
 begin
+  if Launcher.check_game_is_running then
+  begin
+    action := caNone;
+    exit;
+  end;
   if Settings.AlwaysAskOnQuit and Map.check_map_modified then
   begin
     dialog_result := Application.MessageBox('Do you want to save your map changes before exiting the program?','Save changes?', MB_YESNOCANCEL or MB_ICONQUESTION);
@@ -1994,25 +1998,25 @@ end;
 
 function TMainWindow.check_map_can_be_tested: boolean;
 begin
+  result := false;
+  if Launcher.check_game_is_running then
+    exit;
   if not Map.loaded then
   begin
     Application.MessageBox('No map to test.', 'Cannot test map', MB_ICONERROR);
-    result := false;
     exit;
   end;
   if not Mission.mis_assigned then
   begin
     Application.MessageBox('No mission file is assigned to this map.', 'Cannot test map', MB_ICONERROR);
-    result := false;
     exit;
   end;
   if not FileExists(Settings.GameExecutable) then
   begin
     Application.MessageBox(PChar('Cannot find game executable (' + Settings.GameExecutable + ')'), 'Cannot test map', MB_ICONERROR);
-    result := false;
     exit;
   end;
-  if (Launcher.TextUib <> '') and not FileExists(Settings.GamePath + '\Data\UI_DATA\' + Launcher.TextUib) then
+  if (Launcher.TextUib <> '') and (find_file('Data\UI_DATA\' + Launcher.TextUib, '') = '') then
   begin
     Application.MessageBox(PChar('The custom TEXT.UIB file (' + Launcher.TextUib + ') does not exist.'#13'Map will be tested with the game''s default TEXT.UIB file.'), 'Warning', MB_ICONWARNING);
     Launcher.TextUib := '';

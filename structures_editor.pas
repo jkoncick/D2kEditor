@@ -930,6 +930,8 @@ end;
 procedure TStructuresEditor.Savetofiles1Click(Sender: TObject);
 begin
   apply_changes;
+  if Launcher.check_game_is_running then
+    exit;
   save_to_files;
   confirm_overwrite_original_file_last_answer := 0;
 end;
@@ -937,6 +939,8 @@ end;
 procedure TStructuresEditor.Launchgame1Click(Sender: TObject);
 begin
   apply_changes;
+  if Launcher.check_game_is_running then
+    exit;
   save_to_files;
   if confirm_overwrite_original_file_last_answer <> IDNO then
     Launcher.launch_game;

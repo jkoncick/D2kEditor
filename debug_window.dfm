@@ -65,5 +65,22 @@ object DebugWindow: TDebugWindow
         OnClick = DebugSettingChange
       end
     end
+    object gbMissionLauncher: TGroupBox
+      Left = 296
+      Top = 4
+      Width = 225
+      Height = 41
+      Caption = 'Mission launcher'
+      TabOrder = 1
+      object cbShowReplaceFilesFromModsFolderLog: TCheckBox
+        Left = 8
+        Top = 16
+        Width = 209
+        Height = 17
+        Caption = 'Show Replace files from mods folder log'
+        TabOrder = 0
+        OnClick = DebugSettingChange
+      end
+    end
   end
 end

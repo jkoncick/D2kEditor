@@ -31,6 +31,7 @@ type
     ShowUnknownSpecials: boolean;
     UseRandomPaintMap: boolean;
     TranslateStructureNames: boolean;
+    CleanUpExtraModFilesAfterLaunch: boolean;
     GridColor: Cardinal;
 
     // Default values
@@ -53,6 +54,7 @@ type
     // Debug settings
     Debug_ShowRenderTime: boolean;
     Debug_ShowDifferentialRendering: boolean;
+    Debug_ShowReplaceFilesFromModsFolderLog: boolean;
 
   public
     ini: TMemIniFile;
@@ -107,6 +109,7 @@ begin
   ShowUnknownSpecials := ini.ReadBool('Preferences', 'ShowUnknownSpecials', false);
   UseRandomPaintMap := ini.ReadBool('Preferences', 'UseRandomPaintMap', false);
   TranslateStructureNames := ini.ReadBool('Preferences', 'TranslateStructureNames', false);
+  CleanUpExtraModFilesAfterLaunch := ini.ReadBool('Preferences', 'CleanUpExtraModFilesAfterLaunch', false);
   GridColor := ini.ReadInteger('Preferences', 'GridColor', $000000);
   // Load default values
   DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
@@ -196,6 +199,7 @@ begin
   ini.WriteBool('Preferences', 'ShowUnknownSpecials', ShowUnknownSpecials);
   ini.WriteBool('Preferences', 'UseRandomPaintMap', UseRandomPaintMap);
   ini.WriteBool('Preferences', 'TranslateStructureNames', TranslateStructureNames);
+  ini.WriteBool('Preferences', 'CleanUpExtraModFilesAfterLaunch', CleanUpExtraModFilesAfterLaunch);
   ini.WriteInteger('Preferences', 'Gridcolor', GridColor);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);

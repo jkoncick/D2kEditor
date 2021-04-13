@@ -157,7 +157,7 @@ end;
 
 procedure TMissionLauncher.btnLaunchGameClick(Sender: TObject);
 begin
-  if mission_index <> -1 then
+  if (mission_index <> -1) and not Launcher.check_game_is_running then
     Launcher.launch_mission(mission_index, cbDifficultyLevel.ItemIndex);
 end;
 

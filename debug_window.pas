@@ -13,6 +13,8 @@ type
     gbRenderingPerformance: TGroupBox;
     cbShowRenderTime: TCheckBox;
     cbShowDifferentialRendering: TCheckBox;
+    gbMissionLauncher: TGroupBox;
+    cbShowReplaceFilesFromModsFolderLog: TCheckBox;
     procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -52,6 +54,7 @@ procedure TDebugWindow.DebugSettingChange(Sender: TObject);
 begin
   Settings.Debug_ShowRenderTime := cbShowRenderTime.Checked;
   Settings.Debug_ShowDifferentialRendering := cbShowDifferentialRendering.Checked;
+  Settings.Debug_ShowReplaceFilesFromModsFolderLog := cbShowReplaceFilesFromModsFolderLog.Checked;
 end;
 
 procedure TDebugWindow.update_debug_values;

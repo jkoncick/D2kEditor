@@ -85,6 +85,8 @@ begin
   StructGraphics.init;
   Sounds.init;
   StringTable.init;
+  // Restore backup files if needed
+  Launcher.restore_backup_files_from_last_run;
   // Load map given as first parameter
   if ParamCount > 0 then
     MainWindow.load_map(ParamStr(1));
