@@ -120,7 +120,7 @@ type
     procedure cache_map_stats;
 
     // Miscellaneous procedures
-    function check_errors: String;
+    function check_errors: boolean;
     function check_map_modified: boolean;
     function search_special(special: word; var result_x, result_y: integer): boolean;
 
@@ -149,13 +149,17 @@ var
   tmp_map_width, tmp_map_height: word;
   x, y: integer;
 begin
-  // Reset map data
-  for x := 0 to max_map_width-1 do
-    for y := 0 to max_map_height-1 do
-    begin
-      map_data[x,y].tile := 0;
-      map_data[x,y].special := 0;
-    end;
+  // Check for given file
+  if not FileExists(filename) then
+  begin
+    Application.MessageBox(PChar('File does not exist: ' + filename), 'Error loading map', MB_ICONERROR);
+    exit;
+  end;
+  if AnsiCompareText(ExtractFileExt(filename), '.MAP') <> 0 then
+  begin
+    Application.MessageBox('Invalid file type. You need to provide a file with .MAP extension.', 'Error loading map', MB_ICONERROR);
+    exit;
+  end;
   // Read map file
   AssignFile(map_file, filename);
   Reset(map_file);
@@ -172,6 +176,14 @@ begin
     SetLength(buffer, 0);
     exit;
   end;
+  // Reset map data
+  for x := 0 to max_map_width-1 do
+    for y := 0 to max_map_height-1 do
+    begin
+      map_data[x,y].tile := 0;
+      map_data[x,y].special := 0;
+    end;
+  // Setup map data
   map_width := tmp_map_width;
   map_height := tmp_map_height;
   pos := 2;
@@ -193,7 +205,7 @@ begin
   Settings.update_recent_files(map_filename);
   Settings.determine_game_paths_from_path(map_filename);
   // Get test map settings
-  Launcher.get_map_test_settings(map_filename);
+  Launcher.get_test_map_settings(map_filename);
   // Load mission
   Mission.load_mission(filename);
   // Register event in dispatcher
@@ -245,7 +257,7 @@ begin
       Settings.update_recent_files(map_filename);
       Settings.determine_game_paths_from_path(map_filename);
       // Get test map settings
-      Launcher.get_map_test_settings(map_filename);
+      Launcher.get_test_map_settings(map_filename);
       // Register event in dispatcher
       Dispatcher.register_event(evMapFilenameChange);
     end;
@@ -280,8 +292,6 @@ begin
   search_last_special := 65535;
   // Reset random generator
   //--RandomGen.reset;
-  // Get test map settings
-  Launcher.get_map_test_settings(map_filename);
   // New mission
   Mission.new_mission;
   // Register event in dispatcher
@@ -731,7 +741,7 @@ begin
   end;
 end;
 
-function TMap.check_errors: String;
+function TMap.check_errors: boolean;
 var
   x, y: integer;
   player: integer;
@@ -741,42 +751,32 @@ var
   num_spice_blooms: integer;
   num_structures_total: integer;
   num_refineries: integer;
+  errmsg: string;
 begin
+  errmsg := '';
   // Check for number of worm spawners
   if map_stats.objects[ord(sgWormSpawners)] = 0 then
-  begin
-    result := 'You must place at least one Worm Spawner.';
-    exit;
-  end;
+    errmsg := 'You must place at least one Worm Spawner.';
   // Check for number of player starts
   num_player_starts := map_stats.objects[ord(sgPlayerStarts)];
   if (num_player_starts <> 0) and (num_player_starts <> 8) then
-  begin
-    result := format('Invalid number of Player Starts (%d). Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', [num_player_starts]);
-    exit;
-  end;
+    errmsg := format('Invalid number of Player Starts (%d). Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', [num_player_starts]);
   // Check for limit of spice blooms
   num_spice_blooms := map_stats.objects[ord(sgSpiceBlooms)];
   if num_spice_blooms > Structures.limit_spice_blooms then
-  begin
-    result := format('You placed %d spice blooms on map, which is more than maximum of %d supported by game.'#13'The spice blooms above the limit will not work.', [num_spice_blooms, Structures.limit_spice_blooms]);
-    exit;
-  end;
+    errmsg := format('You placed %d spice blooms on map, which is more than maximum of %d supported by game.'#13'The spice blooms above the limit will not work.', [num_spice_blooms, Structures.limit_spice_blooms]);
   // Check for limit of structures
   num_structures_total := map_stats.num_structures_total + map_stats.objects[ord(sgWormSpawners)];
   if num_structures_total > Structures.limit_structures_total then
-  begin
-    result := format('You placed %d structures on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures_total, Structures.limit_structures_total]);
-    exit;
-  end;
+    errmsg := format('You placed %d structures on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures_total, Structures.limit_structures_total]);
   // Check for limit of refineries per player
   for player := 0 to cnt_players - 1 do
   begin
     num_refineries := map_stats.players[player].num_refineries;
     if num_refineries > Structures.limit_refineries_per_player then
     begin
-      result := format('You placed %d refineries for player %s on map, which is more than game''s limit of %d.'#13'Remove some refineries.', [num_refineries, Structures.player_names[player], Structures.limit_refineries_per_player]);
-      exit;
+      errmsg := format('You placed %d refineries for player %s on map, which is more than game''s limit of %d.'#13'Remove some refineries.', [num_refineries, Structures.player_names[player], Structures.limit_refineries_per_player]);
+      break;
     end;
   end;
   // Check for buildings exceeding map bounds
@@ -791,14 +791,15 @@ begin
       Structures.get_structure_size(map_data[x, y].special, size_x, size_y);
       if (x + size_x > map_width) or (y + size_y > map_height) then
       begin
-        result := format('Building at %d,%d (%s) exceeds the map bounds.', [x, y, Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)])]);
-        exit;
+        errmsg := format('Building at %d,%d (%s) exceeds the map bounds.', [x, y, Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)])]);
+        break;
       end;
     end;
-  if Mission.mis_assigned then
-    result := Mission.check_errors
-  else
-    result := '';
+  if (errmsg = '') and Mission.mis_assigned then
+    errmsg := Mission.check_errors;
+  if errmsg <> '' then
+    Application.MessageBox(PChar(errmsg), 'Map error', MB_ICONWARNING);
+  result := errmsg = '';
 end;
 
 function TMap.check_map_modified: boolean;

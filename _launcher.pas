@@ -43,23 +43,25 @@ type
     MissionNumber: integer;
     DifficultyLevel: integer;
     Seed: integer;
-    TextUib: String;
-    TestMapParameters: String;
+
+    // File paths
+    spawn_ini_path: string;
+    journal_ini_path: string;
 
     // Game is running
     game_running: boolean;
 
   public
+    procedure init;
     procedure load_all_missions;
     procedure launch_mission(mission_index: integer; difficulty_level: integer);
-    procedure get_map_test_settings(map_filename: String);
     procedure launch_current_mission;
     procedure launch_game;
+    procedure get_test_map_settings(map_filename: String);
+    function check_map_can_be_tested: boolean;
     function check_game_is_running: boolean;
-    procedure restore_backup_files_from_last_run;
 
   private
-    function get_journal_path: string;
     function replace_files_from_mods_folder(campaign_folder, mods_folder, colours_file: string): boolean;
     procedure execute_game_and_wait(testmap: boolean);
     procedure restore_backup_files;
@@ -71,9 +73,30 @@ var
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, IniFiles, ShellApi, Dialogs, Forms, _settings, _map, _missionini, _dispatcher;
+  Windows, SysUtils, StrUtils, IniFiles, ShellApi, Dialogs, Forms, _settings, _map, _mission, _missionini, _dispatcher, _utils;
 
 { TLauncher }
+
+procedure TLauncher.init;
+var
+  ini: TMemIniFile;
+begin
+  spawn_ini_path := Settings.GamePath + '\spawn.ini';
+  journal_ini_path := Settings.GamePath + '\journal.ini';
+  // Load test map settings from spawn.ini file
+  ini := TMemIniFile.Create(spawn_ini_path);
+  MySideID := ini.ReadInteger('Settings', 'MySideID', 0);
+  MissionNumber := ini.ReadInteger('Settings', 'MissionNumber', 0);
+  DifficultyLevel := ini.ReadInteger('Settings', 'DifficultyLevel', 1);
+  Seed := ini.ReadInteger('Settings', 'Seed', random(2000000000));
+  ini.Destroy;
+  // Restore backup files from last run if needed
+  if FileExists(journal_ini_path) then
+  begin
+    Application.MessageBox('The original game files were not restored from backup during last run. They will be restored now.', 'Restore backup files', MB_ICONINFORMATION or MB_OK);
+    restore_backup_files;
+  end;
+end;
 
 procedure TLauncher.load_all_missions;
 var
@@ -143,6 +166,7 @@ var
   mods_folder: string;
 begin
   minfo := Addr(mission_data[mission_index]);
+  // Check for mods folder existence
   mods_folder := Settings.GamePath + '\CustomCampaignData\' + minfo.campaign_folder + '\' + minfo.mods_folder + '\';
   if (minfo.campaign_folder <> '') and (minfo.mods_folder <> '') and not DirectoryExists(mods_folder) then
   begin
@@ -150,13 +174,13 @@ begin
     exit;
   end;
   // Write test map settings to ini file
-  ini := TIniFile.Create(Settings.GamePath + '\spawn.ini');
+  ini := TIniFile.Create(spawn_ini_path);
   ini.WriteString('Settings', 'Scenario', minfo.filename);
   ini.WriteInteger('Settings', 'MySideID', minfo.side_id);
   ini.WriteInteger('Settings', 'MissionNumber', minfo.mission_number);
   ini.WriteInteger('Settings', 'DifficultyLevel', difficulty_level);
   ini.WriteInteger('Settings', 'Seed', Seed);
-  if mission_data[mission_index].text_uib <> '' then
+  if minfo.text_uib <> '' then
     ini.WriteString('Settings', 'TextUib', minfo.text_uib)
   else
     ini.DeleteKey('Settings', 'TextUib');
@@ -168,63 +192,33 @@ begin
     restore_backup_files;
 end;
 
-procedure TLauncher.get_map_test_settings(map_filename: String);
-var
-  ini: TIniFile;
-  map_name: String;
-  house, mission: char;
-  house_num, mission_num: integer;
-begin
-  ini := TIniFile.Create(Settings.GamePath + '\spawn.ini');
-  // Try to detect MissionNumber and MySideID from map file name
-  if map_filename <> '' then
-  begin
-    map_name := ChangeFileExt(ExtractFileName(map_filename),'');
-    house := map_name[Length(map_name)-3];
-    mission := map_name[Length(map_name)-2];
-  end else
-  begin
-    house := 'X';
-    mission := 'X';
-  end;
-  house_num := ini.ReadInteger('Settings', 'MySideID', 0);
-  case house of
-  'A': house_num := 0;
-  'H': house_num := 1;
-  'O': house_num := 2;
-  end;
-  if (ord(mission) >= ord('1')) and (ord(mission) <= ord('9')) then
-    mission_num := strtoint(mission)
-  else
-    mission_num := ini.ReadInteger('Settings', 'MissionNumber', 1);
-  // Fill test map settings
-  MySideID := house_num;
-  MissionNumber := mission_num;
-  DifficultyLevel := ini.ReadInteger('Settings', 'DifficultyLevel', 1);
-  Seed := ini.ReadInteger('Settings', 'Seed', random(2000000000));
-  TextUib := ini.ReadString('Settings', 'TextUib', '');
-  ini.Destroy;
-end;
-
 procedure TLauncher.launch_current_mission;
 var
   ini: TIniFile;
   files_replaced: boolean;
+  text_uib: string;
 begin
   if random(9001) = 1337 then
   begin
     ShellExecute(0, 'open', PChar('https://www.youtube.com/watch?v=oHg5SJYRHA0'), nil, nil, SW_SHOWNORMAL);
     exit;
   end;
+  // Check for text.uib existence
+  text_uib := MissionIni.TextUib;
+  if (text_uib <> '') and (find_file('Data\UI_DATA\' + text_uib, '') = '') then
+  begin
+    Application.MessageBox(PChar('The custom TEXT.UIB file (' + text_uib + ') does not exist.'#13'Map will be tested with the game''s default TEXT.UIB file.'), 'Warning', MB_ICONWARNING);
+    text_uib := '';
+  end;
   // Write test map settings to ini file
-  ini := TIniFile.Create(Settings.GamePath + '\spawn.ini');
+  ini := TIniFile.Create(spawn_ini_path);
   ini.WriteString ('Settings', 'Scenario', 'TESTMAP');
   ini.WriteInteger('Settings', 'MySideID', MySideID);
   ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);
   ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
   ini.WriteInteger('Settings', 'Seed', Seed);
-  if TextUib <> '' then
-    ini.WriteString('Settings', 'TextUib', TextUib)
+  if text_uib <> '' then
+    ini.WriteString('Settings', 'TextUib', text_uib)
   else
     ini.DeleteKey('Settings', 'TextUib');
   ini.Destroy;
@@ -247,24 +241,54 @@ begin
     restore_backup_files;
 end;
 
+procedure TLauncher.get_test_map_settings(map_filename: String);
+var
+  map_name: String;
+  house, mission: char;
+begin
+  // Try to detect MissionNumber and MySideID from map file name
+  map_name := ChangeFileExt(ExtractFileName(map_filename),'');
+  if Length(map_name) <> 4 then
+    exit;
+  house := map_name[1];
+  case house of
+    'A': MySideID := 0;
+    'H': MySideID := 1;
+    'O': MySideID := 2;
+  end;
+  mission := map_name[2];
+  if (ord(mission) >= ord('1')) and (ord(mission) <= ord('9')) then
+    MissionNumber := strtoint(mission);
+end;
+
+function TLauncher.check_map_can_be_tested: boolean;
+var
+  errmsg: string;
+begin
+  errmsg := '';
+  result := false;
+  if check_game_is_running then
+    exit;
+  if not Map.loaded then
+    errmsg := 'No map to test.'
+  else if not Mission.mis_assigned then
+    errmsg := 'No mission file is assigned to this map.'
+  else if not FileExists(Settings.GameExecutable) then
+    errmsg := 'Cannot find game executable (' + Settings.GameExecutable + ')';
+  // Show error if any
+  if errmsg <> '' then
+    Application.MessageBox(PChar(errmsg), 'Cannot test map', MB_ICONERROR)
+  else if Settings.CheckMapErrorsOnTest then
+    result := Map.check_errors
+  else
+    result := true;
+end;
+
 function TLauncher.check_game_is_running: boolean;
 begin
   result := game_running;
   if game_running then
     Application.MessageBox('Cannot do this operation while game is still running.', 'Game is running', MB_ICONERROR or MB_OK);
-end;
-
-procedure TLauncher.restore_backup_files_from_last_run;
-begin
-  if not FileExists(get_journal_path) then
-    exit;
-  Application.MessageBox('The original game files were not restored from backup during last run. They will be restored now.', 'Restore backup files', MB_ICONINFORMATION or MB_OK);
-  restore_backup_files;
-end;
-
-function TLauncher.get_journal_path: string;
-begin
-  result := Settings.GamePath + '\journal.ini';
 end;
 
 function TLauncher.replace_files_from_mods_folder(campaign_folder, mods_folder, colours_file: string): boolean;
@@ -277,7 +301,6 @@ var
   source_files: array of TSourceFileInfo;
   source_files_count: integer;
   source_file, target_file, backup_file: string;
-  journal_path: string;
   journal: TMemIniFile;
   colours_bin_file: string;
 begin
@@ -324,10 +347,9 @@ begin
   end;
   folders.Destroy;
   // Process found source files
-  journal_path := get_journal_path;
-  if FileExists(journal_path) then
-    DeleteFile(journal_path);
-  journal := TMemIniFile.Create(journal_path);
+  if FileExists(journal_ini_path) then
+    DeleteFile(journal_ini_path);
+  journal := TMemIniFile.Create(journal_ini_path);
   for i := 0 to source_files_count - 1 do
   begin
     source_file := source_folder + source_files[i].name;
@@ -374,7 +396,7 @@ begin
   journal.UpdateFile;
   journal.Destroy;
   if Settings.Debug_ShowReplaceFilesFromModsFolderLog then
-    ShellExecute(0, 'open', PChar(journal_path), nil, nil, SW_SHOWNORMAL);
+    ShellExecute(0, 'open', PChar(journal_ini_path), nil, nil, SW_SHOWNORMAL);
   SetLength(source_files, 0);
   result := true;
 end;
@@ -386,7 +408,7 @@ var
 begin
   FillChar(tmpStartupInfo, SizeOf(tmpStartupInfo), 0);
   tmpStartupInfo.cb := SizeOf(TStartupInfo);
-  if CreateProcess(nil, PChar('"' + Settings.GameExecutable + '" ' + IfThen(testmap, '-SPAWN ', '') + TestMapParameters), nil, nil, true, 0,
+  if CreateProcess(nil, PChar('"' + Settings.GameExecutable + '"' + IfThen(testmap, ' -SPAWN', '')), nil, nil, true, 0,
     nil, PChar(Settings.GamePath), tmpStartupInfo, tmpProcessInformation) then
   begin
     game_running := true;
@@ -404,14 +426,12 @@ end;
 
 procedure TLauncher.restore_backup_files;
 var
-  journal_path: string;
   journal: TMemIniFile;
   files: TStringList;
   i: integer;
   original_file, backup_file: string;
 begin
-  journal_path := get_journal_path;
-  journal := TMemIniFile.Create(journal_path);
+  journal := TMemIniFile.Create(journal_ini_path);
   files := TStringList.Create;
   journal.ReadSection('journal', files);
   for i := 0 to files.Count - 1 do
@@ -431,7 +451,7 @@ begin
   end;
   journal.Destroy;
   files.Destroy;
-  DeleteFile(journal_path);
+  DeleteFile(journal_ini_path);
 end;
 
 end.

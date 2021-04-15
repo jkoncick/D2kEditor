@@ -770,7 +770,7 @@ var
 
 implementation
 
-uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, main, test_map_dialog;
+uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, test_map_dialog;
 
 {$R *.dfm}
 
@@ -950,7 +950,7 @@ end;
 procedure TStructuresEditor.Launchmission1Click(Sender: TObject);
 begin
   apply_changes;
-  if not MainWindow.check_map_can_be_tested then
+  if not Launcher.check_map_can_be_tested then
     exit;
   save_to_files;
   if confirm_overwrite_original_file_last_answer <> IDNO then
@@ -961,11 +961,12 @@ end;
 procedure TStructuresEditor.Launchwithsettings1Click(Sender: TObject);
 begin
   apply_changes;
-  if not MainWindow.check_map_can_be_tested then
+  if not Launcher.check_map_can_be_tested then
     exit;
   save_to_files;
   if confirm_overwrite_original_file_last_answer <> IDNO then
-    TestMapDialog.invoke;
+    if TestMapDialog.invoke = mrOk then
+      Launcher.launch_current_mission;
   confirm_overwrite_original_file_last_answer := 0;
 end;
 

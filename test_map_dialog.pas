@@ -16,23 +16,17 @@ type
     eDifficultyLevel: TComboBox;
     lblSeed: TLabel;
     eSeed: TEdit;
-    lblTextUib: TLabel;
-    eTextUib: TEdit;
-    lblParameters: TLabel;
-    eParameters: TEdit;
     btnCancel: TButton;
     btnLaunch: TButton;
     btnRandomSeed: TButton;
-    btnDefaultTextUib: TButton;
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnRandomSeedClick(Sender: TObject);
-    procedure btnDefaultTextUibClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnLaunchClick(Sender: TObject);
   private
     { Private declarations }
   public
-    procedure invoke;
+    function invoke: TModalResult;
     procedure update_player_list(player_list: TStringList);
   end;
 
@@ -61,14 +55,9 @@ begin
   eSeed.Text := inttostr(random(2000000000));
 end;
 
-procedure TTestMapDialog.btnDefaultTextUibClick(Sender: TObject);
-begin
-  eTextUib.Text := '';
-end;
-
 procedure TTestMapDialog.btnCancelClick(Sender: TObject);
 begin
-  Close;
+  ModalResult := mrCancel;
 end;
 
 procedure TTestMapDialog.btnLaunchClick(Sender: TObject);
@@ -79,14 +68,11 @@ begin
     MissionNumber := eMissionNumber.Value;
     DifficultyLevel := eDifficultyLevel.ItemIndex;
     Seed := strtoint(eSeed.Text);
-    TextUib := eTextUib.Text;
-    TestMapParameters := eParameters.Text;
   end;
-  Launcher.launch_current_mission;
-  close;
+  ModalResult := mrOk;
 end;
 
-procedure TTestMapDialog.invoke;
+function TTestMapDialog.invoke: TModalResult;
 begin
   with Launcher do
   begin
@@ -94,10 +80,8 @@ begin
     eMissionNumber.Value := MissionNumber;
     eDifficultyLevel.ItemIndex := DifficultyLevel;
     eSeed.Text := inttostr(Seed);
-    eTextUib.Text := TextUib;
-    eParameters.Text := TestMapParameters;
   end;
-  ShowModal;
+  result := ShowModal;
 end;
 
 procedure TTestMapDialog.update_player_list(player_list: TStringList);

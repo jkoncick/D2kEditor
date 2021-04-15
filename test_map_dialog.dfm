@@ -4,8 +4,8 @@ object TestMapDialog: TTestMapDialog
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Test Map Settings'
-  ClientHeight = 257
-  ClientWidth = 297
+  ClientHeight = 193
+  ClientWidth = 233
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -46,32 +46,18 @@ object TestMapDialog: TTestMapDialog
     Height = 13
     Caption = 'Seed'
   end
-  object lblTextUib: TLabel
-    Left = 16
-    Top = 144
-    Width = 38
-    Height = 13
-    Caption = 'Text.uib'
-  end
-  object lblParameters: TLabel
-    Left = 16
-    Top = 176
-    Width = 53
-    Height = 13
-    Caption = 'Parameters'
-  end
   object eMySideID: TComboBox
-    Left = 96
+    Left = 80
     Top = 16
-    Width = 121
+    Width = 137
     Height = 21
     ItemHeight = 13
     TabOrder = 0
   end
   object eMissionNumber: TSpinEdit
-    Left = 96
+    Left = 80
     Top = 48
-    Width = 121
+    Width = 137
     Height = 22
     MaxLength = 1
     MaxValue = 9
@@ -80,9 +66,9 @@ object TestMapDialog: TTestMapDialog
     Value = 0
   end
   object eDifficultyLevel: TComboBox
-    Left = 96
+    Left = 80
     Top = 80
-    Width = 121
+    Width = 137
     Height = 21
     ItemHeight = 13
     ItemIndex = 1
@@ -94,62 +80,38 @@ object TestMapDialog: TTestMapDialog
       'Hard')
   end
   object eSeed: TEdit
-    Left = 96
+    Left = 80
     Top = 112
-    Width = 121
+    Width = 80
     Height = 21
     TabOrder = 3
     Text = '0'
   end
-  object eTextUib: TEdit
-    Left = 96
-    Top = 144
-    Width = 121
-    Height = 21
-    TabOrder = 4
-    Text = 'TEXT.UIB'
-  end
-  object eParameters: TEdit
-    Left = 96
-    Top = 176
-    Width = 121
-    Height = 21
-    TabOrder = 5
-  end
   object btnCancel: TButton
     Left = 16
-    Top = 216
+    Top = 152
     Width = 89
     Height = 25
     Caption = 'Cancel'
-    TabOrder = 6
+    TabOrder = 4
     OnClick = btnCancelClick
   end
   object btnLaunch: TButton
     Left = 128
-    Top = 216
+    Top = 152
     Width = 89
     Height = 25
     Caption = 'Launch'
-    TabOrder = 7
+    TabOrder = 5
     OnClick = btnLaunchClick
   end
   object btnRandomSeed: TButton
-    Left = 224
+    Left = 160
     Top = 112
     Width = 57
-    Height = 25
+    Height = 21
     Caption = 'Random'
-    TabOrder = 8
+    TabOrder = 6
     OnClick = btnRandomSeedClick
-  end
-  object btnDefaultTextUib: TButton
-    Left = 224
-    Top = 144
-    Width = 57
-    Height = 25
-    Caption = 'Clear'
-    TabOrder = 9
-    OnClick = btnDefaultTextUibClick
   end
 end

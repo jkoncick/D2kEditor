@@ -368,7 +368,7 @@ procedure TTileAtrEditor.Saveandtest1Click(Sender: TObject);
 begin
   if Tileset.tileatr_filename = '' then
     exit;
-  if not MainWindow.check_map_can_be_tested then
+  if not Launcher.check_map_can_be_tested then
     exit;
   Applychanges1Click(nil);
   Tileset.save_tileatr;

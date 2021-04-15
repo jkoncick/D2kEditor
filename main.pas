@@ -312,15 +312,8 @@ type
     procedure resize_cursor_image;
     procedure render_cursor_image;
 
-    // Map loading & saving procedures
-    procedure load_map(filename: String);
-    function check_map_errors: boolean;
-    procedure refresh_recent_files_menu;
-
-    // Map testing procedures
-    function check_map_can_be_tested: boolean;
-
     // Miscellaneous helper procedures
+    procedure refresh_recent_files_menu;
     procedure set_special_value;
     function mode(m: SelectedMode): boolean;
     function mouse_over_map_canvas: boolean;
@@ -544,7 +537,7 @@ begin
   length := DragQueryFile(Msg.Drop, 0, nil, 0);
   setlength(filename, length);
   DragQueryFile(Msg.Drop, 0, PChar(filename), length + 1);
-  load_map(filename);
+  Map.load_map(filename);
   DragFinish(Msg.Drop);
 end;
 
@@ -781,20 +774,20 @@ end;
 procedure TMainWindow.Openmap1Click(Sender: TObject);
 begin
   if MapOpenDialog.Execute then
-    load_map(MapOpenDialog.FileName);
+    Map.load_map(MapOpenDialog.FileName);
 end;
 
 procedure TMainWindow.Reopenmap1Click(Sender: TObject);
 begin
   if Map.loaded and (Map.filename <> '') then
-    load_map(Map.filename)
+    Map.load_map(Map.filename)
   else if (not Map.loaded) and (Settings.RecentFiles[1] <> '') then
-    load_map(Settings.RecentFiles[1]);
+    Map.load_map(Settings.RecentFiles[1]);
 end;
 
 procedure TMainWindow.OpenRecentFile(Sender: TObject);
 begin
-  load_map(Settings.RecentFiles[(Sender as TMenuItem).Tag]);
+  Map.load_map(Settings.RecentFiles[(Sender as TMenuItem).Tag]);
 end;
 
 procedure TMainWindow.Savemap1Click(Sender: TObject);
@@ -805,7 +798,7 @@ begin
     Savemapas1Click(Sender)
   else begin
     if Settings.CheckMapErrorsOnSave then
-      check_map_errors;
+      Map.check_errors;
     Map.save_map(Map.filename, false);
   end;
 end;
@@ -815,7 +808,7 @@ begin
   if not Map.loaded then
     exit;
   if Settings.CheckMapErrorsOnSave then
-    check_map_errors;
+    Map.check_errors;
   if MapSaveDialog.Execute then
     Map.save_map(MapSaveDialog.FileName, false);
 end;
@@ -1060,16 +1053,17 @@ end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
 begin
-  if not check_map_can_be_tested then
+  if not Launcher.check_map_can_be_tested then
     exit;
   Launcher.launch_current_mission;
 end;
 
 procedure TMainWindow.Launchwithsettings1Click(Sender: TObject);
 begin
-  if not check_map_can_be_tested then
+  if not Launcher.check_map_can_be_tested then
     exit;
-  TestMapDialog.invoke;
+  if TestMapDialog.invoke = mrOk then
+    Launcher.launch_current_mission;
 end;
 
 procedure TMainWindow.OpenHelpDoc(Sender: TObject);
@@ -1953,35 +1947,6 @@ begin
   render_editing_marker;
 end;
 
-procedure TMainWindow.load_map(filename: String);
-begin
-  if not FileExists(filename) then
-  begin
-    Application.MessageBox(PChar('File does not exist: ' + filename), 'Load map error', MB_ICONERROR);
-    exit;
-  end;
-  if UpperCase(Copy(filename, Length(filename)-2, 3)) <> 'MAP' then
-  begin
-    Application.MessageBox('Invalid file type. You need to provide a file with .MAP extension.', 'Load map error', MB_ICONERROR);
-    exit;
-  end;
-  // Load map file
-  Map.load_map(filename);
-end;
-
-function TMainWindow.check_map_errors: boolean;
-var
-  errmsg: String;
-begin
-  errmsg := Map.check_errors;
-  result := true;
-  if errmsg <> '' then
-  begin
-    Application.MessageBox(PChar(errmsg), 'Map error', MB_ICONWARNING);
-    result := false;
-  end;
-end;
-
 procedure TMainWindow.refresh_recent_files_menu;
 var
   i: integer;
@@ -1994,37 +1959,6 @@ begin
       recent_files_menuitems[i].Visible := true;
     end;
   end;
-end;
-
-function TMainWindow.check_map_can_be_tested: boolean;
-begin
-  result := false;
-  if Launcher.check_game_is_running then
-    exit;
-  if not Map.loaded then
-  begin
-    Application.MessageBox('No map to test.', 'Cannot test map', MB_ICONERROR);
-    exit;
-  end;
-  if not Mission.mis_assigned then
-  begin
-    Application.MessageBox('No mission file is assigned to this map.', 'Cannot test map', MB_ICONERROR);
-    exit;
-  end;
-  if not FileExists(Settings.GameExecutable) then
-  begin
-    Application.MessageBox(PChar('Cannot find game executable (' + Settings.GameExecutable + ')'), 'Cannot test map', MB_ICONERROR);
-    exit;
-  end;
-  if (Launcher.TextUib <> '') and (find_file('Data\UI_DATA\' + Launcher.TextUib, '') = '') then
-  begin
-    Application.MessageBox(PChar('The custom TEXT.UIB file (' + Launcher.TextUib + ') does not exist.'#13'Map will be tested with the game''s default TEXT.UIB file.'), 'Warning', MB_ICONWARNING);
-    Launcher.TextUib := '';
-  end;
-  if Settings.CheckMapErrorsOnTest then
-    result := check_map_errors
-  else
-    result := true;
 end;
 
 procedure TMainWindow.set_special_value;

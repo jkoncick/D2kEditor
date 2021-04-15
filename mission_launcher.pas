@@ -81,7 +81,7 @@ var
 implementation
 
 uses
-  ShellApi, Math, StrUtils, _launcher, _settings, _stringtable, main;
+  ShellApi, Math, StrUtils, _map, _launcher, _settings, _stringtable;
 
 {$R *.dfm}
 
@@ -167,7 +167,7 @@ begin
     exit;
   if sender = btnOpenMissionInEditor then
     close;
-  MainWindow.load_map(Settings.MissionsPath + '\' + Launcher.mission_data[mission_index].filename + '.MAP');
+  Map.load_map(Settings.MissionsPath + '\' + Launcher.mission_data[mission_index].filename + '.MAP');
 end;
 
 procedure TMissionLauncher.fill_mission_grid_columns;
