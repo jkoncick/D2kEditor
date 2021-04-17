@@ -505,7 +505,7 @@ begin
   LbUnitList.Top := BuildingList.Top + BuildingList.Height + 3;
   UnitList.Top := LbUnitList.Top + 16;
   EditorPages.Height := EditorMenu.Height - 168;
-  StatusBar.Panels[3].Width := ClientWidth - 570;
+  StatusBar.Panels[3].Width := ClientWidth - 590;
   if Map.loaded then
   begin
     render_minimap_position_marker;
@@ -1666,22 +1666,28 @@ begin
   tiledata_entry := Structures.get_tiledata_entry(special);
   if tiledata_entry.stype = ST_MISC_OBJECT then
   begin
-    MiscObjList.ItemIndex := tiledata_entry.index;
-    BuildingList.ItemIndex := -1;
-    UnitList.ItemIndex := -1;
+    if not special_value_changing then
+    begin
+      MiscObjList.ItemIndex := tiledata_entry.index;
+      BuildingList.ItemIndex := -1;
+      UnitList.ItemIndex := -1;
+    end;
     LbStructureName.Caption := Structures.misc_object_info[tiledata_entry.index].name;
   end else
   if tiledata_entry.stype = ST_BUILDING then
   begin
-    MiscObjList.ItemIndex := -1;
-    for i := 0 to Structures.building_type_mapping_count - 1 do
-      if Structures.building_type_mapping[i] = Integer(tiledata_entry.index) then
-      begin
-        BuildingList.ItemIndex := i;
-        break;
-      end;
-    UnitList.ItemIndex := -1;
-    PlayerSelect.ItemIndex := tiledata_entry.player;
+    if not special_value_changing then
+    begin
+      MiscObjList.ItemIndex := -1;
+      for i := 0 to Structures.building_type_mapping_count - 1 do
+        if Structures.building_type_mapping[i] = Integer(tiledata_entry.index) then
+        begin
+          BuildingList.ItemIndex := i;
+          break;
+        end;
+      UnitList.ItemIndex := -1;
+      PlayerSelect.ItemIndex := tiledata_entry.player;
+    end;
     player := Mission.get_player_alloc_index(tiledata_entry.player);
     if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_side_versions[tiledata_entry.index, player] <> -1) then
       LbStructureName.Caption := Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, player])
@@ -1691,10 +1697,13 @@ begin
   end else
   if tiledata_entry.stype = ST_UNIT then
   begin
-    MiscObjList.ItemIndex := -1;
-    BuildingList.ItemIndex := -1;
-    UnitList.ItemIndex := tiledata_entry.index;
-    PlayerSelect.ItemIndex := tiledata_entry.player;
+    if not special_value_changing then
+    begin
+      MiscObjList.ItemIndex := -1;
+      BuildingList.ItemIndex := -1;
+      UnitList.ItemIndex := tiledata_entry.index;
+      PlayerSelect.ItemIndex := tiledata_entry.player;
+    end;
     player := Mission.get_player_alloc_index(tiledata_entry.player);
     if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_side_versions[tiledata_entry.index, player] <> -1) then
       LbStructureName.Caption := Structures.get_unit_name_str(Structures.unit_side_versions[tiledata_entry.index, player])
@@ -1746,8 +1755,8 @@ var
   i: integer;
 begin
   i := PlayerSelect.ItemIndex;
-  StatusBar.Panels[5].Text := 'W: '+inttostr(Map.stats.objects[1])+'  S: '+inttostr(Map.stats.objects[2])+'  B: '+inttostr(Map.stats.objects[3]);
-  StatusBar.Panels[6].Text := 'Power: '+inttostr(Map.stats.players[i].power_percent)+'%   ('+inttostr(Map.stats.players[i].power_output)+'/'+inttostr(Map.stats.players[i].power_need)+')';
+  StatusBar.Panels[5].Text := Format('W: %d  S: %d  B: %d  C: %d', [Map.stats.misc_objects[MOT_WORM_SPAWNER], Map.stats.misc_objects[MOT_PLAYER_START], Map.stats.misc_objects[MOT_SPICE_BLOOM], Map.stats.misc_objects[MOT_CRATE]]);
+  StatusBar.Panels[6].Text := Format('Power: %d%%   (%d/%d)', [Map.stats.players[i].power_percent, Map.stats.players[i].power_output, Map.stats.players[i].power_need]);
 end;
 
 procedure TMainWindow.resize_map_canvas;

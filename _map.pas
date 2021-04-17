@@ -30,13 +30,14 @@ type
     power_percent: word;
     power_output: word;
     power_need: word;
+    num_structures: word;
     num_refineries: word;
   end;
 
 type
   TMapStats = record
     players: array[0..cnt_players-1] of TPlayerStats;
-    objects: array[0..3] of integer;
+    misc_objects: array[0..3] of integer;
     num_structures_total: integer;
   end;
 
@@ -682,18 +683,20 @@ var
   i, x, y: integer;
   tiledata_entry: TTileDataEntryPtr;
   building_template: TBuildingTemplatePtr;
+  unit_template: TUnitTemplatePtr;
   tmp_power: integer;
-  stats_group: integer;
+  misc_object_type: integer;
 begin
   if not map_loaded then
     exit;
   // Reset values
-  for i := 0 to Length(map_stats.objects) - 1 do
-    map_stats.objects[i] := 0;
+  for i := 0 to Length(map_stats.misc_objects) - 1 do
+    map_stats.misc_objects[i] := 0;
   for x := 0 to cnt_players - 1 do
   begin
     output[x] := 0;
     need[x] := 0;
+    map_stats.players[x].num_structures := 0;
     map_stats.players[x].num_refineries := 0;
   end;
   map_stats.num_structures_total := 0;
@@ -704,16 +707,17 @@ begin
       tiledata_entry := Structures.get_tiledata_entry(map_data[x,y].special);
       if tiledata_entry.stype = ST_MISC_OBJECT then
       begin
-        stats_group := Structures.misc_object_info[tiledata_entry.index].stats_group;
-        if stats_group < Length(map_stats.objects) then
-          inc(map_stats.objects[stats_group]);
+        misc_object_type := Structures.misc_object_info[tiledata_entry.index].obj_type;
+        if misc_object_type < Length(map_stats.misc_objects) then
+          inc(map_stats.misc_objects[misc_object_type]);
       end else
       if tiledata_entry.stype = ST_BUILDING then
       begin
-        inc(map_stats.num_structures_total);
         building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
         if building_template = nil then
           continue;
+        inc(map_stats.num_structures_total);
+        inc(map_stats.players[tiledata_entry.player].num_structures);
         // Building is refinery
         if building_template.SpecialBehavior = 4 then
           inc(map_stats.players[tiledata_entry.player].num_refineries);
@@ -725,7 +729,16 @@ begin
           Inc(output[tiledata_entry.player], tmp_power * -1);
       end else
       if tiledata_entry.stype = ST_UNIT then
+      begin
+        unit_template := Structures.get_unit_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
+        if unit_template = nil then
+          continue;
         inc(map_stats.num_structures_total);
+        inc(map_stats.players[tiledata_entry.player].num_structures);
+        // Unit is sandworm
+        if unit_template.SpecialBehavior = 5 then
+          inc(map_stats.misc_objects[MOT_WORM_SPAWNER]);
+      end;
     end;
   // Calculate power value from output/need for each player
   for x := 0 to cnt_players - 1 do
@@ -748,30 +761,39 @@ var
   tiledata_entry: TTileDataEntryPtr;
   size_x, size_y: integer;
   num_player_starts: integer;
-  num_spice_blooms: integer;
+  num_spice_blooms_crates: integer;
   num_structures_total: integer;
+  num_structures: integer;
   num_refineries: integer;
   errmsg: string;
 begin
   errmsg := '';
   // Check for number of worm spawners
-  if map_stats.objects[ord(sgWormSpawners)] = 0 then
+  if Structures.limit_sandworm_required and (map_stats.misc_objects[MOT_WORM_SPAWNER] = 0) then
     errmsg := 'You must place at least one Worm Spawner.';
   // Check for number of player starts
-  num_player_starts := map_stats.objects[ord(sgPlayerStarts)];
+  num_player_starts := map_stats.misc_objects[MOT_PLAYER_START];
   if (num_player_starts <> 0) and (num_player_starts <> 8) then
     errmsg := format('Invalid number of Player Starts (%d). Must be either 0 (for campaign maps) or 8 (for multiplayer maps).', [num_player_starts]);
   // Check for limit of spice blooms
-  num_spice_blooms := map_stats.objects[ord(sgSpiceBlooms)];
-  if num_spice_blooms > Structures.limit_spice_blooms then
-    errmsg := format('You placed %d spice blooms on map, which is more than maximum of %d supported by game.'#13'The spice blooms above the limit will not work.', [num_spice_blooms, Structures.limit_spice_blooms]);
+  num_spice_blooms_crates := map_stats.misc_objects[MOT_SPICE_BLOOM] + map_stats.misc_objects[MOT_CRATE];
+  if num_spice_blooms_crates > Structures.limit_spice_blooms_crates then
+    errmsg := format('You placed %d spice blooms or crates on map, which is more than maximum of %d supported by game.'#13'The objects above the limit will not work.', [num_spice_blooms_crates, Structures.limit_spice_blooms_crates]);
   // Check for limit of structures
-  num_structures_total := map_stats.num_structures_total + map_stats.objects[ord(sgWormSpawners)];
+  num_structures_total := map_stats.num_structures_total;
   if num_structures_total > Structures.limit_structures_total then
     errmsg := format('You placed %d structures on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures_total, Structures.limit_structures_total]);
-  // Check for limit of refineries per player
+  // Check for per-player limits
   for player := 0 to cnt_players - 1 do
   begin
+    // Number of structures
+    num_structures := map_stats.players[player].num_structures;
+    if num_structures > Structures.limit_structures_per_player then
+    begin
+      errmsg := format('You placed %d structures for player %s on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures, Structures.player_names[player], Structures.limit_structures_per_player]);
+      break;
+    end;
+    // Number of refineries
     num_refineries := map_stats.players[player].num_refineries;
     if num_refineries > Structures.limit_refineries_per_player then
     begin

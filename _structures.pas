@@ -322,13 +322,17 @@ type
   TMiscObjectInfo = record
     name: String;
     value: word;
+    obj_type: word;
     color: Cardinal;
     image: integer;
     mark: string;
-    stats_group: word;
   end;
 
-type TObjectStatsGroup = (sgNone, sgWormSpawners, sgPlayerStarts, sgSpiceBlooms);
+// Misc object types
+const MOT_WORM_SPAWNER = 0;
+const MOT_PLAYER_START = 1;
+const MOT_SPICE_BLOOM = 2;
+const MOT_CRATE = 3;
 
 // *****************************************************************************
 // Templates other definitions
@@ -563,8 +567,10 @@ type
     player_names_short: array[0..CNT_PLAYERS-1] of string;
 
     // Limits related data
-    limit_spice_blooms: integer;
+    limit_sandworm_required: boolean;
+    limit_spice_blooms_crates: integer;
     limit_structures_total: integer;
+    limit_structures_per_player: integer;
     limit_refineries_per_player: integer;
 
     // Templates other related data
@@ -1159,10 +1165,10 @@ begin
     begin
       name := sname;
       value := ini.ReadInteger(sname, 'value', 0);
+      obj_type := ini.ReadInteger(sname, 'type', 0);
       color := ini.ReadInteger(sname, 'color', $0);
       image := ini.ReadInteger(sname, 'image', 0);
       mark := ini.ReadString(sname, 'mark', '');
-      stats_group := ini.ReadInteger(sname, 'stats_group', 0);
     end;
   end;
   register_misc_objects_in_tiledata;
@@ -1180,6 +1186,8 @@ begin
   begin
     with misc_object_info[i] do
     begin
+      if obj_type = MOT_WORM_SPAWNER then
+        continue;
       tiledata[value].index := i;
       tiledata[value].player := 0;
       tiledata[value].stype := ST_MISC_OBJECT;
@@ -1236,8 +1244,10 @@ begin
   limits_ini_filename := tmp_filename;
   // Read limits from limits.ini
   ini := TMemIniFile.Create(tmp_filename);
-  limit_spice_blooms := ini.ReadInteger('Limits', 'spice_blooms', 30);
+  limit_sandworm_required := ini.ReadBool('Limits', 'sandworm_required', true);
+  limit_spice_blooms_crates := ini.ReadInteger('Limits', 'spice_blooms_crates', 30);
   limit_structures_total := ini.ReadInteger('Limits', 'structures_total', 1000);
+  limit_structures_per_player := ini.ReadInteger('Limits', 'structures_per_player', 1000);
   limit_refineries_per_player := ini.ReadInteger('Limits', 'refineries_per_player', 10);
   ini.Destroy;
 end;

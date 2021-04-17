@@ -770,6 +770,7 @@ var
   index: integer;
   player, player2: word;
   tiledata_entry: TTileDataEntryPtr;
+  unit_template: TUnitTemplatePtr;
   building_template: TBuildingTemplatePtr;
   bmp_data: TCardinalArrayPtr;
 begin
@@ -823,8 +824,14 @@ begin
       end else
       if tiledata_entry.stype = ST_UNIT then
       begin
+        unit_template := Structures.get_unit_template(tiledata_entry.index, player);
+        if unit_template = nil then
+          continue;
         index := (bmp_target.height - (y+border_y) - 1) * bmp_target.width + x+border_x;
-        bmp_data[index] := StructGraphics.player_colors[player2];
+        if unit_template.SpecialBehavior = 5 then
+          bmp_data[index] := Structures.misc_object_info[0].color // Worm spawner color
+        else
+          bmp_data[index] := StructGraphics.player_colors[player2];
       end else
       if tiledata_entry.stype = ST_BUILDING then
       begin
