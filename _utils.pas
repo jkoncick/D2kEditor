@@ -32,8 +32,11 @@ function get_float_value  (var arr: array of byte; pos: integer): single;
 procedure set_integer_value(var arr: array of byte; pos, bytes: integer; value: Integer);
 procedure set_float_value  (var arr: array of byte; pos: integer; value: single);
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);
+procedure swap_byte(byte1, byte2: PByte);
+
 function IntToBin(val: integer; width: integer): string;
 function BinToInt(bin: string): integer;
+
 procedure load_binary_file(filename: String; var data; size: integer);
 procedure save_binary_file(filename: String; var data; size: integer);
 
@@ -94,6 +97,15 @@ procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size:
 begin
   FillChar(target_ptr^, target_size, 0);
   Move(source[1], target_ptr^, Length(source));
+end;
+
+procedure swap_byte(byte1, byte2: PByte);
+var
+  tmp_byte: Byte;
+begin
+  tmp_byte := byte1^;
+  byte1^ := byte2^;
+  byte2^ := tmp_byte;
 end;
 
 function IntToBin(val: integer; width: integer): string;

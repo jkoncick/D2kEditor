@@ -61,6 +61,9 @@ type
     unit_type_or_comparison_function: byte;
   end;
 
+const MAX_EVENTS = 64;
+const MAX_CONDITIONS = 48;
+
 type
   TMisFile = packed record
     tech_level:       array[0..7] of byte;
@@ -69,8 +72,8 @@ type
     allocation_index: array[0..7] of byte;
     ai_segments:      array[0..7] of TMisAISegment;
     allegiance:       array[0..7, 0..7] of byte;
-    events:           array[0..63] of TEvent;
-    conditions:       array[0..47] of TCondition;
+    events:           array[0..MAX_EVENTS-1] of TEvent;
+    conditions:       array[0..MAX_CONDITIONS-1] of TCondition;
     tileset:          array[0..199] of char;
     tileatr:          array[0..199] of char;
     num_events:       byte;
@@ -218,7 +221,7 @@ var
 
 implementation
 
-uses SysUtils, Math, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher;
+uses SysUtils, Math, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher, event_dialog;
 
 procedure TMission.init;
 begin
@@ -273,6 +276,7 @@ begin
     MissionIni.save_mission_ini(map_filename, is_testmap);
     exit;
   end;
+  EventDialog.apply_changes;
   if not is_testmap then
   begin
     mis_filename := tmp_filename;

@@ -15,6 +15,7 @@ object EventDialog: TEventDialog
   KeyPreview = True
   OldCreateOrder = False
   Scaled = False
+  OnClose = FormClose
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShortCut = FormShortCut
@@ -1264,6 +1265,7 @@ object EventDialog: TEventDialog
     end
   end
   object EventGridPopupMenu: TPopupMenu
+    OnPopup = EventGridPopupMenuPopup
     Left = 392
     object Addevent1: TMenuItem
       Caption = 'Add event'
@@ -1335,6 +1337,7 @@ object EventDialog: TEventDialog
     end
   end
   object ConditionGridPopupMenu: TPopupMenu
+    OnPopup = ConditionGridPopupMenuPopup
     Left = 424
     object Addcondition1: TMenuItem
       Caption = 'Add condition'

@@ -162,6 +162,7 @@ type
     Showkeyshortcuts2: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
@@ -239,7 +240,8 @@ type
     procedure MoveUp2Click(Sender: TObject);
     procedure MoveDown2Click(Sender: TObject);
     procedure Showkeyshortcuts2Click(Sender: TObject);
-    procedure swap_byte(byte1, byte2: PByte);
+    procedure EventGridPopupMenuPopup(Sender: TObject);
+    procedure ConditionGridPopupMenuPopup(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -264,6 +266,7 @@ type
     // Fill data procedures
     procedure fill_grids;
     // Event-related procedures
+    procedure fill_event_grid_row(index: integer);
     procedure select_event(index: integer);
     procedure fill_event_ui(event_valid: boolean);
     procedure fill_event_ui_panel(panel: TPanel; var panel_top: integer);
@@ -272,6 +275,7 @@ type
     procedure change_event_type(event_type: integer);
     procedure apply_event_changes;
     // Condition-related prodcedures
+    procedure fill_condition_grid_row(index: integer);
     procedure select_condition(index: integer);
     procedure fill_condition_ui(condition_valid: boolean);
     procedure fill_condition_ui_panel(panel: TPanel; var panel_top: integer);
@@ -280,6 +284,7 @@ type
   public
     // Procedures called from different forms
     procedure finish_event_position_selection(x, y: integer);
+    procedure apply_changes;
   end;
 
 var
@@ -287,7 +292,7 @@ var
 
 implementation
 
-uses Math, main, _missionini, _stringtable, _settings, _structures, _dispatcher;
+uses Math, main, _missionini, _stringtable, _settings, _structures, _utils, _dispatcher;
 
 {$R *.dfm}
 
@@ -319,10 +324,6 @@ begin
   EventGrid.ColWidths[5] := 400;
   EventGrid.Cells[6,0] := 'Note';
   EventGrid.ColWidths[6] := 1140;
-  for i:= 1 to 64 do
-  begin
-    EventGrid.Cells[0,i] := inttostr(i-1);
-  end;
   // Initialize condition grid
   ConditionGrid.Cells[0,0] := '#';
   ConditionGrid.ColWidths[0] := 20;
@@ -332,10 +333,6 @@ begin
   ConditionGrid.ColWidths[2] := 72;
   ConditionGrid.Cells[3,0] := 'Contents';
   ConditionGrid.ColWidths[3] := 112;
-  for i:= 1 to 48 do
-  begin
-    ConditionGrid.Cells[0,i] := inttostr(i-1);
-  end;
   StringList := TStringList.Create;
   // Initialize event type list
   for i:= 0 to Length(event_type_info)-1 do
@@ -380,6 +377,11 @@ procedure TEventDialog.FormShow(Sender: TObject);
 begin
   if pending_update_contents then
     update_contents;
+end;
+
+procedure TEventDialog.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  apply_changes;
 end;
 
 procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word;
@@ -493,62 +495,50 @@ end;
 procedure TEventDialog.fill_grids;
 var
   i: integer;
-  event: ^TEvent;
-  et_info: ^TEventTypeInfo;
-  cond: ^TCondition;
-  ct_info: ^TConditionTypeInfo;
 begin
   // Fill events
-  for i := 1 to Mission.mis_data.num_events do
-  begin
-    event := Addr(Mission.mis_data.events[i-1]);
-    et_info := Addr(event_type_info[event.event_type]);
-    // Basic information
-    EventGrid.Cells[1,i] := et_info.name;
-    if et_info.use_map_position then
-      EventGrid.Cells[2,i] := inttostr(event.map_pos_x) + ' , ' + inttostr(event.map_pos_y)
-    else
-      EventGrid.Cells[2,i] := '';
-    if et_info.use_player_index then
-      EventGrid.Cells[3,i] := Structures.player_names[event.player]
-    else
-      EventGrid.Cells[3,i] := '';
-    // Contents
-    EventGrid.Cells[4,i] := Mission.get_event_contents(i-1);
-    // Conditions
-    EventGrid.Cells[5,i] := Mission.get_event_conditions(i-1);
-    // Note
-    EventGrid.Cells[6,i] := MissionIni.event_notes[i-1];
-  end;
-  // Clear unused event rows
-  for i := Mission.mis_data.num_events + 1 to 64 do
-  begin
-    EventGrid.Rows[i].Clear;
-    EventGrid.Cells[0,i] := inttostr(i-1);
-  end;
+  for i := 0 to MAX_EVENTS - 1 do
+    fill_event_grid_row(i);
   // Fill conditions
-  for i := 1 to Mission.mis_data.num_conditions do
-  begin
-    cond := Addr(Mission.mis_data.conditions[i-1]);
-    ct_info := Addr(condition_type_info[cond.condition_type]);
-    // Basic information
-    ConditionGrid.Cells[1,i] := ct_info.name;
-    if ct_info.use_player_index then
-      ConditionGrid.Cells[2,i] := Structures.player_names[cond.player]
-    else
-      ConditionGrid.Cells[2,i] := '';
-    // Contents
-    ConditionGrid.Cells[3,i] := Mission.get_condition_contents(i-1, false);
-  end;
-  // Clear unused condition rows
-  for i := Mission.mis_data.num_conditions + 1 to 48 do
-  begin
-    ConditionGrid.Rows[i].Clear;
-    ConditionGrid.Cells[0,i] := inttostr(i-1);
-  end;
+  for i := 0 to MAX_CONDITIONS - 1 do
+    fill_condition_grid_row(i);
   // All event grid must be redrawn
   if cbMarkEventsHavingCondition.Checked then
     EventGrid.Invalidate;
+end;
+
+procedure TEventDialog.fill_event_grid_row(index: integer);
+var
+  row: integer;
+  event: ^TEvent;
+  et_info: ^TEventTypeInfo;
+begin
+  row := index + 1;
+  if index >= Mission.mis_data.num_events then
+  begin
+    EventGrid.Rows[row].Clear;
+    EventGrid.Cells[0,row] := inttostr(index);
+    exit;
+  end;
+  event := Addr(Mission.mis_data.events[index]);
+  et_info := Addr(event_type_info[event.event_type]);
+  EventGrid.Cells[0,row] := inttostr(index);
+  // Basic information
+  EventGrid.Cells[1,row] := et_info.name;
+  if et_info.use_map_position then
+    EventGrid.Cells[2,row] := inttostr(event.map_pos_x) + ' , ' + inttostr(event.map_pos_y)
+  else
+    EventGrid.Cells[2,row] := '';
+  if et_info.use_player_index then
+    EventGrid.Cells[3,row] := Structures.player_names[event.player]
+  else
+    EventGrid.Cells[3,row] := '';
+  // Contents
+  EventGrid.Cells[4,row] := Mission.get_event_contents(index);
+  // Conditions
+  EventGrid.Cells[5,row] := Mission.get_event_conditions(index);
+  // Note
+  EventGrid.Cells[6,row] := MissionIni.event_notes[index];
 end;
 
 procedure TEventDialog.select_event(index: integer);
@@ -727,6 +717,8 @@ var
   event_type: integer;
   old_event_used_position: boolean;
 begin
+  if selected_event >= Mission.mis_data.num_events then
+    exit;
   event_type := tmp_event.event_type;
   if event_type_info[event_type].use_player_index then
     tmp_event.player := cbEventPlayer.ItemIndex;
@@ -764,7 +756,10 @@ begin
     end;
   end;
   old_event_used_position := event_type_info[Mission.mis_data.events[selected_event].event_type].use_map_position;
-  // Save event
+  // Check if existing and new data differ
+  if CompareMem(Addr(Mission.mis_data.events[selected_event]), Addr(tmp_event), sizeof(TEvent)) and (MissionIni.event_notes[selected_event] = edeventNote.Text) then
+    exit;
+  // Save event data
   Mission.mis_data.events[selected_event] := tmp_event;
   Mission.mis_modified := true;
   // Save event note
@@ -774,10 +769,36 @@ begin
   if (event_type = Byte(etShowMessage)) and msg_text_is_custom then
     MissionIni.set_custom_text(tmp_event.message_index, edMessageText.Text);
   // Update GUI
-  fill_grids;
+  fill_event_grid_row(selected_event);
   // Update event markers on map if old or new event has position
   if old_event_used_position or event_type_info[event_type].use_map_position then
     Dispatcher.register_event(evMisEventPositionChange);
+end;
+
+procedure TEventDialog.fill_condition_grid_row(index: integer);
+var
+  row: integer;
+  cond: ^TCondition;
+  ct_info: ^TConditionTypeInfo;
+begin
+  row := index + 1;
+  if index >= Mission.mis_data.num_conditions then
+  begin
+    ConditionGrid.Rows[row].Clear;
+    ConditionGrid.Cells[0,row] := inttostr(index);
+    exit;
+  end;
+  cond := Addr(Mission.mis_data.conditions[index]);
+  ct_info := Addr(condition_type_info[cond.condition_type]);
+  ConditionGrid.Cells[0,row] := inttostr(index);
+  // Basic information
+  ConditionGrid.Cells[1,row] := ct_info.name;
+  if ct_info.use_player_index then
+    ConditionGrid.Cells[2,row] := Structures.player_names[cond.player]
+  else
+    ConditionGrid.Cells[2,row] := '';
+  // Contents
+  ConditionGrid.Cells[3,row] := Mission.get_condition_contents(index, false);
 end;
 
 procedure TEventDialog.select_condition(index: integer);
@@ -897,7 +918,10 @@ end;
 procedure TEventDialog.apply_condition_changes;
 var
   condition_type: integer;
+  i: integer;
 begin
+  if selected_condition >= Mission.mis_data.num_conditions then
+    exit;
   condition_type := tmp_condition.condition_type;
   if condition_type_info[condition_type].use_player_index then
     tmp_condition.player := cbConditionPlayer.ItemIndex;
@@ -924,13 +948,20 @@ begin
       tmp_condition.map_pos_y := seConditionPositionY.Value;
     end;
   end;
+  // Check if existing and new data differ
+  if CompareMem(Addr(Mission.mis_data.conditions[selected_condition]), Addr(tmp_condition), sizeof(TCondition)) and (MissionIni.condition_notes[selected_condition] = edConditionNote.Text) then
+    exit;
+  // Save condition data
   Mission.mis_data.conditions[selected_condition] := tmp_condition;
   Mission.mis_modified := true;
   // Save condition note
   if notes_enabled then
     MissionIni.condition_notes[selected_condition] := edConditionNote.Text;
   // Update GUI
-  fill_grids;
+  fill_condition_grid_row(selected_condition);
+  for i := 0 to Mission.mis_data.num_events - 1 do
+    if Mission.check_event_has_condition(i, selected_condition) then
+      fill_event_grid_row(i);
   EventConditionList.Clear;
   fill_event_condition_list;
   // Update event markers on map if condition has position
@@ -954,6 +985,14 @@ begin
   end;
 end;
 
+procedure TEventDialog.apply_changes;
+begin
+  if pending_update_contents then
+    exit;
+  apply_condition_changes;
+  apply_event_changes;
+end;
+
 procedure TEventDialog.seMessageIdChange(Sender: TObject);
 begin
   edMessageText.Text := StringTable.get_text(StrToIntDef(seMessageId.Text,0), true, msg_text_is_custom);
@@ -969,12 +1008,15 @@ end;
 procedure TEventDialog.EventGridSelectCell(Sender: TObject; ACol,
   ARow: Integer; var CanSelect: Boolean);
 begin
+  apply_condition_changes;
+  apply_event_changes;
   select_event(ARow-1);
 end;
 
 procedure TEventDialog.ConditionGridSelectCell(Sender: TObject; ACol,
   ARow: Integer; var CanSelect: Boolean);
 begin
+  apply_condition_changes;
   select_condition(ARow-1);
 end;
 
@@ -1354,8 +1396,10 @@ begin
   if selected_event = 0 then
     exit;
   Mission.swap_events(selected_event, selected_event-1);
-  fill_grids;
-  EventGrid.Row := selected_event;
+  Dec(selected_event);
+  EventGrid.Row := selected_event+1;
+  fill_event_grid_row(selected_event);
+  fill_event_grid_row(selected_event+1);
 end;
 
 procedure TEventDialog.MoveDown1Click(Sender: TObject);
@@ -1363,8 +1407,10 @@ begin
   if selected_event >= Mission.mis_data.num_events - 1 then
     exit;
   Mission.swap_events(selected_event, selected_event+1);
-  fill_grids;
-  EventGrid.Row := selected_event + 2;
+  Inc(selected_event);
+  EventGrid.Row := selected_event+1;
+  fill_event_grid_row(selected_event);
+  fill_event_grid_row(selected_event-1);
 end;
 
 procedure TEventDialog.Addcondition1Click(Sender: TObject);
@@ -1417,8 +1463,9 @@ begin
   if selected_condition = 0 then
     exit;
   Mission.swap_conditions(selected_condition, selected_condition - 1);
-  fill_grids;
-  ConditionGrid.Row := selected_condition;
+  dec(selected_condition);
+  ConditionGrid.Row := selected_condition + 1;
+  update_contents;
 end;
 
 procedure TEventDialog.MoveDown2Click(Sender: TObject);
@@ -1426,8 +1473,9 @@ begin
   if selected_condition >= Mission.mis_data.num_conditions - 1 then
     exit;
   Mission.swap_conditions(selected_condition, selected_condition + 1);
-  fill_grids;
-  ConditionGrid.Row := selected_condition + 2;
+  inc(selected_condition);
+  ConditionGrid.Row := selected_condition + 1;
+  update_contents;
 end;
 
 procedure TEventDialog.Showkeyshortcuts2Click(Sender: TObject);
@@ -1645,13 +1693,14 @@ begin
   EventGrid.Invalidate;
 end;
 
-procedure TEventDialog.swap_byte(byte1, byte2: PByte);
-var
-  tmp_byte: Byte;
+procedure TEventDialog.EventGridPopupMenuPopup(Sender: TObject);
 begin
-  tmp_byte := byte1^;
-  byte1^ := byte2^;
-  byte2^ := tmp_byte;
+  apply_event_changes;
+end;
+
+procedure TEventDialog.ConditionGridPopupMenuPopup(Sender: TObject);
+begin
+  apply_condition_changes;
 end;
 
 end.
