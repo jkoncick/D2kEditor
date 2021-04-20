@@ -1844,7 +1844,7 @@ begin
     exit;
   end;
   tiledata_entry := Structures.get_tiledata_entry(StrToIntDef(SpecialValue.Text, 0));
-  if Settings.DrawBuildingMarker and mode(mStructures) and (tiledata_entry.stype = ST_BUILDING) then
+  if mode(mStructures) and (tiledata_entry.stype = ST_BUILDING) then
   begin
     // Draw building placement marker
     building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
@@ -1856,7 +1856,7 @@ begin
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
       Addr(Map.data), mouse_old_x, mouse_old_y, MAX_BUILDING_SIZE, MAX_BUILDING_SIZE, marker_type, building_template.TilesOccupiedAll);
   end else
-  if Settings.DrawObjectBrush and mode(mStructures) and ((tiledata_entry.stype = ST_UNIT) or (tiledata_entry.stype = ST_MISC_OBJECT)) then
+  if mode(mStructures) and ((tiledata_entry.stype = ST_UNIT) or (tiledata_entry.stype = ST_MISC_OBJECT)) then
   begin
     // Draw unit / misc object marker
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
@@ -1872,7 +1872,7 @@ begin
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
       Addr(Map.data), min_x, min_y, max_x-min_x+1, max_y-min_y+1, emSelectionArea, 0);
   end else
-  if Settings.DrawPaintBrush and mode(mPaintMode) then
+  if mode(mPaintMode) then
   begin
     // Draw paint brush marker
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,

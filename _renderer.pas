@@ -83,7 +83,7 @@ type
       o_rendering_optimization: boolean);
     function is_spice(value: word): boolean;
     procedure draw_structure_image(cnv_target: TCanvas; dest_x, dest_y, min_x, min_y, max_x, max_y: integer; structure_image: TStructureImagePtr);
-    procedure render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
+    //--procedure render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
     procedure draw_cross(cnv_target: TCanvas; x1, x2, y1, y2: word; color: TColor; width: integer);
     procedure draw_ellipse(cnv_target: TCanvas; x1, y1, x2, y2: word; pcolor, bcolor: TColor; width: integer; text: String);
     procedure draw_point(cnv_target: TCanvas; x, y: word; color: TColor);
@@ -653,7 +653,7 @@ begin
   cnv_target.CopyMode := cmSrcCopy;
 end;
 
-procedure TRenderer.render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
+{--procedure TRenderer.render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
 var
   randomgen_tile_record: ^TTileRecord;
   pos_x, pos_y: integer;
@@ -726,7 +726,7 @@ begin
     cnv_target.TextOut(xx + 12, yy + 3, inttostr(i));
     cnv_target.TextOut(xx + 12, yy + 17, inttostr(RandomGen.hist_placed_blocks[i].num_backtracked));
   end;
-end;
+end; }
 
 procedure TRenderer.draw_cross(cnv_target: TCanvas; x1, x2, y1, y2: word; color: TColor; width: integer);
 begin

@@ -14,9 +14,9 @@ const max_fill_area_rules = 16;
 const max_paint_tiles = 128;
 const max_block_presets = 640;
 const max_block_preset_tiles = 1024;
-const max_connection_points = 512;
-const cnt_connection_point_types = 16;
-const cnt_block_groups = 256;
+//--const max_connection_points = 512;
+//--const cnt_connection_point_types = 16;
+//--const cnt_block_groups = 256;
 
 // Constants for get_block_preset function
 const bpNext = -1;
@@ -188,11 +188,11 @@ type
     block_preset_tiles: array[0..max_block_preset_tiles] of word;
     block_preset_tiles_used: integer;
 
-    // Tileset configuration specific for random map generator
+    {--// Tileset configuration specific for random map generator
     connection_points: array[0..max_connection_points-1] of TConnectionPoint;
     connection_points_used: integer;
     block_groups: array[0..cnt_block_groups] of TBlockGroup;
-    connection_point_types: array[0..cnt_connection_point_types-1] of TConnectionPointType;
+    connection_point_types: array[0..cnt_connection_point_types-1] of TConnectionPointType;}
 
   public
     procedure init;
@@ -827,7 +827,7 @@ begin
   block_presets_used := preset_index;
   block_preset_tiles_used := preset_tile_index;
 
-  // Load connection points
+  {--// Load connection points
   connection_point_index := 0;
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
@@ -900,7 +900,7 @@ begin
       connection_point_types[i].paint_group := strtoint(decoder2[0]) - 1;
       connection_point_types[i].connection_point_width := strtoint(decoder2[1]);
       connection_point_types[i].connection_point_height := strtoint(decoder2[2]);
-    end;
+    end;}
 
   ini.Destroy;
   tmp_strings.Destroy;

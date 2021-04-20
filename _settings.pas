@@ -14,14 +14,10 @@ type
     // Preferences
     PreserveGUISettings: boolean;
     RestrictPainting: boolean;
-    EnableEventNotes: boolean;
     HidePresetWindow: boolean;
     CheckMapErrorsOnSave: boolean;
     CheckMapErrorsOnTest: boolean;
     AlwaysAskOnQuit: boolean;
-    DrawBuildingMarker: boolean;
-    DrawObjectBrush: boolean;
-    DrawPaintBrush: boolean;
     LoadR16Image: boolean;
     LoadR8Image: boolean;
     LoadCustomColoursBin: boolean;
@@ -92,14 +88,10 @@ begin
   // Load preferences
   PreserveGUISettings := ini.ReadBool('Preferences', 'PreserveGUISettings', true);
   RestrictPainting := ini.ReadBool('Preferences', 'RestrictPainting', true);
-  EnableEventNotes := ini.ReadBool('Preferences', 'EnableEventNotes', true);
   HidePresetWindow := ini.ReadBool('Preferences', 'HidePresetWindow', true);
   CheckMapErrorsOnSave := ini.ReadBool('Preferences', 'CheckMapErrorsOnSave', true);
   CheckMapErrorsOnTest := ini.ReadBool('Preferences', 'CheckMapErrorsOnTest', true);
   AlwaysAskOnQuit := ini.ReadBool('Preferences', 'AlwaysAskOnQuit', true);
-  DrawBuildingMarker := ini.ReadBool('Preferences', 'DrawBuildingMarker', true);
-  DrawObjectBrush := ini.ReadBool('Preferences', 'DrawObjectBrush', true);
-  DrawPaintBrush := ini.ReadBool('Preferences', 'DrawPaintBrush', true);
   LoadR16Image := ini.ReadBool('Preferences', 'LoadR16Image', true);
   LoadR8Image := ini.ReadBool('Preferences', 'LoadR8Image', true);
   LoadCustomColoursBin := ini.ReadBool('Preferences', 'LoadCustomColoursBin', true);
@@ -182,14 +174,10 @@ begin
   // Save preferences
   ini.WriteBool('Preferences', 'PreserveGUISettings', PreserveGUISettings);
   ini.WriteBool('Preferences', 'RestrictPainting', RestrictPainting);
-  ini.WriteBool('Preferences', 'EnableEventNotes', EnableEventNotes);
   ini.WriteBool('Preferences', 'HidePresetWindow', HidePresetWindow);
   ini.WriteBool('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);
   ini.WriteBool('Preferences', 'CheckMapErrorsOnTest', CheckMapErrorsOnTest);
   ini.WriteBool('Preferences', 'AlwaysAskOnQuit', AlwaysAskOnQuit);
-  ini.WriteBool('Preferences', 'DrawBuildingMarker', DrawBuildingMarker);
-  ini.WriteBool('Preferences', 'DrawObjectBrush', DrawObjectBrush);
-  ini.WriteBool('Preferences', 'DrawPaintBrush', DrawPaintBrush);
   ini.WriteBool('Preferences', 'LoadR16Image', LoadR16Image);
   ini.WriteBool('Preferences', 'LoadR8Image', LoadR8Image);
   ini.WriteBool('Preferences', 'LoadCustomColoursBin', LoadCustomColoursBin);

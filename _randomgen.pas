@@ -4,7 +4,7 @@ interface
 
 uses _tileset, _map, Classes;
 
-const max_active_connection_points = 64;
+{--const max_active_connection_points = 64;
 const max_block_candidates = 16;
 const max_backtrack_steps = 2;
 const max_steps = 4096;
@@ -145,7 +145,7 @@ type
   end;
 
 var
-  RandomGen: TRandomGen;
+  RandomGen: TRandomGen; }
 
 implementation
 
@@ -153,7 +153,7 @@ uses SysUtils, Math, main;
 
 { TRandomGen }
 
-procedure TRandomGen.init(string_list: TStrings);
+{--procedure TRandomGen.init(string_list: TStrings);
 begin
   log_target := string_list;
   reset;
@@ -994,7 +994,7 @@ begin
       end;
     end;}
 
-  end;
+  {--end;
   inc(constraint_check_step);
 
   // If more than one active connection point is removed, then give the biggest rating
@@ -1362,6 +1362,6 @@ begin
   undo_fill_enclosed_area_step(pos_x+1, pos_y, base_area_type, target_area_type);
   undo_fill_enclosed_area_step(pos_x, pos_y-1, base_area_type, target_area_type);
   undo_fill_enclosed_area_step(pos_x-1, pos_y, base_area_type, target_area_type);
-end;
+end;}
 
 end.

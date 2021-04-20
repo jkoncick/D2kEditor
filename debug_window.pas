@@ -81,7 +81,7 @@ begin
   add_debug_value(s, Tileset, 'Paint tiles used', Format('%d / %d', [Tileset.paint_tiles_used, max_paint_tiles]));
   add_debug_value(s, Tileset, 'Block presets used', Format('%d / %d', [Tileset.block_presets_used, max_block_presets]));
   add_debug_value(s, Tileset, 'Block preset tiles used', Format('%d / %d', [Tileset.block_preset_tiles_used, max_block_preset_tiles]));
-  add_debug_value(s, Tileset, 'Connection points used', Format('%d / %d', [Tileset.connection_points_used, max_connection_points]));
+  //--add_debug_value(s, Tileset, 'Connection points used', Format('%d / %d', [Tileset.connection_points_used, max_connection_points]));
 
   add_debug_value(s, Structures, 'Templates.bin file', Structures.templates_bin_filename);
   add_debug_value(s, Structures, 'BUILEXP.BIN file', Structures.builexp_bin_filename);

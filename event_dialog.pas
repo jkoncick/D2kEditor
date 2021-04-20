@@ -240,8 +240,7 @@ type
     procedure MoveUp2Click(Sender: TObject);
     procedure MoveDown2Click(Sender: TObject);
     procedure Showkeyshortcuts2Click(Sender: TObject);
-    procedure EventGridPopupMenuPopup(Sender: TObject);
-    procedure ConditionGridPopupMenuPopup(Sender: TObject);
+    procedure PopupMenuPopup(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -310,6 +309,7 @@ begin
   Width := 1280;
   Height := 720;
   // Initialize event grid
+  EventGrid.RowCount := MAX_EVENTS + 1;
   EventGrid.Cells[0,0] := '#';
   EventGrid.ColWidths[0] := 20;
   EventGrid.Cells[1,0] := 'Event type';
@@ -325,6 +325,7 @@ begin
   EventGrid.Cells[6,0] := 'Note';
   EventGrid.ColWidths[6] := 1140;
   // Initialize condition grid
+  ConditionGrid.RowCount := MAX_CONDITIONS + 1;
   ConditionGrid.Cells[0,0] := '#';
   ConditionGrid.ColWidths[0] := 20;
   ConditionGrid.Cells[1,0] := 'Condition type';
@@ -484,7 +485,7 @@ end;
 
 procedure TEventDialog.enable_mission_ini_features;
 begin
-  notes_enabled := MissionIni.mission_ini_assigned and Settings.EnableEventNotes;
+  notes_enabled := MissionIni.mission_ini_assigned;
   lblEventNote.Visible := notes_enabled;
   lblConditionNote.Visible := notes_enabled;
   edEventNote.Visible := notes_enabled;
@@ -1008,15 +1009,14 @@ end;
 procedure TEventDialog.EventGridSelectCell(Sender: TObject; ACol,
   ARow: Integer; var CanSelect: Boolean);
 begin
-  apply_condition_changes;
-  apply_event_changes;
+  apply_changes;
   select_event(ARow-1);
 end;
 
 procedure TEventDialog.ConditionGridSelectCell(Sender: TObject; ACol,
   ARow: Integer; var CanSelect: Boolean);
 begin
-  apply_condition_changes;
+  apply_changes;
   select_condition(ARow-1);
 end;
 
@@ -1693,14 +1693,9 @@ begin
   EventGrid.Invalidate;
 end;
 
-procedure TEventDialog.EventGridPopupMenuPopup(Sender: TObject);
+procedure TEventDialog.PopupMenuPopup(Sender: TObject);
 begin
-  apply_event_changes;
-end;
-
-procedure TEventDialog.ConditionGridPopupMenuPopup(Sender: TObject);
-begin
-  apply_condition_changes;
+  apply_changes;
 end;
 
 end.

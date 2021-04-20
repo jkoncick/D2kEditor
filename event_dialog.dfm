@@ -44,7 +44,7 @@ object EventDialog: TEventDialog
     Align = alClient
     ColCount = 7
     DefaultRowHeight = 18
-    RowCount = 65
+    RowCount = 2
     Font.Charset = EASTEUROPE_CHARSET
     Font.Color = clWindowText
     Font.Height = -11
@@ -62,69 +62,6 @@ object EventDialog: TEventDialog
     OnMouseWheelUp = EventGridMouseWheelUp
     OnSelectCell = EventGridSelectCell
     RowHeights = (
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
-      18
       18
       18)
   end
@@ -145,7 +82,7 @@ object EventDialog: TEventDialog
       Align = alLeft
       ColCount = 4
       DefaultRowHeight = 18
-      RowCount = 49
+      RowCount = 2
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
       PopupMenu = ConditionGridPopupMenu
       TabOrder = 0
@@ -156,53 +93,6 @@ object EventDialog: TEventDialog
       OnMouseWheelUp = ConditionGridMouseWheelUp
       OnSelectCell = ConditionGridSelectCell
       RowHeights = (
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
-        18
         18
         18)
     end
@@ -1265,7 +1155,7 @@ object EventDialog: TEventDialog
     end
   end
   object EventGridPopupMenu: TPopupMenu
-    OnPopup = EventGridPopupMenuPopup
+    OnPopup = PopupMenuPopup
     Left = 392
     object Addevent1: TMenuItem
       Caption = 'Add event'
@@ -1337,7 +1227,7 @@ object EventDialog: TEventDialog
     end
   end
   object ConditionGridPopupMenu: TPopupMenu
-    OnPopup = ConditionGridPopupMenuPopup
+    OnPopup = PopupMenuPopup
     Left = 424
     object Addcondition1: TMenuItem
       Caption = 'Add condition'
