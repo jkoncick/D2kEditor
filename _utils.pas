@@ -212,7 +212,7 @@ begin
     exit;
   modified_date := FileDateToDateTime(FileAge(actual_filename));
   DecodeDate(modified_date, year, month, day);
-  if year <= 2010 then
+  if year > 2010 then
     exit;
   if confirm_overwrite_original_file_last_answer = 0 then
     confirm_overwrite_original_file_last_answer := Application.MessageBox(

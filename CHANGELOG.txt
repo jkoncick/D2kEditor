@@ -1,6 +1,6 @@
 D2kEditor changelog
 
-Version 2.0 (released 2021-02-22)
+Version 2.0 (released 2021-04-20)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
@@ -50,6 +50,9 @@ Added: New Deploy action "Stay" for Reinforcement and Unit Spawn events, renamed
 Added: Show key shortcuts option in Event grid and Condition grid popup menu
 Fixed: Units could not be added to unit list when existing event's type was changed from a different type without units
 Fixed: When changing from Reveal Map event type, there were ghost Light Infantry units added (same amount as Radius)
+Added: Automatic "Apply changes" in Events and Conditions window. You no longer need to click Apply changes button or 
+       press Enter every time you do a change in a mission or event. Your changes are automatically applied when you 
+       switch to a different event/condition, on closing the window and on saving a map.
 Added: Player names loaded from "config\players.ini" file are used in all places in editor and no longer hardcoded
 Added: Minimap colors for buildings and units are loaded from game's COLOURS.BIN file. Original COLOURS.BIN file
        is shipped with editor.
@@ -65,9 +68,17 @@ Added: Debug window. Accessible from Help menu. It will show some internal value
        to currently loaded files (configuration, graphics) to easily track which modded files are used.
 Added: Built-in Mission Browser / Launcher, showing a table with mission details (name, author, ...)
        providing easy overview of all of your mission settings. You can select specific columns to be shown or not.
+Added: Replacing game files with files from mods folder when launching a mission (like the Feda's launcher does)
+Changed: Simplified "Launch with settings" dialog
 Changed: The way how "Unassign .mis file" option and unchecking "Use mission .ini file..." checkbox behaves.
          When you save the map, it will delete .MIS/.ini file from disk.
+Added: When you attempt to save over original game file, editor will show a warning and let you choose not to save
 Added: "D2k Mapping Manual" document
+Added: Manuals are stored in "doc" folder and are accessible from Help in main menu
+Fixed: Finite spice blooms now have proper names (number of respawns) in misc. object list
+Fixed: Worm spawner is now treated as a normal unit and is counted in map statistics, which now give the exact proper
+       number of total structures in a map.
+
 
 Major new features and changes:
 1) Editor loads building and unit graphics and configuration from game's files (Templates.bin, DATA.R16).
@@ -105,8 +116,8 @@ Ad 2)
 - Live preview of building and unit appearance
 - Support for adding, removing, renaming, copy&paste of buildings, units, weapons, explosions, armour types, warheads;
   export and import into files for easy sharing and storage  
-- Support export and import of arts into files (a group of R16 images) for easy sharing and stogare.
-  It is still needed to use Resource editor to modify actual images.
+- Export and import of arts into files (a group of R16 images) for easy sharing and stogare.
+- Export and import individual images from/to 256-color paletted bmp images. Includes import of palette 
 - Export and import of sound effects stored in SOUND.RS file into .WAV files
 - Use "Apply changes" to see changes in map and misssion editor
 - Use "Save and test" to immediately test your changes in currently loaded map
