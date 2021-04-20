@@ -7,11 +7,11 @@ B Build queue (High Tech Factory)
 B Build queue (AT High Tech Factory)
 B Refinery
 B Exploding barrel
-B Unknown
+B Scenery (unused)
 B Build queue (Atreides Palace)
 B Build queue (Harkonnen Palace)
 B Build queue (Ordos Palace)
-Unknown
+B Concrete
 U Frigate
 U Can be built (MCV)
 U Brought with refinery (Harvester)
@@ -50,7 +50,7 @@ W Debris 24
 Number of used debris weapons
 W Spice bloom weapon
 W Devastator self-destruct weapon
-Unknown
+W (unused)
 E Crate Reveal map
 E Crate Cash
 E Crate Hide map
