@@ -404,7 +404,7 @@ begin
       'This program requires original Dune 2000 graphics files to work.'#13+
       'It needs to know where Dune 2000 is located on your computer and will load graphics from that location.'#13+
       'Press YES button if you want to navigate to your Dune 2000 game location and configure it now.'#13+
-      'Press NO button if you want to configure it later. Program will fail with errors and will not be unusable!',
+      'Press NO button if you want to configure it later. Program will fail with errors and will not be usable!',
       'First time run', MB_YESNO or MB_ICONINFORMATION) = IDYES then
     begin
       if FindDune2000Dialog.Execute then
@@ -1243,6 +1243,9 @@ begin
   // If left button is held, paint sand/rock/dunes/spice during mouse move
   if (ssLeft in shift) and (mode(mPaintMode) or mode(mStructuresPaint)) then
     MapCanvasMouseDown(sender,mbLeft,Shift,x,y);
+  // If right button is held in structures mode, erase structures
+  if (ssRight in shift) and mode(mStructures) then
+    MapCanvasMouseDown(sender,mbRight,Shift,x,y);
 end;
 
 procedure TMainWindow.MapCanvasMouseDown(Sender: TObject;
