@@ -758,7 +758,7 @@ begin
   end;
   old_event_used_position := event_type_info[Mission.mis_data.events[selected_event].event_type].use_map_position;
   // Check if existing and new data differ
-  if CompareMem(Addr(Mission.mis_data.events[selected_event]), Addr(tmp_event), sizeof(TEvent)) and (MissionIni.event_notes[selected_event] = edeventNote.Text) then
+  if CompareMem(Addr(Mission.mis_data.events[selected_event]), Addr(tmp_event), sizeof(TEvent)) and (MissionIni.event_notes[selected_event] = edeventNote.Text) and not ((event_type = Byte(etShowMessage)) and msg_text_is_custom) then
     exit;
   // Save event data
   Mission.mis_data.events[selected_event] := tmp_event;
@@ -1564,10 +1564,8 @@ begin
 end;
 
 procedure TEventDialog.btnCreateEventsOkClick(Sender: TObject);
-var
-  event_index: integer;
 begin
-  event_index := Mission.mis_data.num_events;
+  EventGrid.Row := Mission.mis_data.num_events + 1;
   case create_event_type of
     ceUnitSpawn: Mission.create_unit_spawn(cbCreateEventsPlayer.ItemIndex, seCreateEventsNum.Value);
     ceHarvRepl: Mission.create_harvester_replacement(cbCreateEventsPlayer.ItemIndex);
@@ -1576,10 +1574,8 @@ begin
   CreateEventsPanel.Visible := false;
   EventGrid.SetFocus;
   fill_grids;
-  if EventGrid.Row = (event_index + 1) then
-    select_event(event_index)
-  else
-    EventGrid.Row := event_index + 1;
+  select_event(EventGrid.Row - 1);
+  select_condition(ConditionGrid.Row - 1);
 end;
 
 procedure TEventDialog.btnPlusConditionClick(Sender: TObject);
