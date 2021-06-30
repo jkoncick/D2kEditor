@@ -335,11 +335,11 @@ const MOT_SPICE_BLOOM = 2;
 const MOT_CRATE = 3;
 
 // *****************************************************************************
-// Templates other definitions
+// Group IDs definitions
 // *****************************************************************************
 
 type
-  TTemplatesOtherByteType = (tobtNone, tobtBuildingGroup, tobtUnit, tobtWeapon, tobtExplosion);
+  TGroupIDsByteType = (gibtNone, gibtBuildingGroup, gibtUnit, gibtWeapon, gibtExplosion);
 
 // *****************************************************************************
 // Auxiliary constants and types
@@ -521,7 +521,7 @@ type
     players_ini_filename: String;
     misc_objects_ini_filename: String;
     limits_ini_filename: String;
-    templates_other_txt_filename: String;
+    group_ids_txt_filename: String;
 
     // TEMPLATES.BIN related data
     templates: TTemplatesBinFile;
@@ -573,9 +573,9 @@ type
     limit_structures_per_player: integer;
     limit_refineries_per_player: integer;
 
-    // Templates other related data
-    templates_other: TStringList;
-    templates_other_byte_types: array[0..85] of TTemplatesOtherByteType;
+    // Group IDs related data
+    group_ids: TStringList;
+    group_ids_byte_types: array[0..85] of TGroupIDsByteType;
 
     // Auxiliary variables
     item_data_pointers: array[0..36] of TItemDataPointers;
@@ -622,15 +622,15 @@ type
     procedure load_players_ini;
     // Limits related procedures
     procedure load_limits_ini;
-    // Templates other related procedures
-    procedure load_templates_other_txt;
+    // Group IDs related procedures
+    procedure load_group_ids_txt;
 
   private
     // Auxiliary procedures
     procedure fix_reference(var value: integer;  v1, v2: integer; swap: boolean); overload;
     procedure fix_reference(var value: shortint; v1, v2: integer; swap: boolean); overload;
     procedure fix_reference(var value: byte;     v1, v2: integer; swap: boolean); overload;
-    procedure fix_templates_other_reference(byte_type: TTemplatesOtherByteType; v1, v2: integer; swap: boolean);
+    procedure fix_group_ids_reference(byte_type: TGroupIDsByteType; v1, v2: integer; swap: boolean);
     procedure swap_data(data: TByteArrayPtr; data_size, index1, index2: integer);
 
     // Item manipulation procedures
@@ -700,7 +700,7 @@ procedure TStructures.init;
 var
   i: integer;
 begin
-  templates_other := TStringList.Create;
+  group_ids := TStringList.Create;
   // Load all files
   load_templates_bin(false);
   load_builexp_bin(false);
@@ -711,7 +711,7 @@ begin
   load_misc_objects_ini;
   load_players_ini;
   load_limits_ini;
-  load_templates_other_txt;
+  load_group_ids_txt;
   // Initialize item data pointers
   init_item_data_pointers(0, Addr(templates.BuildingDefinitions),  sizeof(TBuildingTemplate));
   init_item_data_pointers(1, Addr(builexp),                        sizeof(TBuilExpEntry));
@@ -1252,30 +1252,30 @@ begin
   ini.Destroy;
 end;
 
-procedure TStructures.load_templates_other_txt;
+procedure TStructures.load_group_ids_txt;
 var
   tmp_filename: String;
   i: integer;
   prefix: string;
 begin
-  tmp_filename := find_file('config\templates_other.txt', 'configuration');
-  if (tmp_filename = '') or (tmp_filename = templates_other_txt_filename) then
+  tmp_filename := find_file('config\group_ids.txt', 'configuration');
+  if (tmp_filename = '') or (tmp_filename = group_ids_txt_filename) then
     exit;
-  templates_other_txt_filename := tmp_filename;
-  templates_other.LoadFromFile(tmp_filename);
-  for i := 0 to Length(templates_other_byte_types) - 1 do
+  group_ids_txt_filename := tmp_filename;
+  group_ids.LoadFromFile(tmp_filename);
+  for i := 0 to Length(group_ids_byte_types) - 1 do
   begin
-    prefix := Copy(templates_other[i], 1, 2);
+    prefix := Copy(group_ids[i], 1, 2);
     if prefix = 'B ' then
-      templates_other_byte_types[i] := tobtBuildingGroup
+      group_ids_byte_types[i] := gibtBuildingGroup
     else if prefix = 'U ' then
-      templates_other_byte_types[i] := tobtUnit
+      group_ids_byte_types[i] := gibtUnit
     else if prefix = 'W ' then
-      templates_other_byte_types[i] := tobtWeapon
+      group_ids_byte_types[i] := gibtWeapon
     else if prefix = 'E ' then
-      templates_other_byte_types[i] := tobtExplosion
+      group_ids_byte_types[i] := gibtExplosion
     else
-      templates_other_byte_types[i] := tobtNone
+      group_ids_byte_types[i] := gibtNone
   end;
 end;
 
@@ -1303,12 +1303,12 @@ begin
     value := v1;
 end;
 
-procedure TStructures.fix_templates_other_reference(byte_type: TTemplatesOtherByteType; v1, v2: integer; swap: boolean);
+procedure TStructures.fix_group_ids_reference(byte_type: TGroupIDsByteType; v1, v2: integer; swap: boolean);
 var
   i: integer;
 begin
   for i := 0 to Length(templates.Other) - 1 do
-    if templates_other_byte_types[i] = byte_type then
+    if group_ids_byte_types[i] = byte_type then
       fix_reference(templates.Other[i], v1, v2, swap);
 end;
 
@@ -1346,7 +1346,7 @@ var
 begin
   case item_type of
     ITEM_UNIT:
-      fix_templates_other_reference(tobtUnit, v1, v2, swap);
+      fix_group_ids_reference(gibtUnit, v1, v2, swap);
     ITEM_BUILDING_GROUP:
       begin
         for i := 0 to templates.BuildingCount - 1 do
@@ -1360,7 +1360,7 @@ begin
           fix_reference(templates.UnitDefinitions[i].Prereq1BuildingGroup, v1, v2, swap);
           fix_reference(templates.UnitDefinitions[i].Prereq2BuildingGroup, v1, v2, swap);
         end;
-        fix_templates_other_reference(tobtBuildingGroup, v1, v2, swap);
+        fix_group_ids_reference(gibtBuildingGroup, v1, v2, swap);
       end;
     ITEM_UNIT_GROUP:
       for i := 0 to templates.UnitCount - 1 do
@@ -1377,7 +1377,7 @@ begin
           fix_reference(templates.UnitDefinitions[i].PrimaryWeapon, v1, v2, swap);
           fix_reference(templates.UnitDefinitions[i].SecondaryWeapon, v1, v2, swap);
         end;
-        fix_templates_other_reference(tobtWeapon, v1, v2, swap);
+        fix_group_ids_reference(gibtWeapon, v1, v2, swap);
       end;
     ITEM_EXPLOSION:
       begin
@@ -1400,7 +1400,7 @@ begin
         end;
         for i := 0 to templates.ExplosionCount - 1 do
           fix_reference(templates.ExplosionDefinitions[i].MyIndex, v1, v2, swap);
-        fix_templates_other_reference(tobtExplosion, v1, v2, swap)
+        fix_group_ids_reference(gibtExplosion, v1, v2, swap)
       end;
     ITEM_WARHEAD:
       for i := 0 to templates.WeaponCount - 1 do

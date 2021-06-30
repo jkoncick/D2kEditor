@@ -518,9 +518,9 @@ type
     cbExplosionFlagEF_HOUSE_COLORED: TCheckBox;
     cbExplosionFlagEF_MUZZLE_FLASH: TCheckBox;
     PageOther: TTabSheet;
-    vleTemplatesOther: TValueListEditor;
-    cbxTemplatesOtherSelect: TComboBox;
-    cbxTemplatesOtherUnitSelect: TComboBox;
+    vleGroupIDs: TValueListEditor;
+    cbxGroupIDsSelect: TComboBox;
+    cbxGroupIDsUnitSelect: TComboBox;
     PageTechpos: TTabSheet;
     imgTechposPreview: TImage;
     rgTechposTechLevel: TRadioGroup;
@@ -574,6 +574,7 @@ type
     btnSamplesUibRemove: TButton;
     btnUnitVoicesExport: TButton;
     btnUnitVoicesImport: TButton;
+    lblGroupIDs: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -640,9 +641,9 @@ type
     procedure lbSpeedTypeListClick(Sender: TObject);
     procedure btnSpeedTypeRenameClick(Sender: TObject);
     // Other tab events
-    procedure vleTemplatesOtherSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
-    procedure vleTemplatesOtherTopLeftChanged(Sender: TObject);
-    procedure cbxTemplatesOtherSelectChange(Sender: TObject);
+    procedure vleGroupIDsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure vleGroupIDsTopLeftChanged(Sender: TObject);
+    procedure cbxGroupIDsSelectChange(Sender: TObject);
     procedure lbOtherArtListClick(Sender: TObject);
     // Techpos tab events
     procedure rgTechposTechLevelClick(Sender: TObject);
@@ -741,7 +742,7 @@ type
     procedure store_explosion_data;
     function get_owner_side_field_value(control: TCheckListBox): byte;
     // Miscellaneous procedures
-    function get_templates_other_cell_text(index: integer; value: shortint): string;
+    function get_group_ids_cell_text(index: integer; value: shortint): string;
     // Item control group procedures
     procedure create_item_control_group(group_index: integer; fill_data_action: TFillDataAction; list_control: TListBox; edit_item_name: TEdit; layout: TItemControlGroupLayoutPtr; container: TPanel);
     // Art control group procedures
@@ -1617,39 +1618,39 @@ begin
   fill_data(fdaSpeedTypeList);
 end;
 
-procedure TStructuresEditor.vleTemplatesOtherSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+procedure TStructuresEditor.vleGroupIDsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
   index: integer;
   item_name_list_combo: TComboBox;
 begin
   index := ARow - 1;
   item_name_list_combo := nil;
-  case Structures.templates_other_byte_types[index] of
-    tobtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
-    tobtUnit:          item_name_list_combo := cbxTemplatesOtherUnitSelect;
-    tobtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
-    tobtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
+  case Structures.group_ids_byte_types[index] of
+    gibtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
+    gibtUnit:          item_name_list_combo := cbxGroupIDsUnitSelect;
+    gibtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
+    gibtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
   end;
-  cbxTemplatesOtherSelect.Visible := Structures.templates_other_byte_types[index] <> tobtNone;
-  cbxTemplatesOtherSelect.Tag := index;
-  if Structures.templates_other_byte_types[index] <> tobtNone then
+  cbxGroupIDsSelect.Visible := Structures.group_ids_byte_types[index] <> gibtNone;
+  cbxGroupIDsSelect.Tag := index;
+  if Structures.group_ids_byte_types[index] <> gibtNone then
   begin
-    cbxTemplatesOtherSelect.Items := item_name_list_combo.Items;
-    cbxTemplatesOtherSelect.ItemIndex := Structures.templates.Other[index] + 1;
-    cbxTemplatesOtherSelect.Top := (ARow - vleTemplatesOther.TopRow + 1) * 20 + 1;
+    cbxGroupIDsSelect.Items := item_name_list_combo.Items;
+    cbxGroupIDsSelect.ItemIndex := Structures.templates.Other[index] + 1;
+    cbxGroupIDsSelect.Top := (ARow - vleGroupIDs.TopRow + 1) * 20 + 17;
   end;
 end;
 
-procedure TStructuresEditor.vleTemplatesOtherTopLeftChanged(Sender: TObject);
+procedure TStructuresEditor.vleGroupIDsTopLeftChanged(Sender: TObject);
 begin
-  cbxTemplatesOtherSelect.Visible := (Structures.templates_other_byte_types[cbxTemplatesOtherSelect.Tag] <> tobtNone) and (vleTemplatesOther.Row >= vleTemplatesOther.TopRow) and (vleTemplatesOther.Row < vleTemplatesOther.TopRow + vleTemplatesOther.VisibleRowCount);
-  cbxTemplatesOtherSelect.Top := (vleTemplatesOther.Row - vleTemplatesOther.TopRow + 1) * 20 + 1;
+  cbxGroupIDsSelect.Visible := (Structures.group_ids_byte_types[cbxGroupIDsSelect.Tag] <> gibtNone) and (vleGroupIDs.Row >= vleGroupIDs.TopRow) and (vleGroupIDs.Row < vleGroupIDs.TopRow + vleGroupIDs.VisibleRowCount);
+  cbxGroupIDsSelect.Top := (vleGroupIDs.Row - vleGroupIDs.TopRow + 1) * 20 + 17;
 end;
 
-procedure TStructuresEditor.cbxTemplatesOtherSelectChange(Sender: TObject);
+procedure TStructuresEditor.cbxGroupIDsSelectChange(Sender: TObject);
 begin
-  Structures.templates.Other[cbxTemplatesOtherSelect.Tag] := cbxTemplatesOtherSelect.ItemIndex - 1;
-  vleTemplatesOther.Cells[1, cbxTemplatesOtherSelect.Tag + 1] := get_templates_other_cell_text(cbxTemplatesOtherSelect.Tag, cbxTemplatesOtherSelect.ItemIndex - 1);
+  Structures.templates.Other[cbxGroupIDsSelect.Tag] := cbxGroupIDsSelect.ItemIndex - 1;
+  vleGroupIDs.Cells[1, cbxGroupIDsSelect.Tag + 1] := get_group_ids_cell_text(cbxGroupIDsSelect.Tag, cbxGroupIDsSelect.ItemIndex - 1);
 end;
 
 procedure TStructuresEditor.lbOtherArtListClick(Sender: TObject);
@@ -2451,7 +2452,7 @@ begin
     // Unit list
     fill_item_list(ITEM_UNIT, tmp_strings);
     tmp_strings.Insert(0, '(none)');
-    cbxTemplatesOtherUnitSelect.Items := tmp_strings;
+    cbxGroupIDsUnitSelect.Items := tmp_strings;
   end;
 
   if (action = fdaAllArt) or (action = fdaAll) then
@@ -2667,9 +2668,9 @@ begin
     // Other
     tmp_strings := TStringList.Create;
     for i := 0 to Length(Structures.templates.Other) - 1 do
-      tmp_strings.Add(Format('%s=%s', [Structures.templates_other[i], get_templates_other_cell_text(i, Structures.templates.Other[i])]));
-    vleTemplatesOther.Strings := tmp_strings;
-    vleTemplatesOther.Col := 0;
+      tmp_strings.Add(Format('%s=%s', [Structures.group_ids[i], get_group_ids_cell_text(i, Structures.templates.Other[i])]));
+    vleGroupIDs.Strings := tmp_strings;
+    vleGroupIDs.Col := 0;
     tmp_strings.Destroy;
     lbOtherArtListClick(nil);
   end else
@@ -2956,8 +2957,8 @@ begin
       str := str + Structures.templates.UnitNameStrings[i] + ' (sec) ';
   end;
   for i := 0 to Length(Structures.templates.Other) - 1 do
-    if (Structures.templates_other_byte_types[i] = tobtWeapon) and ((i < 25) or (i > 48) or ((i - 25) < Structures.templates.Other[49])) and (Structures.templates.Other[i] = index) then
-      str := str + Copy(Structures.templates_other[i], 2, 100) + ' (special) ';
+    if (Structures.group_ids_byte_types[i] = gibtWeapon) and ((i < 25) or (i > 48) or ((i - 25) < Structures.templates.Other[49])) and (Structures.templates.Other[i] = index) then
+      str := str + Copy(Structures.group_ids[i], 2, 100) + ' (special) ';
   lblWeaponUsedBy.Caption := str;
 
   loading := false;
@@ -3008,8 +3009,8 @@ begin
       str := str + Structures.templates.WeaponStrings[i] + ' (trail) ';
   end;
   for i := 0 to Length(Structures.templates.Other) - 1 do
-    if (Structures.templates_other_byte_types[i] = tobtExplosion) and (Structures.templates.Other[i] = index) then
-      str := str + Copy(Structures.templates_other[i], 2, 100) + ' (special) ';
+    if (Structures.group_ids_byte_types[i] = gibtExplosion) and (Structures.templates.Other[i] = index) then
+      str := str + Copy(Structures.group_ids[i], 2, 100) + ' (special) ';
   used_builexp := false;
   for i := 0 to Structures.templates.BuildingCount - 1 do
     for j := 0 to Structures.builexp[i].NumAnimations - 1 do
@@ -3078,8 +3079,8 @@ begin
   begin
     // Other
     for i := 0 to Length(Structures.templates.Other) - 1 do
-      if Structures.templates_other_byte_types[i] = tobtNone then
-        Structures.templates.Other[i] := StrToIntDef(vleTemplatesOther.Cells[1, i+1], 0);
+      if Structures.group_ids_byte_types[i] = gibtNone then
+        Structures.templates.Other[i] := StrToIntDef(vleGroupIDs.Cells[1, i+1], 0);
   end else
   if PageControl.ActivePage = PageSounds then
   begin
@@ -3326,16 +3327,16 @@ begin
       result := result or (1 shl i);
 end;
 
-function TStructuresEditor.get_templates_other_cell_text(index: integer; value: shortint): string;
+function TStructuresEditor.get_group_ids_cell_text(index: integer; value: shortint): string;
 var
   item_name_list_combo: TComboBox;
 begin
   item_name_list_combo := nil;
-  case Structures.templates_other_byte_types[index] of
-    tobtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
-    tobtUnit:          item_name_list_combo := cbxTemplatesOtherUnitSelect;
-    tobtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
-    tobtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
+  case Structures.group_ids_byte_types[index] of
+    gibtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
+    gibtUnit:          item_name_list_combo := cbxGroupIDsUnitSelect;
+    gibtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
+    gibtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
   end;
   if item_name_list_combo <> nil then
     result := item_name_list_combo.Items[value + 1]

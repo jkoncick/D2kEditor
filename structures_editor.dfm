@@ -3060,9 +3060,16 @@ object StructuresEditor: TStructuresEditor
         Height = 13
         Caption = 'Other art'
       end
-      object vleTemplatesOther: TValueListEditor
+      object lblGroupIDs: TLabel
         Left = 0
         Top = 0
+        Width = 48
+        Height = 13
+        Caption = 'Group IDs'
+      end
+      object vleGroupIDs: TValueListEditor
+        Left = 0
+        Top = 16
         Width = 425
         Height = 624
         DefaultColWidth = 210
@@ -3071,27 +3078,27 @@ object StructuresEditor: TStructuresEditor
         TitleCaptions.Strings = (
           'Byte'
           'Value')
-        OnSelectCell = vleTemplatesOtherSelectCell
-        OnTopLeftChanged = vleTemplatesOtherTopLeftChanged
+        OnSelectCell = vleGroupIDsSelectCell
+        OnTopLeftChanged = vleGroupIDsTopLeftChanged
         ColWidths = (
           210
           209)
       end
-      object cbxTemplatesOtherSelect: TComboBox
+      object cbxGroupIDsSelect: TComboBox
         Tag = 1
         Left = 212
-        Top = 21
+        Top = 37
         Width = 194
         Height = 21
         Style = csDropDownList
         ItemHeight = 13
         TabOrder = 1
         Visible = False
-        OnChange = cbxTemplatesOtherSelectChange
+        OnChange = cbxGroupIDsSelectChange
       end
-      object cbxTemplatesOtherUnitSelect: TComboBox
+      object cbxGroupIDsUnitSelect: TComboBox
         Left = 216
-        Top = 48
+        Top = 64
         Width = 145
         Height = 21
         Style = csDropDownList
