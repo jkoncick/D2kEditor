@@ -51,14 +51,14 @@ object StructuresEditor: TStructuresEditor
     OnChanging = PageControlChanging
     object PageBuildings: TTabSheet
       Caption = 'Buildings   '
-      object pnBuildingTypeList: TPanel
+      object pnBuildingGroupList: TPanel
         Left = 0
         Top = 0
         Width = 161
         Height = 637
         BevelOuter = bvNone
         TabOrder = 0
-        object lbBuildingTypeList: TListBox
+        object lbBuildingGroupList: TListBox
           Tag = 2
           Left = 0
           Top = 16
@@ -66,7 +66,7 @@ object StructuresEditor: TStructuresEditor
           Height = 537
           ItemHeight = 13
           TabOrder = 0
-          OnClick = lbBuildingTypeListClick
+          OnClick = lbBuildingGroupListClick
           OnKeyDown = IcgListKeyDown
         end
       end
@@ -110,12 +110,12 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Name:'
         end
-        object lblBuildingType: TLabel
+        object lblBuildingGroup: TLabel
           Left = 8
           Top = 104
-          Width = 27
+          Width = 32
           Height = 13
-          Caption = 'Type:'
+          Caption = 'Group:'
         end
         object imgBuildingIcon: TImage
           Left = 8
@@ -138,17 +138,17 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
         end
         object edBuildingName: TEdit
-          Left = 40
+          Left = 48
           Top = 80
-          Width = 241
+          Width = 233
           Height = 21
           MaxLength = 499
           TabOrder = 1
         end
-        object cbxBuildingType: TComboBox
-          Left = 40
+        object cbxBuildingGroup: TComboBox
+          Left = 48
           Top = 104
-          Width = 241
+          Width = 233
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
@@ -211,14 +211,14 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Upgrade3'
         end
-        object lblBuildingPrereq1BuildingType: TLabel
+        object lblBuildingPrereq1BuildingGroup: TLabel
           Left = 8
           Top = 112
           Width = 67
           Height = 13
           Caption = 'Prerequisite 1:'
         end
-        object lblBuildingPrereq2BuildingType: TLabel
+        object lblBuildingPrereq2BuildingGroup: TLabel
           Left = 8
           Top = 200
           Width = 67
@@ -381,7 +381,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 13
         end
-        object cbxBuildingPrereq1BuildingType: TComboBox
+        object cbxBuildingPrereq1BuildingGroup: TComboBox
           Left = 80
           Top = 112
           Width = 201
@@ -390,7 +390,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 14
         end
-        object cbxBuildingPrereq2BuildingType: TComboBox
+        object cbxBuildingPrereq2BuildingGroup: TComboBox
           Left = 80
           Top = 200
           Width = 201
@@ -1164,14 +1164,14 @@ object StructuresEditor: TStructuresEditor
     object PageUnits: TTabSheet
       Caption = 'Units         '
       ImageIndex = 1
-      object pnUnitTypeList: TPanel
+      object pnUnitGroupList: TPanel
         Left = 0
         Top = 0
         Width = 161
         Height = 637
         BevelOuter = bvNone
         TabOrder = 0
-        object lbUnitTypeList: TListBox
+        object lbUnitGroupList: TListBox
           Tag = 3
           Left = 0
           Top = 16
@@ -1179,7 +1179,7 @@ object StructuresEditor: TStructuresEditor
           Height = 537
           ItemHeight = 13
           TabOrder = 0
-          OnClick = lbUnitTypeListClick
+          OnClick = lbUnitGroupListClick
           OnKeyDown = IcgListKeyDown
         end
       end
@@ -1224,12 +1224,12 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Name:'
         end
-        object lblUnitType: TLabel
+        object lblUnitGroup: TLabel
           Left = 8
           Top = 104
-          Width = 27
+          Width = 32
           Height = 13
-          Caption = 'Type:'
+          Caption = 'Group:'
         end
         object imgUnitIcon: TImage
           Left = 8
@@ -1252,18 +1252,18 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 0
         end
         object edUnitName: TEdit
-          Left = 40
+          Left = 48
           Top = 80
-          Width = 241
+          Width = 233
           Height = 21
           MaxLength = 499
           TabOrder = 1
           OnChange = RedrawUnitPreview
         end
-        object cbxUnitType: TComboBox
-          Left = 40
+        object cbxUnitGroup: TComboBox
+          Left = 48
           Top = 104
-          Width = 241
+          Width = 233
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
@@ -1299,14 +1299,14 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Build speed:'
           WordWrap = True
         end
-        object lblUnitPrereq1BuildingType: TLabel
+        object lblUnitPrereq1BuildingGroup: TLabel
           Left = 8
           Top = 56
           Width = 67
           Height = 13
           Caption = 'Prerequisite 1:'
         end
-        object lblUnitPrereq2BuildingType: TLabel
+        object lblUnitPrereq2BuildingGroup: TLabel
           Left = 8
           Top = 144
           Width = 67
@@ -1364,7 +1364,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 3
         end
-        object cbxUnitPrereq1BuildingType: TComboBox
+        object cbxUnitPrereq1BuildingGroup: TComboBox
           Left = 80
           Top = 56
           Width = 201
@@ -1373,7 +1373,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 4
         end
-        object cbxUnitPrereq2BuildingType: TComboBox
+        object cbxUnitPrereq2BuildingGroup: TComboBox
           Left = 80
           Top = 144
           Width = 201
@@ -3206,7 +3206,7 @@ object StructuresEditor: TStructuresEditor
         OnSelectCell = sgTechposDataSelectCell
         OnSetEditText = sgTechposDataSetEditText
       end
-      object cbxTechposUnitType: TComboBox
+      object cbxTechposUnitGroup: TComboBox
         Left = 124
         Top = 301
         Width = 135
@@ -3215,7 +3215,7 @@ object StructuresEditor: TStructuresEditor
         ItemHeight = 13
         TabOrder = 2
         Visible = False
-        OnChange = cbxTechposUnitTypeChange
+        OnChange = cbxTechposUnitGroupChange
       end
       object tbTechposNumUnits: TTrackBar
         Left = 352

@@ -1682,8 +1682,8 @@ begin
     if not special_value_changing then
     begin
       MiscObjList.ItemIndex := -1;
-      for i := 0 to Structures.building_type_mapping_count - 1 do
-        if Structures.building_type_mapping[i] = Integer(tiledata_entry.index) then
+      for i := 0 to Structures.building_group_mapping_count - 1 do
+        if Structures.building_group_mapping[i] = Integer(tiledata_entry.index) then
         begin
           BuildingList.ItemIndex := i;
           break;
@@ -1988,7 +1988,7 @@ begin
     for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
     begin
       tiledata_entry := Structures.get_tiledata_entry(i);
-      if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.player = PlayerSelect.ItemIndex) and (Integer(tiledata_entry.index) = Structures.building_type_mapping[BuildingList.ItemIndex]) then
+      if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.player = PlayerSelect.ItemIndex) and (Integer(tiledata_entry.index) = Structures.building_group_mapping[BuildingList.ItemIndex]) then
       begin
         value := i;
         break;

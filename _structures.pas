@@ -16,7 +16,7 @@ const UF_SELFHEALING  = $00800000;
 type
   TUnitTemplate = packed record
     OwnerSide:             byte;
-    UnitType:              byte;
+    UnitGroup:             byte;
     ArmorType:             byte;
     UnitRotationSpeed:     byte;
     HitPoints:             cardinal;
@@ -37,12 +37,12 @@ type
     AvailableInStarport:   byte;
     HasBarrel:             byte;
     Prereq1UpgradesNeeded: byte;
-    Prereq1BuildingType:   integer;
+    Prereq1BuildingGroup:  integer;
     Prereq1OwnerSide:      byte;
     SpecialBehavior:       byte;
     _ProbablyUnused46:     byte;
     DeathExplosion:        shortint;
-    Prereq2BuildingType:   integer;
+    Prereq2BuildingGroup:  integer;
     _ProbablyUnused52:     byte;
     CanCrushInfantry:      byte;
     HealthBarSize:         byte;
@@ -98,12 +98,12 @@ type
     BuildSpeedUpgrade2:    cardinal;
     BuildSpeedUpgrade3:    cardinal;
     PowerConsumption:      integer;
-    Prereq1BuildingType:   integer;
+    Prereq1BuildingGroup:  integer;
     Prereq1OwnerSide:      byte;
     Prereq1UpgradesNeeded: byte;
     _ZeroPadding70:        byte;
     _ZeroPadding71:        byte;
-    Prereq2BuildingType:   integer;
+    Prereq2BuildingGroup:  integer;
     Prereq2OwnerSide:      byte;
     Prereq2UpgradesNeeded: byte;
     RequireEnoughPower:    byte;
@@ -124,7 +124,7 @@ type
     AnimationSpeed:        byte;
     ArtHeight:             byte;
     ArtWidth:              byte;
-    BuildingType:          byte;
+    BuildingGroup:         byte;
     BuildupFramesToShow:   byte;
     BuildupArt:            byte;
     BuildingAnimation:     byte;
@@ -216,14 +216,14 @@ type
     WeaponStrings:           array[0..MAX_WEAPONS-1,        0..49]  of char;
     ExplosionStrings:        array[0..MAX_EXPLOSIONS-1,     0..49]  of char;
     UnitNameStrings:         array[0..MAX_UNIT_TYPES-1,     0..449] of char;
-    UnitTypeStrings:         array[0..MAX_UNIT_TYPES-1,     0..49]  of char;
-    BuildingTypeStrings:     array[0..MAX_BUILDING_TYPES-1, 0..49]  of char;
+    UnitGroupStrings:        array[0..MAX_UNIT_TYPES-1,     0..49]  of char;
+    BuildingGroupStrings:    array[0..MAX_BUILDING_TYPES-1, 0..49]  of char;
     Other:                   array[0..85]                   of shortint;
     AnimationArtFlags:       array[0..MAX_EXPLOSIONS-1]     of cardinal;
     BuildingAnimationFrames: array[0..MAX_BUILDING_TYPES-1] of byte;
     BuildupArtFrames:        array[0..MAX_BUILDING_TYPES-1] of byte;
-    BuildingTypeCount:       byte;
-    UnitTypeCount:           byte;
+    BuildingGroupCount:      byte;
+    UnitGroupCount:          byte;
   end;
 
 // *****************************************************************************
@@ -339,7 +339,7 @@ const MOT_CRATE = 3;
 // *****************************************************************************
 
 type
-  TTemplatesOtherByteType = (tobtNone, tobtBuildingType, tobtUnit, tobtWeapon, tobtExplosion);
+  TTemplatesOtherByteType = (tobtNone, tobtBuildingGroup, tobtUnit, tobtWeapon, tobtExplosion);
 
 // *****************************************************************************
 // Auxiliary constants and types
@@ -349,15 +349,15 @@ const MAX_BUILDING_SIZE = 4;
 
 const ITEM_BUILDING         = 0;
 const ITEM_UNIT             = 1;
-const ITEM_BUILDING_TYPE    = 2;
-const ITEM_UNIT_TYPE        = 3;
+const ITEM_BUILDING_GROUP   = 2;
+const ITEM_UNIT_GROUP       = 3;
 const ITEM_WEAPON           = 4;
 const ITEM_EXPLOSION        = 5;
 const ITEM_ARMOUR_TYPE      = 6;
 const ITEM_WARHEAD          = 7;
 const ITEM_UNIT_VOICES      = 8;
 
-const item_type_names: array[0..8] of string = ('Building', 'Unit', 'Building type', 'Unit type', 'Weapon', 'Explosion', 'Armour type', 'Warhead', 'Unit voices');
+const item_type_names: array[0..8] of string = ('Building', 'Unit', 'Building group', 'Unit group', 'Weapon', 'Explosion', 'Armour type', 'Warhead', 'Unit voices');
 const item_type_file_extensions: array[0..8] of string = ('d2kbld', 'd2kunt', '', '', 'd2kwpn', 'd2kexp', 'd2karm', 'd2kwhd', 'd2kvcs');
 
 type
@@ -437,7 +437,7 @@ type
     icon_data:          array[0..3368] of byte;
     item_references:    array[0..15] of TItemReference;
     art_references:     array[0..3] of TArtReference;
-    building_type_str:  array[0..49] of char;
+    building_group_str: array[0..49] of char;
   end;
 
   TBuildingExportDataPtr = ^TBuildingExportData;
@@ -450,7 +450,7 @@ type
     item_references:  array[0..7] of TItemReference;
     art_references:   array[0..1] of TArtReference;
     sound_references: array[0..17] of TSoundReference;
-    unit_type_str:    array[0..49] of char;
+    unit_group_str:   array[0..49] of char;
   end;
 
   TUnitExportDataPtr = ^TUnitExportData;
@@ -535,11 +535,11 @@ type
     buildup_art_image_indexes:        array[0..MAX_BUILDING_TYPES-1] of word;
     building_animation_image_indexes: array[0..MAX_BUILDING_TYPES-1] of word;
 
-    unit_side_versions:     array[0..MAX_UNIT_TYPES-1,     0..CNT_PLAYERS-1] of shortint;
-    building_side_versions: array[0..MAX_BUILDING_TYPES-1, 0..CNT_PLAYERS-1] of shortint;
+    unit_side_versions:               array[0..MAX_UNIT_TYPES-1,     0..CNT_PLAYERS-1] of shortint;
+    building_side_versions:           array[0..MAX_BUILDING_TYPES-1, 0..CNT_PLAYERS-1] of shortint;
 
-    building_type_mapping:  array[0..MAX_BUILDING_TYPES-1] of shortint;
-    building_type_mapping_count:      integer;
+    building_group_mapping:           array[0..MAX_BUILDING_TYPES-1] of shortint;
+    building_group_mapping_count:     integer;
 
     // BUILEXP.BIN related data
     builexp: TBuilExpBinFile;
@@ -590,14 +590,14 @@ type
     procedure save_templates_bin;
     procedure compute_image_indexes;
     procedure compute_building_and_unit_side_versions;
-    procedure compute_building_type_mapping;
+    procedure compute_building_group_mapping;
     function prettify_structure_name(str: String): String;
     function get_unit_name_str(index: integer): String;
-    function get_unit_type_str(index: integer): String;
+    function get_unit_group_str(index: integer): String;
     function get_building_name_str(index: integer): String;
-    function get_building_type_str(index: integer): String;
-    function get_unit_template(unit_type, player: integer): TUnitTemplatePtr;
-    function get_building_template(building_type, player: integer): TBuildingTemplatePtr;
+    function get_building_group_str(index: integer): String;
+    function get_unit_template(unit_group, player: integer): TUnitTemplatePtr;
+    function get_building_template(building_group, player: integer): TBuildingTemplatePtr;
     function check_links_with_wall(special: word): boolean;
     procedure get_structure_size(special: word; var size_x, size_y: integer);
     // BUILEXP.BIN related procedures
@@ -723,15 +723,15 @@ begin
   for i := 0 to MAX_WARHEADS - 1 do
     init_item_data_pointers(7 + i, Addr(armour.WarheadEntries[i].VersusArmorType), 1);
   // Initialize item type pointers
-  init_item_type_pointers(ITEM_BUILDING,      Addr(Structures.templates.BuildingCount),     Addr(Structures.templates.BuildingNameStrings), 450, MAX_BUILDING_TYPES, 0, 2, sizeof(TBuildingExportData));
-  init_item_type_pointers(ITEM_UNIT,          Addr(Structures.templates.UnitCount),         Addr(Structures.templates.UnitNameStrings),     450, MAX_UNIT_TYPES,     2, 1, sizeof(TUnitExportData));
-  init_item_type_pointers(ITEM_BUILDING_TYPE, Addr(Structures.templates.BuildingTypeCount), Addr(Structures.templates.BuildingTypeStrings), 50,  MAX_BUILDING_TYPES, 0, 0, 0);
-  init_item_type_pointers(ITEM_UNIT_TYPE,     Addr(Structures.templates.UnitTypeCount),     Addr(Structures.templates.UnitTypeStrings),     50,  MAX_UNIT_TYPES,     0, 0, 0);
-  init_item_type_pointers(ITEM_WEAPON,        Addr(Structures.templates.WeaponCount),       Addr(Structures.templates.WeaponStrings),       50,  MAX_WEAPONS,        3, 1, sizeof(TWeaponExportData));
-  init_item_type_pointers(ITEM_EXPLOSION,     Addr(Structures.templates.ExplosionCount),    Addr(Structures.templates.ExplosionStrings),    50,  MAX_EXPLOSIONS,     4, 2, sizeof(TExplosionExportData));
-  init_item_type_pointers(ITEM_ARMOUR_TYPE,   Addr(Structures.armour.ArmourTypeCount),      Addr(Structures.armour.ArmourTypeStrings),      50,  MAX_ARMOUR_TYPES,   7, MAX_WARHEADS, sizeof(TArmourTypeExportData));
-  init_item_type_pointers(ITEM_WARHEAD,       Addr(Structures.armour.WarheadCount),         Addr(Structures.armour.WarheadStrings),         50,  MAX_WARHEADS,       6, 1, sizeof(TWarheadExportData));
-  init_item_type_pointers(ITEM_UNIT_VOICES,   nil,                                          nil,                                            0,   0,                  0, 0, sizeof(TUnitVoicesExportData));
+  init_item_type_pointers(ITEM_BUILDING,       Addr(Structures.templates.BuildingCount),      Addr(Structures.templates.BuildingNameStrings),  450, MAX_BUILDING_TYPES, 0, 2, sizeof(TBuildingExportData));
+  init_item_type_pointers(ITEM_UNIT,           Addr(Structures.templates.UnitCount),          Addr(Structures.templates.UnitNameStrings),      450, MAX_UNIT_TYPES,     2, 1, sizeof(TUnitExportData));
+  init_item_type_pointers(ITEM_BUILDING_GROUP, Addr(Structures.templates.BuildingGroupCount), Addr(Structures.templates.BuildingGroupStrings), 50,  MAX_BUILDING_TYPES, 0, 0, 0);
+  init_item_type_pointers(ITEM_UNIT_GROUP,     Addr(Structures.templates.UnitGroupCount),     Addr(Structures.templates.UnitGroupStrings),     50,  MAX_UNIT_TYPES,     0, 0, 0);
+  init_item_type_pointers(ITEM_WEAPON,         Addr(Structures.templates.WeaponCount),        Addr(Structures.templates.WeaponStrings),        50,  MAX_WEAPONS,        3, 1, sizeof(TWeaponExportData));
+  init_item_type_pointers(ITEM_EXPLOSION,      Addr(Structures.templates.ExplosionCount),     Addr(Structures.templates.ExplosionStrings),     50,  MAX_EXPLOSIONS,     4, 2, sizeof(TExplosionExportData));
+  init_item_type_pointers(ITEM_ARMOUR_TYPE,    Addr(Structures.armour.ArmourTypeCount),       Addr(Structures.armour.ArmourTypeStrings),       50,  MAX_ARMOUR_TYPES,   7, MAX_WARHEADS, sizeof(TArmourTypeExportData));
+  init_item_type_pointers(ITEM_WARHEAD,        Addr(Structures.armour.WarheadCount),          Addr(Structures.armour.WarheadStrings),          50,  MAX_WARHEADS,       6, 1, sizeof(TWarheadExportData));
+  init_item_type_pointers(ITEM_UNIT_VOICES,    nil,                                           nil,                                             0,   0,                  0, 0, sizeof(TUnitVoicesExportData));
   // Initialize art type pointers
   init_art_type_pointers(ART_BUILDING,           Addr(templates.BuildingArtCount),   Addr(templates.BuildingArtDirections),   nil,                                     0, MAX_BUILDING_ART,   Addr(building_art_image_indexes),       Addr(projectile_art_image_indexes[0]));
   init_art_type_pointers(ART_BUILDING_ANIMATION, Addr(templates.BuildingCount),      nil,                                     Addr(templates.BuildingAnimationFrames), 1, MAX_BUILDING_TYPES, Addr(building_animation_image_indexes), nil);
@@ -754,7 +754,7 @@ begin
 
   compute_image_indexes;
   compute_building_and_unit_side_versions;
-  compute_building_type_mapping;
+  compute_building_group_mapping;
 
   // Register event in dispatcher
   Dispatcher.register_event(evFLTemplatesBin);
@@ -837,7 +837,7 @@ begin
   for i := 0 to MAX_UNIT_TYPES - 1 do
     for j := 0 to CNT_PLAYERS - 1 do
       for index := 0 to data.UnitCount - 1 do
-        if data.UnitDefinitions[index].UnitType = i then
+        if data.UnitDefinitions[index].UnitGroup = i then
         begin
           if unit_side_versions[i,j] = -1 then
             unit_side_versions[i,j] := index;
@@ -848,7 +848,7 @@ begin
   for i := 0 to MAX_BUILDING_TYPES - 1 do
     for j := 0 to CNT_PLAYERS - 1 do
       for index := 0 to data.BuildingCount - 1 do
-        if data.BuildingDefinitions[index].BuildingType = i then
+        if data.BuildingDefinitions[index].BuildingGroup = i then
         begin
           if building_side_versions[i,j] = -1 then
             building_side_versions[i,j] := index;
@@ -857,22 +857,22 @@ begin
         end;
 end;
 
-procedure TStructures.compute_building_type_mapping;
+procedure TStructures.compute_building_group_mapping;
 var
   i, j: integer;
   building_template: TBuildingTemplatePtr;
 begin
   j := 0;
-  for i := 0 to templates.BuildingTypeCount - 1 do
+  for i := 0 to templates.BuildingGroupCount - 1 do
   begin
     building_template := get_building_template(i, 0);
     // If building is concrete, do not add it to list
     if (building_template <> nil) and (building_template.SpecialBehavior = 15) then
       continue;
-    building_type_mapping[j] := i;
+    building_group_mapping[j] := i;
     inc(j);
   end;
-  building_type_mapping_count := j;
+  building_group_mapping_count := j;
 end;
 
 function TStructures.prettify_structure_name(str: String): String;
@@ -909,19 +909,19 @@ begin
     result := 'UNDEFINED#' + inttostr(index);
 end;
 
-function TStructures.get_unit_type_str(index: integer): String;
+function TStructures.get_unit_group_str(index: integer): String;
 var
   row: integer;
 begin
-  if index < templates.UnitTypeCount then
+  if index < templates.UnitGroupCount then
   begin
     row := -1;
     if settings.TranslateStructureNames then
-      row := StringTable.text_uib.IndexOfName(templates.UnitTypeStrings[index]);
+      row := StringTable.text_uib.IndexOfName(templates.UnitGroupStrings[index]);
     if row <> -1 then
       result := StringTable.text_uib.ValueFromIndex[row]
     else
-      result := prettify_structure_name(templates.UnitTypeStrings[index])
+      result := prettify_structure_name(templates.UnitGroupStrings[index])
   end else
     result := 'UNDEFINED#' + inttostr(index);
 end;
@@ -934,40 +934,40 @@ begin
     result := 'UNDEFINED#' + inttostr(index);
 end;
 
-function TStructures.get_building_type_str(index: integer): String;
+function TStructures.get_building_group_str(index: integer): String;
 var
   row: integer;
 begin
-  if index < templates.BuildingTypeCount then
+  if index < templates.BuildingGroupCount then
   begin
     row := -1;
     if settings.TranslateStructureNames then
-      row := StringTable.text_uib.IndexOfName(templates.BuildingTypeStrings[index]);
+      row := StringTable.text_uib.IndexOfName(templates.BuildingGroupStrings[index]);
     if row <> -1 then
       result := StringTable.text_uib.ValueFromIndex[row]
     else
-      result := prettify_structure_name(templates.BuildingTypeStrings[index]);
+      result := prettify_structure_name(templates.BuildingGroupStrings[index]);
   end else
     result := 'UNDEFINED#' + inttostr(index);
 end;
 
-function TStructures.get_unit_template(unit_type, player: integer): TUnitTemplatePtr;
+function TStructures.get_unit_template(unit_group, player: integer): TUnitTemplatePtr;
 var
   unit_template_index: integer;
 begin
   result := nil;
-  unit_template_index := unit_side_versions[unit_type, player];
+  unit_template_index := unit_side_versions[unit_group, player];
   if unit_template_index = -1 then
     exit;
   result := Addr(templates.UnitDefinitions[unit_template_index]);
 end;
 
-function TStructures.get_building_template(building_type, player: integer): TBuildingTemplatePtr;
+function TStructures.get_building_template(building_group, player: integer): TBuildingTemplatePtr;
 var
   building_template_index: integer;
 begin
   result := nil;
-  building_template_index := building_side_versions[building_type, player];
+  building_template_index := building_side_versions[building_group, player];
   if building_template_index = -1 then
     exit;
   result := Addr(templates.BuildingDefinitions[building_template_index]);
@@ -1267,7 +1267,7 @@ begin
   begin
     prefix := Copy(templates_other[i], 1, 2);
     if prefix = 'B ' then
-      templates_other_byte_types[i] := tobtBuildingType
+      templates_other_byte_types[i] := tobtBuildingGroup
     else if prefix = 'U ' then
       templates_other_byte_types[i] := tobtUnit
     else if prefix = 'W ' then
@@ -1347,24 +1347,24 @@ begin
   case item_type of
     ITEM_UNIT:
       fix_templates_other_reference(tobtUnit, v1, v2, swap);
-    ITEM_BUILDING_TYPE:
+    ITEM_BUILDING_GROUP:
       begin
         for i := 0 to templates.BuildingCount - 1 do
         begin
-          fix_reference(templates.BuildingDefinitions[i].BuildingType, v1, v2, swap);
-          fix_reference(templates.BuildingDefinitions[i].Prereq1BuildingType, v1, v2, swap);
-          fix_reference(templates.BuildingDefinitions[i].Prereq2BuildingType, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].BuildingGroup, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].Prereq1BuildingGroup, v1, v2, swap);
+          fix_reference(templates.BuildingDefinitions[i].Prereq2BuildingGroup, v1, v2, swap);
         end;
         for i := 0 to templates.UnitCount - 1 do
         begin
-          fix_reference(templates.UnitDefinitions[i].Prereq1BuildingType, v1, v2, swap);
-          fix_reference(templates.UnitDefinitions[i].Prereq2BuildingType, v1, v2, swap);
+          fix_reference(templates.UnitDefinitions[i].Prereq1BuildingGroup, v1, v2, swap);
+          fix_reference(templates.UnitDefinitions[i].Prereq2BuildingGroup, v1, v2, swap);
         end;
-        fix_templates_other_reference(tobtBuildingType, v1, v2, swap);
+        fix_templates_other_reference(tobtBuildingGroup, v1, v2, swap);
       end;
-    ITEM_UNIT_TYPE:
+    ITEM_UNIT_GROUP:
       for i := 0 to templates.UnitCount - 1 do
-        fix_reference(templates.UnitDefinitions[i].UnitType, v1, v2, swap);
+        fix_reference(templates.UnitDefinitions[i].UnitGroup, v1, v2, swap);
     ITEM_WEAPON:
       begin
         for i := 0 to templates.BuildingCount - 1 do
@@ -1440,7 +1440,7 @@ begin
           PrimaryWeapon := -1;
           SecondaryWeapon := -1;
           BarrelArt := -1;
-          Prereq2BuildingType := -1;
+          Prereq2BuildingGroup := -1;
           DeathExplosion := -1;
           BuildupArt := templates.BuildingCount;
           BuildingAnimation := templates.BuildingCount;
@@ -1458,7 +1458,7 @@ begin
           PrimaryWeapon := -1;
           SecondaryWeapon := -1;
           BarrelArt := -1;
-          Prereq2BuildingType := -1;
+          Prereq2BuildingGroup := -1;
           DeathExplosion := -1;
           MuzzleFlashExplosion := -1;
         end;
@@ -1972,14 +1972,14 @@ begin
   else
     FillChar(data.icon_data, sizeof(data.icon_data), 0);
   // Item references
-  store_item_reference(data.item_references[0], ITEM_BUILDING_TYPE, data.building_template.BuildingType);
-  store_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.building_template.Prereq1BuildingType);
-  store_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.building_template.Prereq2BuildingType);
-  store_item_reference(data.item_references[3], ITEM_WEAPON,        data.building_template.PrimaryWeapon);
-  store_item_reference(data.item_references[4], ITEM_WEAPON,        data.building_template.SecondaryWeapon);
-  store_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.building_template.DeathExplosion);
-  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.MuzzleFlashExplosion);
-  store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.building_template.ArmorType);
+  store_item_reference(data.item_references[0], ITEM_BUILDING_GROUP, data.building_template.BuildingGroup);
+  store_item_reference(data.item_references[1], ITEM_BUILDING_GROUP, data.building_template.Prereq1BuildingGroup);
+  store_item_reference(data.item_references[2], ITEM_BUILDING_GROUP, data.building_template.Prereq2BuildingGroup);
+  store_item_reference(data.item_references[3], ITEM_WEAPON,         data.building_template.PrimaryWeapon);
+  store_item_reference(data.item_references[4], ITEM_WEAPON,         data.building_template.SecondaryWeapon);
+  store_item_reference(data.item_references[5], ITEM_EXPLOSION,      data.building_template.DeathExplosion);
+  store_item_reference(data.item_references[6], ITEM_EXPLOSION,      data.building_template.MuzzleFlashExplosion);
+  store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,    data.building_template.ArmorType);
   for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
     store_item_reference(data.item_references[8+i], ITEM_EXPLOSION, IfThen(i < data.builexp_entry.NumAnimations, data.builexp_entry.AnimExplosion[i], -1));
   // Art references
@@ -1988,7 +1988,7 @@ begin
   store_art_reference(data.art_references[2], ART_BUILDING_ANIMATION, data.building_template.BuildingAnimation);
   store_art_reference(data.art_references[3], ART_BUILDUP,            data.building_template.BuildupArt);
   // Building type string
-  store_c_string(StringTable.text_uib.Values[templates.BuildingTypeStrings[data.building_template.BuildingType]], Addr(data.building_type_str), Length(data.building_type_str));
+  store_c_string(StringTable.text_uib.Values[templates.BuildingGroupStrings[data.building_template.BuildingGroup]], Addr(data.building_group_str), Length(data.building_group_str));
 end;
 
 procedure TStructures.restore_building_export_data(index: integer; data: TBuildingExportDataPtr; import_path: string);
@@ -2008,14 +2008,14 @@ begin
     compute_image_indexes;
   end;
   // Item references
-  data.building_template.BuildingType :=        restore_item_reference(data.item_references[0], ITEM_BUILDING_TYPE, data.building_template.BuildingType,        import_path);
-  data.building_template.Prereq1BuildingType := restore_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.building_template.Prereq1BuildingType, import_path);
-  data.building_template.Prereq2BuildingType := restore_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.building_template.Prereq2BuildingType, import_path);
-  data.building_template.PrimaryWeapon :=       restore_item_reference(data.item_references[3], ITEM_WEAPON,        data.building_template.PrimaryWeapon,       import_path);
-  data.building_template.SecondaryWeapon :=     restore_item_reference(data.item_references[4], ITEM_WEAPON,        data.building_template.SecondaryWeapon,     import_path);
-  data.building_template.DeathExplosion :=      restore_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.building_template.DeathExplosion,      import_path);
-  data.building_template.MuzzleFlashExplosion :=restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.building_template.MuzzleFlashExplosion,import_path);
-  data.building_template.ArmorType :=           restore_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.building_template.ArmorType,           import_path);
+  data.building_template.BuildingGroup :=        restore_item_reference(data.item_references[0], ITEM_BUILDING_GROUP, data.building_template.BuildingGroup,        import_path);
+  data.building_template.Prereq1BuildingGroup := restore_item_reference(data.item_references[1], ITEM_BUILDING_GROUP, data.building_template.Prereq1BuildingGroup, import_path);
+  data.building_template.Prereq2BuildingGroup := restore_item_reference(data.item_references[2], ITEM_BUILDING_GROUP, data.building_template.Prereq2BuildingGroup, import_path);
+  data.building_template.PrimaryWeapon :=        restore_item_reference(data.item_references[3], ITEM_WEAPON,         data.building_template.PrimaryWeapon,        import_path);
+  data.building_template.SecondaryWeapon :=      restore_item_reference(data.item_references[4], ITEM_WEAPON,         data.building_template.SecondaryWeapon,      import_path);
+  data.building_template.DeathExplosion :=       restore_item_reference(data.item_references[5], ITEM_EXPLOSION,      data.building_template.DeathExplosion,       import_path);
+  data.building_template.MuzzleFlashExplosion := restore_item_reference(data.item_references[6], ITEM_EXPLOSION,      data.building_template.MuzzleFlashExplosion, import_path);
+  data.building_template.ArmorType :=            restore_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,    data.building_template.ArmorType,            import_path);
   for i := 0 to data.builexp_entry.NumAnimations - 1 do
     data.builexp_entry.AnimExplosion[i] := restore_item_reference(data.item_references[8+i], ITEM_EXPLOSION, data.builexp_entry.AnimExplosion[i], import_path);
   // Art references
@@ -2025,8 +2025,8 @@ begin
   modify_art(ART_BUILDUP, index, 0, data.art_references[3].frames);
   data.building_template.BuildupArt :=        restore_art_reference(data.art_references[3], ART_BUILDUP,            data.building_template.BuildupArt,        index, import_path + data.building_name + '_BUILDUP');
   // Building type string
-  if (Ord(data.building_type_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
-    Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the building name appears in game.', [data.item_references[0].item_name, data.building_type_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
+  if (Ord(data.building_group_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
+    Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the building name appears in game.', [data.item_references[0].item_name, data.building_group_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
 end;
 
 procedure TStructures.store_unit_export_data(index: integer; data: TUnitExportDataPtr);
@@ -2041,14 +2041,14 @@ begin
   else
     FillChar(data.icon_data, sizeof(data.icon_data), 0);
   // Item references
-  store_item_reference(data.item_references[0], ITEM_UNIT_TYPE,     data.unit_template.UnitType);
-  store_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.unit_template.Prereq1BuildingType);
-  store_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.unit_template.Prereq2BuildingType);
-  store_item_reference(data.item_references[3], ITEM_WEAPON,        data.unit_template.PrimaryWeapon);
-  store_item_reference(data.item_references[4], ITEM_WEAPON,        data.unit_template.SecondaryWeapon);
-  store_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.unit_template.DeathExplosion);
-  store_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.MuzzleFlashExplosion);
-  store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.unit_template.ArmorType);
+  store_item_reference(data.item_references[0], ITEM_UNIT_GROUP,     data.unit_template.UnitGroup);
+  store_item_reference(data.item_references[1], ITEM_BUILDING_GROUP, data.unit_template.Prereq1BuildingGroup);
+  store_item_reference(data.item_references[2], ITEM_BUILDING_GROUP, data.unit_template.Prereq2BuildingGroup);
+  store_item_reference(data.item_references[3], ITEM_WEAPON,         data.unit_template.PrimaryWeapon);
+  store_item_reference(data.item_references[4], ITEM_WEAPON,         data.unit_template.SecondaryWeapon);
+  store_item_reference(data.item_references[5], ITEM_EXPLOSION,      data.unit_template.DeathExplosion);
+  store_item_reference(data.item_references[6], ITEM_EXPLOSION,      data.unit_template.MuzzleFlashExplosion);
+  store_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,    data.unit_template.ArmorType);
   // Art references
   store_art_reference(data.art_references[0], ART_UNIT, data.unit_template.UnitArt);
   store_art_reference(data.art_references[1], ART_UNIT, data.unit_template.BarrelArt);
@@ -2056,7 +2056,7 @@ begin
   for i := 0 to Length(data.sound_references) - 1 do
     store_sound_reference(data.sound_references[i], data.unit_template.Voices[i]);
   // Unit type string
-  store_c_string(StringTable.text_uib.Values[templates.UnitTypeStrings[data.unit_template.UnitType]], Addr(data.unit_type_str), Length(data.unit_type_str));
+  store_c_string(StringTable.text_uib.Values[templates.UnitGroupStrings[data.unit_template.UnitGroup]], Addr(data.unit_group_str), Length(data.unit_group_str));
 end;
 
 procedure TStructures.restore_unit_export_data(index: integer; data: TUnitExportDataPtr; import_path: string);
@@ -2069,14 +2069,14 @@ begin
   else
     StructGraphics.modify_image_data(first_unit_icon_image_index + index, data.icon_data, 1);
   // Item references
-  data.unit_template.UnitType :=            restore_item_reference(data.item_references[0], ITEM_UNIT_TYPE,     data.unit_template.UnitType,            import_path);
-  data.unit_template.Prereq1BuildingType := restore_item_reference(data.item_references[1], ITEM_BUILDING_TYPE, data.unit_template.Prereq1BuildingType, import_path);
-  data.unit_template.Prereq2BuildingType := restore_item_reference(data.item_references[2], ITEM_BUILDING_TYPE, data.unit_template.Prereq2BuildingType, import_path);
-  data.unit_template.PrimaryWeapon :=       restore_item_reference(data.item_references[3], ITEM_WEAPON,        data.unit_template.PrimaryWeapon,       import_path);
-  data.unit_template.SecondaryWeapon :=     restore_item_reference(data.item_references[4], ITEM_WEAPON,        data.unit_template.SecondaryWeapon,     import_path);
-  data.unit_template.DeathExplosion :=      restore_item_reference(data.item_references[5], ITEM_EXPLOSION,     data.unit_template.DeathExplosion,      import_path);
-  data.unit_template.MuzzleFlashExplosion :=restore_item_reference(data.item_references[6], ITEM_EXPLOSION,     data.unit_template.MuzzleFlashExplosion,import_path);
-  data.unit_template.ArmorType :=           restore_item_reference(data.item_references[7], ITEM_ARMOUR_TYPE,   data.unit_template.ArmorType,           import_path);
+  data.unit_template.UnitGroup :=            restore_item_reference(data.item_references[0],  ITEM_UNIT_GROUP,     data.unit_template.UnitGroup,            import_path);
+  data.unit_template.Prereq1BuildingGroup := restore_item_reference(data.item_references[1],  ITEM_BUILDING_GROUP, data.unit_template.Prereq1BuildingGroup, import_path);
+  data.unit_template.Prereq2BuildingGroup := restore_item_reference(data.item_references[2],  ITEM_BUILDING_GROUP, data.unit_template.Prereq2BuildingGroup, import_path);
+  data.unit_template.PrimaryWeapon :=        restore_item_reference(data.item_references[3],  ITEM_WEAPON,         data.unit_template.PrimaryWeapon,        import_path);
+  data.unit_template.SecondaryWeapon :=      restore_item_reference(data.item_references[4],  ITEM_WEAPON,         data.unit_template.SecondaryWeapon,      import_path);
+  data.unit_template.DeathExplosion :=       restore_item_reference(data.item_references[5],  ITEM_EXPLOSION,      data.unit_template.DeathExplosion,       import_path);
+  data.unit_template.MuzzleFlashExplosion := restore_item_reference(data.item_references[6],  ITEM_EXPLOSION,      data.unit_template.MuzzleFlashExplosion, import_path);
+  data.unit_template.ArmorType :=            restore_item_reference(data.item_references[7],  ITEM_ARMOUR_TYPE,    data.unit_template.ArmorType,            import_path);
   // Art references
   data.unit_template.UnitArt   := restore_art_reference(data.art_references[0], ART_UNIT, data.unit_template.UnitArt,   -1, import_path + data.unit_name);
   data.unit_template.BarrelArt := restore_art_reference(data.art_references[1], ART_UNIT, data.unit_template.BarrelArt, -1, import_path + data.unit_name + '_BARREL');
@@ -2084,8 +2084,8 @@ begin
   for i := 0 to Length(data.sound_references) - 1 do
     data.unit_template.Voices[i] := restore_sound_reference(data.sound_references[i], data.unit_template.Voices[i], import_path, true);
   // Unit type string
-  if (Ord(data.unit_type_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
-    Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the unit name appears in game.', [data.item_references[0].item_name, data.unit_type_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
+  if (Ord(data.unit_group_str[0]) <> 0) and (StringTable.text_uib.IndexOfName(data.item_references[0].item_name) = -1) then
+    Application.MessageBox(PChar(Format('The key %s is missing in current Text.UIB file. Add this key with value "%s" so that the unit name appears in game.', [data.item_references[0].item_name, data.unit_group_str])), 'Add string to Text.UIB', MB_OK or MB_ICONWARNING);
 end;
 
 procedure TStructures.store_weapon_export_data(index: integer; data: TWeaponExportDataPtr);

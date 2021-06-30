@@ -118,7 +118,7 @@ begin
       begin
         index := -1;
         for k := 0 to MAX_BUILDING_TYPES-1 do
-          if Structures.building_type_mapping[k] = Integer(tiledata_entry.index) then
+          if Structures.building_group_mapping[k] = Integer(tiledata_entry.index) then
           begin
             index := k;
             break;
@@ -133,13 +133,13 @@ begin
       end else
       if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.index < MAX_UNIT_TYPES) then
       begin
-        Inc(tmp_stats[CNT_FIXED_ROWS + Structures.building_type_mapping_count + tiledata_entry.index, tiledata_entry.player]);
+        Inc(tmp_stats[CNT_FIXED_ROWS + Structures.building_group_mapping_count + tiledata_entry.index, tiledata_entry.player]);
         Inc(tmp_stats[Byte(osAllStructures), tiledata_entry.player]);
         Inc(tmp_stats[Byte(osUnits), tiledata_entry.player]);
       end;
     end;
   // Show statistics on grid
-  for i := 0 to cnt_fixed_rows + Structures.building_type_mapping_count + Structures.templates.UnitTypeCount - 1 do
+  for i := 0 to cnt_fixed_rows + Structures.building_group_mapping_count + Structures.templates.UnitGroupCount - 1 do
   begin
     total_value := 0;
     for j := 0 to cnt_players - 1 do
@@ -161,11 +161,11 @@ procedure TMapStatsDialog.update_structures_list(building_list, unit_list: TStri
 var
   i: integer;
 begin
-  StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.building_type_mapping_count + Structures.templates.UnitTypeCount;
-  for i := 0 to Structures.building_type_mapping_count - 1 do
+  StatsGrid.RowCount := 1 + cnt_fixed_rows + Structures.building_group_mapping_count + Structures.templates.UnitGroupCount;
+  for i := 0 to Structures.building_group_mapping_count - 1 do
     StatsGrid.Cells[0,1+cnt_fixed_rows+i] := building_list[i];
-  for i := 0 to Structures.templates.UnitTypeCount - 1 do
-    StatsGrid.Cells[0,1+cnt_fixed_rows+Structures.building_type_mapping_count+i] := unit_list[i];
+  for i := 0 to Structures.templates.UnitGroupCount - 1 do
+    StatsGrid.Cells[0,1+cnt_fixed_rows+Structures.building_group_mapping_count+i] := unit_list[i];
 end;
 
 procedure TMapStatsDialog.update_player_list;

@@ -230,10 +230,10 @@ var
 begin
   tmp_strings_buildings := TStringList.Create;
   tmp_strings_units := TStringList.Create;
-  for i := 0 to Structures.building_type_mapping_count - 1 do
-    tmp_strings_buildings.Add(Structures.get_building_type_str(Structures.building_type_mapping[i]));
-  for i := 0 to Structures.templates.UnitTypeCount - 1 do
-    tmp_strings_units.Add(Structures.get_unit_type_str(i));
+  for i := 0 to Structures.building_group_mapping_count - 1 do
+    tmp_strings_buildings.Add(Structures.get_building_group_str(Structures.building_group_mapping[i]));
+  for i := 0 to Structures.templates.UnitGroupCount - 1 do
+    tmp_strings_units.Add(Structures.get_unit_group_str(i));
   MainWindow.update_structures_list(tmp_strings_buildings, tmp_strings_units);
   MapStatsDialog.update_structures_list(tmp_strings_buildings, tmp_strings_units);
   tmp_strings_buildings.Destroy;

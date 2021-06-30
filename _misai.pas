@@ -113,21 +113,21 @@ begin
   for i := 0 to Length(mis_ai_properties_template) - 1 do
   begin
     name := mis_ai_properties_template[i].name;
-    // Replace building name
+    // Replace building group
     position := Pos('B#', name);
     if position > 0 then
     begin
-      num := strtointdef(Copy(name, position+2, 2), 100);
-      if num < Structures.templates.BuildingTypeCount then
-        name := Copy(name, 0, position-1) + Structures.templates.BuildingTypeStrings[num]
+      num := strtointdef(Copy(name, position+2, 2), MAX_BUILDING_TYPES);
+      if num < Structures.templates.BuildingGroupCount then
+        name := Copy(name, 0, position-1) + Structures.templates.BuildingGroupStrings[num]
       else
         continue;
     end;
-    // Replace building2 name
+    // Replace building name
     position := Pos('B2#', name);
     if position > 0 then
     begin
-      num := strtointdef(Copy(name, position+3, 2), 100);
+      num := strtointdef(Copy(name, position+3, 2), MAX_BUILDING_TYPES);
       if num < Structures.templates.BuildingCount then
         name := Copy(name, 0, position-1) + Structures.prettify_structure_name(Structures.templates.BuildingNameStrings[num])
       else
@@ -137,7 +137,7 @@ begin
     position := Pos('U#', name);
     if position > 0 then
     begin
-      num := strtointdef(Copy(name, position+2, 2), 60);
+      num := strtointdef(Copy(name, position+2, 2), MAX_UNIT_TYPES);
       if num < Structures.templates.UnitCount then
         name := Copy(name, 0, position-1) + Structures.templates.UnitNameStrings[num]
       else

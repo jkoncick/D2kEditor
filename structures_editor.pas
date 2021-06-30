@@ -16,9 +16,9 @@ type
     fdaNone,
     fdaAll,
     fdaAllArt,
-    fdaBuildingTypeList,
+    fdaBuildingGroupList,
     fdaBuildingList,
-    fdaUnitTypeList,
+    fdaUnitGroupList,
     fdaUnitList,
     fdaBuilexpList,
     fdaWeaponList,
@@ -55,7 +55,7 @@ type
   TItemControlGroupLayout = array[0..8] of TItemControlGroupButtonLayout;
   TItemControlGroupLayoutPtr = ^TItemControlGroupLayout;
 
-const ICG_LAYOUT_BLD_UNT_TYPE: TItemControlGroupLayout = (
+const ICG_LAYOUT_BLD_UNT_GROUP: TItemControlGroupLayout = (
     (row: 1; left: 0;  width: 73),
     (row: 1; left: 88; width: 73),
     (row: 2; left: 32; width: 97),
@@ -174,8 +174,8 @@ type
     PageControl: TPageControl;
     PageBuildings: TTabSheet;
     PageUnits: TTabSheet;
-    pnBuildingTypeList: TPanel;
-    lbBuildingTypeList: TListBox;
+    pnBuildingGroupList: TPanel;
+    lbBuildingGroupList: TListBox;
     pnBuildingList: TPanel;
     lbBuildingList: TListBox;
     gbBuildingBasic: TGroupBox;
@@ -188,8 +188,8 @@ type
     lblBuildingOwnerSide: TLabel;
     edBuildingName: TEdit;
     lblBuildingName: TLabel;
-    cbxBuildingType: TComboBox;
-    lblBuildingType: TLabel;
+    cbxBuildingGroup: TComboBox;
+    lblBuildingGroup: TLabel;
     imgBuildingIcon: TImage;
     lblBuildingRequirementsTech: TLabel;
     lblBuildingRequirementsCost: TLabel;
@@ -210,12 +210,12 @@ type
     edBuildingBuildSpeedUpgrade1: TEdit;
     edBuildingBuildSpeedUpgrade2: TEdit;
     edBuildingBuildSpeedUpgrade3: TEdit;
-    lblBuildingPrereq1BuildingType: TLabel;
-    lblBuildingPrereq2BuildingType: TLabel;
+    lblBuildingPrereq1BuildingGroup: TLabel;
+    lblBuildingPrereq2BuildingGroup: TLabel;
     clbBuildingPrereq1OwnerSide: TCheckListBox;
     clbBuildingPrereq2OwnerSide: TCheckListBox;
-    cbxBuildingPrereq1BuildingType: TComboBox;
-    cbxBuildingPrereq2BuildingType: TComboBox;
+    cbxBuildingPrereq1BuildingGroup: TComboBox;
+    cbxBuildingPrereq2BuildingGroup: TComboBox;
     seBuildingPrereq1UpgradesNeeded: TSpinEdit;
     seBuildingPrereq2UpgradesNeeded: TSpinEdit;
     lblBuildingPrereq1UpgradesNeeded: TLabel;
@@ -302,32 +302,32 @@ type
     tmBuildingBuildingAnimation: TTimer;
     btnBuildingBuildupArtPlay: TButton;
     tmBuildingBuildupArt: TTimer;
-    pnUnitTypeList: TPanel;
-    lbUnitTypeList: TListBox;
+    pnUnitGroupList: TPanel;
+    lbUnitGroupList: TListBox;
     pnUnitList: TPanel;
     lbUnitList: TListBox;
     gbUnitBasic: TGroupBox;
     lblUnitOwnerSide: TLabel;
     lblUnitName: TLabel;
-    lblUnitType: TLabel;
+    lblUnitGroup: TLabel;
     imgUnitIcon: TImage;
     clbUnitOwnerSide: TCheckListBox;
     edUnitName: TEdit;
-    cbxUnitType: TComboBox;
+    cbxUnitGroup: TComboBox;
     gbUnitBuildRequirements: TGroupBox;
     lblUnitTechLevel: TLabel;
     lblUnitCost: TLabel;
     lblUnitBuildSpeed: TLabel;
-    lblUnitPrereq1BuildingType: TLabel;
-    lblUnitPrereq2BuildingType: TLabel;
+    lblUnitPrereq1BuildingGroup: TLabel;
+    lblUnitPrereq2BuildingGroup: TLabel;
     lblUnitPrereq1UpgradesNeeded: TLabel;
     lblUnitPrereq1OwnerSide: TLabel;
     seUnitTechLevel: TSpinEdit;
     edUnitCost: TEdit;
     edUnitBuildSpeed: TEdit;
     clbUnitPrereq1OwnerSide: TCheckListBox;
-    cbxUnitPrereq1BuildingType: TComboBox;
-    cbxUnitPrereq2BuildingType: TComboBox;
+    cbxUnitPrereq1BuildingGroup: TComboBox;
+    cbxUnitPrereq2BuildingGroup: TComboBox;
     seUnitPrereq1UpgradesNeeded: TSpinEdit;
     cbUnitAvailableInStarport: TCheckBox;
     cbUnitMultiplayerOnly: TCheckBox;
@@ -528,7 +528,7 @@ type
     sbTechposHarkonnen: TSpeedButton;
     sbTechposOrdos: TSpeedButton;
     sgTechposData: TStringGrid;
-    cbxTechposUnitType: TComboBox;
+    cbxTechposUnitGroup: TComboBox;
     tbTechposNumUnits: TTrackBar;
     lblTechposNumUnits: TLabel;
     ItemExportDialog: TSaveDialog;
@@ -589,7 +589,7 @@ type
     procedure PageControlChanging(Sender: TObject; var AllowChange: Boolean);
     procedure PageControlChange(Sender: TObject);
     // Buildings tab events
-    procedure lbBuildingTypeListClick(Sender: TObject);
+    procedure lbBuildingGroupListClick(Sender: TObject);
     procedure lbBuildingListClick(Sender: TObject);
     procedure imgBuildingIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -603,7 +603,7 @@ type
     procedure btnBuildingBuildupArtPlayClick(Sender: TObject);
     procedure tmBuildingBuildupArtTimer(Sender: TObject);
     // Units tab events
-    procedure lbUnitTypeListClick(Sender: TObject);
+    procedure lbUnitGroupListClick(Sender: TObject);
     procedure lbUnitListClick(Sender: TObject);
     procedure imgUnitIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure edUnitFlagsChange(Sender: TObject);
@@ -648,7 +648,7 @@ type
     procedure rgTechposTechLevelClick(Sender: TObject);
     procedure sgTechposDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure sgTechposDataSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
-    procedure cbxTechposUnitTypeChange(Sender: TObject);
+    procedure cbxTechposUnitGroupChange(Sender: TObject);
     procedure TechposPreviewChange(Sender: TObject);
     procedure imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     // Sounds tab events
@@ -884,14 +884,14 @@ begin
   sgSoundRs.ColWidths[1] := 132;
   sgSoundRs.ColWidths[2] := 132;
   // List control groups
-  create_item_control_group(ITEM_BUILDING,      fdaBuildingList,     lbBuildingList,     edBuildingName,  Addr(ICG_LAYOUT_BLD_UNT),      pnBuildingList);
-  create_item_control_group(ITEM_UNIT,          fdaUnitList,         lbUnitList,         edUnitName,      Addr(ICG_LAYOUT_BLD_UNT),      pnUnitList);
-  create_item_control_group(ITEM_BUILDING_TYPE, fdaBuildingTypeList, lbBuildingTypeList, nil,             Addr(ICG_LAYOUT_BLD_UNT_TYPE), pnBuildingTypeList);
-  create_item_control_group(ITEM_UNIT_TYPE,     fdaUnitTypeList,     lbUnitTypeList,     nil,             Addr(ICG_LAYOUT_BLD_UNT_TYPE), pnUnitTypeList);
-  create_item_control_group(ITEM_WEAPON,        fdaWeaponList,       lbWeaponList,       edWeaponName,    Addr(ICG_LAYOUT_WPN_EXP),      pnWeaponList);
-  create_item_control_group(ITEM_EXPLOSION,     fdaExplosionList,    lbExplosionList,    edExplosionName, Addr(ICG_LAYOUT_WPN_EXP),      pnExplosionList);
-  create_item_control_group(ITEM_ARMOUR_TYPE,   fdaArmourTypeList,   lbArmourTypeList,   nil,             Addr(ICG_LAYOUT_ARM_WHD),      pnArmourTypeList);
-  create_item_control_group(ITEM_WARHEAD,       fdaWarheadList,      lbWarheadList,      nil,             Addr(ICG_LAYOUT_ARM_WHD),      pnWarheadList);
+  create_item_control_group(ITEM_BUILDING,       fdaBuildingList,      lbBuildingList,      edBuildingName,  Addr(ICG_LAYOUT_BLD_UNT),       pnBuildingList);
+  create_item_control_group(ITEM_UNIT,           fdaUnitList,          lbUnitList,          edUnitName,      Addr(ICG_LAYOUT_BLD_UNT),       pnUnitList);
+  create_item_control_group(ITEM_BUILDING_GROUP, fdaBuildingGroupList, lbBuildingGroupList, nil,             Addr(ICG_LAYOUT_BLD_UNT_GROUP), pnBuildingGroupList);
+  create_item_control_group(ITEM_UNIT_GROUP,     fdaUnitGroupList,     lbUnitGroupList,     nil,             Addr(ICG_LAYOUT_BLD_UNT_GROUP), pnUnitGroupList);
+  create_item_control_group(ITEM_WEAPON,         fdaWeaponList,        lbWeaponList,        edWeaponName,    Addr(ICG_LAYOUT_WPN_EXP),       pnWeaponList);
+  create_item_control_group(ITEM_EXPLOSION,      fdaExplosionList,     lbExplosionList,     edExplosionName, Addr(ICG_LAYOUT_WPN_EXP),       pnExplosionList);
+  create_item_control_group(ITEM_ARMOUR_TYPE,    fdaArmourTypeList,    lbArmourTypeList,    nil,             Addr(ICG_LAYOUT_ARM_WHD),       pnArmourTypeList);
+  create_item_control_group(ITEM_WARHEAD,        fdaWarheadList,       lbWarheadList,       nil,             Addr(ICG_LAYOUT_ARM_WHD),       pnWarheadList);
   item_control_groups[ITEM_UNIT_VOICES].list_control := lbUnitList;
   item_control_groups[ITEM_UNIT_VOICES].edit_item_name := edUnitName;
   // Art control groups
@@ -996,10 +996,10 @@ begin
   fill_status_bar;
 end;
 
-procedure TStructuresEditor.lbBuildingTypeListClick(Sender: TObject);
+procedure TStructuresEditor.lbBuildingGroupListClick(Sender: TObject);
 begin
-  item_control_groups[ITEM_BUILDING_TYPE].last_item_index := lbBuildingTypeList.ItemIndex;
-  item_control_groups[ITEM_BUILDING_TYPE].edit_item_name.Text := Structures.templates.BuildingTypeStrings[lbBuildingTypeList.ItemIndex];
+  item_control_groups[ITEM_BUILDING_GROUP].last_item_index := lbBuildingGroupList.ItemIndex;
+  item_control_groups[ITEM_BUILDING_GROUP].edit_item_name.Text := Structures.templates.BuildingGroupStrings[lbBuildingGroupList.ItemIndex];
 end;
 
 procedure TStructuresEditor.lbBuildingListClick(Sender: TObject);
@@ -1188,10 +1188,10 @@ begin
   tmBuildingBuildupArt.Tag := tmBuildingBuildupArt.Tag + 1;
 end;
 
-procedure TStructuresEditor.lbUnitTypeListClick(Sender: TObject);
+procedure TStructuresEditor.lbUnitGroupListClick(Sender: TObject);
 begin
-  item_control_groups[ITEM_UNIT_TYPE].last_item_index := lbUnitTypeList.ItemIndex;
-  item_control_groups[ITEM_UNIT_TYPE].edit_item_name.Text := Structures.templates.UnitTypeStrings[lbUnitTypeList.ItemIndex];
+  item_control_groups[ITEM_UNIT_GROUP].last_item_index := lbUnitGroupList.ItemIndex;
+  item_control_groups[ITEM_UNIT_GROUP].edit_item_name.Text := Structures.templates.UnitGroupStrings[lbUnitGroupList.ItemIndex];
 end;
 
 procedure TStructuresEditor.lbUnitListClick(Sender: TObject);
@@ -1625,10 +1625,10 @@ begin
   index := ARow - 1;
   item_name_list_combo := nil;
   case Structures.templates_other_byte_types[index] of
-    tobtBuildingType: item_name_list_combo := cbxBuildingPrereq1BuildingType;
-    tobtUnit:         item_name_list_combo := cbxTemplatesOtherUnitSelect;
-    tobtWeapon:       item_name_list_combo := cbxBuildingPrimaryWeapon;
-    tobtExplosion:    item_name_list_combo := cbxBuildingDeathExplosion;
+    tobtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
+    tobtUnit:          item_name_list_combo := cbxTemplatesOtherUnitSelect;
+    tobtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
+    tobtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
   end;
   cbxTemplatesOtherSelect.Visible := Structures.templates_other_byte_types[index] <> tobtNone;
   cbxTemplatesOtherSelect.Tag := index;
@@ -1682,9 +1682,9 @@ begin
   begin
     sgTechposData.Cells[1, i + 1] := inttostr(Structures.techpos[tech, i].PosX);
     sgTechposData.Cells[2, i + 1] := inttostr(Structures.techpos[tech, i].PosY);
-    sgTechposData.Cells[3, i + 1] := cbxTechposUnitType.Items[Structures.techpos[tech, i].Units[0] + 1];
-    sgTechposData.Cells[4, i + 1] := cbxTechposUnitType.Items[Structures.techpos[tech, i].Units[1] + 1];
-    sgTechposData.Cells[5, i + 1] := cbxTechposUnitType.Items[Structures.techpos[tech, i].Units[2] + 1];
+    sgTechposData.Cells[3, i + 1] := cbxTechposUnitGroup.Items[Structures.techpos[tech, i].Units[0] + 1];
+    sgTechposData.Cells[4, i + 1] := cbxTechposUnitGroup.Items[Structures.techpos[tech, i].Units[1] + 1];
+    sgTechposData.Cells[5, i + 1] := cbxTechposUnitGroup.Items[Structures.techpos[tech, i].Units[2] + 1];
   end;
   sgTechposDataSelectCell(nil, sgTechposData.Col, sgTechposData.Row, dummy);
   draw_techpos_preview;
@@ -1694,16 +1694,16 @@ procedure TStructuresEditor.sgTechposDataSelectCell(Sender: TObject; ACol, ARow:
 var
   side, unitnum, tech: integer;
 begin
-  cbxTechposUnitType.Visible := ACol >= 3;
+  cbxTechposUnitGroup.Visible := ACol >= 3;
   if ACol < 3 then
     exit;
   side := ACol - 3;
   unitnum := ARow - 1;
   tech := rgTechposTechLevel.ItemIndex;
-  cbxTechposUnitType.Left := 124 + side * 134;
-  cbxTechposUnitType.Top := 301 + unitnum * 20;
-  cbxTechposUnitType.ItemIndex := Structures.techpos[tech, unitnum].Units[side] + 1;
-  cbxTechposUnitType.Tag := side * 10 + unitnum;
+  cbxTechposUnitGroup.Left := 124 + side * 134;
+  cbxTechposUnitGroup.Top := 301 + unitnum * 20;
+  cbxTechposUnitGroup.ItemIndex := Structures.techpos[tech, unitnum].Units[side] + 1;
+  cbxTechposUnitGroup.Tag := side * 10 + unitnum;
 end;
 
 procedure TStructuresEditor.sgTechposDataSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
@@ -1725,17 +1725,17 @@ begin
   draw_techpos_preview;
 end;
 
-procedure TStructuresEditor.cbxTechposUnitTypeChange(Sender: TObject);
+procedure TStructuresEditor.cbxTechposUnitGroupChange(Sender: TObject);
 var
   side, unitnum, tech: integer;
 begin
-  side := cbxTechposUnitType.Tag div 10;
-  unitnum := cbxTechposUnitType.Tag mod 10;
+  side := cbxTechposUnitGroup.Tag div 10;
+  unitnum := cbxTechposUnitGroup.Tag mod 10;
   tech := rgTechposTechLevel.ItemIndex;
-  Structures.techpos[tech, unitnum].Units[side] := cbxTechposUnitType.ItemIndex - 1;
+  Structures.techpos[tech, unitnum].Units[side] := cbxTechposUnitGroup.ItemIndex - 1;
   Structures.techpos_bin_modified := true;
   fill_status_bar;
-  sgTechposData.Cells[3 + side, 1 + unitnum] := cbxTechposUnitType.Items[Structures.techpos[tech, unitnum].Units[side] + 1];
+  sgTechposData.Cells[3 + side, 1 + unitnum] := cbxTechposUnitGroup.Items[Structures.techpos[tech, unitnum].Units[side] + 1];
   draw_techpos_preview;
 end;
 
@@ -1760,7 +1760,7 @@ begin
   else
     side := 2;
   tech := rgTechposTechLevel.ItemIndex;
-  unitnum := cbxTechposUnitType.Tag mod 10;
+  unitnum := cbxTechposUnitGroup.Tag mod 10;
   for i := 0 to 9 do
     if (Structures.techpos[tech, i].PosX = pos_x) and (Structures.techpos[tech, i].PosY = pos_y) then
     begin
@@ -1769,7 +1769,7 @@ begin
     end;
   sgTechposData.Col := 3 + side;
   sgTechposData.Row := 1 + unitnum;
-  cbxTechposUnitType.SetFocus;
+  cbxTechposUnitGroup.SetFocus;
 end;
 
 procedure TStructuresEditor.sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -2417,17 +2417,17 @@ var
 begin
   tmp_strings := TStringList.Create;
 
-  if (action = fdaBuildingTypeList) or (action = fdaAll) then
+  if (action = fdaBuildingGroupList) or (action = fdaAll) then
   begin
     // Building type list
-    fill_item_list(ITEM_BUILDING_TYPE, tmp_strings);
-    cbxBuildingType.Items := tmp_strings;
+    fill_item_list(ITEM_BUILDING_GROUP, tmp_strings);
+    cbxBuildingGroup.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
-    cbxBuildingPrereq1BuildingType.Items := tmp_strings;
-    cbxBuildingPrereq2BuildingType.Items := tmp_strings;
-    cbxUnitPrereq1BuildingType.Items := tmp_strings;
-    cbxUnitPrereq2BuildingType.Items := tmp_strings;
-    lbBuildingTypeListClick(nil);
+    cbxBuildingPrereq1BuildingGroup.Items := tmp_strings;
+    cbxBuildingPrereq2BuildingGroup.Items := tmp_strings;
+    cbxUnitPrereq1BuildingGroup.Items := tmp_strings;
+    cbxUnitPrereq2BuildingGroup.Items := tmp_strings;
+    lbBuildingGroupListClick(nil);
   end;
 
   if (action = fdaBuildingList) or (action = fdaAll) then
@@ -2436,14 +2436,14 @@ begin
     fill_item_list(ITEM_BUILDING, tmp_strings);
   end;
 
-  if (action = fdaUnitTypeList) or (action = fdaAll) then
+  if (action = fdaUnitGroupList) or (action = fdaAll) then
   begin
     // Unit type list
-    fill_item_list(ITEM_UNIT_TYPE, tmp_strings);
-    cbxUnitType.Items := tmp_strings;
+    fill_item_list(ITEM_UNIT_GROUP, tmp_strings);
+    cbxUnitGroup.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
-    cbxTechposUnitType.Items := tmp_strings;
-    lbUnitTypeListClick(nil);
+    cbxTechposUnitGroup.Items := tmp_strings;
+    lbUnitGroupListClick(nil);
   end;
 
   if (action = fdaUnitList) or (action = fdaAll) then
@@ -2732,7 +2732,7 @@ begin
   bld := Addr(Structures.templates.BuildingDefinitions[index]);
   // Basic group box
   edBuildingName.Text := Structures.templates.BuildingNameStrings[index];
-  cbxBuildingType.ItemIndex := bld.BuildingType;
+  cbxBuildingGroup.ItemIndex := bld.BuildingGroup;
   icon := StructGraphics.get_raw_structure_image(Structures.first_building_icon_image_index + index);
   if icon <> nil then
   begin
@@ -2756,10 +2756,10 @@ begin
   edBuildingBuildSpeedUpgrade1.Text := inttostr(bld.BuildSpeedUpgrade1);
   edBuildingBuildSpeedUpgrade2.Text := inttostr(bld.BuildSpeedUpgrade2);
   edBuildingBuildSpeedUpgrade3.Text := inttostr(bld.BuildSpeedUpgrade3);
-  cbxBuildingPrereq1BuildingType.ItemIndex := bld.Prereq1BuildingType + 1;
+  cbxBuildingPrereq1BuildingGroup.ItemIndex := bld.Prereq1BuildingGroup + 1;
   set_owner_side_field_value(clbBuildingPrereq1OwnerSide, bld.Prereq1OwnerSide);
   seBuildingPrereq1UpgradesNeeded.Value := bld.Prereq1UpgradesNeeded;
-  cbxBuildingPrereq2BuildingType.ItemIndex := bld.Prereq2BuildingType + 1;
+  cbxBuildingPrereq2BuildingGroup.ItemIndex := bld.Prereq2BuildingGroup + 1;
   set_owner_side_field_value(clbBuildingPrereq2OwnerSide, bld.Prereq2OwnerSide);
   seBuildingPrereq2UpgradesNeeded.Value := bld.Prereq2UpgradesNeeded;
   // Properties and behavior group box
@@ -2822,7 +2822,7 @@ begin
   unt := Addr(Structures.templates.UnitDefinitions[index]);
   // Basic group box
   edUnitName.Text := Structures.templates.UnitNameStrings[index];
-  cbxUnitType.ItemIndex := unt.UnitType;
+  cbxUnitGroup.ItemIndex := unt.UnitGroup;
   icon := StructGraphics.get_raw_structure_image(Structures.first_unit_icon_image_index + index);
   if icon <> nil then
   begin
@@ -2837,10 +2837,10 @@ begin
   seUnitTechLevel.Value := unt.TechLevel;
   edUnitCost.Text := inttostr(unt.Cost);
   edUnitBuildSpeed.Text := inttostr(unt.BuildSpeed);
-  cbxUnitPrereq1BuildingType.ItemIndex := unt.Prereq1BuildingType + 1;
+  cbxUnitPrereq1BuildingGroup.ItemIndex := unt.Prereq1BuildingGroup + 1;
   set_owner_side_field_value(clbUnitPrereq1OwnerSide, unt.Prereq1OwnerSide);
   seUnitPrereq1UpgradesNeeded.Value := unt.Prereq1UpgradesNeeded;
-  cbxUnitPrereq2BuildingType.ItemIndex := unt.Prereq2BuildingType + 1;
+  cbxUnitPrereq2BuildingGroup.ItemIndex := unt.Prereq2BuildingGroup + 1;
   cbUnitAvailableInStarport.Checked := unt.AvailableInStarport <> 0;
   cbUnitMultiplayerOnly.Checked := unt.MultiplayerOnly <> 0;
   // Voices group box
@@ -3100,7 +3100,7 @@ begin
     exit;
   bld := Addr(Structures.templates.BuildingDefinitions[index]);
   // Basic group box
-  bld.BuildingType := cbxBuildingType.ItemIndex;
+  bld.BuildingGroup := cbxBuildingGroup.ItemIndex;
   bld.OwnerSide := get_owner_side_field_value(clbBuildingOwnerSide);
   // Build requirements group box
   bld.TechLevelBuild := seBuildingTechLevelBuild.Value;
@@ -3115,10 +3115,10 @@ begin
   bld.BuildSpeedUpgrade1 := strtointdef(edBuildingBuildSpeedUpgrade1.Text, 0);
   bld.BuildSpeedUpgrade2 := strtointdef(edBuildingBuildSpeedUpgrade2.Text, 0);
   bld.BuildSpeedUpgrade3 := strtointdef(edBuildingBuildSpeedUpgrade3.Text, 0);
-  bld.Prereq1BuildingType := cbxBuildingPrereq1BuildingType.ItemIndex - 1;
+  bld.Prereq1BuildingGroup := cbxBuildingPrereq1BuildingGroup.ItemIndex - 1;
   bld.Prereq1OwnerSide := get_owner_side_field_value(clbBuildingPrereq1OwnerSide);
   bld.Prereq1UpgradesNeeded := seBuildingPrereq1UpgradesNeeded.Value;
-  bld.Prereq2BuildingType := cbxBuildingPrereq2BuildingType.ItemIndex - 1;
+  bld.Prereq2BuildingGroup := cbxBuildingPrereq2BuildingGroup.ItemIndex - 1;
   bld.Prereq2OwnerSide := get_owner_side_field_value(clbBuildingPrereq2OwnerSide);
   bld.Prereq2UpgradesNeeded := seBuildingPrereq2UpgradesNeeded.Value;
   // Properties and behavior group box
@@ -3179,16 +3179,16 @@ begin
     exit;
   unt := Addr(Structures.templates.UnitDefinitions[index]);
   // Basic group box
-  unt.UnitType := cbxUnitType.ItemIndex;
+  unt.UnitGroup := cbxUnitGroup.ItemIndex;
   unt.OwnerSide := get_owner_side_field_value(clbUnitOwnerSide);
   // Build requirements group box
   unt.TechLevel := seUnitTechLevel.Value;
   unt.Cost := strtointdef(edUnitCost.Text, 0);
   unt.BuildSpeed := strtointdef(edUnitBuildSpeed.Text, 0);
-  unt.Prereq1BuildingType := cbxUnitPrereq1BuildingType.ItemIndex - 1;
+  unt.Prereq1BuildingGroup := cbxUnitPrereq1BuildingGroup.ItemIndex - 1;
   unt.Prereq1OwnerSide := get_owner_side_field_value(clbUnitPrereq1OwnerSide);
   unt.Prereq1UpgradesNeeded := seUnitPrereq1UpgradesNeeded.Value;
-  unt.Prereq2BuildingType := cbxUnitPrereq2BuildingType.ItemIndex - 1;
+  unt.Prereq2BuildingGroup := cbxUnitPrereq2BuildingGroup.ItemIndex - 1;
   unt.AvailableInStarport := IfThen(cbUnitAvailableInStarport.Checked, 1, 0);
   unt.MultiplayerOnly := IfThen(cbUnitMultiplayerOnly.Checked, 1, 0);
   // Voices group box
@@ -3332,10 +3332,10 @@ var
 begin
   item_name_list_combo := nil;
   case Structures.templates_other_byte_types[index] of
-    tobtBuildingType: item_name_list_combo := cbxBuildingPrereq1BuildingType;
-    tobtUnit:         item_name_list_combo := cbxTemplatesOtherUnitSelect;
-    tobtWeapon:       item_name_list_combo := cbxBuildingPrimaryWeapon;
-    tobtExplosion:    item_name_list_combo := cbxBuildingDeathExplosion;
+    tobtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
+    tobtUnit:          item_name_list_combo := cbxTemplatesOtherUnitSelect;
+    tobtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
+    tobtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
   end;
   if item_name_list_combo <> nil then
     result := item_name_list_combo.Items[value + 1]
@@ -4043,7 +4043,7 @@ procedure TStructuresEditor.draw_techpos_preview;
 var
   i: integer;
   tech, side: integer;
-  unit_type: integer;
+  unit_group: integer;
   unit_template: TUnitTemplatePtr;
   is_stealth: boolean;
   structure_image: TStructureImagePtr;
@@ -4065,16 +4065,16 @@ begin
     side := 2;
   for i := 0 to tbTechposNumUnits.Position - 1 do
   begin
-    unit_type := Structures.techpos[tech, i].Units[side];
+    unit_group := Structures.techpos[tech, i].Units[side];
     pos_x := ((TECHPOS_PREVIEW_SIZE div 2) + Structures.techpos[tech, i].PosX) * 32;
     pos_y := ((TECHPOS_PREVIEW_SIZE div 2) + Structures.techpos[tech, i].PosY) * 32;
-    if unit_type = -1 then
+    if unit_group = -1 then
       continue;
-    unit_template := Structures.get_unit_template(unit_type, side);
+    unit_template := Structures.get_unit_template(unit_group, side);
     if (unit_template = nil) or (unit_template.SpecialBehavior = 5) then
       continue;
     // Check if unit is stealth
-    is_stealth := ((unit_template.Flags and $10) <> 0) or (unit_template.SpecialBehavior = 12) or (Structures.templates.UnitNameStrings[Structures.unit_side_versions[unit_type, side]] = 'STEALTH RAIDER');
+    is_stealth := ((unit_template.Flags and $10) <> 0) or (unit_template.SpecialBehavior = 12) or (Structures.templates.UnitNameStrings[Structures.unit_side_versions[unit_group, side]] = 'STEALTH RAIDER');
     // Draw unit
     if unit_template.UnitArt <> -1 then
     begin
@@ -4096,7 +4096,7 @@ procedure TStructuresEditor.apply_changes;
 begin
   store_data;
   Structures.compute_building_and_unit_side_versions;
-  Structures.compute_building_type_mapping;
+  Structures.compute_building_group_mapping;
   Dispatcher.register_event(evACStructuresEditor);
 end;
 
