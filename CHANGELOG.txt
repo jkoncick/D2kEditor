@@ -1,17 +1,17 @@
 D2kEditor changelog
 
-Version 2.0 (released 2021-04-20)
+Version 2.0 (released 2021-06-30)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.
 Added: Save minimap image feature
 Added: Mark Wall & Concrete owner side feature. Available as 4th toggle button "Own" below minimap (or Ctrl+W).
        "Show unknown specials" option was moved under Settings menu.
-Fixed: Outpost and Modified Outpost are visually distinguished by antenna turn direction.
 Changed: Spice Bloom graphics is now transparent
 Fixed: The "Maximized" window property is now preserved for all dialogs when you close and open program again.
 Fixed: The last used directory for various open/save dialogs is preserved independently for each dialog.
 Fixed: Some key shortcuts (i.e. Ctrl+G) will no longer select a preset
 Fixed: Scrolling map with arrows will always work in Terrain mode
+Added: In structures mode you can erase structures when right button is held and mouse is moved
 Added: In Structures mode, use Up/Down keys to select building/unit in a list, and Left/Right keys to switch between
        Misc Objects, Building and Unit lists
 Added: You can use Shift + mouse wheel up/down to change brush size

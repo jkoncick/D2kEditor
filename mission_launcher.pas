@@ -17,8 +17,8 @@ type
 const mission_grid_column_definitions: array[0..11] of TMissionGridColumnDefinition =
   (
     (name: 'File name';       short: '';   width: 160; shown: false),
-    (name: 'Mission name';    short: '';   width: 260; shown: true),
-    (name: 'Author';          short: '';   width: 72;  shown: true),
+    (name: 'Mission name';    short: '';   width: 256; shown: true),
+    (name: 'Author';          short: '';   width: 68;  shown: true),
     (name: 'Side ID';         short: 'S.'; width: 16;  shown: true),
     (name: 'Mission number';  short: '#';  width: 16;  shown: false),
     (name: 'Campaign folder'; short: '';   width: 80;  shown: true),
