@@ -15,10 +15,16 @@ type
   TCardinalArray = array[0..0] of cardinal;
   TCardinalArrayPtr = ^TCardinalArray;
 
+  TStructMemberDefinition = record
+    pos: byte;
+    bytes: byte;
+  end;
+  TStructDefinition = array[0..0] of TStructMemberDefinition;
+  TStructDefinitionPtr = ^TStructDefinition;
+
   TDummyStringRec = record
     str: array[0..49] of char;
   end;
-
   TDummyStringRecPtr = ^TDummyStringRec;
 
 type
@@ -27,10 +33,14 @@ type
       procedure CMMouseLeave(var Message: TMessage); message CM_MOUSELEAVE;
   end;
 
-function get_integer_value(var arr: array of byte; pos, bytes: integer): integer;
-function get_float_value  (var arr: array of byte; pos: integer): single;
-procedure set_integer_value(var arr: array of byte; pos, bytes: integer; value: Integer);
-procedure set_float_value  (var arr: array of byte; pos: integer; value: single);
+function get_integer_value(ptr: Pointer; pos, bytes: integer): integer;
+function get_float_value  (ptr: Pointer; pos: integer): single;
+procedure set_integer_value(ptr: Pointer; pos, bytes: integer; value: Integer);
+procedure set_float_value  (ptr: Pointer; pos: integer; value: single);
+function get_integer_struct_member(ptr: Pointer; structdef: TStructDefinitionPtr; member: integer): integer;
+function get_float_struct_member  (ptr: Pointer; structdef: TStructDefinitionPtr; member: integer): single;
+procedure set_integer_struct_member(ptr: Pointer; structdef: TStructDefinitionPtr; member: integer; value: integer);
+procedure set_float_struct_member  (ptr: Pointer; structdef: TStructDefinitionPtr; member: integer; value: single);
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);
 procedure swap_byte(byte1, byte2: PByte);
 
@@ -60,37 +70,65 @@ begin
   MainWindow.ImageMouseLeave(self);
 end;
 
-function get_integer_value(var arr: array of byte; pos, bytes: integer): integer;
+function get_integer_value(ptr: Pointer; pos, bytes: integer): integer;
 var
+  arr: TByteArrayPtr;
   b: integer;
 begin
   result := 0;
+  arr := ptr;
   for b := 0 to bytes - 1 do
     result := result + (arr[pos + b] shl (8 * b));
 end;
 
-function get_float_value(var arr: array of byte; pos: integer): single;
+function get_float_value(ptr: Pointer; pos: integer): single;
 var
+  arr: TByteArrayPtr;
   f_ptr: ^single;
 begin
+  arr := ptr;
   f_ptr := Addr(arr[pos]);
   result := f_ptr^;
 end;
 
-procedure set_integer_value(var arr: array of byte; pos, bytes: integer; value: Integer);
+procedure set_integer_value(ptr: Pointer; pos, bytes: integer; value: Integer);
 var
+  arr: TByteArrayPtr;
   b: integer;
 begin
+  arr := ptr;
   for b := 0 to bytes - 1 do
     arr[pos + b] := (value shr (8 * b)) and 255;
 end;
 
-procedure set_float_value(var arr: array of byte; pos: integer; value: single);
+procedure set_float_value(ptr: Pointer; pos: integer; value: single);
 var
+  arr: TByteArrayPtr;
   f_ptr: ^single;
 begin
+  arr := ptr;
   f_ptr := Addr(arr[pos]);
   f_ptr^ := value;
+end;
+
+function get_integer_struct_member(ptr: Pointer; structdef: TStructDefinitionPtr; member: integer): integer;
+begin
+  result := get_integer_value(ptr, structdef[member].pos, structdef[member].bytes);
+end;
+
+function get_float_struct_member(ptr: Pointer; structdef: TStructDefinitionPtr; member: integer): single;
+begin
+  result := get_float_value(ptr, structdef[member].pos);
+end;
+
+procedure set_integer_struct_member(ptr: Pointer; structdef: TStructDefinitionPtr; member: integer; value: integer);
+begin
+  set_integer_value(ptr, structdef[member].pos, structdef[member].bytes, value);
+end;
+
+procedure set_float_struct_member(ptr: Pointer; structdef: TStructDefinitionPtr; member: integer; value: single);
+begin
+  set_float_value(ptr, structdef[member].pos, value);
 end;
 
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);

@@ -1636,7 +1636,7 @@ begin
   if Structures.group_ids_byte_types[index] <> gibtNone then
   begin
     cbxGroupIDsSelect.Items := item_name_list_combo.Items;
-    cbxGroupIDsSelect.ItemIndex := Structures.templates.Other[index] + 1;
+    cbxGroupIDsSelect.ItemIndex := Structures.templates.GroupIDs[index] + 1;
     cbxGroupIDsSelect.Top := (ARow - vleGroupIDs.TopRow + 1) * 20 + 17;
   end;
 end;
@@ -1649,7 +1649,7 @@ end;
 
 procedure TStructuresEditor.cbxGroupIDsSelectChange(Sender: TObject);
 begin
-  Structures.templates.Other[cbxGroupIDsSelect.Tag] := cbxGroupIDsSelect.ItemIndex - 1;
+  Structures.templates.GroupIDs[cbxGroupIDsSelect.Tag] := cbxGroupIDsSelect.ItemIndex - 1;
   vleGroupIDs.Cells[1, cbxGroupIDsSelect.Tag + 1] := get_group_ids_cell_text(cbxGroupIDsSelect.Tag, cbxGroupIDsSelect.ItemIndex - 1);
 end;
 
@@ -2667,8 +2667,8 @@ begin
   begin
     // Other
     tmp_strings := TStringList.Create;
-    for i := 0 to Length(Structures.templates.Other) - 1 do
-      tmp_strings.Add(Format('%s=%s', [Structures.group_ids[i], get_group_ids_cell_text(i, Structures.templates.Other[i])]));
+    for i := 0 to Length(Structures.templates.GroupIDs) - 1 do
+      tmp_strings.Add(Format('%s=%s', [Structures.group_ids[i], get_group_ids_cell_text(i, Structures.templates.GroupIDs[i])]));
     vleGroupIDs.Strings := tmp_strings;
     vleGroupIDs.Col := 0;
     tmp_strings.Destroy;
@@ -2956,8 +2956,8 @@ begin
     if Structures.templates.UnitDefinitions[i].SecondaryWeapon = index then
       str := str + Structures.templates.UnitNameStrings[i] + ' (sec) ';
   end;
-  for i := 0 to Length(Structures.templates.Other) - 1 do
-    if (Structures.group_ids_byte_types[i] = gibtWeapon) and ((i < 25) or (i > 48) or ((i - 25) < Structures.templates.Other[49])) and (Structures.templates.Other[i] = index) then
+  for i := 0 to Length(Structures.templates.GroupIDs) - 1 do
+    if (Structures.group_ids_byte_types[i] = gibtWeapon) and ((i < 25) or (i > 48) or ((i - 25) < Structures.templates.GroupIDs[49])) and (Structures.templates.GroupIDs[i] = index) then
       str := str + Copy(Structures.group_ids[i], 2, 100) + ' (special) ';
   lblWeaponUsedBy.Caption := str;
 
@@ -3008,8 +3008,8 @@ begin
     if Structures.templates.WeaponDefinitions[i].TrailExplosion = index then
       str := str + Structures.templates.WeaponStrings[i] + ' (trail) ';
   end;
-  for i := 0 to Length(Structures.templates.Other) - 1 do
-    if (Structures.group_ids_byte_types[i] = gibtExplosion) and (Structures.templates.Other[i] = index) then
+  for i := 0 to Length(Structures.templates.GroupIDs) - 1 do
+    if (Structures.group_ids_byte_types[i] = gibtExplosion) and (Structures.templates.GroupIDs[i] = index) then
       str := str + Copy(Structures.group_ids[i], 2, 100) + ' (special) ';
   used_builexp := false;
   for i := 0 to Structures.templates.BuildingCount - 1 do
@@ -3078,9 +3078,9 @@ begin
   if PageControl.ActivePage = PageOther then
   begin
     // Other
-    for i := 0 to Length(Structures.templates.Other) - 1 do
+    for i := 0 to Length(Structures.templates.GroupIDs) - 1 do
       if Structures.group_ids_byte_types[i] = gibtNone then
-        Structures.templates.Other[i] := StrToIntDef(vleGroupIDs.Cells[1, i+1], 0);
+        Structures.templates.GroupIDs[i] := StrToIntDef(vleGroupIDs.Cells[1, i+1], 0);
   end else
   if PageControl.ActivePage = PageSounds then
   begin

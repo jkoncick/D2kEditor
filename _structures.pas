@@ -218,7 +218,7 @@ type
     UnitNameStrings:         array[0..MAX_UNIT_TYPES-1,     0..449] of char;
     UnitGroupStrings:        array[0..MAX_UNIT_TYPES-1,     0..49]  of char;
     BuildingGroupStrings:    array[0..MAX_BUILDING_TYPES-1, 0..49]  of char;
-    Other:                   array[0..85]                   of shortint;
+    GroupIDs:                array[0..85]                   of shortint;
     AnimationArtFlags:       array[0..MAX_EXPLOSIONS-1]     of cardinal;
     BuildingAnimationFrames: array[0..MAX_BUILDING_TYPES-1] of byte;
     BuildupArtFrames:        array[0..MAX_BUILDING_TYPES-1] of byte;
@@ -1307,9 +1307,9 @@ procedure TStructures.fix_group_ids_reference(byte_type: TGroupIDsByteType; v1, 
 var
   i: integer;
 begin
-  for i := 0 to Length(templates.Other) - 1 do
+  for i := 0 to Length(templates.GroupIDs) - 1 do
     if group_ids_byte_types[i] = byte_type then
-      fix_reference(templates.Other[i], v1, v2, swap);
+      fix_reference(templates.GroupIDs[i], v1, v2, swap);
 end;
 
 procedure TStructures.swap_data(data: TByteArrayPtr; data_size, index1, index2: integer);

@@ -389,13 +389,13 @@ begin
       'd': bytes := 4;
       'f':
         begin
-          f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(MisAI.default_ai, prop.position));
-          set_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, f_val);
+          f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Addr(MisAI.default_ai), prop.position));
+          set_float_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position, f_val);
           continue;
         end;
     end;
-    i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(MisAI.default_ai, prop.position, bytes));
-    set_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, bytes, i_val);
+    i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Addr(MisAI.default_ai), prop.position, bytes));
+    set_integer_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position, bytes, i_val);
   end;
   loading := false;
 end;
@@ -459,7 +459,7 @@ begin
   defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[AITabControl.TabIndex], defence_area_num);
   x := defence_area.MinX;
   y := defence_area.MinY;
-  MainWindow.start_event_position_selection(x, y, epmDefenceArea);
+  MainWindow.start_position_selection(x, y, psmDefenceArea);
   close;
 end;
 
@@ -665,16 +665,16 @@ begin
       'd': bytes := 4;
       'f':
         begin
-          f_val := get_float_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position);
-          if cbDiffMode.Checked and (f_val = get_float_value(MisAI.default_ai, prop.position)) then
+          f_val := get_float_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position);
+          if cbDiffMode.Checked and (f_val = get_float_value(Addr(MisAI.default_ai), prop.position)) then
             tmp_strings.Add(prop.name + '=')
           else
             tmp_strings.Add(prop.name + '=' + floattostrf(f_val, ffFixed, 8, 3));
           continue;
         end;
       end;
-    i_val := get_integer_value(Mission.mis_data.ai_segments[AITabControl.TabIndex], prop.position, bytes);
-    if cbDiffMode.Checked and (i_val = get_integer_value(MisAI.default_ai, prop.position, bytes)) then
+    i_val := get_integer_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position, bytes);
+    if cbDiffMode.Checked and (i_val = get_integer_value(Addr(MisAI.default_ai), prop.position, bytes)) then
       tmp_strings.Add(prop.name + '=')
     else
       tmp_strings.Add(prop.name + '=' + inttostr(i_val));

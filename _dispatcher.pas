@@ -47,6 +47,8 @@ type
     evFLTextUib,
     evFLSamplesUib,
     evSamplesUibModify,
+    // EventConfig events
+    evLoadEventTypeConfiguration,
     // Setting change events
     evSCTranslateStructureNames,
     // Apply changes events
@@ -72,6 +74,7 @@ type
     paUpdateEventMarkers,
     paUpdatePlayerColours,
     paUpdateSpeedModifiers,
+    paUpdateEventTypeConfiguration,
     // Update mission dialog contents
     paUpdateMissionData,
     paUpdateMissionIniData,
@@ -175,6 +178,8 @@ begin
       end;
     evFLSamplesUib:               pact := pact + [paUpdateSoundList, paUpdateDebugValues];
     evSamplesUibModify:           pact := pact + [paUpdateSoundList];
+    // EventConfig events
+    evLoadEventTypeConfiguration: pact := pact + [paUpdateEventTypeConfiguration];
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
@@ -205,6 +210,7 @@ begin
   if paUpdateEventMarkers       in pact then update_event_markers;
   if paUpdatePlayerColours      in pact then MissionDialog.update_player_colors;
   if paUpdateSpeedModifiers     in pact then TileAtrEditor.update_speed_modifiers;
+  if paUpdateEventTypeConfiguration in pact then EventDialog.update_event_type_configuration;
   // Update mission dialog contents
   if paUpdateMissionData        in pact then MissionDialog.update_mission_data;
   if paUpdateMissionIniData     in pact then MissionDialog.update_mission_ini_data;
@@ -271,6 +277,7 @@ begin
   TilesetDialog.update_tileset;
   BlockPresetDialog.update_tileset;
   MissionDialog.update_tileset;
+  EventDialog.update_tileset;
   StructuresEditor.update_tileset;
 end;
 

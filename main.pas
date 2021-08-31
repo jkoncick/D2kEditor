@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Units
-  _utils, _dispatcher, _renderer, _map, _mission, _missionini, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher;
+  _utils, _dispatcher, _renderer, _map, _mission, _missionini, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher, _eventconfig;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -16,7 +16,7 @@ type
   SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
 
 type
-  EventPositionSelectionMode = (epmNone, epmEventCoordinates, epmDefenceArea);
+  PositionSelectionMode = (psmNone, psmEventPoint, psmEventArea, psmDefenceArea);
 
 type
   TBlockClipboard = record
@@ -275,11 +275,12 @@ type
 
     // Event marker moving variables
     moving_disable: boolean;
-    moving_event: integer;
-    moving_condition: integer;
+    moving_marker_type: TEventMarkerType;
+    moving_marker_index: integer;
+    moving_marker_coord: integer;
 
-    // Event position selection variables
-    event_position_selection_mode: EventPositionSelectionMode;
+    // Position selection variables
+    position_selection_mode: PositionSelectionMode;
 
     // Clipboard variables
     clipboard_format: cardinal;
@@ -318,8 +319,8 @@ type
     function mode(m: SelectedMode): boolean;
     function mouse_over_map_canvas: boolean;
     procedure apply_key_preset(key: word);
-    procedure start_event_position_selection(x, y: integer; mode: EventPositionSelectionMode);
-    procedure finish_event_position_selection(min_x, max_x, min_y, max_y: integer);
+    procedure start_position_selection(x, y: integer; mode: PositionSelectionMode);
+    procedure finish_position_selection(min_x, max_x, min_y, max_y: integer);
 
     // Procedures related to selecting/placing block
     procedure select_block_from_tileset(b_width, b_height, b_left, b_top: word);
@@ -352,9 +353,8 @@ begin
   // Miscellaneous initializations
   DragAcceptFiles(Handle, True);
   clipboard_format := RegisterClipboardFormat('D2kEditorBlock');
-  moving_event := -1;
-  moving_condition := -1;
-  event_position_selection_mode := epmNone;
+  moving_marker_type := emNone;
+  position_selection_mode := psmNone;
   top := 40;
   CursorImage.Picture.Bitmap.TransparentColor := clBtnFace;
   // Initialize terrain editing controls
@@ -578,7 +578,7 @@ begin
     27:
     begin
       if not EditorPages.Visible then
-        finish_event_position_selection(-1,-1,-1,-1);
+        finish_position_selection(-1,-1,-1,-1);
     end;
     // Space: open tileset/preset window
     32:
@@ -1132,8 +1132,8 @@ begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13+
               'Part of D2K+ Editing tools'#13#13+
               'Made by Klofkac (kozten@seznam.cz)'#13+
-              'Version 2.0'#13+
-              'Date: 2021-06-30'#13#13+
+              'Version 2.1 dev1'#13+
+              'Date: 2021-08-31'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13+
               'mvi - for making the original Mission editor'#13+
@@ -1187,14 +1187,14 @@ begin
   // Write coordinates on status bar
   StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
   // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
-  if mode(mStructures) and Showeventmarkers1.Checked and ((Mission.event_markers[map_x,map_y].emtype = emReinforcement) or (Mission.event_markers[map_x,map_y].emtype = emUnitSpawn)) then
+  if mode(mStructures) and Showeventmarkers1.Checked and (Mission.event_markers[map_x,map_y].emtype = emEvent) and (EventConfig.event_types[Mission.mis_data.events[Mission.event_markers[map_x,map_y].index].event_type].event_data = edUnitList) then
   begin
     Application.CancelHint;
     eventnum := Mission.event_markers[map_x,map_y].index;
-    numunits := Mission.mis_data.events[eventnum].num_units;
+    numunits := Mission.mis_data.events[eventnum].amount;
     tmp_hint := inttostr(numunits) + ' units:';
     for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name_str(Mission.mis_data.events[eventnum].units[i]);
+      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name_str(Mission.mis_data.events[eventnum].data[i]);
     MapCanvas.Hint := tmp_hint;
     MapCanvas.ShowHint := true
   end else
@@ -1210,21 +1210,21 @@ begin
     mouse_old_y := map_y;
   end;
   // Move event marker
-  if (moving_event <> -1) then
+  if (moving_marker_type <> emNone) then
   begin
-    Renderer.invalidate_map_tile(0, Mission.mis_data.events[moving_event].map_pos_y);
-    Renderer.invalidate_map_tile(Map.width-1, map_y);
-    Mission.mis_data.events[moving_event].map_pos_x := map_x;
-    Mission.mis_data.events[moving_event].map_pos_y := map_y;
-    Dispatcher.register_event(evMisEventPositionChange);
-    exit;
-  end;
-  if (moving_condition <> -1) then
-  begin
-    Renderer.invalidate_map_tile(0, Mission.mis_data.conditions[moving_condition].map_pos_y);
-    Renderer.invalidate_map_tile(Map.width-1, map_y);
-    Mission.mis_data.conditions[moving_condition].map_pos_x := map_x;
-    Mission.mis_data.conditions[moving_condition].map_pos_y := map_y;
+    if moving_marker_type = emEvent then
+    begin
+      Renderer.invalidate_map_tile(0, Mission.mis_data.events[moving_marker_index].coord_y[moving_marker_coord]);
+      Renderer.invalidate_map_tile(Map.width-1, map_y);
+      Mission.mis_data.events[moving_marker_index].coord_x[moving_marker_coord] := map_x;
+      Mission.mis_data.events[moving_marker_index].coord_y[moving_marker_coord] := map_y;
+    end else
+    begin
+      Renderer.invalidate_map_tile(0, Mission.mis_data.conditions[moving_marker_index].coord_y[moving_marker_coord]);
+      Renderer.invalidate_map_tile(Map.width-1, map_y);
+      Mission.mis_data.conditions[moving_marker_index].coord_x[moving_marker_coord] := map_x;
+      Mission.mis_data.conditions[moving_marker_index].coord_y[moving_marker_coord] := map_y;
+    end;
     Dispatcher.register_event(evMisEventPositionChange);
     exit;
   end;
@@ -1254,7 +1254,6 @@ var
   map_x, map_y: integer;
   special: word;
   tiledata_entry: TTileDataEntryPtr;
-  event_marker: ^TEventMarker;
   cursor_left: integer;
   cursor_top: integer;
 begin
@@ -1271,21 +1270,19 @@ begin
     Caption := inttostr(Map.data[map_x, map_y].tile) + ' ' + inttohex(Tileset.get_tile_attributes(Map.data[map_x, map_y].tile, Map.data[map_x, map_y].special, true), 16);
     exit;
   end;
-  // Event position selection mode
-  if (event_position_selection_mode = epmEventCoordinates) and (Button = mbLeft) then
+  // Position selection mode
+  if (position_selection_mode = psmEventPoint) and (Button = mbLeft) then
   begin
-    finish_event_position_selection(map_x, map_x, map_y, map_y);
+    finish_position_selection(map_x, map_x, map_y, map_y);
     exit;
   end;
   // Moving event markers
   if (Mission.event_markers[map_x, map_y].emtype <> emNone) and Showeventmarkers1.Checked and not moving_disable and
     mode(mStructures) and (Button = mbLeft) then
   begin
-    event_marker := Addr(Mission.event_markers[map_x, map_y]);
-    if event_marker.emtype = emTileRevealed then
-      moving_condition := event_marker.index
-    else
-      moving_event := event_marker.index;
+    moving_marker_type := Mission.event_markers[map_x, map_y].emtype;
+    moving_marker_index := Mission.event_markers[map_x, map_y].index;
+    moving_marker_coord := Mission.event_markers[map_x, map_y].coord;
     exit;
   end;
   moving_disable := true;
@@ -1379,7 +1376,7 @@ begin
   begin
     event_marker := Addr(Mission.event_markers[mouse_old_x, mouse_old_y]);
     EventDialog.Show;
-    if event_marker.emtype = emTileRevealed then
+    if event_marker.emtype = emCondition then
     begin
       EventDialog.ConditionGrid.Row := event_marker.index + 1;
       EventDialog.ConditionGrid.SetFocus;
@@ -1400,10 +1397,9 @@ var
   min_x, max_x, min_y, max_y: word;
 begin
   moving_disable := false;
-  if (moving_event <> -1) or (moving_condition <> -1) then
+  if (moving_marker_type <> emNone) then
   begin
-    moving_event := -1;
-    moving_condition := -1;
+    moving_marker_type := emNone;
     EventDialog.update_contents;
   end;
   if block_select_started and (Button = mbLeft) then
@@ -1413,9 +1409,9 @@ begin
     max_x := Max(block_select_start_x, block_select_end_x);
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
-    if event_position_selection_mode = epmDefenceArea then
+    if (position_selection_mode = psmEventArea) or (position_selection_mode = psmDefenceArea) then
     begin
-      finish_event_position_selection(min_x, max_x, min_y, max_y);
+      finish_position_selection(min_x, max_x, min_y, max_y);
       exit;
     end;
     copy_block_from_map(max_x - min_x + 1, max_y - min_y + 1, min_x, min_y, true, ssShift in Shift, cbSelectAreaType.ItemIndex - 1);
@@ -2021,10 +2017,10 @@ var
 begin
   result := false;
   case m of
-    mStructures:      result := (EditorPages.TabIndex = 0) and (event_position_selection_mode = epmNone);
+    mStructures:      result := (EditorPages.TabIndex = 0) and (position_selection_mode = psmNone);
     mStructuresPaint:
       begin
-        if (EditorPages.TabIndex <> 0) or (event_position_selection_mode <> epmNone) then
+        if (EditorPages.TabIndex <> 0) or (position_selection_mode <> psmNone) then
           exit;
         // Walls can be painted while holding mouse
         tiledata_entry := Structures.get_tiledata_entry(StrToIntDef(SpecialValue.Text, 0));
@@ -2038,7 +2034,7 @@ begin
     mTerrain:         result := EditorPages.TabIndex = 1;
     mPaintMode:       result := (EditorPages.TabIndex = 1) and RbPaintMode.Checked;
     mBlockMode:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;
-    mSelectMode:      result := ((EditorPages.TabIndex = 1) and RbSelectMode.Checked) or (event_position_selection_mode = epmDefenceArea);
+    mSelectMode:      result := ((EditorPages.TabIndex = 1) and RbSelectMode.Checked) or (position_selection_mode = psmEventArea) or (position_selection_mode = psmDefenceArea);
   end;
 end;
 
@@ -2067,45 +2063,46 @@ begin
   select_block_preset(Tileset.get_block_preset(block_preset_group, key, bpNext));
 end;
 
-procedure TMainWindow.start_event_position_selection(x, y: integer; mode: EventPositionSelectionMode);
+procedure TMainWindow.start_position_selection(x, y: integer; mode: PositionSelectionMode);
 begin
   EditorPages.TabIndex := 0;
   if (x <> 0) or (y <> 0) then
   begin
     MapScrollH.Position := x - (map_canvas_width div 2);
     MapScrollV.Position := y - (map_canvas_height div 2);
-    if mode = epmEventCoordinates then
-      exit;
   end;
   EditorPages.Visible := false;
   File1.Enabled := false;
   Edit1.Enabled := false;
   ileset1.Enabled := false;
+  Structures1.Enabled := false;
   Map1.Enabled := false;
   Mission1.Enabled := false;
   Launchgame1.Enabled := false;
   MapCanvas.Cursor := crHandPoint;
-  event_position_selection_mode := mode;
+  position_selection_mode := mode;
 end;
 
-procedure TMainWindow.finish_event_position_selection(min_x, max_x, min_y, max_y: integer);
+procedure TMainWindow.finish_position_selection(min_x, max_x, min_y, max_y: integer);
 var
-  mode: EventPositionSelectionMode;
+  mode: PositionSelectionMode;
 begin
-  mode := event_position_selection_mode;
+  mode := position_selection_mode;
   EditorPages.Visible := true;
   File1.Enabled := true;
   Edit1.Enabled := true;
   ileset1.Enabled := true;
+  Structures1.Enabled := true;
   Map1.Enabled := true;
   Mission1.Enabled := true;
   Launchgame1.Enabled := true;
   MapCanvas.Cursor := crDefault;
-  event_position_selection_mode := epmNone;
-  if mode = epmEventCoordinates then
-    EventDialog.finish_event_position_selection(min_x, min_y)
-  else
-    MissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y);
+  position_selection_mode := psmNone;
+  case mode of
+    psmEventPoint:  EventDialog.finish_point_selection(min_x, min_y);
+    psmEventArea:   EventDialog.finish_area_selection(min_x, max_x, min_y, max_y);
+    psmDefenceArea: MissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y);
+  end;
 end;
 
 procedure TMainWindow.select_block_from_tileset(b_width, b_height, b_left, b_top: word);

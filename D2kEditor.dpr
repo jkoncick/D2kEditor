@@ -30,7 +30,8 @@ uses
   _sounds in '_sounds.pas',
   _stringtable in '_stringtable.pas',
   _randomgen in '_randomgen.pas',
-  _launcher in '_launcher.pas';
+  _launcher in '_launcher.pas',
+  _eventconfig in '_eventconfig.pas';
 
 {$R *.res}
 
@@ -60,6 +61,7 @@ begin
   StringTable := TStringTable.Create;
   //--RandomGen := TRandomGen.Create;
   Launcher := TLauncher.Create;
+  EventConfig := TEventConfig.Create;
   // Create forms
   Application.CreateForm(TMainWindow, MainWindow);
   Application.CreateForm(TSetDialog, SetDialog);
@@ -86,6 +88,7 @@ begin
   Sounds.init;
   StringTable.init;
   Launcher.init;
+  EventConfig.init;
   // Load map given as first parameter
   if ParamCount > 0 then
     Map.load_map(ParamStr(1));

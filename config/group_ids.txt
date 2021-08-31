@@ -31,26 +31,26 @@ W Debris 5
 W Debris 6
 W Debris 7
 W Debris 8
-W Debris 9
-W Debris 10
-W Debris 11
-W Debris 12
-W Debris 13
-W Debris 14
-W Debris 15
-W Debris 16
-W Debris 17
-W Debris 18
-W Debris 19
-W Debris 20
-W Debris 21
-W Debris 22
-W Debris 23
-W Debris 24
+E Unit powerup crate (stealth)
+E Unit powerup crate (full heal)
+E Unit powerup crate (50% heal)
+E Unit powerup crate (25% heal)
+E Unit powerup crate (upgrade type)
+E Unit powerup crate (unused)
+E Unit powerup crate (unused)
+E Unit powerup crate (unused)
+(Unused)
+(Unused)
+(Unused)
+(Unused)
+(Unused)
+(Unused)
+(Unused)
+(Unused)
 Number of used debris weapons
 W Spice bloom weapon
 W Devastator self-destruct weapon
-W (unused)
+(Unused)
 E Crate Reveal map
 E Crate Cash
 E Crate Hide map
@@ -83,4 +83,4 @@ E Devastator self-destruct spark 1
 E Devastator self-destruct spark 2
 E Devastator self-destruct spark 3
 E Devastator self-destruct explosion
-Unknown
+(Unused)

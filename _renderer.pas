@@ -549,7 +549,7 @@ begin
         event_marker := addr(Mission.event_markers[x + cnv_left, y + cnv_top]);
         if event_marker.emtype = emNone then
           continue;
-        if event_marker_type_info[ord(event_marker.emtype)].player_related then
+        if event_marker.side <> -1 then
         begin
           player := Min(event_marker.side, CNT_PLAYERS - 1);
           cnv_target.Pen.Color := StructGraphics.player_colors_inv[player];
@@ -561,7 +561,7 @@ begin
         end;
         cnv_target.Rectangle(x*32, y*32, x*32+32, y*32+32);
         cnv_target.Pen.Color := clBlack;
-        cnv_target.TextOut(x * 32 + 12, y * 32 + 3, event_marker_type_info[ord(event_marker.emtype)].letter);
+        cnv_target.TextOut(x * 32 + 12, y * 32 + 3, event_marker.marker);
         cnv_target.TextOut(x * 32 + 12, y * 32 + 17, inttostr(event_marker.index));
         if event_marker.moved then
           cnv_target.TextOut(x * 32 + 2, y * 32 + 10, '<');
