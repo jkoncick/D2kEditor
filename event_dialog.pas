@@ -1789,6 +1789,8 @@ begin
   loading := true;
   ccg.spin_x.Value := get_integer_value(ccg.data_ptr, ccg.offset_x, 1);
   ccg.spin_y.Value := get_integer_value(ccg.data_ptr, ccg.offset_y, 1);
+  ccg.spin_x.MaxValue := coorddef.maxval;
+  ccg.spin_y.MaxValue := coorddef.maxval;
   ccg.spin_x.ReadOnly := coorddef.readonly;
   ccg.spin_y.ReadOnly := coorddef.readonly;
   ccg.btn_select.Visible := coorddef.coord_type <> ctNone;

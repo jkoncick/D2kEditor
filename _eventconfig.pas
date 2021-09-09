@@ -35,6 +35,7 @@ type
     coord_type: CoordType;
     marker: char;
     default: integer;
+    maxval: integer;
     readonly: boolean;
   end;
 
@@ -258,6 +259,7 @@ begin
   s := ini.ReadString(ini_sect, n + '.marker', ' ');
   coord.marker := s[1];
   coord.default := ini.ReadInteger(ini_sect, n + '.default', 0);
+  coord.maxval := ini.ReadInteger(ini_sect, n + '.maxval', 127);
   coord.readonly := ini.ReadBool(ini_sect, n + '.readonly', false);
 end;
 
