@@ -888,7 +888,7 @@ begin
   map_width := new_width;
   map_height := new_height;
   // Adjust also mission
-  Mission.adjust_event_positions_on_map_resize;
+  Mission.adjust_event_positions(0, 0);
   reset_undo_history;
   map_modified := true;
   Dispatcher.register_event(evMapResize);
@@ -913,7 +913,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
-          Mission.shift_event_positions(num_tiles * -1, 0);
+          Mission.adjust_event_positions(num_tiles * -1, 0);
         end;
     2:  begin // Up
           for y := 0 to map_height - 1 do
@@ -928,7 +928,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
-          Mission.shift_event_positions(0, num_tiles * -1);
+          Mission.adjust_event_positions(0, num_tiles * -1);
         end;
     3:  begin // Right
           for y := map_height - 1 downto 0 do
@@ -943,7 +943,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
-          Mission.shift_event_positions(num_tiles, 0);
+          Mission.adjust_event_positions(num_tiles, 0);
         end;
     4:  begin
           for y := map_height - 1 downto 0 do
@@ -958,7 +958,7 @@ begin
                 map_data[x,y].special := 0;
               end;
             end;
-          Mission.shift_event_positions(0, num_tiles);
+          Mission.adjust_event_positions(0, num_tiles);
         end;
   end;
   reset_undo_history;

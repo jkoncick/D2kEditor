@@ -166,8 +166,7 @@ type
     procedure create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
     procedure add_run_once_flag(event_num: integer);
     // Miscellaneous
-    procedure shift_event_positions(shift_x: integer; shift_y: integer);
-    procedure adjust_event_positions_on_map_resize;
+    procedure adjust_event_positions(shift_x: integer; shift_y: integer);
     function check_errors: String;
     function get_player_alloc_index(player: integer): integer;
   end;
@@ -1109,60 +1108,45 @@ begin
   mis_data.conditions[flag_number].condition_type := Byte(ctFlag);
 end;
 
-procedure TMission.shift_event_positions(shift_x, shift_y: integer);
+procedure TMission.adjust_event_positions(shift_x, shift_y: integer);
 var
-  i: integer;
+  i, j: integer;
   event: ^TEvent;
+  et: TEventTypeDefinitionPtr;
   condition: ^TCondition;
-  new_pos_x, new_pos_y: integer;
+  ct: TConditionTypeDefinitionPtr;
 begin
   for i := 0 to mis_data.num_events - 1 do
   begin
     event := Addr(mis_data.events[i]);
-    if EventConfig.event_types[event.event_type].has_map_pos then
-    begin
-      new_pos_x := Integer(event.coord_x[0]) + shift_x;
-      new_pos_y := Integer(event.coord_y[0]) + shift_y;
-      event.coord_x[0] := min(Map.width - 1, max(0, new_pos_x));
-      event.coord_y[0] := min(Map.height - 1, max(0, new_pos_y));
-    end;
+    et := Addr(EventConfig.event_types[event.event_type]);
+    for j := 0 to High(et.coords) do
+      if et.coords[j].coord_type <> ctNone then
+      begin
+        event.coord_x[j] := min(Map.width - 1, max(0, Integer(event.coord_x[j]) + shift_x));
+        event.coord_y[j] := min(Map.height - 1, max(0, Integer(event.coord_y[j]) + shift_y));
+        if et.coords[j].coord_type = ctArea then
+        begin
+          event.coord_x[j+1] := min(Map.width - event.coord_x[j], event.coord_x[j+1]);
+          event.coord_y[j+1] := min(Map.height - event.coord_y[j], event.coord_y[j+1]);
+        end;
+      end;
   end;
   for i := 0 to mis_data.num_conditions - 1 do
   begin
     condition := Addr(mis_data.conditions[i]);
-    if condition.condition_type = Byte(ctTileRevealed) then
-    begin
-      new_pos_x := Integer(condition.coord_x[0]) + shift_x;
-      new_pos_y := Integer(condition.coord_y[0]) + shift_y;
-      condition.coord_x[0] := min(Map.width - 1, max(0, new_pos_x));
-      condition.coord_y[0] := min(Map.height - 1, max(0, new_pos_y));
-    end;
-  end;
-end;
-
-procedure TMission.adjust_event_positions_on_map_resize;
-var
-  i: integer;
-  event: ^TEvent;
-  condition: ^TCondition;
-begin
-  for i := 0 to mis_data.num_events - 1 do
-  begin
-    event := Addr(mis_data.events[i]);
-    if EventConfig.event_types[event.event_type].has_map_pos then
-    begin
-      event.coord_x[0] := min(Map.width - 1, event.coord_x[0]);
-      event.coord_y[0] := min(Map.height - 1, event.coord_y[0]);
-    end;
-  end;
-  for i := 0 to mis_data.num_conditions - 1 do
-  begin
-    condition := Addr(mis_data.conditions[i]);
-    if condition.condition_type = Byte(ctTileRevealed) then
-    begin
-      condition.coord_x[0] := min(Map.width - 1, condition.coord_x[0]);
-      condition.coord_y[0] := min(Map.height - 1, condition.coord_y[0]);
-    end;
+    ct := Addr(EventConfig.condition_types[condition.condition_type]);
+    for j := 0 to High(ct.coords) do
+      if ct.coords[j].coord_type <> ctNone then
+      begin
+        condition.coord_x[j] := min(Map.width - 1, max(0, Integer(condition.coord_x[j]) + shift_x));
+        condition.coord_y[j] := min(Map.height - 1, max(0, Integer(condition.coord_y[j]) + shift_y));
+        if ct.coords[j].coord_type = ctArea then
+        begin
+          condition.coord_x[j+1] := min(Map.width - condition.coord_x[j], condition.coord_x[j+1]);
+          condition.coord_y[j+1] := min(Map.height - condition.coord_y[j], condition.coord_y[j+1]);
+        end;
+      end;
   end;
 end;
 
