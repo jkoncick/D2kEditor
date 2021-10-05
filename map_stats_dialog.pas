@@ -86,7 +86,10 @@ procedure TMapStatsDialog.update_map_stats;
 var
   i,j,k: integer;
   index: integer;
-  tiledata_entry: TTileDataEntryPtr;
+  special: word;
+  structure_type: byte;
+  player: integer;
+  unit_template: TUnitTemplatePtr;
   building_template: TBuildingTemplatePtr;
   total_value: integer;
 begin
@@ -113,29 +116,36 @@ begin
   for i := 0 to Map.width-1 do
     for j := 0 to Map.height-1 do
     begin
-      tiledata_entry := Structures.get_tiledata_entry(Map.data[i,j].special);
-      if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.index < MAX_BUILDING_TYPES) then
+      special := Map.data[i,j].special;
+      structure_type := Structures.get_special_value_type(special);
+      player := Structures.get_special_value_player(special);
+      if structure_type = ST_BUILDING then
       begin
+        building_template := Structures.get_building_template_for_special(special);
+        if building_template = nil then
+          continue;
         index := -1;
         for k := 0 to MAX_BUILDING_TYPES-1 do
-          if Structures.building_group_mapping[k] = Integer(tiledata_entry.index) then
+          if Structures.building_group_mapping[k] = Integer(building_template.BuildingGroup) then
           begin
             index := k;
             break;
           end;
         if index <> -1 then
-          Inc(tmp_stats[CNT_FIXED_ROWS + index, tiledata_entry.player]);
-        Inc(tmp_stats[Byte(osAllStructures), tiledata_entry.player]);
-        Inc(tmp_stats[Byte(osBuildings), tiledata_entry.player]);
-        building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
-        if not ((building_template <> nil) and (building_template.SpecialBehavior = 14)) then
-          Inc(tmp_stats[Byte(osBuildingsNoWalls), tiledata_entry.player]);
+          Inc(tmp_stats[CNT_FIXED_ROWS + index, player]);
+        Inc(tmp_stats[Byte(osAllStructures), player]);
+        Inc(tmp_stats[Byte(osBuildings), player]);
+        if building_template.SpecialBehavior <> 14 then
+          Inc(tmp_stats[Byte(osBuildingsNoWalls), player]);
       end else
-      if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.index < MAX_UNIT_TYPES) then
+      if structure_type = ST_UNIT then
       begin
-        Inc(tmp_stats[CNT_FIXED_ROWS + Structures.building_group_mapping_count + tiledata_entry.index, tiledata_entry.player]);
-        Inc(tmp_stats[Byte(osAllStructures), tiledata_entry.player]);
-        Inc(tmp_stats[Byte(osUnits), tiledata_entry.player]);
+        unit_template := Structures.get_unit_template_for_special(special);
+        if unit_template = nil then
+          continue;
+        Inc(tmp_stats[CNT_FIXED_ROWS + Structures.building_group_mapping_count + unit_template.UnitGroup, player]);
+        Inc(tmp_stats[Byte(osAllStructures), player]);
+        Inc(tmp_stats[Byte(osUnits), player]);
       end;
     end;
   // Show statistics on grid

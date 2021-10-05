@@ -244,7 +244,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, StrUtils, _map, _settings, _dispatcher;
+uses Forms, SysUtils, StrUtils, Math, _map, _settings, _dispatcher;
 
 procedure TTileset.init;
 begin
@@ -1021,35 +1021,39 @@ end;
 
 function TTileset.get_tile_attributes(tile, special: word; use_internal_attributes: boolean): Int64;
 var
-  editor_attributes, paint_tile_group_attributes, spice_attributes: int64;
+  editor_attributes, paint_tile_group_attributes, tile_property_attributes: int64;
+  spice_amount: integer;
 begin
   // Standard game attributes: 32 bits
-  result := attributes[tile];
+  result := attributes[tile and $0FFF];
   // Explicit editor attributes (Area type 1-8): 8 bits
-  editor_attributes := attributes_editor[tile];
+  editor_attributes := attributes_editor[tile and $0FFF];
   editor_attributes := (editor_attributes shl 32) and $000000FF00000000;
   result := result or editor_attributes;
   if use_internal_attributes then
   begin
     // Internal attributes (paint tile group 1-8, A-D): 12 bits
     paint_tile_group_attributes := 0;
-    if tile_paint_group[tile] <> -128 then
+    if tile_paint_group[tile and $0FFF] <> -128 then
     begin
-      if tile_paint_group[tile] >= 0 then
-        paint_tile_group_attributes := paint_tile_group_attributes or (1 shl (tile_paint_group[tile] + 8))
+      if tile_paint_group[tile and $0FFF] >= 0 then
+        paint_tile_group_attributes := paint_tile_group_attributes or (1 shl (tile_paint_group[tile and $0FFF] + 8))
       else
-        paint_tile_group_attributes := paint_tile_group_attributes or (1 shl (tile_paint_group[tile] + 20))
+        paint_tile_group_attributes := paint_tile_group_attributes or (1 shl (tile_paint_group[tile and $0FFF] + 20))
     end;
     paint_tile_group_attributes := (paint_tile_group_attributes shl 32) and $000FFF0000000000;
     result := result or paint_tile_group_attributes;
-    // Internal attributes (thin spice, thick spice): 2 bits
-    spice_attributes := 0;
-    if special = 1 then
-      spice_attributes := $00010000;
-    if special = 2 then
-      spice_attributes := $00020000;
-    spice_attributes := (spice_attributes shl 32) and $0003000000000000;
-    result := result or spice_attributes;
+    // Internal attributes (thin spice, thick spice, concrete): 3 bits
+    spice_amount := IfThen((tile and $1000) = 0, (tile shr 13) and 7, 0);
+    tile_property_attributes := 0;
+    if (special = 1) or (spice_amount = 1) or (spice_amount = 2) then
+      tile_property_attributes := $00010000;
+    if (special = 2) or (spice_amount >= 3) then
+      tile_property_attributes := $00020000;
+    if ((tile and $1000) <> 0) then
+      tile_property_attributes := $00040000;
+    tile_property_attributes := (tile_property_attributes shl 32) and $0007000000000000;
+    result := result or tile_property_attributes;
   end;
 end;
 

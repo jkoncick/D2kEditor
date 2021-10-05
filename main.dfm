@@ -102,7 +102,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v2.1 dev1'
+        Text = 'v2.1 dev2'
         Width = 0
       end>
   end
@@ -199,46 +199,8 @@ object MainWindow: TMainWindow
           Height = 13
           Caption = 'Special Value:'
         end
-        object LbMiscObjList: TLabel
-          Left = 8
-          Top = 43
-          Width = 59
-          Height = 13
-          Caption = 'Misc objects'
-        end
-        object LbPlayerSelect: TLabel
-          Left = 8
-          Top = 132
-          Width = 29
-          Height = 13
-          Caption = 'Player'
-        end
-        object LbBuildingList: TLabel
-          Left = 8
-          Top = 172
-          Width = 42
-          Height = 13
-          Caption = 'Buildings'
-        end
-        object LbUnitList: TLabel
-          Left = 8
-          Top = 276
-          Width = 24
-          Height = 13
-          Caption = 'Units'
-        end
-        object LbStructureName: TLabel
-          Left = 8
-          Top = 25
-          Width = 145
-          Height = 15
-          AutoSize = False
-          Color = 4259839
-          ParentColor = False
-          Transparent = False
-          Layout = tlCenter
-        end
         object SpecialValue: TEdit
+          Tag = -1
           Left = 80
           Top = 2
           Width = 49
@@ -246,43 +208,6 @@ object MainWindow: TMainWindow
           TabOrder = 0
           Text = '0'
           OnChange = SpecialValueChange
-        end
-        object MiscObjList: TListBox
-          Left = 8
-          Top = 59
-          Width = 145
-          Height = 70
-          ItemHeight = 13
-          TabOrder = 1
-          OnClick = MiscObjListClick
-        end
-        object PlayerSelect: TComboBox
-          Left = 8
-          Top = 148
-          Width = 145
-          Height = 21
-          Style = csDropDownList
-          ItemHeight = 13
-          TabOrder = 2
-          OnChange = PlayerSelectChange
-        end
-        object BuildingList: TListBox
-          Left = 8
-          Top = 188
-          Width = 145
-          Height = 83
-          ItemHeight = 13
-          TabOrder = 3
-          OnClick = BuildingListClick
-        end
-        object UnitList: TListBox
-          Left = 8
-          Top = 292
-          Width = 145
-          Height = 83
-          ItemHeight = 13
-          TabOrder = 4
-          OnClick = UnitListClick
         end
         object btnFindSelectedObject: TButton
           Left = 133
@@ -293,8 +218,773 @@ object MainWindow: TMainWindow
           Caption = 'F'
           ParentShowHint = False
           ShowHint = True
-          TabOrder = 5
+          TabOrder = 1
           OnClick = btnFindSelectedObjectClick
+        end
+        object StructPages: TPageControl
+          Left = 0
+          Top = 24
+          Width = 158
+          Height = 358
+          ActivePage = PageStructBasic
+          Align = alBottom
+          TabOrder = 2
+          OnChange = EditorPagesChange
+          object PageStructBasic: TTabSheet
+            Caption = 'Basic             '
+            object lblBuildingGroup: TLabel
+              Left = 0
+              Top = 144
+              Width = 42
+              Height = 13
+              Caption = 'Buildings'
+            end
+            object lblMiscObject: TLabel
+              Left = 0
+              Top = 16
+              Width = 59
+              Height = 13
+              Caption = 'Misc objects'
+            end
+            object lblStructPlayer: TLabel
+              Left = 0
+              Top = 104
+              Width = 29
+              Height = 13
+              Caption = 'Player'
+            end
+            object lblStructureName: TLabel
+              Left = 0
+              Top = 0
+              Width = 148
+              Height = 15
+              AutoSize = False
+              Color = 4259839
+              ParentColor = False
+              Transparent = False
+              Layout = tlCenter
+            end
+            object lblUnitGroup: TLabel
+              Left = 0
+              Top = 240
+              Width = 24
+              Height = 13
+              Caption = 'Units'
+            end
+            object cbxStructPlayer: TComboBox
+              Left = 0
+              Top = 120
+              Width = 148
+              Height = 21
+              Style = csDropDownList
+              ItemHeight = 13
+              TabOrder = 0
+              OnChange = PlayerSelectChange
+            end
+            object lbBuildingGroup: TListBox
+              Tag = -1
+              Left = 0
+              Top = 160
+              Width = 148
+              Height = 77
+              ItemHeight = 13
+              TabOrder = 1
+              OnClick = lbBuildingGroupClick
+            end
+            object lbMiscObject: TListBox
+              Tag = -1
+              Left = 0
+              Top = 32
+              Width = 148
+              Height = 70
+              ItemHeight = 13
+              TabOrder = 2
+              OnClick = lbMiscObjectClick
+            end
+            object lbUnitGroup: TListBox
+              Tag = -1
+              Left = 0
+              Top = 256
+              Width = 148
+              Height = 73
+              ItemHeight = 13
+              TabOrder = 3
+              OnClick = lbUnitGroupClick
+            end
+          end
+          object PageStructAdvanced: TTabSheet
+            Caption = 'Advanced     '
+            ImageIndex = 1
+            object StructAdvancedPages: TPageControl
+              Left = 0
+              Top = 0
+              Width = 150
+              Height = 330
+              ActivePage = PageStructBuildings
+              Align = alClient
+              TabOrder = 0
+              OnChange = EditorPagesChange
+              object PageStructBuildings: TTabSheet
+                Caption = 'Buildings'
+                object lblBuildingDirection: TLabel
+                  Left = 0
+                  Top = 2
+                  Width = 45
+                  Height = 13
+                  Caption = 'Direction:'
+                  Visible = False
+                end
+                object cbBuildingNoNewHarv: TCheckBox
+                  Left = 0
+                  Top = 0
+                  Width = 113
+                  Height = 17
+                  Caption = 'No new harvester'
+                  TabOrder = 2
+                  OnClick = StructControlClick
+                end
+                object cbxBuildingPlayer: TComboBox
+                  Tag = -1
+                  Left = 0
+                  Top = 40
+                  Width = 140
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 0
+                  TabOrder = 0
+                  OnChange = PlayerSelectChange
+                end
+                object lbBuildingType: TListBox
+                  Tag = -1
+                  Left = 0
+                  Top = 64
+                  Width = 140
+                  Height = 233
+                  ItemHeight = 13
+                  TabOrder = 1
+                  OnClick = lbBuildingTypeClick
+                end
+                object cbBuildingPrimary: TCheckBox
+                  Left = 0
+                  Top = 22
+                  Width = 65
+                  Height = 17
+                  Caption = 'Primary'
+                  TabOrder = 3
+                  OnClick = StructControlClick
+                end
+                object cbBuildingTagged: TCheckBox
+                  Left = 72
+                  Top = 22
+                  Width = 65
+                  Height = 17
+                  Caption = 'Tagged'
+                  TabOrder = 4
+                  OnClick = StructControlClick
+                end
+                object cbxBuildingDirection: TComboBox
+                  Tag = -1
+                  Left = 50
+                  Top = 0
+                  Width = 90
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 13
+                  ItemIndex = 0
+                  TabOrder = 5
+                  Text = 'Up'
+                  Visible = False
+                  OnClick = StructControlClick
+                  Items.Strings = (
+                    'Up'
+                    'Right'
+                    'Down'
+                    'Left')
+                end
+              end
+              object PageStructUnits: TTabSheet
+                Caption = 'Units   '
+                ImageIndex = 1
+                object lblUnitDirection: TLabel
+                  Left = 0
+                  Top = 2
+                  Width = 45
+                  Height = 13
+                  Caption = 'Direction:'
+                end
+                object cbxUnitPlayer: TComboBox
+                  Tag = -1
+                  Left = 0
+                  Top = 40
+                  Width = 140
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 0
+                  TabOrder = 0
+                  OnChange = PlayerSelectChange
+                end
+                object lbUnitType: TListBox
+                  Tag = -1
+                  Left = 0
+                  Top = 64
+                  Width = 140
+                  Height = 233
+                  ItemHeight = 13
+                  TabOrder = 1
+                  OnClick = StructControlClick
+                end
+                object cbxUnitDirection: TComboBox
+                  Tag = -1
+                  Left = 50
+                  Top = 0
+                  Width = 90
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 13
+                  ItemIndex = 0
+                  TabOrder = 2
+                  Text = 'Up'
+                  OnClick = StructControlClick
+                  Items.Strings = (
+                    'Up'
+                    'Up-Right'
+                    'Right'
+                    'Down-Right'
+                    'Down'
+                    'Down-Left'
+                    'Left'
+                    'Up-Left')
+                end
+                object cbUnitStealth: TCheckBox
+                  Left = 0
+                  Top = 22
+                  Width = 65
+                  Height = 17
+                  Caption = 'Stealth'
+                  TabOrder = 3
+                  OnClick = StructControlClick
+                end
+                object cbUnitTagged: TCheckBox
+                  Left = 72
+                  Top = 22
+                  Width = 65
+                  Height = 17
+                  Caption = 'Tagged'
+                  TabOrder = 4
+                  OnClick = StructControlClick
+                end
+              end
+              object PageStructCrates: TTabSheet
+                Caption = 'Crates '
+                ImageIndex = 2
+                object lblCrateImage: TLabel
+                  Left = 0
+                  Top = 40
+                  Width = 57
+                  Height = 13
+                  Caption = 'Crate Image'
+                end
+                object lblCrateType: TLabel
+                  Left = 0
+                  Top = 0
+                  Width = 52
+                  Height = 13
+                  Caption = 'Crate Type'
+                end
+                object lblCrateExtData: TLabel
+                  Left = 0
+                  Top = 84
+                  Width = 140
+                  Height = 15
+                  AutoSize = False
+                  Caption = 'Extension data = 0'
+                  Color = 4259839
+                  ParentColor = False
+                  Transparent = False
+                  Layout = tlCenter
+                end
+                object lblCrateBloomSpawnerType: TLabel
+                  Left = 0
+                  Top = 58
+                  Width = 27
+                  Height = 13
+                  Caption = 'Type:'
+                  Visible = False
+                end
+                object cbxCrateType: TComboBox
+                  Tag = -1
+                  Left = 0
+                  Top = 16
+                  Width = 140
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 13
+                  ItemIndex = 0
+                  TabOrder = 0
+                  Text = '0 - Cash'
+                  OnChange = CrateControlClick
+                  Items.Strings = (
+                    '0 - Cash'
+                    '1 - Explode'
+                    '2 - Reveal Map'
+                    '3 - Hide Map'
+                    '4 - Unit'
+                    '5 - Powerup'
+                    '6 - Execute Event'
+                    '7 - Bloom Spawner'
+                    '8 - Small Bloom'
+                    '9 - Medium Bloom'
+                    '10 - Large Bloom')
+                end
+                object cbxCrateImage: TComboBox
+                  Tag = -1
+                  Left = 0
+                  Top = 56
+                  Width = 140
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 13
+                  ItemIndex = 0
+                  TabOrder = 1
+                  Text = '0 - Blue Crate'
+                  OnChange = StructControlClick
+                  Items.Strings = (
+                    '0 - Blue Crate'
+                    '1 - Red Crate'
+                    '2 - Green Crate'
+                    '3 - Purple Crate'
+                    '4 - Invisible'
+                    '5 - Small Bloom'
+                    '6 - Medium Bloom'
+                    '7 - Large Bloom')
+                end
+                object pnCrateCash: TPanel
+                  Left = 0
+                  Top = 104
+                  Width = 140
+                  Height = 25
+                  BevelOuter = bvNone
+                  TabOrder = 2
+                  object lblCrateCash: TLabel
+                    Left = 0
+                    Top = 2
+                    Width = 64
+                    Height = 13
+                    Caption = 'Credits x 100:'
+                  end
+                  object seCrateCash: TSpinEdit
+                    Tag = -1
+                    Left = 72
+                    Top = 0
+                    Width = 67
+                    Height = 22
+                    MaxValue = 255
+                    MinValue = 0
+                    TabOrder = 0
+                    Value = 0
+                    OnChange = StructControlClick
+                  end
+                end
+                object pnCrateExplode: TPanel
+                  Left = 0
+                  Top = 104
+                  Width = 140
+                  Height = 81
+                  BevelOuter = bvNone
+                  TabOrder = 3
+                  object lblCrateExplodeWeaponType: TLabel
+                    Left = 0
+                    Top = 0
+                    Width = 67
+                    Height = 13
+                    Caption = 'Weapon type:'
+                  end
+                  object cbxCrateExplodeWeaponType: TComboBox
+                    Tag = -1
+                    Left = 0
+                    Top = 16
+                    Width = 140
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 0
+                    TabOrder = 0
+                    OnChange = StructControlClick
+                  end
+                  object cbCrateExplodeShootable: TCheckBox
+                    Left = 0
+                    Top = 40
+                    Width = 97
+                    Height = 17
+                    Caption = 'Shootable'
+                    TabOrder = 1
+                    OnClick = StructControlClick
+                  end
+                  object cbCrateExplodeDamageUnit: TCheckBox
+                    Left = 0
+                    Top = 60
+                    Width = 129
+                    Height = 17
+                    Caption = 'Damage closer to unit'
+                    TabOrder = 2
+                    OnClick = StructControlClick
+                  end
+                end
+                object pnCrateReveal: TPanel
+                  Left = 0
+                  Top = 104
+                  Width = 140
+                  Height = 73
+                  BevelOuter = bvNone
+                  TabOrder = 4
+                  object lblCrateRevealRadius: TLabel
+                    Left = 0
+                    Top = 2
+                    Width = 36
+                    Height = 13
+                    Caption = 'Radius:'
+                  end
+                  object lblCrateRevealXOffset: TLabel
+                    Left = 0
+                    Top = 26
+                    Width = 39
+                    Height = 13
+                    Caption = 'X offset:'
+                  end
+                  object lblCrateRevealYOffset: TLabel
+                    Left = 0
+                    Top = 50
+                    Width = 39
+                    Height = 13
+                    Caption = 'Y offset:'
+                  end
+                  object cbxCrateRevealRadius: TComboBox
+                    Tag = -1
+                    Left = 48
+                    Top = 0
+                    Width = 73
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 13
+                    ItemIndex = 0
+                    TabOrder = 0
+                    Text = '4'
+                    OnChange = StructControlClick
+                    Items.Strings = (
+                      '4'
+                      '5'
+                      '6'
+                      '7')
+                  end
+                  object cbxCrateRevealXOffset: TComboBox
+                    Tag = -1
+                    Left = 48
+                    Top = 24
+                    Width = 73
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 13
+                    ItemIndex = 0
+                    TabOrder = 1
+                    Text = '0'
+                    OnChange = StructControlClick
+                    Items.Strings = (
+                      '0'
+                      '4'
+                      '8'
+                      '12'
+                      '-16'
+                      '-12'
+                      '-8'
+                      '-4')
+                  end
+                  object cbxCrateRevealYOffset: TComboBox
+                    Tag = -1
+                    Left = 48
+                    Top = 48
+                    Width = 73
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 13
+                    ItemIndex = 0
+                    TabOrder = 2
+                    Text = '0'
+                    OnChange = StructControlClick
+                    Items.Strings = (
+                      '0'
+                      '4'
+                      '8'
+                      '12'
+                      '-16'
+                      '-12'
+                      '-8'
+                      '-4')
+                  end
+                end
+                object pnCrateUnit: TPanel
+                  Left = 0
+                  Top = 104
+                  Width = 140
+                  Height = 81
+                  BevelOuter = bvNone
+                  TabOrder = 5
+                  object lblCrateUnitUnitType: TLabel
+                    Left = 0
+                    Top = 0
+                    Width = 45
+                    Height = 13
+                    Caption = 'Unit type:'
+                  end
+                  object cbxCrateUnitUnitType: TComboBox
+                    Tag = -1
+                    Left = 0
+                    Top = 16
+                    Width = 140
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 0
+                    TabOrder = 0
+                    OnChange = StructControlClick
+                  end
+                  object cbCrateUnitFiveInfantry: TCheckBox
+                    Left = 0
+                    Top = 40
+                    Width = 105
+                    Height = 17
+                    Caption = 'Spawn 5 infantry'
+                    TabOrder = 1
+                    OnClick = StructControlClick
+                  end
+                  object cbCrateUnitUnitGroup: TCheckBox
+                    Left = 0
+                    Top = 60
+                    Width = 129
+                    Height = 17
+                    Caption = 'Side version of unit'
+                    TabOrder = 2
+                    OnClick = CrateControlClick
+                  end
+                end
+                object pnCratePowerup: TPanel
+                  Left = 0
+                  Top = 104
+                  Width = 140
+                  Height = 89
+                  BevelOuter = bvNone
+                  TabOrder = 6
+                  object lblCratePowerupRadius: TLabel
+                    Left = 0
+                    Top = 2
+                    Width = 36
+                    Height = 13
+                    Caption = 'Radius:'
+                  end
+                  object lblCratePowerupType: TLabel
+                    Left = 0
+                    Top = 26
+                    Width = 27
+                    Height = 13
+                    Caption = 'Type:'
+                  end
+                  object cbxCratePowerupRadius: TComboBox
+                    Tag = -1
+                    Left = 48
+                    Top = 0
+                    Width = 91
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 13
+                    ItemIndex = 0
+                    TabOrder = 0
+                    Text = 'One unit'
+                    OnClick = StructControlClick
+                    Items.Strings = (
+                      'One unit'
+                      '1 tile'
+                      '2 tiles'
+                      '3 tiles')
+                  end
+                  object cbxCratePowerupType: TComboBox
+                    Tag = -1
+                    Left = 48
+                    Top = 24
+                    Width = 91
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 13
+                    ItemIndex = 0
+                    TabOrder = 1
+                    Text = 'Stealth'
+                    OnClick = StructControlClick
+                    Items.Strings = (
+                      'Stealth'
+                      '100% heal'
+                      '50% heal'
+                      '25% heal'
+                      'Change type')
+                  end
+                  object cbCratePowerupAnimation: TCheckBox
+                    Left = 0
+                    Top = 48
+                    Width = 113
+                    Height = 17
+                    Caption = 'Pickup animation'
+                    TabOrder = 2
+                    OnClick = StructControlClick
+                  end
+                  object cbCratePowerupAlwaysPickup: TCheckBox
+                    Left = 0
+                    Top = 68
+                    Width = 97
+                    Height = 17
+                    Caption = 'Always pick up'
+                    TabOrder = 3
+                    OnClick = StructControlClick
+                  end
+                end
+                object pnCrateEvent: TPanel
+                  Left = 0
+                  Top = 104
+                  Width = 140
+                  Height = 25
+                  BevelOuter = bvNone
+                  TabOrder = 7
+                  object lblCrateEvent: TLabel
+                    Left = 0
+                    Top = 2
+                    Width = 69
+                    Height = 13
+                    Caption = 'Event number:'
+                  end
+                  object seCrateEvent: TSpinEdit
+                    Tag = -1
+                    Left = 72
+                    Top = 0
+                    Width = 67
+                    Height = 22
+                    MaxValue = 255
+                    MinValue = 0
+                    TabOrder = 0
+                    Value = 0
+                    OnChange = StructControlClick
+                  end
+                end
+                object pnCrateBloom: TPanel
+                  Left = 0
+                  Top = 104
+                  Width = 140
+                  Height = 105
+                  BevelOuter = bvNone
+                  TabOrder = 8
+                  object lblCrateBloomRadius: TLabel
+                    Left = 0
+                    Top = 2
+                    Width = 36
+                    Height = 13
+                    Caption = 'Radius:'
+                  end
+                  object lblCrateBloomType: TLabel
+                    Left = 0
+                    Top = 26
+                    Width = 27
+                    Height = 13
+                    Caption = 'Type:'
+                  end
+                  object lblCrateBloomRadiusPlus: TLabel
+                    Left = 112
+                    Top = 2
+                    Width = 3
+                    Height = 13
+                  end
+                  object cbxCrateBloomType: TComboBox
+                    Tag = -1
+                    Left = 48
+                    Top = 24
+                    Width = 91
+                    Height = 21
+                    Style = csDropDownList
+                    ItemHeight = 13
+                    ItemIndex = 0
+                    TabOrder = 0
+                    Text = 'Classic'
+                    OnChange = CrateControlClick
+                    Items.Strings = (
+                      'Classic'
+                      'Instant square'
+                      'Instant circle'
+                      'Dune2 style')
+                  end
+                  object cbCrateBloomDestroyUnit: TCheckBox
+                    Left = 0
+                    Top = 48
+                    Width = 113
+                    Height = 17
+                    Caption = 'Always destroy unit'
+                    TabOrder = 1
+                    OnClick = StructControlClick
+                  end
+                  object cbCrateBloomNotShootable: TCheckBox
+                    Left = 0
+                    Top = 68
+                    Width = 97
+                    Height = 17
+                    Caption = 'Not shootable'
+                    TabOrder = 2
+                    OnClick = StructControlClick
+                  end
+                  object seCrateBloomRadius: TSpinEdit
+                    Tag = -1
+                    Left = 48
+                    Top = 0
+                    Width = 57
+                    Height = 22
+                    MaxValue = 15
+                    MinValue = 0
+                    TabOrder = 3
+                    Value = 0
+                    OnChange = StructControlClick
+                  end
+                  object cbCrateBloomRandomizer: TCheckBox
+                    Left = 0
+                    Top = 88
+                    Width = 97
+                    Height = 17
+                    Caption = 'Randomizer'
+                    TabOrder = 4
+                    OnClick = StructControlClick
+                  end
+                end
+                object cbxCrateBloomSpawnerType: TComboBox
+                  Tag = -1
+                  Left = 32
+                  Top = 56
+                  Width = 108
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 13
+                  ItemIndex = 0
+                  TabOrder = 9
+                  Text = 'No spice'
+                  Visible = False
+                  OnChange = StructControlClick
+                  Items.Strings = (
+                    'No spice'
+                    'Thin spice'
+                    'Thick spice'
+                    'Immediate spawn')
+                end
+                object cbCrateBloomSpawnerRespawning: TCheckBox
+                  Left = 0
+                  Top = 38
+                  Width = 97
+                  Height = 17
+                  Caption = 'Respawning'
+                  TabOrder = 10
+                  Visible = False
+                  OnClick = StructControlClick
+                end
+              end
+            end
+          end
         end
       end
       object PageTerrain: TTabSheet
@@ -409,7 +1099,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -418,8 +1108,19 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 6
+        end
+        object cbxConcretePlayer: TComboBox
+          Left = 48
+          Top = 26
+          Width = 105
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 0
+          TabOrder = 7
+          Visible = False
+          OnChange = PlayerSelectChange
         end
       end
     end

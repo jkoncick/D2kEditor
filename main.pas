@@ -61,12 +61,12 @@ type
     PageTerrain: TTabSheet;
     LbStructureValue: TLabel;
     SpecialValue: TEdit;
-    LbMiscObjList: TLabel;
-    MiscObjList: TListBox;
-    LbPlayerSelect: TLabel;
-    PlayerSelect: TComboBox;
-    LbBuildingList: TLabel;
-    BuildingList: TListBox;
+    lblMiscObject: TLabel;
+    lbMiscObject: TListBox;
+    lblStructPlayer: TLabel;
+    cbxStructPlayer: TComboBox;
+    lblBuildingGroup: TLabel;
+    lbBuildingGroup: TListBox;
     RbBlockMode: TRadioButton;
     RbPaintMode: TRadioButton;
     LbBrushSize: TLabel;
@@ -110,8 +110,8 @@ type
     Bevel2: TBevel;
     cbBrushSize: TComboBox;
     LbPaintTileGroupName: TLabel;
-    UnitList: TListBox;
-    LbUnitList: TLabel;
+    lbUnitGroup: TListBox;
+    lblUnitGroup: TLabel;
     N11: TMenuItem;
     Showmapstatistics1: TMenuItem;
     btnFindSelectedObject: TButton;
@@ -140,13 +140,81 @@ type
     RemapTilesOpenDialog: TOpenDialog;
     Remaptiles1: TMenuItem;
     Userandompaintmap1: TMenuItem;
-    LbStructureName: TLabel;
+    lblStructureName: TLabel;
     Structures1: TMenuItem;
     Structureseditor1: TMenuItem;
     Translatestructurenames1: TMenuItem;
     N15: TMenuItem;
     Debugwindow1: TMenuItem;
     N12: TMenuItem;
+    StructPages: TPageControl;
+    PageStructBasic: TTabSheet;
+    PageStructAdvanced: TTabSheet;
+    StructAdvancedPages: TPageControl;
+    PageStructBuildings: TTabSheet;
+    PageStructUnits: TTabSheet;
+    PageStructCrates: TTabSheet;
+    cbxBuildingPlayer: TComboBox;
+    cbxUnitPlayer: TComboBox;
+    cbxCrateType: TComboBox;
+    cbxCrateImage: TComboBox;
+    lblCrateImage: TLabel;
+    lblCrateType: TLabel;
+    lbBuildingType: TListBox;
+    lbUnitType: TListBox;
+    lblUnitDirection: TLabel;
+    cbBuildingNoNewHarv: TCheckBox;
+    cbBuildingPrimary: TCheckBox;
+    cbxUnitDirection: TComboBox;
+    cbUnitStealth: TCheckBox;
+    cbUnitTagged: TCheckBox;
+    cbBuildingTagged: TCheckBox;
+    pnCrateCash: TPanel;
+    pnCrateExplode: TPanel;
+    pnCrateReveal: TPanel;
+    seCrateCash: TSpinEdit;
+    lblCrateCash: TLabel;
+    lblCrateExplodeWeaponType: TLabel;
+    cbxCrateExplodeWeaponType: TComboBox;
+    cbCrateExplodeShootable: TCheckBox;
+    cbCrateExplodeDamageUnit: TCheckBox;
+    lblCrateRevealRadius: TLabel;
+    lblCrateRevealXOffset: TLabel;
+    lblCrateRevealYOffset: TLabel;
+    cbxCrateRevealRadius: TComboBox;
+    cbxCrateRevealXOffset: TComboBox;
+    cbxCrateRevealYOffset: TComboBox;
+    pnCrateUnit: TPanel;
+    lblCrateUnitUnitType: TLabel;
+    cbxCrateUnitUnitType: TComboBox;
+    cbCrateUnitFiveInfantry: TCheckBox;
+    cbCrateUnitUnitGroup: TCheckBox;
+    pnCratePowerup: TPanel;
+    lblCratePowerupRadius: TLabel;
+    lblCratePowerupType: TLabel;
+    cbxCratePowerupRadius: TComboBox;
+    cbxCratePowerupType: TComboBox;
+    cbCratePowerupAnimation: TCheckBox;
+    cbCratePowerupAlwaysPickup: TCheckBox;
+    pnCrateEvent: TPanel;
+    lblCrateEvent: TLabel;
+    seCrateEvent: TSpinEdit;
+    pnCrateBloom: TPanel;
+    lblCrateBloomRadius: TLabel;
+    lblCrateBloomType: TLabel;
+    cbxCrateBloomType: TComboBox;
+    cbCrateBloomDestroyUnit: TCheckBox;
+    cbCrateBloomNotShootable: TCheckBox;
+    seCrateBloomRadius: TSpinEdit;
+    cbCrateBloomRandomizer: TCheckBox;
+    lblCrateExtData: TLabel;
+    cbxConcretePlayer: TComboBox;
+    lblBuildingDirection: TLabel;
+    cbxBuildingDirection: TComboBox;
+    cbxCrateBloomSpawnerType: TComboBox;
+    lblCrateBloomSpawnerType: TLabel;
+    cbCrateBloomSpawnerRespawning: TCheckBox;
+    lblCrateBloomRadiusPlus: TLabel;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -224,10 +292,13 @@ type
     procedure EditorPagesChange(Sender: TObject);
     procedure SpecialValueChange(Sender: TObject);
     procedure btnFindSelectedObjectClick(Sender: TObject);
-    procedure BuildingListClick(Sender: TObject);
-    procedure UnitListClick(Sender: TObject);
+    procedure lbBuildingGroupClick(Sender: TObject);
+    procedure lbUnitGroupClick(Sender: TObject);
     procedure PlayerSelectChange(Sender: TObject);
-    procedure MiscObjListClick(Sender: TObject);
+    procedure lbMiscObjectClick(Sender: TObject);
+    procedure StructControlClick(Sender: TObject);
+    procedure lbBuildingTypeClick(Sender: TObject);
+    procedure CrateControlClick(Sender: TObject);
     procedure OpenTilesetClick(Sender: TObject);
     procedure BlockImageClick(Sender: TObject);
     procedure RbTerrainModeClick(Sender: TObject);
@@ -291,6 +362,7 @@ type
 
     // Others
     special_value_changing: boolean;
+    loading: boolean;
     editing_marker_disabled: boolean;
 
     // Dispatcher procedures
@@ -316,6 +388,9 @@ type
     // Miscellaneous helper procedures
     procedure refresh_recent_files_menu;
     procedure set_special_value;
+    procedure set_player_comboboxes(item_index: integer);
+    procedure set_building_ui(building_is_turret: boolean);
+    procedure set_crate_ui;
     function mode(m: SelectedMode): boolean;
     function mouse_over_map_canvas: boolean;
     procedure apply_key_preset(key: word);
@@ -499,12 +574,15 @@ begin
   resize_map_canvas;
   EditorMenu.Left := ClientWidth - 168;
   EditorMenu.Height := ClientHeight - StatusBar.Height;
-  tmp_height := EditorMenu.Height - 404;
-  BuildingList.Height := tmp_height div 2;
-  UnitList.Height := tmp_height div 2;
-  LbUnitList.Top := BuildingList.Top + BuildingList.Height + 3;
-  UnitList.Top := LbUnitList.Top + 16;
   EditorPages.Height := EditorMenu.Height - 168;
+  StructPages.Height := EditorPages.Height - 54;
+  tmp_height := StructPages.Height - 208;
+  lbBuildingGroup.Height := tmp_height div 2;
+  lbUnitGroup.Height := tmp_height div 2;
+  lblUnitGroup.Top := lbBuildingGroup.Top + lbBuildingGroup.Height + 3;
+  lbUnitGroup.Top := lblUnitGroup.Top + 16;
+  lbBuildingType.Height := StructAdvancedPages.Height - 94;
+  lbUnitType.Height := StructAdvancedPages.Height - 94;
   StatusBar.Panels[3].Width := ClientWidth - 590;
   if Map.loaded then
   begin
@@ -591,13 +669,37 @@ begin
       key := 0;
       exit;
     end;
+    // KP+: Change building/unit direction
+    107: begin
+      if (EditorPages.TabIndex = 0) and (StructPages.TabIndex = 1) then
+      begin
+        case StructAdvancedPages.TabIndex of
+          0:  cbxBuildingDirection.ItemIndex := Min(cbxBuildingDirection.ItemIndex + 1, cbxBuildingDirection.Items.Count - 1);
+          1:  cbxUnitDirection.ItemIndex := Min(cbxUnitDirection.ItemIndex + 1, cbxUnitDirection.Items.Count - 1);
+          2:  cbxCrateImage.ItemIndex := Min(cbxCrateImage.ItemIndex + 1, cbxCrateImage.Items.Count - 1);
+        end;
+        StructControlClick(nil);
+      end;
+    end;
+    // KP+: Change building/unit direction
+    109: begin
+      if (EditorPages.TabIndex = 0) and (StructPages.TabIndex = 1) then
+      begin
+        case StructAdvancedPages.TabIndex of
+          0:  cbxBuildingDirection.ItemIndex := Max(cbxBuildingDirection.ItemIndex - 1, 0);
+          1:  cbxUnitDirection.ItemIndex := Max(cbxUnitDirection.ItemIndex - 1, 0);
+          2:  cbxCrateImage.ItemIndex := Max(cbxCrateImage.ItemIndex - 1, 0);
+        end;
+        StructControlClick(nil);
+      end;
+    end;
     // The key under Esc:
     192: begin
       if mode(mStructures) then
       begin
-        MiscObjList.ItemIndex := 0;
-        MiscObjListClick(nil);
-        MiscObjList.SetFocus;
+        lbMiscObject.ItemIndex := 0;
+        lbMiscObjectClick(nil);
+        lbMiscObject.SetFocus;
       end else
       begin
         if Tileset.block_preset_groups[block_preset_group].paint_group <> -5 then
@@ -610,7 +712,7 @@ begin
   if (key >= 37) and (key <= 40) then
   begin
     // Arrow keys
-    if not ((ActiveControl = MiscObjList) or (ActiveControl = BuildingList) or (ActiveControl = UnitList)) then
+    if ActiveControl.Tag <> -1 then
     begin
       // Scroll map
       if ssShift in Shift then
@@ -629,25 +731,25 @@ begin
           end;
       key := 0;
     end else
-    if (key = 37) or (key = 39) then
+    if ((key = 37) or (key = 39)) and (StructPages.ActivePageIndex = 0) then
     begin
       // Switch between building list, unit list and misc. object list
-      MiscObjList.ItemIndex := -1;
-      BuildingList.ItemIndex := -1;
-      UnitList.ItemIndex := -1;
-      if ((key = 39) and (ActiveControl = MiscObjList)) or ((key = 37) and (ActiveControl = UnitList)) then
+      lbMiscObject.ItemIndex := -1;
+      lbBuildingGroup.ItemIndex := -1;
+      lbUnitGroup.ItemIndex := -1;
+      if ((key = 39) and (ActiveControl = lbMiscObject)) or ((key = 37) and (ActiveControl = lbUnitGroup)) then
       begin
-        BuildingList.ItemIndex := 0;
-        BuildingList.SetFocus;
+        lbBuildingGroup.ItemIndex := 0;
+        lbBuildingGroup.SetFocus;
       end else
       if key = 37 then
       begin
-        MiscObjList.ItemIndex := 0;
-        MiscObjList.SetFocus
+        lbMiscObject.ItemIndex := 0;
+        lbMiscObject.SetFocus
       end else
       begin
-        UnitList.ItemIndex := 0;
-        UnitList.SetFocus;
+        lbUnitGroup.ItemIndex := 0;
+        lbUnitGroup.SetFocus;
       end;
       key := 0;
       set_special_value;
@@ -665,8 +767,8 @@ begin
   else if mode(mStructures) and (ActiveControl <> SpecialValue) and (key >= 96) and (key < 96 + cnt_players) then
   begin
     // Select player
-    PlayerSelect.ItemIndex := key - 96;
-    PlayerSelectChange(nil);
+    set_player_comboboxes(key - 96);
+    PlayerSelectChange(cbxStructPlayer);
   end;
   // F1-F4 - Select block preset group
   if (key >= 112) and (key <= 115) then
@@ -690,7 +792,7 @@ begin
     end;
     case key of
     // Structures editing mode selection
-    ord('E'): begin MiscObjList.ItemIndex := 3; MiscObjListClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
+    ord('E'): begin lbMiscObject.ItemIndex := 3; lbMiscObjectClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
     // Terrain editing mode selection
     ord('Q'): begin EditorPages.TabIndex := 1; paint_tile_select[-4].Down := true; PaintTileSelectClick(paint_tile_select[-4]); end;
     ord('W'): begin EditorPages.TabIndex := 1; paint_tile_select[-3].Down := true; PaintTileSelectClick(paint_tile_select[-3]); end;
@@ -1094,7 +1196,8 @@ begin
               'Num 2,4,6,8 = Move block on map'#13+
               'Num 5 = Place block'#13#13+
               'In Structures mode:'#13+
-              'Num 0 - Num 7 = Select player');
+              'Num 0 - Num 7 = Select player'#13+
+              'Num +,- = Change unit/building direction');
 end;
 
 procedure TMainWindow.Mouseactions1Click(Sender: TObject);
@@ -1132,8 +1235,8 @@ begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13+
               'Part of D2K+ Editing tools'#13#13+
               'Made by Klofkac (kozten@seznam.cz)'#13+
-              'Version 2.1 dev1'#13+
-              'Date: 2021-08-31'#13#13+
+              'Version 2.1 dev2'#13+
+              'Date: 2021-10-05'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13+
               'mvi - for making the original Mission editor'#13+
@@ -1253,7 +1356,6 @@ procedure TMainWindow.MapCanvasMouseDown(Sender: TObject;
 var
   map_x, map_y: integer;
   special: word;
-  tiledata_entry: TTileDataEntryPtr;
   cursor_left: integer;
   cursor_top: integer;
 begin
@@ -1304,8 +1406,7 @@ begin
       begin
         Map.set_special_value(map_x, map_y, special);
         // After placing building do not draw building marker
-        tiledata_entry := Structures.get_tiledata_entry(special);
-        if tiledata_entry.stype = ST_BUILDING then
+        if Structures.get_special_value_type(special) = ST_BUILDING then
           editing_marker_disabled := true;
       end;
     end else
@@ -1355,7 +1456,7 @@ begin
       else if mode(mPaintMode) then
       begin
         // Paint
-        Map.paint_rect(map_x, map_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], paint_tile_group);
+        Map.paint_rect(map_x, map_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], paint_tile_group, cbxConcretePlayer.ItemIndex);
       end;
     end
     else if button = mbMiddle then
@@ -1388,7 +1489,7 @@ begin
   end else
   // Double click for filling area
   if mode(mPaintMode) then
-    Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group);
+    Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group, cbxConcretePlayer.ItemIndex);
 end;
 
 procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
@@ -1464,14 +1565,33 @@ end;
 
 procedure TMainWindow.EditorPagesChange(Sender: TObject);
 begin
+  if loading then
+    exit;
   if EditorPages.ActivePageIndex = 0 then
   begin
-    if MiscObjList.ItemIndex <> -1 then
-      MiscObjList.SetFocus;
-    if BuildingList.ItemIndex <> -1 then
-      BuildingList.SetFocus;
-    if UnitList.ItemIndex <> -1 then
-      UnitList.SetFocus;
+    // Basic page
+    if StructPages.ActivePageIndex = 0 then
+    begin
+      if lbMiscObject.ItemIndex <> -1 then
+        lbMiscObject.SetFocus;
+      if lbBuildingGroup.ItemIndex <> -1 then
+        lbBuildingGroup.SetFocus;
+      if lbUnitGroup.ItemIndex <> -1 then
+        lbUnitGroup.SetFocus;
+    end else
+    // Advanced page
+    begin
+      if StructAdvancedPages.ActivePageIndex = 0 then
+        lbBuildingType.SetFocus
+      else if StructAdvancedPages.ActivePageIndex = 1 then
+        lbUnitType.SetFocus
+      else if StructAdvancedPages.ActivePageIndex = 2 then
+      begin
+        cbxCrateType.SetFocus;
+        set_crate_ui;
+      end;
+    end;
+    set_special_value;
   end;
   render_editing_marker;
 end;
@@ -1492,30 +1612,54 @@ begin
   end;
 end;
 
-procedure TMainWindow.BuildingListClick(Sender: TObject);
+procedure TMainWindow.lbBuildingGroupClick(Sender: TObject);
 begin
-  MiscObjList.ItemIndex := -1;
-  UnitList.ItemIndex := -1;
+  lbMiscObject.ItemIndex := -1;
+  lbUnitGroup.ItemIndex := -1;
   set_special_value;
 end;
 
-procedure TMainWindow.UnitListClick(Sender: TObject);
+procedure TMainWindow.lbUnitGroupClick(Sender: TObject);
 begin
-  MiscObjList.ItemIndex := -1;
-  BuildingList.ItemIndex := -1;
+  lbMiscObject.ItemIndex := -1;
+  lbBuildingGroup.ItemIndex := -1;
   set_special_value;
 end;
 
 procedure TMainWindow.PlayerSelectChange(Sender: TObject);
 begin
+  set_player_comboboxes((Sender as TComboBox).ItemIndex);
   set_special_value;
   update_map_stats;
 end;
 
-procedure TMainWindow.MiscObjListClick(Sender: TObject);
+procedure TMainWindow.lbMiscObjectClick(Sender: TObject);
 begin
-  BuildingList.ItemIndex := -1;
-  UnitList.ItemIndex := -1;
+  lbBuildingGroup.ItemIndex := -1;
+  lbUnitGroup.ItemIndex := -1;
+  set_special_value;
+end;
+
+procedure TMainWindow.StructControlClick(Sender: TObject);
+begin
+  if loading then
+    exit;
+  set_special_value;
+end;
+
+procedure TMainWindow.lbBuildingTypeClick(Sender: TObject);
+begin
+  if loading then
+    exit;
+  set_building_ui(Structures.templates.BuildingDefinitions[lbBuildingType.ItemIndex].SpecialBehavior = 16);
+  set_special_value;
+end;
+
+procedure TMainWindow.CrateControlClick(Sender: TObject);
+begin
+  if loading then
+    exit;
+  set_crate_ui;
   set_special_value;
 end;
 
@@ -1554,6 +1698,7 @@ begin
   paint_tile_select[paint_tile_group].AllowAllUp := false;
   LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
   RbPaintMode.Checked := true;
+  cbxConcretePlayer.Visible := paint_tile_group = -2;
 end;
 
 procedure TMainWindow.PaintTileSelectDblClick(Sender: TObject);
@@ -1577,22 +1722,54 @@ end;
 procedure TMainWindow.update_structures_list(building_list, unit_list: TStringList);
 var
   prev_index: integer;
+  i: integer;
+  tmp_strings: TStringList;
 begin
-  prev_index := BuildingList.ItemIndex;
-  BuildingList.Items := building_list;
-  BuildingList.ItemIndex := prev_index;
-  prev_index := UnitList.ItemIndex;
-  UnitList.Items := unit_list;
-  UnitList.ItemIndex := prev_index;
+  // Basic page
+  prev_index := lbBuildingGroup.ItemIndex;
+  lbBuildingGroup.Items := building_list;
+  lbBuildingGroup.ItemIndex := prev_index;
+  prev_index := lbUnitGroup.ItemIndex;
+  lbUnitGroup.Items := unit_list;
+  lbUnitGroup.ItemIndex := prev_index;
+  // Advanced page
+  tmp_strings := TStringList.Create;
+  // Building list
+  for i:= 0 to Structures.templates.BuildingCount -1 do
+    tmp_strings.Add(Structures.get_building_name_str(i));
+  prev_index := lbBuildingType.ItemIndex;
+  lbBuildingType.Items := tmp_strings;
+  lbBuildingType.ItemIndex := Max(prev_index, 0);
+  // Unit list
+  tmp_strings.Clear;
+  for i:= 0 to Structures.templates.UnitCount -1 do
+    tmp_strings.Add(Structures.get_unit_name_str(i));
+  prev_index := lbUnitType.ItemIndex;
+  lbUnitType.Items := tmp_strings;
+  lbUnitType.ItemIndex := Max(prev_index, 0);
+  // Weapon list
+  tmp_strings.Clear;
+  for i:= 0 to Structures.templates.WeaponCount -1 do
+    tmp_strings.Add(IntToStr(i) + ' - ' + Structures.templates.WeaponStrings[i]);
+  prev_index := cbxCrateExplodeWeaponType.ItemIndex;
+  cbxCrateExplodeWeaponType.Items := tmp_strings;
+  cbxCrateExplodeWeaponType.ItemIndex := Max(prev_index, 0);
+  tmp_strings.Destroy;
+  // Unit list under Crates tab
+  if StructAdvancedPages.ActivePageIndex = 2 then
+    set_crate_ui;
 end;
 
 procedure TMainWindow.update_player_list(player_list: TStringList);
 var
   prev_index: integer;
 begin
-  prev_index := PlayerSelect.ItemIndex;
-  PlayerSelect.Items := player_list;
-  PlayerSelect.ItemIndex := Max(prev_index, 0);
+  prev_index := cbxStructPlayer.ItemIndex;
+  cbxStructPlayer.Items := player_list;
+  cbxBuildingPlayer.Items := player_list;
+  cbxUnitPlayer.Items := player_list;
+  cbxConcretePlayer.Items := player_list;
+  set_player_comboboxes(Max(prev_index, 0));
 end;
 
 procedure TMainWindow.update_misc_object_list;
@@ -1603,7 +1780,7 @@ begin
   tmp_strings := TStringList.Create;
   for i := 0 to Structures.cnt_misc_objects - 1 do
     tmp_strings.Add(Structures.misc_object_info[i].name);
-  MiscObjList.Items := tmp_strings;
+  lbMiscObject.Items := tmp_strings;
   tmp_strings.Destroy;
 end;
 
@@ -1660,66 +1837,156 @@ var
   i: integer;
   special, player: integer;
   tiledata_entry: TTileDataEntryPtr;
+  building_is_turret: boolean;
+  crate_type, crate_image, ext_data: integer;
+  bloom_type_0: boolean;
 begin
   special := StrToIntDef(SpecialValue.Text, 0);
-  tiledata_entry := Structures.get_tiledata_entry(special);
-  if tiledata_entry.stype = ST_MISC_OBJECT then
+  if (special >= CNT_TILEDATA_ENTRIES) and special_value_changing then
+    exit;
+  loading := true;
+  if (special and 32768) <> 0 then
   begin
-    if not special_value_changing then
+    StructPages.ActivePageIndex := 1;
+    StructAdvancedPages.ActivePageIndex := 2;
+    crate_type := (special shr 11) and 15;
+    crate_image := (special shr 8) and 7;
+    ext_data := special and 255;
+    cbxCrateType.ItemIndex := crate_type;
+    if crate_type = 7 then
     begin
-      MiscObjList.ItemIndex := tiledata_entry.index;
-      BuildingList.ItemIndex := -1;
-      UnitList.ItemIndex := -1;
-    end;
-    LbStructureName.Caption := Structures.misc_object_info[tiledata_entry.index].name;
-  end else
-  if tiledata_entry.stype = ST_BUILDING then
-  begin
-    if not special_value_changing then
-    begin
-      MiscObjList.ItemIndex := -1;
-      for i := 0 to Structures.building_group_mapping_count - 1 do
-        if Structures.building_group_mapping[i] = Integer(tiledata_entry.index) then
-        begin
-          BuildingList.ItemIndex := i;
-          break;
+      cbCrateBloomSpawnerRespawning.Checked := (special and 256) <> 0;
+      cbxCrateBloomSpawnerType.ItemIndex := (special shr 9) and 3;
+    end else
+      cbxCrateImage.ItemIndex := crate_image;
+    lblCrateExtData.Caption := 'Extension data = ' + IntToStr(ext_data);
+    if (crate_type = 4) then
+      cbCrateUnitUnitGroup.Checked := (ext_data and 128) <> 0;
+    if (crate_type >= 7) then
+      cbxCrateBloomType.ItemIndex := (ext_data shr 4) and 3;
+    set_crate_ui;
+    case crate_type of
+      0: seCrateCash.Value := ext_data;
+      1: begin
+          cbCrateExplodeShootable.Checked := (ext_data and 128) <> 0;
+          cbCrateExplodeDamageUnit.Checked := (ext_data and 64) <> 0;
+          cbxCrateExplodeWeaponType.ItemIndex := IfThen((ext_data and 63) < cbxCrateExplodeWeaponType.Items.Count, ext_data and 63, -1);
         end;
-      UnitList.ItemIndex := -1;
-      PlayerSelect.ItemIndex := tiledata_entry.player;
+      2: begin
+          cbxCrateRevealRadius.ItemIndex := ext_data and 3;
+          cbxCrateRevealXOffset.ItemIndex := (ext_data shr 5) and 7;
+          cbxCrateRevealXOffset.ItemIndex := (ext_data shr 2) and 7;
+        end;
+      4: begin
+          cbCrateUnitFiveInfantry.Checked := (ext_data and 64) <> 0;
+          cbxCrateUnitUnitType.ItemIndex := IfThen((ext_data and 63) < cbxCrateUnitUnitType.Items.Count, ext_data and 63, -1);
+        end;
+      5: begin
+          cbCratePowerupAnimation.Checked := (ext_data and 128) <> 0;
+          cbCratePowerupAlwaysPickup.Checked := (ext_data and 64) <> 0;
+          cbxCratePowerupType.ItemIndex := (ext_data shr 2) and 15;
+          cbxCratePowerupRadius.ItemIndex := ext_data and 3;
+        end;
+      6: seCrateEvent.Value := ext_data;
+      else begin
+          cbCrateBloomNotShootable.Checked := (ext_data and 128) <> 0;
+          cbCrateBloomDestroyUnit.Checked := (ext_data and 64) <> 0;
+          bloom_type_0 := ((ext_data shr 4) and 3) = 0;
+          seCrateBloomRadius.Value := ext_data and IfThen(bloom_type_0, 15, 7);
+          if not bloom_type_0 then
+            cbCrateBloomRandomizer.Checked := (ext_data and 8) <> 0;
+        end;
     end;
-    player := Mission.get_player_alloc_index(tiledata_entry.player);
-    if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_side_versions[tiledata_entry.index, player] <> -1) then
-      LbStructureName.Caption := Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, player])
-    else
-      LbStructureName.Caption := 'INVALID';
-    update_map_stats;
   end else
-  if tiledata_entry.stype = ST_UNIT then
+  if (special and 16384) <> 0 then
   begin
-    if not special_value_changing then
-    begin
-      MiscObjList.ItemIndex := -1;
-      BuildingList.ItemIndex := -1;
-      UnitList.ItemIndex := tiledata_entry.index;
-      PlayerSelect.ItemIndex := tiledata_entry.player;
-    end;
-    player := Mission.get_player_alloc_index(tiledata_entry.player);
-    if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_side_versions[tiledata_entry.index, player] <> -1) then
-      LbStructureName.Caption := Structures.get_unit_name_str(Structures.unit_side_versions[tiledata_entry.index, player])
+    StructPages.ActivePageIndex := 1;
+    StructAdvancedPages.ActivePageIndex := 1;
+    lbUnitType.ItemIndex := IfThen((special and 63) < lbUnitType.Count, special and 63, -1);
+    set_player_comboboxes((special shr 6) and 7);
+    cbxUnitDirection.ItemIndex := (special shr 9) and 7;
+    cbUnitStealth.Checked := (special and 4096) <> 0;
+    cbUnitTagged.Checked := (special and 8192) <> 0;
+  end else
+  if (special and 8192) <> 0 then
+  begin
+    StructPages.ActivePageIndex := 1;
+    StructAdvancedPages.ActivePageIndex := 0;
+    lbBuildingType.ItemIndex := IfThen((special and 127) < lbBuildingType.Count, special and 127, -1);
+    building_is_turret := (lbBuildingType.ItemIndex <> -1) and (Structures.templates.BuildingDefinitions[lbBuildingType.ItemIndex].SpecialBehavior = 16);
+    set_player_comboboxes((special shr 7) and 7);
+    set_building_ui(building_is_turret);
+    if building_is_turret then
+      cbxBuildingDirection.ItemIndex := (special shr 10) and 3
     else
-      LbStructureName.Caption := 'INVALID';
-    update_map_stats;
+    begin
+      cbBuildingNoNewHarv.Checked := (special and 1024) <> 0;
+      cbBuildingPrimary.Checked := (special and 2048) <> 0;
+    end;
+    cbBuildingTagged.Checked := (special and 4096) <> 0;
   end else
   begin
-    if not special_value_changing then
+    StructPages.ActivePageIndex := 0;
+    tiledata_entry := Structures.get_tiledata_entry(special);
+    if tiledata_entry.stype = ST_MISC_OBJECT then
     begin
-      MiscObjList.ItemIndex := -1;
-      BuildingList.ItemIndex := -1;
-      UnitList.ItemIndex := -1;
+      if not special_value_changing then
+      begin
+        lbMiscObject.ItemIndex := tiledata_entry.index;
+        lbBuildingGroup.ItemIndex := -1;
+        lbUnitGroup.ItemIndex := -1;
+      end;
+      lblStructureName.Caption := Structures.misc_object_info[tiledata_entry.index].name;
+    end else
+    if tiledata_entry.stype = ST_BUILDING then
+    begin
+      if not special_value_changing then
+      begin
+        lbMiscObject.ItemIndex := -1;
+        for i := 0 to Structures.building_group_mapping_count - 1 do
+          if Structures.building_group_mapping[i] = Integer(tiledata_entry.index) then
+          begin
+            lbBuildingGroup.ItemIndex := i;
+            break;
+          end;
+        lbUnitGroup.ItemIndex := -1;
+        set_player_comboboxes(tiledata_entry.player);
+      end;
+      player := Mission.get_player_alloc_index(tiledata_entry.player);
+      if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_side_versions[tiledata_entry.index, player] <> -1) then
+        lblStructureName.Caption := Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, player])
+      else
+        lblStructureName.Caption := 'INVALID';
+      update_map_stats;
+    end else
+    if tiledata_entry.stype = ST_UNIT then
+    begin
+      if not special_value_changing then
+      begin
+        lbMiscObject.ItemIndex := -1;
+        lbBuildingGroup.ItemIndex := -1;
+        lbUnitGroup.ItemIndex := tiledata_entry.index;
+        set_player_comboboxes(tiledata_entry.player);
+      end;
+      player := Mission.get_player_alloc_index(tiledata_entry.player);
+      if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_side_versions[tiledata_entry.index, player] <> -1) then
+        lblStructureName.Caption := Structures.get_unit_name_str(Structures.unit_side_versions[tiledata_entry.index, player])
+      else
+        lblStructureName.Caption := 'INVALID';
+      update_map_stats;
+    end else
+    begin
+      if not special_value_changing then
+      begin
+        lbMiscObject.ItemIndex := -1;
+        lbBuildingGroup.ItemIndex := -1;
+        lbUnitGroup.ItemIndex := -1;
+      end;
+      lblStructureName.Caption := '';
     end;
-    LbStructureName.Caption := '';
   end;
   render_editing_marker;
+  loading := false;
 end;
 
 procedure TMainWindow.update_map_dimensions;
@@ -1753,7 +2020,7 @@ procedure TMainWindow.update_map_stats;
 var
   i: integer;
 begin
-  i := PlayerSelect.ItemIndex;
+  i := cbxStructPlayer.ItemIndex;
   StatusBar.Panels[5].Text := Format('W: %d  S: %d  B: %d  C: %d', [Map.stats.misc_objects[MOT_WORM_SPAWNER], Map.stats.misc_objects[MOT_PLAYER_START], Map.stats.misc_objects[MOT_SPICE_BLOOM], Map.stats.misc_objects[MOT_CRATE]]);
   StatusBar.Panels[6].Text := Format('Power: %d%%   (%d/%d)', [Map.stats.players[i].power_percent, Map.stats.players[i].power_output, Map.stats.players[i].power_need]);
 end;
@@ -1831,7 +2098,8 @@ end;
 
 procedure TMainWindow.render_editing_marker;
 var
-  tiledata_entry: TTileDataEntryPtr;
+  special: word;
+  structure_type: byte;
   building_template: TBuildingTemplatePtr;
   marker_type: EditingMarkerType;
   min_x, min_y, max_x, max_y: integer;
@@ -1842,11 +2110,12 @@ begin
     CursorImage.Visible := false;
     exit;
   end;
-  tiledata_entry := Structures.get_tiledata_entry(StrToIntDef(SpecialValue.Text, 0));
-  if mode(mStructures) and (tiledata_entry.stype = ST_BUILDING) then
+  special := StrToIntDef(SpecialValue.Text, 0);
+  structure_type := Structures.get_special_value_type(special);
+  if mode(mStructures) and (structure_type = ST_BUILDING) then
   begin
     // Draw building placement marker
-    building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
+    building_template := Structures.get_building_template_for_special(special);
     if building_template = nil then
       exit;
     marker_type := emBuilding;
@@ -1855,7 +2124,7 @@ begin
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
       Addr(Map.data), mouse_old_x, mouse_old_y, MAX_BUILDING_SIZE, MAX_BUILDING_SIZE, marker_type, building_template.TilesOccupiedAll);
   end else
-  if mode(mStructures) and ((tiledata_entry.stype = ST_UNIT) or (tiledata_entry.stype = ST_MISC_OBJECT)) then
+  if mode(mStructures) and ((structure_type = ST_UNIT) or (structure_type = ST_MISC_OBJECT)) then
   begin
     // Draw unit / misc object marker
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
@@ -1931,8 +2200,8 @@ begin
     for x:= 0 to block_width-1 do
       for y := 0 to block_height-1 do
       begin
-        tile_x := block_data[x,y].tile mod 20;
-        tile_y := block_data[x,y].tile div 20;
+        tile_x := (block_data[x,y].tile and $0FFF) mod 20;
+        tile_y := (block_data[x,y].tile and $0FFF) div 20;
         BlockImage.Canvas.CopyRect(rect(x*32+border_x, y*32+border_y, x*32+32+border_x, y*32+32+border_y), Tileset.tileimage.Canvas,rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
       end;
   end;
@@ -1973,35 +2242,75 @@ procedure TMainWindow.set_special_value;
 var
   tiledata_entry: TTileDataEntryPtr;
   value: word;
+  ext_data: byte;
   i: integer;
+  building_is_turret: boolean;
+  crate_type: integer;
 begin
-  if MiscObjList.ItemIndex > -1 then
-    value := Structures.misc_object_info[MiscObjList.ItemIndex].value
-  else if BuildingList.ItemIndex > -1 then
+  value := 0;
+  // Basic tab
+  if StructPages.ActivePageIndex = 0 then
   begin
-    // Find building special value
-    value := 0;
-    for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+    if lbMiscObject.ItemIndex > -1 then
+      value := Structures.misc_object_info[lbMiscObject.ItemIndex].value
+    else if lbBuildingGroup.ItemIndex > -1 then
     begin
-      tiledata_entry := Structures.get_tiledata_entry(i);
-      if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.player = PlayerSelect.ItemIndex) and (Integer(tiledata_entry.index) = Structures.building_group_mapping[BuildingList.ItemIndex]) then
+      // Find building special value
+      for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
       begin
-        value := i;
-        break;
+        tiledata_entry := Structures.get_tiledata_entry(i);
+        if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.player = cbxStructPlayer.ItemIndex) and (Integer(tiledata_entry.index) = Structures.building_group_mapping[lbBuildingGroup.ItemIndex]) then
+        begin
+          value := i;
+          break;
+        end;
+      end;
+    end else
+    begin
+      // Find unit special value
+      for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+      begin
+        tiledata_entry := Structures.get_tiledata_entry(i);
+        if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.player = cbxStructPlayer.ItemIndex) and (tiledata_entry.index = lbUnitGroup.ItemIndex) then
+        begin
+          value := i;
+          break;
+        end;
       end;
     end;
   end else
+  // Advanced tab
   begin
-    // Find unit special value
-    value := 0;
-    for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+    // Buildings tab
+    if StructAdvancedPages.ActivePageIndex = 0 then
     begin
-      tiledata_entry := Structures.get_tiledata_entry(i);
-      if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.player = PlayerSelect.ItemIndex) and (tiledata_entry.index = UnitList.ItemIndex) then
-      begin
-        value := i;
-        break;
+      building_is_turret := Structures.templates.BuildingDefinitions[lbBuildingType.ItemIndex].SpecialBehavior = 16;
+      value := 8192 + IfThen(cbBuildingTagged.Checked, 4096, 0) +
+        IfThen(building_is_turret, 1024 * cbxBuildingDirection.ItemIndex, IfThen(cbBuildingPrimary.Checked, 2048, 0) + IfThen(cbBuildingNoNewHarv.Checked, 1024, 0)) +
+        128 * cbxBuildingPlayer.ItemIndex + lbBuildingType.ItemIndex;
+    end
+    // Units tab
+    else if StructAdvancedPages.ActivePageIndex = 1 then
+      value := 16384 + IfThen(cbUnitTagged.Checked, 8192, 0) + IfThen(cbUnitStealth.Checked, 4096, 0) + 512 * cbxUnitDirection.ItemIndex + 64 * cbxUnitPlayer.ItemIndex + lbUnitType.ItemIndex
+    // Crates tab
+    else if StructAdvancedPages.ActivePageIndex = 2 then
+    begin
+      crate_type := cbxCrateType.ItemIndex;
+      case crate_type of
+        0: ext_data := StrToIntDef(seCrateCash.Text, 0);
+        1: ext_data := IfThen(cbCrateExplodeShootable.Checked, 128, 0) + IfThen(cbCrateExplodeDamageUnit.Checked, 64, 0) + cbxCrateExplodeWeaponType.ItemIndex;
+        2: ext_data := cbxCrateRevealXOffset.ItemIndex * 32 + cbxCrateRevealYOffset.ItemIndex * 4 + cbxCrateRevealRadius.ItemIndex;
+        3: ext_data := 0;
+        4: ext_data := IfThen(cbCrateUnitUnitGroup.Checked, 128, 0) + IfThen(cbCrateUnitFiveInfantry.Checked, 64, 0) + cbxCrateUnitUnitType.ItemIndex;
+        5: ext_data := IfThen(cbCratePowerupAnimation.Checked, 128, 0) + IfThen(cbCratePowerupAlwaysPickup.Checked, 64, 0) + cbxCratePowerupType.ItemIndex * 4 + cbxCratePowerupRadius.ItemIndex;
+        6: ext_data := StrToIntDef(seCrateEvent.Text, 0);
+        else ext_data := IfThen(cbCrateBloomNotShootable.Checked, 128, 0) + IfThen(cbCrateBloomDestroyUnit.Checked, 64, 0) + cbxCrateBloomType.ItemIndex * 16 +
+                          IfThen(cbxCrateBloomType.ItemIndex = 0, StrToIntDef(seCrateBloomRadius.Text, 0) and 15, IfThen(cbCrateBloomRandomizer.Checked, 8, 0) + StrToIntDef(seCrateBloomRadius.Text, 0) and 7);
       end;
+      lblCrateExtData.Caption := 'Extension data = ' + IntToStr(ext_data);
+      value := 32768 + 2048 * crate_type +
+        IfThen(crate_type = 7, IfThen(cbCrateBloomSpawnerRespawning.Checked, 256, 0) + cbxCrateBloomSpawnerType.ItemIndex * 512, 256 * cbxCrateImage.ItemIndex) +
+        ext_data;
     end;
   end;
   special_value_changing := true;
@@ -2010,9 +2319,72 @@ begin
   mouse_already_clicked := false;
 end;
 
+procedure TMainWindow.set_player_comboboxes(item_index: integer);
+begin
+  cbxStructPlayer.ItemIndex := item_index;
+  cbxBuildingPlayer.ItemIndex := item_index;
+  cbxUnitPlayer.ItemIndex := item_index;
+  cbxConcretePlayer.ItemIndex := item_index;
+end;
+
+procedure TMainWindow.set_building_ui(building_is_turret: boolean);
+begin
+  cbBuildingNoNewHarv.Visible := not building_is_turret;
+  cbBuildingPrimary.Visible := not building_is_turret;
+  lblBuildingDirection.Visible := building_is_turret;
+  cbxBuildingDirection.Visible := building_is_turret;
+end;
+
+procedure TMainWindow.set_crate_ui;
+var
+  crate_type: integer;
+  tmp_strings: TStringList;
+  i: integer;
+begin
+  crate_type := cbxCrateType.ItemIndex;
+  lblCrateImage.Visible := crate_type <> 7;
+  cbxCrateImage.Visible := crate_type <> 7;
+  cbCrateBloomSpawnerRespawning.Visible := crate_type = 7;
+  lblCrateBloomSpawnerType.Visible := crate_type = 7;
+  cbxCrateBloomSpawnerType.Visible := crate_type = 7;
+  pnCrateCash.Visible := crate_type = 0;
+  pnCrateExplode.Visible := crate_type = 1;
+  pnCrateReveal.Visible := crate_type = 2;
+  pnCrateUnit.Visible := crate_type = 4;
+  pnCratePowerup.Visible := crate_type = 5;
+  pnCrateEvent.Visible := crate_type = 6;
+  pnCrateBloom.Visible := crate_type >= 7;
+  if crate_type = 4 then
+  begin
+    tmp_strings := TStringList.Create;
+    if not cbCrateUnitUnitGroup.Checked then
+    begin
+      for i := 0 to Structures.templates.UnitCount - 1 do
+        tmp_strings.Add(Structures.get_unit_name_str(i));
+    end else
+    begin
+      for i := 0 to Structures.templates.UnitGroupCount - 1 do
+        tmp_strings.Add(Structures.get_unit_group_str(i));
+    end;
+    cbxCrateUnitUnitType.Items := tmp_strings;
+    tmp_strings.Destroy;
+    cbxCrateUnitUnitType.ItemIndex := 0;
+    lblCrateUnitUnitType.Caption := IfThen(not cbCrateUnitUnitGroup.Checked, 'Unit type:', 'Unit group:');
+  end;
+  if crate_type >= 7 then
+  begin
+    seCrateBloomRadius.MaxValue := IfThen(cbxCrateBloomType.ItemIndex = 0, 15, 7);
+    cbCrateBloomRandomizer.Visible := cbxCrateBloomType.ItemIndex > 0;
+    case crate_type of
+      9:  lblCrateBloomRadiusPlus.Caption := '(+1)';
+      10: lblCrateBloomRadiusPlus.Caption := '(+2)';
+      else lblCrateBloomRadiusPlus.Caption := '';
+    end;
+  end;
+end;
+
 function TMainWindow.mode(m: SelectedMode): boolean;
 var
-  tiledata_entry: TTileDataEntryPtr;
   building_template: TBuildingTemplatePtr;
 begin
   result := false;
@@ -2023,13 +2395,8 @@ begin
         if (EditorPages.TabIndex <> 0) or (position_selection_mode <> psmNone) then
           exit;
         // Walls can be painted while holding mouse
-        tiledata_entry := Structures.get_tiledata_entry(StrToIntDef(SpecialValue.Text, 0));
-        if tiledata_entry.stype = ST_BUILDING then
-        begin
-          building_template := Structures.get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
-          // Check if building behavior is wall
-          result := (building_template <> nil) and (building_template.SpecialBehavior = 14);
-        end;
+        building_template := Structures.get_building_template_for_special(StrToIntDef(SpecialValue.Text, 0));
+        result := (building_template <> nil) and (building_template.SpecialBehavior = 14);
       end;
     mTerrain:         result := EditorPages.TabIndex = 1;
     mPaintMode:       result := (EditorPages.TabIndex = 1) and RbPaintMode.Checked;

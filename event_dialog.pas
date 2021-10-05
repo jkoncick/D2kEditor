@@ -1979,7 +1979,7 @@ begin
     FillChar(tmp_event.data[0], Length(tmp_event.data), 0);
     for j := 0 to max_y - min_y do
       for i := 0 to max_x - min_x do
-        set_integer_value(Addr(tmp_event.data[1]), (j * (width) + i) * 2, 2, Map.data[i + min_x, j + min_y].tile);
+        set_integer_value(Addr(tmp_event.data[1]), (j * (width) + i) * 2, 2, Map.data[i + min_x, j + min_y].tile and $0FFF);
     draw_tile_block;
   end;
 end;

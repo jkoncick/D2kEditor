@@ -328,11 +328,16 @@ type
     mark: string;
   end;
 
+  TMiscObjectInfoPtr = ^TMiscObjectInfo;
+
 // Misc object types
 const MOT_WORM_SPAWNER = 0;
 const MOT_PLAYER_START = 1;
 const MOT_SPICE_BLOOM = 2;
 const MOT_CRATE = 3;
+
+// Crate type marks
+const crate_type_marks: array[0..15] of string = ('C', 'E', 'R', 'H', 'U', 'P', 'X', 'B', 'S', 'M', 'L', '11', '12', '13', '14', '15');
 
 // *****************************************************************************
 // Group IDs definitions
@@ -560,6 +565,7 @@ type
 
     // Misc. objects related data
     misc_object_info: array of TMiscObjectInfo;
+    adv_crate_misc_object_info: TMiscObjectInfo;
     cnt_misc_objects: integer;
 
     // Player related data
@@ -596,8 +602,13 @@ type
     function get_unit_group_str(index: integer): String;
     function get_building_name_str(index: integer): String;
     function get_building_group_str(index: integer): String;
-    function get_unit_template(unit_group, player: integer): TUnitTemplatePtr;
-    function get_building_template(building_group, player: integer): TBuildingTemplatePtr;
+    function get_special_value_type(special: word): byte;
+    function get_special_value_player(special: word): integer;
+    function get_unit_template_for_special(special: word): TUnitTemplatePtr;
+    function get_unit_template(index, player: integer; my_version: boolean): TUnitTemplatePtr;
+    function check_unit_is_stealth_for_special(special: word): boolean;
+    function get_building_template_for_special(special: word): TBuildingTemplatePtr;
+    function get_building_template(index, player: integer; my_version: boolean): TBuildingTemplatePtr;
     function check_links_with_wall(special: word): boolean;
     procedure get_structure_size(special: word; var size_x, size_y: integer);
     // BUILEXP.BIN related procedures
@@ -618,6 +629,7 @@ type
     // Misc. objects related procedures
     procedure load_misc_objects_ini;
     procedure register_misc_objects_in_tiledata;
+    function get_misc_object_info_for_special(special: word): TMiscObjectInfoPtr;
     // Players related procedures
     procedure load_players_ini;
     // Limits related procedures
@@ -865,7 +877,7 @@ begin
   j := 0;
   for i := 0 to templates.BuildingGroupCount - 1 do
   begin
-    building_template := get_building_template(i, 0);
+    building_template := get_building_template(i, 0, true);
     // If building is concrete, do not add it to list
     if (building_template <> nil) and (building_template.SpecialBehavior = 15) then
       continue;
@@ -951,55 +963,146 @@ begin
     result := 'UNDEFINED#' + inttostr(index);
 end;
 
-function TStructures.get_unit_template(unit_group, player: integer): TUnitTemplatePtr;
+function TStructures.get_special_value_type(special: word): byte;
+begin
+  if special = 65535 then
+    result := ST_NOTHING
+  else if (special and 32768) <> 0 then
+    result := ST_MISC_OBJECT
+  else if (special and 16384) <> 0 then
+    result := ST_UNIT
+  else if (special and 8192) <> 0 then
+    result := ST_BUILDING
+  else
+    result := (get_tiledata_entry(special)).stype;
+end;
+
+function TStructures.get_special_value_player(special: word): integer;
+begin
+  if (special and 32768) <> 0 then
+    result := -1
+  else if (special and 16384) <> 0 then
+    result := (special shr 6) and 7
+  else if (special and 8192) <> 0 then
+    result := (special shr 7) and 7
+  else
+    result := (get_tiledata_entry(special)).player;
+end;
+
+function TStructures.get_unit_template_for_special(special: word): TUnitTemplatePtr;
+var
+  tiledata_entry: TTileDataEntryPtr;
+begin
+  result := nil;
+  if ((special and 32768) = 0) and ((special and 16384) <> 0) then
+    result := get_unit_template(special and 63, -1, false)
+  else
+  begin
+    tiledata_entry := get_tiledata_entry(special);
+    if tiledata_entry.stype = ST_UNIT then
+      result := get_unit_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player), true);
+  end;
+end;
+
+function TStructures.get_unit_template(index, player: integer; my_version: boolean): TUnitTemplatePtr;
 var
   unit_template_index: integer;
 begin
   result := nil;
-  unit_template_index := unit_side_versions[unit_group, player];
-  if unit_template_index = -1 then
-    exit;
-  result := Addr(templates.UnitDefinitions[unit_template_index]);
+  if my_version then
+  begin
+    unit_template_index := unit_side_versions[index, player];
+    if unit_template_index = -1 then
+      exit;
+    result := Addr(templates.UnitDefinitions[unit_template_index]);
+  end else
+  begin
+    if index >= Structures.templates.UnitCount then
+      exit;
+    result := Addr(templates.UnitDefinitions[index]);
+  end;
 end;
 
-function TStructures.get_building_template(building_group, player: integer): TBuildingTemplatePtr;
+function TStructures.check_unit_is_stealth_for_special(special: word): boolean;
+var
+  tiledata_entry: TTileDataEntryPtr;
+  unit_index: integer;
+begin
+  result := false;
+  unit_index := -1;
+  if ((special and 32768) = 0) and ((special and 16384) <> 0) then
+  begin
+    if (special and 4096) <> 0 then
+    begin
+      result := true;
+      exit;
+    end;
+    unit_index := special and 63
+  end else
+  begin
+    tiledata_entry := get_tiledata_entry(special);
+    if tiledata_entry.stype = ST_UNIT then
+      unit_index := unit_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)];
+  end;
+  if (unit_index = -1) or (unit_index >= templates.UnitCount) then
+    exit;
+  result := ((templates.UnitDefinitions[unit_index].Flags and $10) <> 0) or (templates.UnitDefinitions[unit_index].SpecialBehavior = 12) or (templates.UnitNameStrings[unit_index] = 'STEALTH RAIDER');
+end;
+
+function TStructures.get_building_template_for_special(special: word): TBuildingTemplatePtr;
+var
+  tiledata_entry: TTileDataEntryPtr;
+begin
+  result := nil;
+  if ((special and 49152) = 0) and ((special and 8192) <> 0) then
+    result := get_building_template(special and 127, -1, false)
+  else
+  begin
+    tiledata_entry := get_tiledata_entry(special);
+    if tiledata_entry.stype = ST_BUILDING then
+      result := get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player), true);
+  end;
+end;
+
+function TStructures.get_building_template(index, player: integer; my_version: boolean): TBuildingTemplatePtr;
 var
   building_template_index: integer;
 begin
   result := nil;
-  building_template_index := building_side_versions[building_group, player];
-  if building_template_index = -1 then
-    exit;
-  result := Addr(templates.BuildingDefinitions[building_template_index]);
+  if my_version then
+  begin
+    building_template_index := building_side_versions[index, player];
+    if building_template_index = -1 then
+      exit;
+    result := Addr(templates.BuildingDefinitions[building_template_index]);
+  end else
+  begin
+    if index >= Structures.templates.BuildingCount then
+      exit;
+    result := Addr(templates.BuildingDefinitions[index]);
+  end;
 end;
 
 function TStructures.check_links_with_wall(special: word): boolean;
 var
-  tiledata_entry: TTiledataEntryPtr;
   building_template: TBuildingTemplatePtr;
 begin
-  result := false;
-  tiledata_entry := get_tiledata_entry(special);
-  if tiledata_entry.stype <> ST_BUILDING then
-    exit;
-  building_template := get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
-  if building_template = nil then
-    exit;
-  result := (building_template.SpecialBehavior = 14) or (building_template.SpecialBehavior = 16);
+  building_template := get_building_template_for_special(special);
+  result := (building_template <> nil) and ((building_template.SpecialBehavior = 14) or (building_template.SpecialBehavior = 16));
 end;
 
 procedure TStructures.get_structure_size(special: word; var size_x, size_y: integer);
 var
-  tiledata_entry: TTiledataEntryPtr;
+  structure_type: byte;
   building_template: TBuildingTemplatePtr;
   xx, yy: integer;
 begin
   size_x := 0;
   size_y := 0;
-  tiledata_entry := get_tiledata_entry(special);
-  if tiledata_entry.stype = ST_BUILDING then
+  structure_type := get_special_value_type(special);
+  if structure_type = ST_BUILDING then
   begin
-    building_template := get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player));
+    building_template := get_building_template_for_special(special);
     if building_template = nil then
       exit;
     // Get building size
@@ -1011,7 +1114,7 @@ begin
           size_y := Max(size_y, yy + 1);
         end;
   end else
-  if tiledata_entry.stype = ST_UNIT then
+  if structure_type = ST_UNIT then
   begin
     size_x := 1;
     size_y := 1;
@@ -1192,6 +1295,31 @@ begin
       tiledata[value].player := 0;
       tiledata[value].stype := ST_MISC_OBJECT;
     end;
+  end;
+end;
+
+function TStructures.get_misc_object_info_for_special(special: word): TMiscObjectInfoPtr;
+var
+  tiledata_entry: TTileDataEntryPtr;
+  crate_type: integer;
+begin
+  result := nil;
+  if special = 65535 then
+    exit;
+  if (special and 32768) <> 0 then
+    with adv_crate_misc_object_info do
+    begin
+      obj_type := 3;
+      color := $00C000;
+      crate_type := (special shr 11) and 15;
+      image := IfThen(crate_type = 7, -3, (special shr 8) and 7 + 102);
+      mark := crate_type_marks[crate_type];
+      result := Addr(adv_crate_misc_object_info);
+    end else
+  begin
+    tiledata_entry := get_tiledata_entry(special);
+    if tiledata_entry.stype = ST_MISC_OBJECT then
+      result := Addr(misc_object_info[tiledata_entry.index]);
   end;
 end;
 

@@ -4071,7 +4071,7 @@ begin
     pos_y := ((TECHPOS_PREVIEW_SIZE div 2) + Structures.techpos[tech, i].PosY) * 32;
     if unit_group = -1 then
       continue;
-    unit_template := Structures.get_unit_template(unit_group, side);
+    unit_template := Structures.get_unit_template(unit_group, side, true);
     if (unit_template = nil) or (unit_template.SpecialBehavior = 5) then
       continue;
     // Check if unit is stealth
