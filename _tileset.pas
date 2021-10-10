@@ -1067,7 +1067,7 @@ function TTileset.get_tile_type(tile: word): TileType;
 var
   atr: cardinal;
 begin
-  atr := attributes[tile];
+  atr := attributes[tile and $0FFF];
   if (atr and taAnyPass) = 0 then
     result := ttImpassable
   else if (atr and taAnyPass) = taInfantryPass then
