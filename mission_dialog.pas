@@ -292,30 +292,30 @@ begin
     for j := 0 to cnt_players-1 do
     begin
       if i = j then
-        Mission.mis_data.allegiance[i,j] := 0
+        Mission.allegiance[i,j] := 0
       else
-        Mission.mis_data.allegiance[i,j] := 1;
-      allegiance_btn[i,j].Caption := allegiance_type[Mission.mis_data.allegiance[i,j]];
-      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
+        Mission.allegiance[i,j] := 1;
+      allegiance_btn[i,j].Caption := allegiance_type[Mission.allegiance[i,j]];
+      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.allegiance[i,j]];
     end;
 end;
 
 procedure TMissionDialog.tech_level_change(Sender: TObject);
 begin
-  Mission.mis_data.tech_level[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
+  Mission.tech_level[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
 end;
 
 procedure TMissionDialog.starting_money_change(Sender: TObject);
 begin
-  Mission.mis_data.starting_money[(Sender as TEdit).Tag] := StrToIntDef((Sender as TEdit).Text, 0);
+  Mission.starting_money[(Sender as TEdit).Tag] := StrToIntDef((Sender as TEdit).Text, 0);
 end;
 
 procedure TMissionDialog.alloc_index_change(Sender: TObject);
 begin
   if loading then
     exit;
-  Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
-  color_marker[(Sender as TSpinEdit).Tag].Color := StructGraphics.player_colors_inv[Mission.mis_data.allocation_index[(Sender as TSpinEdit).Tag]];
+  Mission.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
+  color_marker[(Sender as TSpinEdit).Tag].Color := StructGraphics.player_colors_inv[Mission.allocation_index[(Sender as TSpinEdit).Tag]];
   Dispatcher.register_event(evMisAllocIndexChange);
 end;
 
@@ -326,13 +326,13 @@ var
 begin
   i := (Sender as TBitBtn).Tag div cnt_players;
   j := (Sender as TBitBtn).Tag mod cnt_players;
-  new_allegiance := IfThen((Mission.mis_data.allegiance[i,j] - 1) < 0, Length(allegiance_type)-1, Mission.mis_data.allegiance[i,j] - 1);
-  Mission.mis_data.allegiance[i,j] := new_allegiance;
+  new_allegiance := IfThen((Mission.allegiance[i,j] - 1) < 0, Length(allegiance_type)-1, Mission.allegiance[i,j] - 1);
+  Mission.allegiance[i,j] := new_allegiance;
   allegiance_btn[i,j].Caption := allegiance_type[new_allegiance];
   allegiance_btn[i,j].Font.Color := allegiance_type_color[new_allegiance];
   if cbSetBothSides.Checked and (i <> j) then
   begin
-    Mission.mis_data.allegiance[j,i] := new_allegiance;
+    Mission.allegiance[j,i] := new_allegiance;
     allegiance_btn[j,i].Caption := allegiance_type[new_allegiance];
     allegiance_btn[j,i].Font.Color := allegiance_type_color[new_allegiance];
   end;
@@ -340,19 +340,19 @@ end;
 
 procedure TMissionDialog.time_limit_change(Sender: TObject);
 begin
-  Mission.mis_data.time_limit := StrToIntDef(edTimeLimit.Text, -1);
+  Mission.time_limit := StrToIntDef(edTimeLimit.Text, -1);
 end;
 
 procedure TMissionDialog.edTilesetNameChange(Sender: TObject);
 begin
   if not loading then
-    store_c_string(edTilesetName.Text, Addr(Mission.mis_data.tileset), Length(Mission.mis_data.tileset));
+    store_c_string(edTilesetName.Text, Addr(Mission.tileset_name), Length(Mission.tileset_name));
 end;
 
 procedure TMissionDialog.edTileatrNameChange(Sender: TObject);
 begin
   if not loading then
-    store_c_string(edTileatrName.Text, Addr(Mission.mis_data.tileatr), Length(Mission.mis_data.tileatr));
+    store_c_string(edTileatrName.Text, Addr(Mission.tileatr_name), Length(Mission.tileatr_name));
 end;
 
 procedure TMissionDialog.AITabControlChange(Sender: TObject);
@@ -390,12 +390,12 @@ begin
       'f':
         begin
           f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Addr(MisAI.default_ai), prop.position));
-          set_float_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position, f_val);
+          set_float_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position, f_val);
           continue;
         end;
     end;
     i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Addr(MisAI.default_ai), prop.position, bytes));
-    set_integer_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position, bytes, i_val);
+    set_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position, bytes, i_val);
   end;
   loading := false;
 end;
@@ -418,26 +418,26 @@ end;
 procedure TMissionDialog.btnExportAIClick(Sender: TObject);
 begin
   if ExportAIDialog.Execute then
-    MisAI.save_misai_segment(ExportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex]);
+    MisAI.save_misai_segment(ExportAIDialog.FileName, Mission.ai_segments[AITabControl.TabIndex]);
 end;
 
 procedure TMissionDialog.btnImportAIClick(Sender: TObject);
 begin
   if ImportAIDialog.Execute then
   begin
-    MisAI.load_misai_segment(ImportAIDialog.FileName, Mission.mis_data.ai_segments[AITabControl.TabIndex]);
+    MisAI.load_misai_segment(ImportAIDialog.FileName, Mission.ai_segments[AITabControl.TabIndex]);
     update_mis_ai_values;
   end;
 end;
 
 procedure TMissionDialog.btnCopyAIClick(Sender: TObject);
 begin
-  MisAI.copy_misai_segment_to_clipboard(Mission.mis_data.ai_segments[AITabControl.TabIndex]);
+  MisAI.copy_misai_segment_to_clipboard(Mission.ai_segments[AITabControl.TabIndex]);
 end;
 
 procedure TMissionDialog.btnPasteAIClick(Sender: TObject);
 begin
-  if MisAI.paste_misai_segment_from_clipboard(Mission.mis_data.ai_segments[AITabControl.TabIndex]) then
+  if MisAI.paste_misai_segment_from_clipboard(Mission.ai_segments[AITabControl.TabIndex]) then
     update_mis_ai_values;
 end;
 
@@ -451,12 +451,12 @@ var
   x, y: integer;
   defence_area: TDefenceAreaPtr;
 begin
-  if defence_area_num >= Mission.mis_data.ai_segments[AITabControl.TabIndex, DEFENCE_AREAS_COUNT_BYTE] then
+  if defence_area_num >= Mission.ai_segments[AITabControl.TabIndex, DEFENCE_AREAS_COUNT_BYTE] then
   begin
     Application.MessageBox('Increase number of Defence Areas first.', 'Cannot select Defence Area', MB_OK or MB_ICONWARNING);
     exit;
   end;
-  defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[AITabControl.TabIndex], defence_area_num);
+  defence_area := MisAI.get_defence_area(Mission.ai_segments[AITabControl.TabIndex], defence_area_num);
   x := defence_area.MinX;
   y := defence_area.MinY;
   MainWindow.start_position_selection(x, y, psmDefenceArea);
@@ -610,7 +610,7 @@ var
   i: integer;
 begin
   for i := 0 to cnt_players-1 do
-    color_marker[i].Color := StructGraphics.player_colors_inv[Mission.mis_data.allocation_index[i]];
+    color_marker[i].Color := StructGraphics.player_colors_inv[Mission.allocation_index[i]];
 end;
 
 procedure TMissionDialog.update_tileset;
@@ -626,19 +626,19 @@ begin
   loading := true;
   for i := 0 to cnt_players-1 do
   begin
-    tech_level[i].Value := Mission.mis_data.tech_level[i];
-    starting_money[i].Text := inttostr(Mission.mis_data.starting_money[i]);
-    alloc_index[i].Value := Mission.mis_data.allocation_index[i];
+    tech_level[i].Value := Mission.tech_level[i];
+    starting_money[i].Text := inttostr(Mission.starting_money[i]);
+    alloc_index[i].Value := Mission.allocation_index[i];
     for j := 0 to cnt_players-1 do
     begin
-      allegiance_btn[i,j].Caption := allegiance_type[Mission.mis_data.allegiance[i,j]];
-      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.mis_data.allegiance[i,j]];
+      allegiance_btn[i,j].Caption := allegiance_type[Mission.allegiance[i,j]];
+      allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.allegiance[i,j]];
     end;
   end;
   update_player_colors;
-  edTimeLimit.Text := inttostr(Mission.mis_data.time_limit);
-  edTilesetName.Text := Mission.mis_data.tileset;
-  edTileatrName.Text := Mission.mis_data.tileatr;
+  edTimeLimit.Text := inttostr(Mission.time_limit);
+  edTilesetName.Text := Mission.tileset_name;
+  edTileatrName.Text := Mission.tileatr_name;
   loading := false;
 end;
 
@@ -665,7 +665,7 @@ begin
       'd': bytes := 4;
       'f':
         begin
-          f_val := get_float_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position);
+          f_val := get_float_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position);
           if cbDiffMode.Checked and (f_val = get_float_value(Addr(MisAI.default_ai), prop.position)) then
             tmp_strings.Add(prop.name + '=')
           else
@@ -673,7 +673,7 @@ begin
           continue;
         end;
       end;
-    i_val := get_integer_value(Addr(Mission.mis_data.ai_segments[AITabControl.TabIndex]), prop.position, bytes);
+    i_val := get_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position, bytes);
     if cbDiffMode.Checked and (i_val = get_integer_value(Addr(MisAI.default_ai), prop.position, bytes)) then
       tmp_strings.Add(prop.name + '=')
     else
@@ -731,7 +731,7 @@ begin
   Show;
   if (min_x = -1) or (min_y = -1) then
     exit;
-  defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[AITabControl.TabIndex], defence_area_num);
+  defence_area := MisAI.get_defence_area(Mission.ai_segments[AITabControl.TabIndex], defence_area_num);
   defence_area.MinX := min_x;
   defence_area.MaxX := max_x;
   defence_area.MinY := min_y;

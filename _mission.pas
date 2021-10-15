@@ -28,8 +28,8 @@ type
     coord_var_flags: byte;                 // 31
     arg_var_flags: byte;                   // 32
     condition_not: array[0..11] of byte;   // 33
-    conditions_and_or: byte;               // 45
-    blocked_flags: byte;                   // 46
+    unused: byte;                          // 45
+    event_flags: byte;                     // 46
     data: array[0..24] of byte;            // 47
   end;                                     // 72
 
@@ -49,16 +49,20 @@ const event_args_struct_members: array[0..5] of TStructMemberDefinition =
 
 type
   TCondition = packed record
-    time_amount: cardinal;        // 0
-    start_delay: cardinal;        // 4
+    val2: cardinal;               // 0
+    val1: cardinal;               // 4
     value: cardinal;              // 8
-    coord_x: array[0..3] of byte; // 12
-    coord_y: array[0..3] of byte; // 16
-    casualties_ratio: single;     // 20
+    coord_x: array[0..1] of byte; // 12
+    coord_var_flags: byte;        // 14
+    arg_var_flags: byte;          // 15
+    coord_y: array[0..1] of byte; // 16
+    unused1: byte;                // 18
+    unused2: byte;                // 19
+    float_val: single;            // 20
     player: byte;                 // 24
     condition_type: byte;         // 25
-    arg1: byte;                   // 26 cpBuildingType          (building type)
-    arg2: byte;                   // 27 cpUnitType, cpTimer     (unit type, comparison function)
+    arg1: byte;                   // 26
+    arg2: byte;                   // 27
   end;                            // 28
 
 const condition_args_struct_members: array[0..6] of TStructMemberDefinition =
@@ -66,38 +70,21 @@ const condition_args_struct_members: array[0..6] of TStructMemberDefinition =
     (pos: 24; bytes: 1), // player
     (pos: 26; bytes: 1), // arg1
     (pos: 27; bytes: 1), // arg2
-    (pos: 4;  bytes: 4), // start_delay
-    (pos: 0;  bytes: 4), // time_amount
+    (pos: 4;  bytes: 4), // val1
+    (pos: 0;  bytes: 4), // val2
     (pos: 8;  bytes: 4), // value
-    (pos: 20; bytes: 4)  // casualties_ratio
+    (pos: 20; bytes: 4)  // float_val
   );
-
-const comparison_function: array[0..3] of string = ('>', '<', '=', '%');
 
 // *****************************************************************************
 // Mis file definitions
 // *****************************************************************************
 
-const MAX_EVENTS = 64;
-const MAX_CONDITIONS = 48;
+const MAX_EVENTS = 1024;
+const MAX_CONDITIONS = 256;
 
-type
-  TMisFile = packed record
-    tech_level:       array[0..7] of byte;
-    starting_money:   array[0..7] of cardinal;
-    unknown1:         array[0..39] of byte;
-    allocation_index: array[0..7] of byte;
-    ai_segments:      array[0..7] of TMisAISegment;
-    allegiance:       array[0..7, 0..7] of byte;
-    events:           array[0..MAX_EVENTS-1] of TEvent;
-    conditions:       array[0..MAX_CONDITIONS-1] of TCondition;
-    tileset:          array[0..199] of char;
-    tileatr:          array[0..199] of char;
-    num_events:       byte;
-    num_conditions:   byte;
-    time_limit:       integer;
-    unknown2:         array[0..691] of byte;
-  end;
+const MAX_ORIG_EVENTS = 64;
+const MAX_ORIG_CONDITIONS = 48;
 
 // *****************************************************************************
 // Event markers definitions
@@ -123,11 +110,25 @@ type
   TMission = class
 
   public
-    // MIS file related data
+    // MIS file properties
     mis_filename: String;
     mis_assigned: boolean;
     mis_modified: boolean;
-    mis_data: TMisFile;
+    // Mission data
+    tech_level:       array[0..7] of byte;
+    starting_money:   array[0..7] of cardinal;
+    unknown1:         array[0..39] of byte;
+    allocation_index: array[0..7] of byte;
+    ai_segments:      array[0..7] of TMisAISegment;
+    allegiance:       array[0..7, 0..7] of byte;
+    event_data:       array[0..MAX_EVENTS-1] of TEvent;
+    condition_data:   array[0..MAX_CONDITIONS-1] of TCondition;
+    tileset_name:     array[0..199] of char;
+    tileatr_name:     array[0..199] of char;
+    num_events:       word;
+    num_conditions:   word;
+    time_limit:       integer;
+    message_data:     array[0..691] of byte;
     // Other data
     event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
 
@@ -192,6 +193,7 @@ end;
 procedure TMission.load_mission(map_filename: String);
 var
   tmp_filename: string;
+  f: file of byte;
 begin
   tmp_filename := get_mis_filename(map_filename);
   if not FileExists(tmp_filename) then
@@ -211,11 +213,42 @@ begin
   mis_modified := false;
 
   // Load actual data
-  load_binary_file(tmp_filename, mis_data, sizeof(mis_data));
+  AssignFile(f, tmp_filename);
+  Reset(f);
+  // Vanilla data
+  BlockRead(f, tech_level[0], sizeof(tech_level));
+  BlockRead(f, starting_money[0], sizeof(starting_money));
+  BlockRead(f, unknown1[0], sizeof(unknown1));
+  BlockRead(f, allocation_index[0], sizeof(allocation_index));
+  BlockRead(f, ai_segments[0], sizeof(ai_segments));
+  BlockRead(f, allegiance[0], sizeof(allegiance));
+  BlockRead(f, event_data[0], sizeof(TEvent) * MAX_ORIG_EVENTS);
+  BlockRead(f, condition_data[0], sizeof(TCondition) * MAX_ORIG_CONDITIONS);
+  BlockRead(f, tileset_name[0], sizeof(tileset_name));
+  BlockRead(f, tileatr_name[0], sizeof(tileatr_name));
+  BlockRead(f, num_events, 1);
+  BlockRead(f, num_conditions, 1);
+  BlockRead(f, time_limit, sizeof(time_limit));
+  BlockRead(f, message_data[0], sizeof(message_data));
+  // Extended data
+  if not Eof(f) then
+  begin
+    BlockRead(f, num_events, 2);
+    BlockRead(f, num_conditions, 2);
+    BlockRead(f, condition_data[MAX_ORIG_CONDITIONS], sizeof(TCondition) * (MAX_CONDITIONS - MAX_ORIG_CONDITIONS));
+    BlockRead(f, event_data[MAX_ORIG_EVENTS], sizeof(TEvent) * (MAX_EVENTS - MAX_ORIG_EVENTS));
+  end else
+  begin
+    num_events := num_events and 255;
+    num_conditions := num_conditions and 255;
+    FillChar(condition_data[MAX_ORIG_CONDITIONS], sizeof(TCondition) * (MAX_CONDITIONS - MAX_ORIG_CONDITIONS), 0);
+    FillChar(event_data[MAX_ORIG_EVENTS], sizeof(TEvent) * (MAX_EVENTS - MAX_ORIG_EVENTS), 0);
+  end;
+  CloseFile(f);
   // Load mission ini file
   MissionIni.load_mission_ini(map_filename);
   // Change tileset according to mission's tileset
-  Tileset.change_tileset_by_name(mis_data.tileset, mis_data.tileatr);
+  Tileset.change_tileset_by_name(tileset_name, tileatr_name);
   // Do needed actions
   Dispatcher.register_event(evMisLoad);
 end;
@@ -223,6 +256,7 @@ end;
 procedure TMission.save_mission(map_filename: String; is_testmap: boolean);
 var
   tmp_filename: string;
+  f: file of byte;
 begin
   tmp_filename := get_mis_filename(map_filename);
   if not mis_assigned then
@@ -240,7 +274,32 @@ begin
   end;
 
   // Save actual data
-  save_binary_file(tmp_filename, mis_data, sizeof(mis_data));
+  AssignFile(f, tmp_filename);
+  Rewrite(f);
+  // Vanilla data
+  BlockWrite(f, tech_level[0], sizeof(tech_level));
+  BlockWrite(f, starting_money[0], sizeof(starting_money));
+  BlockWrite(f, unknown1[0], sizeof(unknown1));
+  BlockWrite(f, allocation_index[0], sizeof(allocation_index));
+  BlockWrite(f, ai_segments[0], sizeof(ai_segments));
+  BlockWrite(f, allegiance[0], sizeof(allegiance));
+  BlockWrite(f, event_data[0], sizeof(TEvent) * MAX_ORIG_EVENTS);
+  BlockWrite(f, condition_data[0], sizeof(TCondition) * MAX_ORIG_CONDITIONS);
+  BlockWrite(f, tileset_name[0], sizeof(tileset_name));
+  BlockWrite(f, tileatr_name[0], sizeof(tileatr_name));
+  BlockWrite(f, num_events, 1);
+  BlockWrite(f, num_conditions, 1);
+  BlockWrite(f, time_limit, sizeof(time_limit));
+  BlockWrite(f, message_data[0], sizeof(message_data));
+  // Extended data
+  if (num_events > MAX_ORIG_EVENTS) or (num_conditions > MAX_ORIG_CONDITIONS) then
+  begin
+    BlockWrite(f, num_events, 2);
+    BlockWrite(f, num_conditions, 2);
+    BlockWrite(f, condition_data[MAX_ORIG_CONDITIONS], sizeof(TCondition) * (MAX_CONDITIONS - MAX_ORIG_CONDITIONS));
+    BlockWrite(f, event_data[MAX_ORIG_EVENTS], sizeof(TEvent) * (MAX_EVENTS - MAX_ORIG_EVENTS));
+  end;
+  CloseFile(f);
   // Save mission ini file
   MissionIni.save_mission_ini(map_filename, is_testmap);
 end;
@@ -275,29 +334,42 @@ procedure TMission.reset_mission_data;
 var
   i, j: integer;
 begin
-  FillChar(mis_data, sizeof(mis_data), 0);
+  FillChar(tech_level[0], sizeof(tech_level), 0);
+  FillChar(starting_money[0], sizeof(starting_money), 0);
+  FillChar(unknown1[0], sizeof(unknown1), 0);
+  FillChar(allocation_index[0], sizeof(allocation_index), 0);
+  FillChar(ai_segments[0], sizeof(ai_segments), 0);
+  FillChar(allegiance[0], sizeof(allegiance), 0);
+  FillChar(event_data[0], sizeof(event_data), 0);
+  FillChar(condition_data[0], sizeof(condition_data), 0);
+  FillChar(tileset_name[0], sizeof(tileset_name), 0);
+  FillChar(tileatr_name[0], sizeof(tileatr_name), 0);
+  FillChar(num_events, sizeof(num_events), 0);
+  FillChar(num_conditions, sizeof(num_conditions), 0);
+  FillChar(time_limit, sizeof(time_limit), 0);
+  FillChar(message_data[0], sizeof(message_data), 0);
   // Write tileset name
-  Move(Tileset.tileset_name[1], mis_data.tileset, Length(Tileset.tileset_name));
-  Move(Tileset.tileatr_name[1], mis_data.tileatr, Length(Tileset.tileatr_name));
+  Move(Tileset.tileset_name[1], tileset_name, Length(Tileset.tileset_name));
+  Move(Tileset.tileatr_name[1], tileatr_name, Length(Tileset.tileatr_name));
   // Player properties and AI
   for i := 0 to 7 do
   begin
-    mis_data.tech_level[i] := Settings.DefaultMisTechLevel;
-    mis_data.starting_money[i] := Settings.DefaultMisStartingMoney;
-    mis_data.allocation_index[i] := i;
-    MisAI.init_misai_segment(mis_data.ai_segments[i], i);
+    tech_level[i] := Settings.DefaultMisTechLevel;
+    starting_money[i] := Settings.DefaultMisStartingMoney;
+    allocation_index[i] := i;
+    MisAI.init_misai_segment(ai_segments[i], i);
   end;
   // Allegiance
   for i := 0 to 7 do
     for j := 0 to 7 do
     begin
       if i = j then
-        mis_data.allegiance[i,j] := 0
+        allegiance[i,j] := 0
       else
-        mis_data.allegiance[i,j] := 1;
+        allegiance[i,j] := 1;
     end;
   // Time limit
-  mis_data.time_limit := -1;
+  time_limit := -1;
   // Clear mofication flag
   mis_modified := false;
 end;
@@ -318,9 +390,9 @@ begin
     for y := 0 to max_map_height - 1 do
       event_markers[x,y].emtype := emNone;
   // Process events
-  for i:= 0 to mis_data.num_events - 1 do
+  for i:= 0 to num_events - 1 do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     for j := 0 to Length(et.coords) - 1 do
       if (et.coords[j].marker <> ' ') and evaluate_show_if(Addr(et.coords[j].show_if), event, Addr(event_args_struct_members)) then
@@ -351,9 +423,9 @@ begin
     end;
   end;
   // Process conditions
-  for i:= 0 to mis_data.num_conditions - 1 do
+  for i:= 0 to num_conditions - 1 do
   begin
-    condition := Addr(mis_data.conditions[i]);
+    condition := Addr(condition_data[i]);
     ct := Addr(EventConfig.condition_types[condition.condition_type]);
     for j := 0 to Length(ct.coords) - 1 do
       if (ct.coords[j].marker <> ' ') and evaluate_show_if(Addr(ct.coords[j].show_if), condition, Addr(condition_args_struct_members)) then
@@ -392,7 +464,7 @@ var
   start: integer;
   idx: integer;
 begin
-  event := Addr(mis_data.events[index]);
+  event := Addr(event_data[index]);
   et := Addr(EventConfig.event_types[event.event_type]);
   contents := '';
   i := 0;
@@ -439,8 +511,8 @@ var
   cond_index: integer;
   i: integer;
 begin
-  event := Addr(mis_data.events[index]);
-  conditions := '';
+  event := Addr(event_data[index]);
+  conditions := IfThen((event.event_flags and 4) = 0, '&  ', 'o  ');
   for i := 0 to event.num_conditions - 1 do
   begin
     if i > 0 then
@@ -449,7 +521,7 @@ begin
     if event.condition_not[i] = 1 then
       conditions := conditions + 'x';
     cond_index := event.condition_index[i];
-    conditions := conditions + inttostr(cond_index) + ']' + EventConfig.condition_types[mis_data.conditions[cond_index].condition_type].name + '(' + get_condition_contents(cond_index, true) + ')';
+    conditions := conditions + inttostr(cond_index) + ']' + EventConfig.condition_types[condition_data[cond_index].condition_type].name + '(' + get_condition_contents(cond_index, true) + ')';
   end;
   result := conditions;
 end;
@@ -463,9 +535,9 @@ var
   start: integer;
   idx: integer;
 begin
-  cond := Addr(mis_data.conditions[index]);
+  cond := Addr(condition_data[index]);
   ct := Addr(EventConfig.condition_types[cond.condition_type]);
-  if (ct.has_player) and show_player then
+  if (ct.has_player) and show_player and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
   begin
     contents := contents + Structures.player_names[cond.player];
     if Length(ct.contents) > 0 then
@@ -500,17 +572,6 @@ begin
     end;
   end;
   contents := contents + copy(ct.contents, start, Length(ct.contents) + 1 - start);
-  {case cond_type of
-    ctBuildingExists: contents := contents + space + Structures.get_building_name_str(cond.arg1);
-    ctUnitExists:     contents := contents + space + Structures.get_unit_name_str(cond.arg2);
-    ctInterval:       contents := contents + inttostr(cond.start_delay) + ' ' + inttostr(cond.time_amount) + ' ' + inttostr(cond.value);
-    ctTimer:          contents := contents + comparison_function[cond.arg2] + inttostr(cond.time_amount);
-    ctCasualties:     contents := contents + space + inttostr(cond.value) + '  ' + floattostrf(cond.casualties_ratio, ffFixed, 8, 3);
-    ctTileRevealed:   contents := contents + inttostr(cond.coord_x[0]) + ' ' + inttostr(cond.coord_y[0]);
-    ctSpiceHarvested: contents := contents + inttostr(cond.value);
-    ctFlag:           contents := contents + MissionIni.condition_notes[index];
-  end;}
-  //contents := contents + inttostr(cond.time_amount) + ' ' + inttostr(cond.start_delay) + ' ' + inttostr(cond.more_uses) + ' ' + inttostr(cond.map_pos_x) + ' ' + inttostr(cond.map_pos_y) + ' ' + inttostr(cond.casualty_flags) + ' ' + inttostr(cond.side) + ' ' + inttostr(cond.building_type) + ' ' + inttostr(cond.unit_type_or_comparison_function);
   result := contents;
 end;
 
@@ -553,7 +614,7 @@ var
   tmp_unit_count: array[0..MAX_UNIT_TYPES-1] of byte;
   message_index: integer;
 begin
-  event := Addr(mis_data.events[event_id]);
+  event := Addr(event_data[event_id]);
   et := Addr(EventConfig.event_types[event.event_type]);
   contents := '';
   if et.event_data = edUnitList then
@@ -593,7 +654,7 @@ var
   event: ^TEvent;
   i: integer;
 begin
-  event := Addr(mis_data.events[index]);
+  event := Addr(event_data[index]);
   for i := 0 to event.num_conditions - 1 do
   begin
     if event.condition_index[i] = condition_index then
@@ -612,33 +673,33 @@ var
   et: TEventTypeDefinitionPtr;
   event_reference: integer;
 begin
-  if mis_data.num_events = Length(mis_data.events) then
+  if num_events = Length(event_data) then
   begin
     result := -1;
     exit;
   end;
-  position := Min(position, mis_data.num_events);
-  for i := mis_data.num_events downto position + 1 do
+  position := Min(position, num_events);
+  for i := num_events downto position + 1 do
   begin
-    mis_data.events[i] := mis_data.events[i-1];
+    event_data[i] := event_data[i-1];
     MissionIni.event_notes[i] := MissionIni.event_notes[i-1];
   end;
   // Initialize new event with default values
-  FillChar(mis_data.events[position], sizeof(TEvent), 0);
-  mis_data.events[position].event_type := event_type;
+  FillChar(event_data[position], sizeof(TEvent), 0);
+  event_data[position].event_type := event_type;
   et := Addr(EventConfig.event_types[event_type]);
   for i := 0 to High(et.coords) do
   begin
-    mis_data.events[position].coord_x[i] := et.coords[i].default;
-    mis_data.events[position].coord_y[i] := et.coords[i].default;
+    event_data[position].coord_x[i] := et.coords[i].default;
+    event_data[position].coord_y[i] := et.coords[i].default;
   end;
   for i := 0 to High(et.args) do
-    set_integer_struct_member(Addr(mis_data.events[position]), Addr(event_args_struct_members), i, et.args[i].default);
+    set_integer_struct_member(Addr(event_data[position]), Addr(event_args_struct_members), i, et.args[i].default);
   MissionIni.event_notes[position] := '';
   // Go through all events and update event references
-  for i := 0 to mis_data.num_events do
+  for i := 0 to num_events do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     // Modify argument value for condition references
     for j := 0 to High(et.args) do
@@ -653,7 +714,7 @@ begin
     end;
   end;
   // Increase number of events
-  inc(mis_data.num_events);
+  inc(num_events);
   mis_modified := true;
   result := position;
 end;
@@ -663,25 +724,25 @@ var
   i: integer;
   ct: TConditionTypeDefinitionPtr;
 begin
-  if mis_data.num_conditions = Length(mis_data.conditions) then
+  if num_conditions = Length(condition_data) then
   begin
     result := false;
     exit;
   end;
   // Initialize new event with default values
-  FillChar(mis_data.conditions[mis_data.num_conditions], sizeof(TCondition), 0);
-  mis_data.conditions[mis_data.num_conditions].condition_type := condition_type;
+  FillChar(condition_data[num_conditions], sizeof(TCondition), 0);
+  condition_data[num_conditions].condition_type := condition_type;
   ct := Addr(EventConfig.condition_types[condition_type]);
   for i := 0 to High(ct.coords) do
   begin
-    mis_data.conditions[mis_data.num_conditions].coord_x[i] := ct.coords[i].default;
-    mis_data.conditions[mis_data.num_conditions].coord_y[i] := ct.coords[i].default;
+    condition_data[num_conditions].coord_x[i] := ct.coords[i].default;
+    condition_data[num_conditions].coord_y[i] := ct.coords[i].default;
   end;
   for i := 0 to High(ct.args) do
-    set_integer_struct_member(Addr(mis_data.conditions[mis_data.num_conditions]), Addr(condition_args_struct_members), i, ct.args[i].default);
-  MissionIni.condition_notes[mis_data.num_conditions] := '';
+    set_integer_struct_member(Addr(condition_data[num_conditions]), Addr(condition_args_struct_members), i, ct.args[i].default);
+  MissionIni.condition_notes[num_conditions] := '';
   // Increase number of conditions
-  inc(mis_data.num_conditions);
+  inc(num_conditions);
   mis_modified := true;
   result := true;
 end;
@@ -694,21 +755,21 @@ var
   et: TEventTypeDefinitionPtr;
   event_reference: integer;
 begin
-  if deleted_index >= mis_data.num_events then
+  if deleted_index >= num_events then
     exit;
-  event_used_position := EventConfig.event_types[mis_data.events[deleted_index].event_type].has_map_pos;
+  event_used_position := EventConfig.event_types[event_data[deleted_index].event_type].has_map_pos;
   // Delete event and shift all events up
-  for i := deleted_index to mis_data.num_events - 2 do
+  for i := deleted_index to num_events - 2 do
   begin
-    mis_data.events[i] := mis_data.events[i+1];
+    event_data[i] := event_data[i+1];
     MissionIni.event_notes[i] := MissionIni.event_notes[i+1];
   end;
-  FillChar(mis_data.events[mis_data.num_events - 1], sizeof(TEvent), 0);
-  MissionIni.event_notes[mis_data.num_events - 1] := '';
+  FillChar(event_data[num_events - 1], sizeof(TEvent), 0);
+  MissionIni.event_notes[num_events - 1] := '';
   // Go through all events and fix references
-  for i := 0 to mis_data.num_events - 1 do
+  for i := 0 to num_events - 1 do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     // Modify argument value for condition references
     for j := 0 to High(et.args) do
@@ -725,7 +786,7 @@ begin
     end;
   end;
   // Decrease number of events
-  dec(mis_data.num_events);
+  dec(num_events);
   mis_modified := true;
   // Update event markers on map if event had position
   if event_used_position then
@@ -740,21 +801,21 @@ var
   et: TEventTypeDefinitionPtr;
   condition_reference: integer;
 begin
-  if deleted_index >= mis_data.num_conditions then
+  if deleted_index >= num_conditions then
     exit;
-  condition_used_position := EventConfig.condition_types[mis_data.conditions[deleted_index].condition_type].has_map_pos;
+  condition_used_position := EventConfig.condition_types[condition_data[deleted_index].condition_type].has_map_pos;
   // Delete condition and shift all conditions up
-  for i := deleted_index to mis_data.num_conditions - 2 do
+  for i := deleted_index to num_conditions - 2 do
   begin
-    mis_data.conditions[i] := mis_data.conditions[i+1];
+    condition_data[i] := condition_data[i+1];
     MissionIni.condition_notes[i] := MissionIni.condition_notes[i+1];
   end;
-  FillChar(mis_data.conditions[mis_data.num_conditions - 1], sizeof(TCondition), 0);
-  MissionIni.condition_notes[mis_data.num_conditions - 1] := '';
+  FillChar(condition_data[num_conditions - 1], sizeof(TCondition), 0);
+  MissionIni.condition_notes[num_conditions - 1] := '';
   // Go through all events
-  for i := 0 to mis_data.num_events - 1 do
+  for i := 0 to num_events - 1 do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     // Go through all event's conditions
     m := 0;
@@ -792,7 +853,7 @@ begin
     end;
   end;
   // Finally decrease number of conditions and fill event dialog grids
-  dec(mis_data.num_conditions);
+  dec(num_conditions);
   mis_modified := true;
   // Update event markers on map if condition had position
   if condition_used_position then
@@ -805,11 +866,11 @@ var
   event: ^TEvent;
 begin
   result := false;
-  if index >= mis_data.num_conditions then
+  if index >= num_conditions then
     exit;
-  for i := 0 to mis_data.num_events - 1 do
+  for i := 0 to num_events - 1 do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     for j := 0 to event.num_conditions - 1 do
       if event.condition_index[j] = index then
       begin
@@ -828,17 +889,17 @@ var
   et: TEventTypeDefinitionPtr;
   event_reference: integer;
 begin
-  tmp_event := mis_data.events[e1];
-  mis_data.events[e1] := mis_data.events[e2];
-  mis_data.events[e2] := tmp_event;
+  tmp_event := event_data[e1];
+  event_data[e1] := event_data[e2];
+  event_data[e2] := tmp_event;
   tmp_note := MissionIni.event_notes[e1];
   MissionIni.event_notes[e1] := MissionIni.event_notes[e2];
   MissionIni.event_notes[e2] := tmp_note;
   mis_modified := true;
   // Go through all events and update event references
-  for i := 0 to mis_data.num_events do
+  for i := 0 to num_events do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     // Modify argument value for condition references
     for j := 0 to High(et.args) do
@@ -855,7 +916,7 @@ begin
     end;
   end;
   // Update event markers on map if event had position
-  if (EventConfig.event_types[mis_data.events[e1].event_type].has_map_pos) or (EventConfig.event_types[mis_data.events[e2].event_type].has_map_pos) then
+  if (EventConfig.event_types[event_data[e1].event_type].has_map_pos) or (EventConfig.event_types[event_data[e2].event_type].has_map_pos) then
     Dispatcher.register_event(evMisEventPositionChange);
 end;
 
@@ -869,21 +930,21 @@ var
   et: TEventTypeDefinitionPtr;
   condition_reference: integer;
 begin
-  if (c1 >= mis_data.num_conditions) or (c2 >= mis_data.num_conditions) then
+  if (c1 >= num_conditions) or (c2 >= num_conditions) then
     exit;
-  condition_used_position := (EventConfig.condition_types[mis_data.conditions[c1].condition_type].has_map_pos) or (EventConfig.condition_types[mis_data.conditions[c2].condition_type].has_map_pos);
+  condition_used_position := (EventConfig.condition_types[condition_data[c1].condition_type].has_map_pos) or (EventConfig.condition_types[condition_data[c2].condition_type].has_map_pos);
   // Swap conditions
-  tmp_condition := mis_data.conditions[c1];
-  mis_data.conditions[c1] := mis_data.conditions[c2];
-  mis_data.conditions[c2] := tmp_condition;
+  tmp_condition := condition_data[c1];
+  condition_data[c1] := condition_data[c2];
+  condition_data[c2] := tmp_condition;
   // Swap condition notes
   tmp_note := MissionIni.condition_notes[c1];
   MissionIni.condition_notes[c1] := MissionIni.condition_notes[c2];
   MissionIni.condition_notes[c2] := tmp_note;
   // Go through all events
-  for i := 0 to mis_data.num_events - 1 do
+  for i := 0 to num_events - 1 do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     // Go through all event's conditions
     for j := 0 to event.num_conditions - 1 do
@@ -922,12 +983,12 @@ var
   cond: ^TCondition;
 begin
   // Try to find condition if it already exists
-  for i := 0 to mis_data.num_conditions - 1 do
+  for i := 0 to num_conditions - 1 do
   begin
-    cond := Addr(mis_data.conditions[i]);
+    cond := Addr(condition_data[i]);
     if  (cond.condition_type = Byte(condition_type)) and
         (cond.player = player) and
-        (cond.time_amount = time_amount) and
+        (cond.val2 = time_amount) and
         (cond.arg2 = unit_type_or_comp_func) and
         (condition_type <> ctFlag) then // Always create new flag
     begin
@@ -941,13 +1002,11 @@ begin
     result := -1;
     exit;
   end;
-  result := mis_data.num_conditions - 1;
-  cond := Addr(mis_data.conditions[result]);
+  result := num_conditions - 1;
+  cond := Addr(condition_data[result]);
   cond.player := player;
-  cond.time_amount := time_amount;
+  cond.val2 := time_amount;
   cond.arg2 := unit_type_or_comp_func;
-  if (condition_type = ctBaseDestroyed) or (condition_type = ctUnitsDestroyed) then
-    cond.value := 1;
 end;
 
 procedure TMission.create_unit_spawn(player, num_events: integer);
@@ -961,9 +1020,9 @@ begin
     exit;
   for i := 0 to num_events - 1 do
   begin
-    if add_event(mis_data.num_events, 18) = -1 then
+    if add_event(num_events, 18) = -1 then
       exit;
-    event := Addr(mis_data.events[mis_data.num_events-1]);
+    event := Addr(event_data[num_events-1]);
     event.player := player;
     event.num_conditions := 1;
     event.condition_index[0] := cond_index;
@@ -988,9 +1047,9 @@ begin
   // Create all needed events
   for i := 1 to 3 do
   begin
-    if add_event(mis_data.num_events, 0) = -1 then
+    if add_event(num_events, 0) = -1 then
       exit;
-    event[i] := Addr(mis_data.events[mis_data.num_events-1]);
+    event[i] := Addr(event_data[num_events-1]);
   end;
   // Fill all event contents
   event[1].event_type := 0;
@@ -1036,7 +1095,7 @@ begin
   begin
     // All players having given allocation index
     for i := 0 to cnt_players-1 do
-      if mis_data.allocation_index[i] = alloc_index then
+      if allocation_index[i] = alloc_index then
       begin
         players[num_players] := i;
         inc(num_players);
@@ -1050,9 +1109,9 @@ begin
   if num_players = 0 then
     exit;
   // Create message event
-  if add_event(mis_data.num_events, 17) = -1 then
+  if add_event(num_events, 17) = -1 then
     exit;
-  event := Addr(mis_data.events[mis_data.num_events - 1]);
+  event := Addr(event_data[num_events - 1]);
   set_integer_value(Addr(event.data), 21, 4, player_annihilated_msgid[player]);
   event.value := 300;
   // Create base/units destroyed conditions
@@ -1067,7 +1126,7 @@ begin
     event.num_conditions := event.num_conditions + 2;
   end;
   // Finally create run-once flag
-  add_run_once_flag(mis_data.num_events - 1);
+  add_run_once_flag(num_events - 1);
 end;
 
 procedure TMission.add_run_once_flag(event_num: integer);
@@ -1076,36 +1135,36 @@ var
   new_condition: integer;
   i: integer;
 begin
-  if event_num >= mis_data.num_events then
+  if event_num >= num_events then
     exit;
   // Check if this event is Set flag (can be ignored)
-  if mis_data.events[event_num].event_type = 19 then
+  if event_data[event_num].event_type = 19 then
     exit;
   // Check if this event has already flag in list of conditions
-  for i := 0 to mis_data.events[event_num].num_conditions do
+  for i := 0 to event_data[event_num].num_conditions do
   begin
-    if (mis_data.events[event_num].condition_not[i] = 1) and
-      (mis_data.conditions[mis_data.events[event_num].condition_index[i]].condition_type = Byte(ctFlag)) then
+    if (event_data[event_num].condition_not[i] = 1) and
+      (condition_data[event_data[event_num].condition_index[i]].condition_type = Byte(ctFlag)) then
       exit;
   end;
   // Try to create new event (Set flag) and condition (Flag)
   if (add_event(event_num+1, 0) = -1) or not add_condition(-1) then
     exit;
-  flag_number := mis_data.num_conditions - 1;
-  new_condition := mis_data.events[event_num].num_conditions;
+  flag_number := num_conditions - 1;
+  new_condition := event_data[event_num].num_conditions;
   // Add new flag to event's conditions
-  mis_data.events[event_num].num_conditions := new_condition + 1;
-  mis_data.events[event_num].condition_index[new_condition] := flag_number;
-  mis_data.events[event_num].condition_not[new_condition] := 1;
+  event_data[event_num].num_conditions := new_condition + 1;
+  event_data[event_num].condition_index[new_condition] := flag_number;
+  event_data[event_num].condition_not[new_condition] := 1;
   // Fill new event
-  mis_data.events[event_num+1].event_type := 19;
-  mis_data.events[event_num+1].player := flag_number;
-  mis_data.events[event_num+1].value := 1;
-  mis_data.events[event_num+1].num_conditions := new_condition + 1;
-  Move(mis_data.events[event_num].condition_index, mis_data.events[event_num+1].condition_index, Length(mis_data.events[0].condition_index));
-  Move(mis_data.events[event_num].condition_not, mis_data.events[event_num+1].condition_not, Length(mis_data.events[0].condition_not));
+  event_data[event_num+1].event_type := 19;
+  event_data[event_num+1].player := flag_number;
+  event_data[event_num+1].value := 1;
+  event_data[event_num+1].num_conditions := new_condition + 1;
+  Move(event_data[event_num].condition_index, event_data[event_num+1].condition_index, Length(event_data[0].condition_index));
+  Move(event_data[event_num].condition_not, event_data[event_num+1].condition_not, Length(event_data[0].condition_not));
   // Fill new condition
-  mis_data.conditions[flag_number].condition_type := Byte(ctFlag);
+  condition_data[flag_number].condition_type := Byte(ctFlag);
 end;
 
 procedure TMission.adjust_event_positions(shift_x, shift_y: integer);
@@ -1116,9 +1175,9 @@ var
   condition: ^TCondition;
   ct: TConditionTypeDefinitionPtr;
 begin
-  for i := 0 to mis_data.num_events - 1 do
+  for i := 0 to num_events - 1 do
   begin
-    event := Addr(mis_data.events[i]);
+    event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     for j := 0 to High(et.coords) do
       if et.coords[j].coord_type <> ctNone then
@@ -1132,9 +1191,9 @@ begin
         end;
       end;
   end;
-  for i := 0 to mis_data.num_conditions - 1 do
+  for i := 0 to num_conditions - 1 do
   begin
-    condition := Addr(mis_data.conditions[i]);
+    condition := Addr(condition_data[i]);
     ct := Addr(EventConfig.condition_types[condition.condition_type]);
     for j := 0 to High(ct.coords) do
       if ct.coords[j].coord_type <> ctNone then
@@ -1157,18 +1216,18 @@ begin
   // Check if players with active AI have non-zero tech and credits
   for i := 0 to 7 do
   begin
-    if (mis_data.ai_segments[i, 1] = 1) and ((mis_data.tech_level[i] = 0) or (mis_data.starting_money[i] = 0)) then
+    if (ai_segments[i, 1] = 1) and ((tech_level[i] = 0) or (starting_money[i] = 0)) then
     begin
       result := format('Players with active AI must have non-zero tech level and credits. Player ''%s'' does not meet this requirement.', [Structures.player_names[i]]);
       exit;
     end;
   end;
   // Check if Reinforcement or Starport Delivery events have non-zero units.
-  for i := 0 to mis_data.num_events - 1 do
+  for i := 0 to num_events - 1 do
   begin
-    if ((mis_data.events[i].event_type = 0) or (mis_data.events[i].event_type = 1)) and (mis_data.events[i].amount = 0) then
+    if ((event_data[i].event_type = 0) or (event_data[i].event_type = 1)) and (event_data[i].amount = 0) then
     begin
-      result := format('Event #%d of type %s has zero units to deliver.', [i, EventConfig.event_types[mis_data.events[i].event_type].name]);
+      result := format('Event #%d of type %s has zero units to deliver.', [i, EventConfig.event_types[event_data[i].event_type].name]);
       exit;
     end;
   end;
@@ -1180,7 +1239,7 @@ begin
   result := player;
   if not mis_assigned then
     exit;
-  result := Min(mis_data.allocation_index[player], CNT_PLAYERS - 1);
+  result := Min(allocation_index[player], CNT_PLAYERS - 1);
 end;
 
 end.

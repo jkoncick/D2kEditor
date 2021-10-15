@@ -587,9 +587,9 @@ begin
     cnv_target.Brush.Style := bsClear;
     cnv_target.pen.Width := 2;
     for x := 0 to cnt_players - 1 do
-      for y := 0 to Min(Mission.mis_data.ai_segments[x, DEFENCE_AREAS_COUNT_BYTE], CNT_DEFENCE_AREAS) - 1 do
+      for y := 0 to Min(Mission.ai_segments[x, DEFENCE_AREAS_COUNT_BYTE], CNT_DEFENCE_AREAS) - 1 do
       begin
-        defence_area := MisAI.get_defence_area(Mission.mis_data.ai_segments[x], y);
+        defence_area := MisAI.get_defence_area(Mission.ai_segments[x], y);
         cnv_target.Pen.Color := StructGraphics.player_colors_inv[x];
         cnv_target.Rectangle(
           (defence_area.MinX - cnv_left) * 32,

@@ -72,7 +72,7 @@ type
 type
   TConditionTypeDefinition = record
     name: String;
-    coords: array[0..3] of TCoordDefinition;
+    coords: array[0..1] of TCoordDefinition;
     args: array[0..6] of TArgDefinition;
     contents: String;
     has_map_pos: boolean;

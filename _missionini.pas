@@ -3,7 +3,7 @@ unit _missionini;
 interface
 
 uses
-  StdCtrls, ValEdit, IniFiles, Classes;
+  StdCtrls, ValEdit, IniFiles, Classes, _mission;
 
 type
   TRuleDefinition = record
@@ -41,8 +41,8 @@ type
     // Text section
     TextValueList: TValueListEditor;
     // Notes section
-    event_notes: array[0..63] of String;
-    condition_notes: array[0..47] of String;
+    event_notes: array[0..MAX_EVENTS-1] of String;
+    condition_notes: array[0..MAX_CONDITIONS-1] of String;
 
   public
     procedure init;

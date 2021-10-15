@@ -169,7 +169,7 @@ object EventDialog: TEventDialog
         Height = 17
         Caption = 'Auto-block'
         TabOrder = 3
-        OnClick = cbEventBlockedClick
+        OnClick = EventFlagsClick
       end
       object cbEventBlocked: TCheckBox
         Left = 152
@@ -178,7 +178,7 @@ object EventDialog: TEventDialog
         Height = 17
         Caption = 'Blocked'
         TabOrder = 4
-        OnClick = cbEventBlockedClick
+        OnClick = EventFlagsClick
       end
       object btnApplyEventChanges: TBitBtn
         Left = 120
@@ -516,6 +516,24 @@ object EventDialog: TEventDialog
           Width = 90
           Height = 13
           Caption = 'Conditions in event'
+        end
+        object rbEventConditionsAnd: TRadioButton
+          Left = 104
+          Top = 0
+          Width = 49
+          Height = 17
+          Caption = 'AND'
+          TabOrder = 0
+          OnClick = EventFlagsClick
+        end
+        object rbEventConditionsOr: TRadioButton
+          Left = 152
+          Top = 0
+          Width = 49
+          Height = 17
+          Caption = 'OR'
+          TabOrder = 1
+          OnClick = EventFlagsClick
         end
       end
       object btnAddCondition: TButton

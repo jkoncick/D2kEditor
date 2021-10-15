@@ -1290,14 +1290,14 @@ begin
   // Write coordinates on status bar
   StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
   // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
-  if mode(mStructures) and Showeventmarkers1.Checked and (Mission.event_markers[map_x,map_y].emtype = emEvent) and (EventConfig.event_types[Mission.mis_data.events[Mission.event_markers[map_x,map_y].index].event_type].event_data = edUnitList) then
+  if mode(mStructures) and Showeventmarkers1.Checked and (Mission.event_markers[map_x,map_y].emtype = emEvent) and (EventConfig.event_types[Mission.event_data[Mission.event_markers[map_x,map_y].index].event_type].event_data = edUnitList) then
   begin
     Application.CancelHint;
     eventnum := Mission.event_markers[map_x,map_y].index;
-    numunits := Mission.mis_data.events[eventnum].amount;
+    numunits := Mission.event_data[eventnum].amount;
     tmp_hint := inttostr(numunits) + ' units:';
     for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name_str(Mission.mis_data.events[eventnum].data[i]);
+      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name_str(Mission.event_data[eventnum].data[i]);
     MapCanvas.Hint := tmp_hint;
     MapCanvas.ShowHint := true
   end else
@@ -1317,16 +1317,16 @@ begin
   begin
     if moving_marker_type = emEvent then
     begin
-      Renderer.invalidate_map_tile(0, Mission.mis_data.events[moving_marker_index].coord_y[moving_marker_coord]);
+      Renderer.invalidate_map_tile(0, Mission.event_data[moving_marker_index].coord_y[moving_marker_coord]);
       Renderer.invalidate_map_tile(Map.width-1, map_y);
-      Mission.mis_data.events[moving_marker_index].coord_x[moving_marker_coord] := map_x;
-      Mission.mis_data.events[moving_marker_index].coord_y[moving_marker_coord] := map_y;
+      Mission.event_data[moving_marker_index].coord_x[moving_marker_coord] := map_x;
+      Mission.event_data[moving_marker_index].coord_y[moving_marker_coord] := map_y;
     end else
     begin
-      Renderer.invalidate_map_tile(0, Mission.mis_data.conditions[moving_marker_index].coord_y[moving_marker_coord]);
+      Renderer.invalidate_map_tile(0, Mission.condition_data[moving_marker_index].coord_y[moving_marker_coord]);
       Renderer.invalidate_map_tile(Map.width-1, map_y);
-      Mission.mis_data.conditions[moving_marker_index].coord_x[moving_marker_coord] := map_x;
-      Mission.mis_data.conditions[moving_marker_index].coord_y[moving_marker_coord] := map_y;
+      Mission.condition_data[moving_marker_index].coord_x[moving_marker_coord] := map_x;
+      Mission.condition_data[moving_marker_index].coord_y[moving_marker_coord] := map_y;
     end;
     Dispatcher.register_event(evMisEventPositionChange);
     exit;
