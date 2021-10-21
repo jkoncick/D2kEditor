@@ -1359,6 +1359,10 @@ object MainWindow: TMainWindow
         ShortCut = 16459
         OnClick = Remaptiles1Click
       end
+      object Converttoadvanced1: TMenuItem
+        Caption = 'Convert to advanced'
+        OnClick = Converttoadvanced1Click
+      end
       object N11: TMenuItem
         Caption = '-'
       end

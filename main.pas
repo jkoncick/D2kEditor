@@ -215,6 +215,7 @@ type
     lblCrateBloomSpawnerType: TLabel;
     cbCrateBloomSpawnerRespawning: TCheckBox;
     lblCrateBloomRadiusPlus: TLabel;
+    Converttoadvanced1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -258,6 +259,7 @@ type
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
     procedure Remaptiles1Click(Sender: TObject);
+    procedure Converttoadvanced1Click(Sender: TObject);
     procedure Showmapstatistics1Click(Sender: TObject);
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
@@ -768,7 +770,7 @@ begin
   begin
     // Select player
     set_player_comboboxes(key - 96);
-    PlayerSelectChange(cbxStructPlayer);
+    set_special_value;
   end;
   // F1-F4 - Select block preset group
   if (key >= 112) and (key <= 115) then
@@ -1113,6 +1115,14 @@ begin
   if RemapTilesOpenDialog.Execute then
     if not Map.remap_tiles(RemapTilesOpenDialog.FileName) then
       Application.MessageBox('The ini file must contain at least one of [Remap_Tiles] and [Remap_Specials] sections'#13'with key-value pairs in the form'#13'from_index=to_index'#13'where key and value is a tile/special index.', 'Invalid remap tiles ini file', MB_OK or MB_ICONERROR);
+end;
+
+procedure TMainWindow.Converttoadvanced1Click(Sender: TObject);
+var
+  tiles_modified: integer;
+begin
+  tiles_modified := Map.convert_structures_to_advanced_mode;
+  Application.MessageBox(PChar(inttostr(tiles_modified) + ' structures were converted in this map.'), 'Convert structures to advanced mode', MB_ICONINFORMATION or MB_OK);
 end;
 
 procedure TMainWindow.Showmapstatistics1Click(Sender: TObject);
@@ -1630,7 +1640,6 @@ procedure TMainWindow.PlayerSelectChange(Sender: TObject);
 begin
   set_player_comboboxes((Sender as TComboBox).ItemIndex);
   set_special_value;
-  update_map_stats;
 end;
 
 procedure TMainWindow.lbMiscObjectClick(Sender: TObject);
@@ -2325,6 +2334,7 @@ begin
   cbxBuildingPlayer.ItemIndex := item_index;
   cbxUnitPlayer.ItemIndex := item_index;
   cbxConcretePlayer.ItemIndex := item_index;
+  update_map_stats;
 end;
 
 procedure TMainWindow.set_building_ui(building_is_turret: boolean);

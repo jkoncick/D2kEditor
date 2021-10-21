@@ -130,6 +130,7 @@ type
     procedure shift_map(direction, num_tiles: integer);
     procedure change_structure_owner(player_from, player_to: integer; swap: boolean);
     function remap_tiles(ini_filename: String): boolean;
+    function convert_structures_to_advanced_mode: integer;
 
   end;
 
@@ -1132,6 +1133,40 @@ begin
   reset_undo_history;
   map_modified := true;
   Dispatcher.register_event(evMapTilesModify);
+end;
+
+function TMap.convert_structures_to_advanced_mode: integer;
+var
+  x, y: integer;
+  tiledata_entry: TTileDataEntryPtr;
+  struct_type: integer;
+begin
+  undo_block_start := true;
+  Renderer.invalidate_init;
+  result := 0;
+  for y := 0 to height - 1 do
+    for x := 0 to width - 1 do
+    begin
+      tiledata_entry := Structures.get_tiledata_entry(map_data[x, y].special);
+      if tiledata_entry.stype = ST_UNIT then
+      begin
+        struct_type := Structures.unit_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)];
+        if struct_type <> -1 then
+        begin
+          modify_map_tile(x, y, map_data[x,y].tile, 16384 + tiledata_entry.player * 64 + struct_type);
+          inc(result);
+        end;
+      end else
+      if tiledata_entry.stype = ST_BUILDING then
+      begin
+        struct_type := Structures.building_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)];
+        if struct_type <> -1 then
+        begin
+          modify_map_tile(x, y, map_data[x,y].tile, 8192 + tiledata_entry.player * 128 + struct_type);
+          inc(result);
+        end;
+      end
+    end;
 end;
 
 end.
