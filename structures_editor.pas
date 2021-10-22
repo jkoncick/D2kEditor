@@ -520,7 +520,6 @@ type
     PageOther: TTabSheet;
     vleGroupIDs: TValueListEditor;
     cbxGroupIDsSelect: TComboBox;
-    cbxGroupIDsUnitSelect: TComboBox;
     PageTechpos: TTabSheet;
     imgTechposPreview: TImage;
     rgTechposTechLevel: TRadioGroup;
@@ -575,6 +574,8 @@ type
     btnUnitVoicesExport: TButton;
     btnUnitVoicesImport: TButton;
     lblGroupIDs: TLabel;
+    cbxUnitUpgradeTargetType: TComboBox;
+    cbUnitUpgradeAllowed: TCheckBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -1627,7 +1628,7 @@ begin
   item_name_list_combo := nil;
   case Structures.group_ids_byte_types[index] of
     gibtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
-    gibtUnit:          item_name_list_combo := cbxGroupIDsUnitSelect;
+    gibtUnit:          item_name_list_combo := cbxUnitUpgradeTargetType;
     gibtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
     gibtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
   end;
@@ -2452,7 +2453,7 @@ begin
     // Unit list
     fill_item_list(ITEM_UNIT, tmp_strings);
     tmp_strings.Insert(0, '(none)');
-    cbxGroupIDsUnitSelect.Items := tmp_strings;
+    cbxUnitUpgradeTargetType.Items := tmp_strings;
   end;
 
   if (action = fdaAllArt) or (action = fdaAll) then
@@ -2878,6 +2879,8 @@ begin
   seUnitUnknown46.Value := unt._ProbablyUnused46;
   seUnitUnknown52.Value := unt._ProbablyUnused52;
   edUnitFlags.Text := IntToHex(unt.Flags, 8);
+  cbUnitUpgradeAllowed.Checked := unt.UpgradeAllowed <> 0;
+  cbxUnitUpgradeTargetType.ItemIndex := unt.UpgradeTargetType + 1;
 
   loading := false;
   edUnitFlagsChange(nil);
@@ -3226,6 +3229,8 @@ begin
   unt._ProbablyUnused46 := seUnitUnknown46.Value;
   unt._ProbablyUnused52 := seUnitUnknown52.Value;
   unt.Flags := strtointdef('$' + edUnitFlags.Text, 0);
+  unt.UpgradeAllowed := IfThen(cbUnitUpgradeAllowed.Checked, 1, 0);
+  unt.UpgradeTargetType := cbxUnitUpgradeTargetType.ItemIndex - 1;
   // Store unit name
   if edUnitName.Text <> Structures.templates.UnitNameStrings[index] then
   begin
@@ -3334,7 +3339,7 @@ begin
   item_name_list_combo := nil;
   case Structures.group_ids_byte_types[index] of
     gibtBuildingGroup: item_name_list_combo := cbxBuildingPrereq1BuildingGroup;
-    gibtUnit:          item_name_list_combo := cbxGroupIDsUnitSelect;
+    gibtUnit:          item_name_list_combo := cbxUnitUpgradeTargetType;
     gibtWeapon:        item_name_list_combo := cbxBuildingPrimaryWeapon;
     gibtExplosion:     item_name_list_combo := cbxBuildingDeathExplosion;
   end;

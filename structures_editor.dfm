@@ -1802,12 +1802,12 @@ object StructuresEditor: TStructuresEditor
         Left = 696
         Top = 352
         Width = 305
-        Height = 225
+        Height = 217
         Caption = 'Visuals'
         TabOrder = 8
         object imgUnitImage: TImage
           Left = 192
-          Top = 16
+          Top = 12
           Width = 80
           Height = 80
         end
@@ -1827,21 +1827,21 @@ object StructuresEditor: TStructuresEditor
         end
         object lblUnitDeathExplosion: TLabel
           Left = 8
-          Top = 104
+          Top = 96
           Width = 104
           Height = 13
           Caption = 'Destruction explosion:'
         end
         object lblUnitMuzzleFlashExplosion: TLabel
           Left = 160
-          Top = 104
+          Top = 96
           Width = 108
           Height = 13
           Caption = 'Muzzle flash explosion:'
         end
         object lblUnitDirectionFrames: TLabel
           Left = 8
-          Top = 144
+          Top = 136
           Width = 79
           Height = 13
           Caption = 'Direction frames:'
@@ -1868,7 +1868,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxUnitDeathExplosion: TComboBox
           Left = 8
-          Top = 120
+          Top = 112
           Width = 137
           Height = 21
           Style = csDropDownList
@@ -1877,7 +1877,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxUnitMuzzleFlashExplosion: TComboBox
           Left = 160
-          Top = 120
+          Top = 112
           Width = 137
           Height = 21
           Style = csDropDownList
@@ -1886,7 +1886,7 @@ object StructuresEditor: TStructuresEditor
         end
         object sgUnitDirectionFrames: TStringGrid
           Left = 94
-          Top = 146
+          Top = 138
           Width = 203
           Height = 67
           ColCount = 8
@@ -1900,7 +1900,7 @@ object StructuresEditor: TStructuresEditor
         end
         object btnUnitDirectionFrames0: TButton
           Left = 8
-          Top = 160
+          Top = 152
           Width = 75
           Height = 17
           Caption = 'No directions'
@@ -1910,7 +1910,7 @@ object StructuresEditor: TStructuresEditor
         object btnUnitDirectionFrames8: TButton
           Tag = 8
           Left = 8
-          Top = 176
+          Top = 168
           Width = 75
           Height = 17
           Caption = '8 directions'
@@ -1920,7 +1920,7 @@ object StructuresEditor: TStructuresEditor
         object btnUnitDirectionFrames32: TButton
           Tag = 32
           Left = 8
-          Top = 192
+          Top = 184
           Width = 75
           Height = 17
           Caption = '32 directions'
@@ -1930,35 +1930,35 @@ object StructuresEditor: TStructuresEditor
       end
       object gbUnitOther: TGroupBox
         Left = 696
-        Top = 584
+        Top = 576
         Width = 305
-        Height = 53
+        Height = 61
         Caption = 'Others'
         TabOrder = 9
         object lblUnitUnknown52: TLabel
-          Left = 216
-          Top = 24
+          Left = 224
+          Top = 34
           Width = 22
           Height = 13
           Caption = 'B52:'
         end
         object lblUnitFlags: TLabel
           Left = 8
-          Top = 24
+          Top = 16
           Width = 28
           Height = 13
           Caption = 'Flags:'
         end
         object lblUnitUnknown46: TLabel
-          Left = 128
-          Top = 24
+          Left = 224
+          Top = 10
           Width = 22
           Height = 13
           Caption = 'B46:'
         end
         object seUnitUnknown52: TSpinEdit
           Left = 248
-          Top = 24
+          Top = 34
           Width = 49
           Height = 22
           MaxLength = 3
@@ -1968,22 +1968,39 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object edUnitFlags: TEdit
-          Left = 40
-          Top = 24
+          Left = 8
+          Top = 32
           Width = 73
           Height = 21
           TabOrder = 1
           OnChange = edUnitFlagsChange
         end
         object seUnitUnknown46: TSpinEdit
-          Left = 160
-          Top = 24
+          Left = 248
+          Top = 10
           Width = 49
           Height = 22
           MaxValue = 255
           MinValue = 0
           TabOrder = 2
           Value = 0
+        end
+        object cbxUnitUpgradeTargetType: TComboBox
+          Left = 88
+          Top = 32
+          Width = 129
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 3
+        end
+        object cbUnitUpgradeAllowed: TCheckBox
+          Left = 88
+          Top = 14
+          Width = 105
+          Height = 17
+          Caption = 'Unit upgrade type:'
+          TabOrder = 4
         end
       end
     end
@@ -3096,23 +3113,13 @@ object StructuresEditor: TStructuresEditor
         Visible = False
         OnChange = cbxGroupIDsSelectChange
       end
-      object cbxGroupIDsUnitSelect: TComboBox
-        Left = 216
-        Top = 64
-        Width = 145
-        Height = 21
-        Style = csDropDownList
-        ItemHeight = 13
-        TabOrder = 2
-        Visible = False
-      end
       object pnOtherArtControlGroup: TPanel
         Left = 688
         Top = 0
         Width = 169
         Height = 637
         BevelOuter = bvNone
-        TabOrder = 3
+        TabOrder = 2
       end
       object lbOtherArtList: TListBox
         Tag = 6
@@ -3138,7 +3145,7 @@ object StructuresEditor: TStructuresEditor
           'Sand craters'
           'Stealth animation'
           'Stealth reveal mask')
-        TabOrder = 4
+        TabOrder = 3
         OnClick = lbOtherArtListClick
         OnKeyDown = AcgArtListKeyDown
       end

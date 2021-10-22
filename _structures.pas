@@ -54,7 +54,9 @@ type
     MuzzleFlashExplosion:  shortint;
     SpeedType:             byte;
     MultiplayerOnly:       byte;
-    _ZeroBytes:            array[0..84] of byte;
+    UpgradeAllowed:        byte;
+    UpgradeTargetType:     byte;
+    _ZeroBytes:            array[0..82] of byte;
   end;
 
   TUnitTemplatePtr = ^TUnitTemplate;
