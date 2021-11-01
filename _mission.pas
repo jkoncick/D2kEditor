@@ -166,6 +166,9 @@ type
     procedure create_harvester_replacement(player: integer);
     procedure create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
     procedure add_run_once_flag(event_num: integer);
+    // Export and import
+    procedure export_events(first_event, last_event: integer; filename: string);
+    procedure import_events(filename: string);
     // Miscellaneous
     procedure adjust_event_positions(shift_x: integer; shift_y: integer);
     function check_errors: String;
@@ -177,7 +180,7 @@ var
 
 implementation
 
-uses SysUtils, Math, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher, event_dialog,
+uses SysUtils, Math, Windows, Forms, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher, event_dialog,
   StrUtils;
 
 procedure TMission.init;
@@ -262,7 +265,7 @@ begin
   if not mis_assigned then
   begin
     if FileExists(tmp_filename) then
-      DeleteFile(tmp_filename);
+      DeleteFile(PChar(tmp_filename));
     MissionIni.save_mission_ini(map_filename, is_testmap);
     exit;
   end;
@@ -1165,6 +1168,128 @@ begin
   Move(event_data[event_num].condition_not, event_data[event_num+1].condition_not, Length(event_data[0].condition_not));
   // Fill new condition
   condition_data[flag_number].condition_type := Byte(ctFlag);
+end;
+
+procedure TMission.export_events(first_event, last_event: integer; filename: string);
+var
+  event_buffer: array[0..MAX_EVENTS-1] of TEvent;
+  condition_buffer: array[0..MAX_CONDITIONS-1] of TCondition;
+  condition_used: array[0..MAX_CONDITIONS-1] of boolean;
+  condition_mapping: array[0..MAX_CONDITIONS-1] of byte;
+  exp_num_events, exp_num_conditions: integer;
+  reference: integer;
+  i, j: integer;
+  f: file of byte;
+begin
+  // Step 1: Process all events and find which conditions are used
+  exp_num_events := 0;
+  FillChar(condition_used[0], MAX_CONDITIONS, 0);
+  for i := first_event to last_event do
+  begin
+    event_buffer[exp_num_events] := event_data[i];
+    for j := 0 to event_buffer[exp_num_events].num_conditions - 1 do
+      condition_used[event_buffer[exp_num_events].condition_index[j]] := true;
+    inc(exp_num_events);
+  end;
+  // Step 2: Process all conditions which are used
+  exp_num_conditions := 0;
+  FillChar(condition_mapping[0], MAX_CONDITIONS, 0);
+  for i := 0 to MAX_CONDITIONS - 1 do
+    if condition_used[i] then
+    begin
+      condition_buffer[exp_num_conditions] := condition_data[i];
+      condition_mapping[i] := exp_num_conditions;
+      inc(exp_num_conditions);
+    end;
+  // Step 3: Remap conditions in events
+  for i := 0 to exp_num_events - 1 do
+  begin
+    for j := 0 to High(event_buffer[i].condition_index) do
+      event_buffer[i].condition_index[j] := condition_mapping[event_buffer[i].condition_index[j]];
+    for j := 0 to High(EventConfig.event_types[0].args) do
+    begin
+      if EventConfig.event_types[event_buffer[i].event_type].args[j].reference = rtEvent then
+      begin
+        reference := get_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j);
+        if (reference < first_event) or (reference > last_event) then
+          Application.MessageBox(PChar(Format('Event %d is referencing event %d which is not within selected range for export.', [i + first_event, reference])), 'Event reference warning', MB_ICONWARNING or MB_OK);
+        set_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j, Max(reference - first_event, 0));
+      end;
+      if EventConfig.event_types[event_buffer[i].event_type].args[j].reference = rtCondition then
+      begin
+        reference := get_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j);
+        if not condition_used[reference] then
+          Application.MessageBox(PChar(Format('Event %d is referencing condition %d which is not used by events selected for export.', [i + first_event, reference])), 'Condition reference warning', MB_ICONWARNING or MB_OK);
+        set_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j, condition_mapping[reference]);
+      end;
+    end;
+  end;
+  // Save data into file
+  AssignFile(f, filename);
+  Rewrite(f);
+  BlockWrite(f, exp_num_events, 4);
+  BlockWrite(f, exp_num_conditions, 4);
+  BlockWrite(f, event_buffer, exp_num_events * sizeof(TEvent));
+  BlockWrite(f, condition_buffer, exp_num_conditions * sizeof(TCondition));
+  CloseFile(f);
+end;
+
+procedure TMission.import_events(filename: string);
+var
+  event_buffer: array[0..MAX_EVENTS-1] of TEvent;
+  condition_buffer: array[0..MAX_CONDITIONS-1] of TCondition;
+  exp_num_events, exp_num_conditions: integer;
+  i, j: integer;
+  f: file of byte;
+begin
+  // Load data from file
+  AssignFile(f, filename);
+  Reset(f);
+  BlockRead(f, exp_num_events, 4);
+  BlockRead(f, exp_num_conditions, 4);
+  if (exp_num_events > MAX_EVENTS) or (exp_num_conditions > MAX_CONDITIONS) then
+  begin
+    Application.MessageBox('File seems not to have valid format.', 'Event import error', MB_ICONERROR or MB_OK);
+    CloseFile(f);
+    exit;
+  end;
+  BlockRead(f, event_buffer, exp_num_events * sizeof(TEvent));
+  BlockRead(f, condition_buffer, exp_num_conditions * sizeof(TCondition));
+  CloseFile(f);
+  // Add imported events
+  for i := 0 to exp_num_events - 1 do
+  begin
+    if (num_events + i) >= MAX_EVENTS then
+    begin
+      Application.MessageBox('Maximum number of events was exceeded.', 'Event import error', MB_ICONERROR or MB_OK);
+      break;
+    end;
+    // Fix references
+    for j := 0 to event_buffer[i].num_conditions - 1 do
+      event_buffer[i].condition_index[j] := event_buffer[i].condition_index[j] + num_conditions;
+    for j := 0 to High(EventConfig.event_types[0].args) do
+    begin
+      if EventConfig.event_types[event_buffer[i].event_type].args[j].reference = rtEvent then
+        set_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j, get_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j) + num_events);
+      if EventConfig.event_types[event_buffer[i].event_type].args[j].reference = rtCondition then
+        set_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j, get_integer_struct_member(Addr(event_buffer[i]), Addr(event_args_struct_members), j) + num_conditions);
+    end;
+    event_data[num_events + i] := event_buffer[i];
+  end;
+  num_events := Min(num_events + exp_num_events, MAX_EVENTS);
+  // Add imported conditions
+  for i := 0 to exp_num_conditions - 1 do
+  begin
+    if (num_conditions + i) >= MAX_CONDITIONS then
+    begin
+      Application.MessageBox('Maximum number of conditions was exceeded.', 'Event import error', MB_ICONERROR or MB_OK);
+      break;
+    end;
+    condition_data[num_conditions + i] := condition_buffer[i];
+  end;
+  num_conditions := Min(num_conditions + exp_num_conditions, MAX_CONDITIONS);
+  // Register events in dispatcher
+  Dispatcher.register_event(evMisEventsImport);
 end;
 
 procedure TMission.adjust_event_positions(shift_x, shift_y: integer);

@@ -120,9 +120,6 @@ type
     btnMoveConditionUp: TButton;
     btnMoveConditionDown: TButton;
     N2: TMenuItem;
-    Showkeyshortcuts1: TMenuItem;
-    N3: TMenuItem;
-    Showkeyshortcuts2: TMenuItem;
     edpUnitList: TPanel;
     UnitSelectionList: TListBox;
     EventUnitListPaddingPanel: TPanel;
@@ -152,6 +149,12 @@ type
     imgTilePairs: TImage;
     rbEventConditionsAnd: TRadioButton;
     rbEventConditionsOr: TRadioButton;
+    Exportevents1: TMenuItem;
+    Importevents1: TMenuItem;
+    lblEventExportMarker: TLabel;
+    pnEventExportMarker: TPanel;
+    ExportEventsDialog: TSaveDialog;
+    ImportEventsDialog: TOpenDialog;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -164,6 +167,7 @@ type
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure EventGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure EventGridMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure EventGridMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure EventGridMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
@@ -179,7 +183,8 @@ type
     procedure Harvesterreplacement1Click(Sender: TObject);
     procedure Annihilatemessage1Click(Sender: TObject);
     procedure Createrunonceflag1Click(Sender: TObject);
-    procedure Showkeyshortcuts1Click(Sender: TObject);
+    procedure Exportevents1Click(Sender: TObject);
+    procedure Importevents1Click(Sender: TObject);
     // Create events panel actions
     procedure btnCreateEventsCancelClick(Sender: TObject);
     procedure cbCreateEventsPlayerChange(Sender: TObject);
@@ -235,7 +240,6 @@ type
     procedure Deletelastcondition1Click(Sender: TObject);
     procedure MoveUp2Click(Sender: TObject);
     procedure MoveDown2Click(Sender: TObject);
-    procedure Showkeyshortcuts2Click(Sender: TObject);
     // Condition properties panel actions
     procedure cbxConditionTypeChange(Sender: TObject);
     procedure btnApplyConditionChangesClick(Sender: TObject);
@@ -422,8 +426,13 @@ begin
       btnApplyEventChangesClick(nil);
   end;
   if (key = 27) and CreateEventsPanel.Visible then
-    btnCreateEventsCancelClick(Sender);
-  if (key = 27) and not CreateEventsPanel.Visible then
+    btnCreateEventsCancelClick(Sender)
+  else if (key = 27) and pnEventExportMarker.Visible then
+  begin
+    pnEventExportMarker.Visible := false;
+    EventGrid.Options := EventGrid.Options - [goRangeSelect];
+  end
+  else if key = 27 then
     Close;
   if key = 123 then // F2
     MainWindow.Show;
@@ -497,6 +506,23 @@ begin
     if row > 0 then
       EventGrid.Row := row;
   end;
+end;
+
+procedure TEventDialog.EventGridMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  first_event, last_event: integer;
+begin
+  if not pnEventExportMarker.Visible then
+    exit;
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  pnEventExportMarker.Visible := false;
+  EventGrid.Options := EventGrid.Options - [goRangeSelect];
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
+    exit;
+  ExportEventsDialog.Title := Format('Export events (%d - %d)', [first_event, last_event]);
+  if ExportEventsDialog.Execute then
+    Mission.export_events(first_event, last_event, ExportEventsDialog.FileName);
 end;
 
 procedure TEventDialog.EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
@@ -644,12 +670,16 @@ begin
   update_contents;
 end;
 
-procedure TEventDialog.Showkeyshortcuts1Click(Sender: TObject);
-var
-  msg: string;
+procedure TEventDialog.Exportevents1Click(Sender: TObject);
 begin
-  msg := 'Enter = Apply changes';
-  ShowMessage(msg);
+  pnEventExportMarker.Visible := true;
+  EventGrid.Options := EventGrid.Options + [goRangeSelect];
+end;
+
+procedure TEventDialog.Importevents1Click(Sender: TObject);
+begin
+  if ImportEventsDialog.Execute then
+    Mission.import_events(ImportEventsDialog.FileName);
 end;
 
 procedure TEventDialog.btnCreateEventsCancelClick(Sender: TObject);
@@ -1123,14 +1153,6 @@ begin
   inc(selected_condition);
   ConditionGrid.Row := selected_condition + 1;
   update_contents;
-end;
-
-procedure TEventDialog.Showkeyshortcuts2Click(Sender: TObject);
-var
-  msg: string;
-begin
-  msg := 'Enter = Apply changes';
-  ShowMessage(msg);
 end;
 
 procedure TEventDialog.cbxConditionTypeChange(Sender: TObject);

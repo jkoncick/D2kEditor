@@ -66,6 +66,7 @@ object EventDialog: TEventDialog
       OnDrawCell = EventGridDrawCell
       OnKeyDown = EventGridKeyDown
       OnMouseDown = EventGridMouseDown
+      OnMouseUp = EventGridMouseUp
       OnMouseWheelDown = EventGridMouseWheelDown
       OnMouseWheelUp = EventGridMouseWheelUp
       OnSelectCell = EventGridSelectCell
@@ -801,6 +802,32 @@ object EventDialog: TEventDialog
       TabOrder = 4
     end
   end
+  object pnEventExportMarker: TPanel
+    Left = 144
+    Top = 3
+    Width = 465
+    Height = 16
+    BevelOuter = bvNone
+    Color = clYellow
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -13
+    Font.Name = 'MS Sans Serif'
+    Font.Style = [fsBold]
+    ParentBackground = False
+    ParentFont = False
+    TabOrder = 3
+    Visible = False
+    object lblEventExportMarker: TLabel
+      Left = 0
+      Top = 0
+      Width = 461
+      Height = 16
+      Caption = 
+        'Select a contiguous range of events to export. Press Esc to canc' +
+        'el.'
+    end
+  end
   object EventGridPopupMenu: TPopupMenu
     OnPopup = PopupMenuPopup
     Left = 392
@@ -868,9 +895,15 @@ object EventDialog: TEventDialog
     object N2: TMenuItem
       Caption = '-'
     end
-    object Showkeyshortcuts1: TMenuItem
-      Caption = 'Show key shortcuts'
-      OnClick = Showkeyshortcuts1Click
+    object Exportevents1: TMenuItem
+      Caption = 'Export events'
+      ShortCut = 16453
+      OnClick = Exportevents1Click
+    end
+    object Importevents1: TMenuItem
+      Caption = 'Import events'
+      ShortCut = 16457
+      OnClick = Importevents1Click
     end
   end
   object ConditionGridPopupMenu: TPopupMenu
@@ -906,12 +939,16 @@ object EventDialog: TEventDialog
       ShortCut = 34
       OnClick = MoveDown2Click
     end
-    object N3: TMenuItem
-      Caption = '-'
-    end
-    object Showkeyshortcuts2: TMenuItem
-      Caption = 'Show key shortcuts'
-      OnClick = Showkeyshortcuts2Click
-    end
+  end
+  object ExportEventsDialog: TSaveDialog
+    DefaultExt = 'd2kevt'
+    Filter = 'Dune2000 event export data (*.d2kevt)|*.d2kevt'
+    Left = 456
+  end
+  object ImportEventsDialog: TOpenDialog
+    DefaultExt = 'd2kevt'
+    Filter = 'Dune2000 event export data (*.d2kevt)|*.d2kevt'
+    Title = 'Import events'
+    Left = 488
   end
 end

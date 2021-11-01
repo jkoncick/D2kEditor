@@ -12,6 +12,7 @@ type
     evMapFilenameChange,
     // Mission events
     evMisLoad,
+    evMisEventsImport,
     evMisAllocIndexChange,
     evMisEventPositionChange,
     evMisDefenceAreaChange,
@@ -138,6 +139,7 @@ begin
     evMapFilenameChange:          pact := pact + [paUpdateMapName];
     // Mission events
     evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateMissionData, paUpdateMisAiValues, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evMisEventsImport:            pact := pact + [paUpdateEventMarkers, paUpdateEventDialog];
     evMisAllocIndexChange:        pact := pact + [paUpdateStructureControls, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisEventPositionChange:     pact := pact + [paUpdateEventMarkers];
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
