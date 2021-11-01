@@ -102,7 +102,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v2.1 dev2'
+        Text = 'v2.1 dev3'
         Width = 0
       end>
   end
@@ -350,7 +350,7 @@ object MainWindow: TMainWindow
                   Width = 140
                   Height = 21
                   Style = csDropDownList
-                  ItemHeight = 0
+                  ItemHeight = 13
                   TabOrder = 0
                   OnChange = PlayerSelectChange
                 end
@@ -419,7 +419,7 @@ object MainWindow: TMainWindow
                   Width = 140
                   Height = 21
                   Style = csDropDownList
-                  ItemHeight = 0
+                  ItemHeight = 13
                   TabOrder = 0
                   OnChange = PlayerSelectChange
                 end
@@ -606,7 +606,7 @@ object MainWindow: TMainWindow
                     Width = 140
                     Height = 21
                     Style = csDropDownList
-                    ItemHeight = 0
+                    ItemHeight = 13
                     TabOrder = 0
                     OnChange = StructControlClick
                   end
@@ -741,7 +741,7 @@ object MainWindow: TMainWindow
                     Width = 140
                     Height = 21
                     Style = csDropDownList
-                    ItemHeight = 0
+                    ItemHeight = 13
                     TabOrder = 0
                     OnChange = StructControlClick
                   end
@@ -1099,7 +1099,7 @@ object MainWindow: TMainWindow
           Width = 73
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 5
         end
         object cbSelectAreaType: TComboBox
@@ -1108,7 +1108,7 @@ object MainWindow: TMainWindow
           Width = 121
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 6
         end
         object cbxConcretePlayer: TComboBox
@@ -1117,7 +1117,7 @@ object MainWindow: TMainWindow
           Width = 105
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 7
           Visible = False
           OnChange = PlayerSelectChange
