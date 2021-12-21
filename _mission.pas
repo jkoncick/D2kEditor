@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics, Classes, IniFiles, _map, _misai, _utils, _eventconfig;
+uses Graphics, Classes, IniFiles, _map, _misai, _utils, _gamelists, _eventconfig;
 
 // Mis file constants
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
@@ -77,6 +77,27 @@ const condition_args_struct_members: array[0..6] of TStructMemberDefinition =
   );
 
 // *****************************************************************************
+// Object filter definition
+// *****************************************************************************
+
+type
+  TObjectFilter = packed record
+    pos_min_x: byte;
+    pos_min_y: byte;
+    pos_max_x: byte;
+    pos_max_y: byte;
+    pos_flags: byte;
+    criteria_var_flags: byte;
+    criteria_and_or: word;
+    criteria_type: array[0..7] of byte;
+    criteria_value: array[0..7] of byte;
+  end;
+
+  TObjectFilterPtr = ^TObjectFilter;
+
+const object_filter_comp_operation: array[0..3] of string = ('=', '!=', '>=', '<');
+
+// *****************************************************************************
 // Mis file definitions
 // *****************************************************************************
 
@@ -96,7 +117,7 @@ type
 type
   TEventMarker = record
     emtype: TEventMarkerType;
-    index: byte;
+    index: word;
     coord: byte;
     side: shortint;
     marker: char;
@@ -150,7 +171,9 @@ type
     function get_condition_contents(index: integer; show_player: boolean): String;
     function get_coords_contents(x, y: integer): String;
     function get_argument_contents(value: integer; argdef: TArgDefinitionPtr): String;
+    function get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: GameListType; item_list_type: ItemListType): String;
     function get_event_data_contents(event_id: integer): string;
+    function get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer): string;
     function check_event_has_condition(index: integer; condition_index: integer): boolean;
     // Creating/deleting events/conditions
     function add_event(position, event_type: integer): integer;
@@ -572,6 +595,16 @@ begin
           contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), Addr(ct.args[idx]));
       end;
       start := i + 3;
+    end else
+    if (ct.contents[i+1]) = 's' then
+    begin
+      if ct.condition_data >= cdUnitFilter then
+      begin
+        if cond.arg2 > 0 then
+          contents := contents + 'Am(' + IfThen((cond.arg1 and 1) <> 0, '=', '>=') + IntToStr(cond.arg2) + ') ';
+        contents := contents + get_object_filter_contents(TObjectFilterPtr(cond), Ord(ct.condition_data) - Ord(cdUnitFilter));
+      end;
+      start := i + 2;
     end;
   end;
   contents := contents + copy(ct.contents, start, Length(ct.contents) + 1 - start);
@@ -590,20 +623,30 @@ begin
     atBigNumber: result := inttostr(value);
     atNumber: result := inttostr(value);
     atHexNumber: result := IntToHex(value, 8);
-    atList:
-      begin
-        case argdef.list_type of
-          ltCustom: result := argdef.values[value];
-          ltPlayers: result := Structures.player_names[value];
-          ltSounds: result := StringTable.samples_uib.ValueFromIndex[value];
-          ltBuildings: result := Structures.get_building_name_str(value);
-          ltUnits: result := Structures.get_unit_name_str(value);
-          ltWeapons: result := Structures.templates.WeaponStrings[value];
-          ltExplosions: result := Structures.templates.ExplosionStrings[value];
-        end;
-      end;
+    atList: result := get_list_value_contents(value, argdef.list_type, argdef.values, argdef.game_list_type, argdef.item_list_type);
     atBool: if (value <> 0) then result := '(' + argdef.name + ')';
     atSwitch: result := argdef.values[IfThen(value <> 0, 1, 0)];
+  end;
+end;
+
+function TMission.get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: GameListType; item_list_type: ItemListType): String;
+begin
+  case list_type of
+    ltNone: result := IntToStr(value);
+    ltCustom: result := value_list[value];
+    ltGame: result := GameLists.lists[Ord(game_list_type)][value];
+    ltItem: case item_list_type of
+      ilPlayers: result := Structures.player_names[value];
+      ilSounds: result := StringTable.samples_uib.ValueFromIndex[value];
+      ilBuildings: result := Structures.get_building_name_str(value);
+      ilBuildingGroups: result := Structures.get_building_group_str(value);
+      ilUnits: result := Structures.get_unit_name_str(value);
+      ilUnitGroups: result := Structures.get_unit_group_str(value);
+      ilWeapons: result := Structures.templates.WeaponStrings[value];
+      ilExplosions: result := Structures.templates.ExplosionStrings[value];
+      ilArmourTypes: result := Structures.armour.ArmourTypeStrings[value];
+      ilSpeedTypes: result := Structures.speed.SpeedNameStrings[value];
+    end;
   end;
 end;
 
@@ -649,6 +692,49 @@ begin
   end;
   if et.event_data = edMusic then
     SetString(contents, PChar(Addr(event.data[0])), StrLen(PChar(Addr(event.data[0]))));
+  if et.event_data >= edUnitFilter then
+  begin
+    contents := 'Filter: ';
+    if event.data[0] > 0 then
+      contents := contents + 'Limit(' + IntToStr(event.data[0]) + ') ';
+    contents := contents + get_object_filter_contents(Addr(event.data[1]), Ord(et.event_data) - Ord(edUnitFilter));
+  end;
+  result := contents;
+end;
+
+function TMission.get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer): string;
+var
+  contents: string;
+  i: integer;
+  and_or_op, and_or_level: integer;
+  criteria: TFilterCriteriaDefinitionPtr;
+begin
+  if (filter.pos_flags and 1) = 1 then
+    contents := contents + IfThen((filter.pos_flags and 2) = 0, 'Pos', 'NegPos') + Format('(%d , %d : %d , %d) ', [filter.pos_min_x, filter.pos_min_y, filter.pos_max_x, filter.pos_max_y]);
+  and_or_level := 0;
+  for i := 0 to High(filter.criteria_type) do
+  begin
+    if (filter.criteria_type[i] and 63) = 0 then
+      continue;
+    criteria := Addr(EventConfig.filter_criteria[filter_type, filter.criteria_type[i] and 63]);
+    if i > 0 then
+    begin
+      and_or_op := (filter.criteria_and_or shr ((i - 1) * 2)) and 3;
+      contents := contents + ' ' + IfThen((and_or_op and 1) = 0, 'and', 'or') + ' ';
+    end;
+    and_or_op := (filter.criteria_and_or shr (i * 2)) and 3;
+    while (and_or_op > and_or_level) do
+    begin
+      contents := contents + '(';
+      inc(and_or_level);
+    end;
+    contents := contents + criteria.name + ' ' + object_filter_comp_operation[filter.criteria_type[i] shr 6] + ' ' + get_list_value_contents(filter.criteria_value[i], criteria.list_type, criteria.values, criteria.game_list_type, criteria.item_list_type);
+    while (and_or_op < and_or_level) do
+    begin
+      contents := contents + ')';
+      dec(and_or_level);
+    end;
+  end;
   result := contents;
 end;
 

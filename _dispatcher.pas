@@ -48,6 +48,8 @@ type
     evFLTextUib,
     evFLSamplesUib,
     evSamplesUibModify,
+    // GameLists events
+    evLoadGameLists,
     // EventConfig events
     evLoadEventTypeConfiguration,
     // Setting change events
@@ -75,6 +77,7 @@ type
     paUpdateEventMarkers,
     paUpdatePlayerColours,
     paUpdateSpeedModifiers,
+    paUpdateGameLists,
     paUpdateEventTypeConfiguration,
     // Update mission dialog contents
     paUpdateMissionData,
@@ -112,6 +115,7 @@ type
     procedure update_mission_load_status;
     procedure update_map_stats;
     procedure update_event_markers;
+    procedure update_game_lists;
 
   end;
 
@@ -180,6 +184,8 @@ begin
       end;
     evFLSamplesUib:               pact := pact + [paUpdateSoundList, paUpdateDebugValues];
     evSamplesUibModify:           pact := pact + [paUpdateSoundList];
+    // GameLists events
+    evLoadGameLists:              pact := pact + [paUpdateGameLists];
     // EventConfig events
     evLoadEventTypeConfiguration: pact := pact + [paUpdateEventTypeConfiguration];
     // "Translate structure names" setting changed
@@ -212,6 +218,7 @@ begin
   if paUpdateEventMarkers       in pact then update_event_markers;
   if paUpdatePlayerColours      in pact then MissionDialog.update_player_colors;
   if paUpdateSpeedModifiers     in pact then TileAtrEditor.update_speed_modifiers;
+  if paUpdateGameLists          in pact then update_game_lists;
   if paUpdateEventTypeConfiguration in pact then EventDialog.update_event_type_configuration;
   // Update mission dialog contents
   if paUpdateMissionData        in pact then MissionDialog.update_mission_data;
@@ -320,6 +327,13 @@ begin
   Mission.cache_event_markers;
   if Settings.ShowEventMarkers then
     pact := pact + [paRenderMap];
+end;
+
+procedure TDispatcher.update_game_lists;
+begin
+  MainWindow.update_game_lists;
+  StructuresEditor.update_game_lists;
+  TileAtrEditor.update_game_lists;
 end;
 
 end.

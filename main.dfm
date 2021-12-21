@@ -519,22 +519,8 @@ object MainWindow: TMainWindow
                   Height = 21
                   Style = csDropDownList
                   ItemHeight = 13
-                  ItemIndex = 0
                   TabOrder = 0
-                  Text = '0 - Cash'
                   OnChange = CrateControlClick
-                  Items.Strings = (
-                    '0 - Cash'
-                    '1 - Explode'
-                    '2 - Reveal Map'
-                    '3 - Hide Map'
-                    '4 - Unit'
-                    '5 - Powerup'
-                    '6 - Execute Event'
-                    '7 - Bloom Spawner'
-                    '8 - Small Bloom'
-                    '9 - Medium Bloom'
-                    '10 - Large Bloom')
                 end
                 object cbxCrateImage: TComboBox
                   Tag = -1
@@ -544,19 +530,8 @@ object MainWindow: TMainWindow
                   Height = 21
                   Style = csDropDownList
                   ItemHeight = 13
-                  ItemIndex = 0
                   TabOrder = 1
-                  Text = '0 - Blue Crate'
                   OnChange = StructControlClick
-                  Items.Strings = (
-                    '0 - Blue Crate'
-                    '1 - Red Crate'
-                    '2 - Green Crate'
-                    '3 - Purple Crate'
-                    '4 - Invisible'
-                    '5 - Small Bloom'
-                    '6 - Medium Bloom'
-                    '7 - Large Bloom')
                 end
                 object pnCrateCash: TPanel
                   Left = 0

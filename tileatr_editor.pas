@@ -220,6 +220,7 @@ type
 
   public
     // Dispatcher procedures
+    procedure update_game_lists;
     procedure update_tileset_list;
     procedure update_contents;
     procedure update_grid_color;
@@ -242,7 +243,7 @@ var
 
 implementation
 
-uses main, _utils, _stringtable, _settings, _structures, _graphics, _dispatcher, _launcher;
+uses main, _utils, _stringtable, _settings, _structures, _graphics, _dispatcher, _launcher, _gamelists;
 
 {$R *.dfm}
 
@@ -728,6 +729,11 @@ begin
     render_tileset;
   end else
     edRule.Font.Color := clRed;
+end;
+
+procedure TTileAtrEditor.update_game_lists;
+begin
+  TileAtrList.Items := GameLists.lists[Ord(glTileAtr)];
 end;
 
 procedure TTileAtrEditor.update_tileset_list;

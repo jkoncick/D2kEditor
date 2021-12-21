@@ -648,27 +648,6 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 4
           OnChange = RedrawBuildingPreview
-          Items.Strings = (
-            '0 - None'
-            '1 - Radar'
-            '2 - Construction Yard'
-            '3 - Unknown/Unused'
-            '4 - Refinery'
-            '5 - Silo'
-            '6 - Repair Pad'
-            '7 - Production (Light F)'
-            '8 - Production (Heavy F)'
-            '9 - Production (HTF)'
-            '10 - Production (AT HTF)'
-            '11 - Production (Barracks)'
-            '12 - Production (Unused)'
-            '13 - Starport'
-            '14 - Wall'
-            '15 - Concrete'
-            '16 - Turret'
-            '17 - Production (H Palace)'
-            '18 - Production (O Palace)'
-            '19 - Production (A Palace)')
         end
         object cbBuildingFlagSELECT_REPAIR: TCheckBox
           Tag = 512
@@ -1553,23 +1532,6 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 3
           OnChange = RedrawUnitPreview
-          Items.Strings = (
-            '0 - None'
-            '1 - Harvester'
-            '2 - Carryall'
-            '3 - Engineer'
-            '4 - Saboteur'
-            '5 - Sandworm'
-            '6 - MCV'
-            '7 - Devastator'
-            '8 - Frigate'
-            '9 - Ornithopter'
-            '10 - DH missile'
-            '11 - Sardaukar'
-            '12 - Fremen'
-            '13 - (unused?)'
-            '14 - Thumper'
-            '15 - (crash)')
         end
         object cbUnitIsInfantry: TCheckBox
           Tag = 512

@@ -31,6 +31,7 @@ uses
   _stringtable in '_stringtable.pas',
   _randomgen in '_randomgen.pas',
   _launcher in '_launcher.pas',
+  _gamelists in '_gamelists.pas',
   _eventconfig in '_eventconfig.pas';
 
 {$R *.res}
@@ -61,6 +62,7 @@ begin
   StringTable := TStringTable.Create;
   //--RandomGen := TRandomGen.Create;
   Launcher := TLauncher.Create;
+  GameLists := TGameLists.Create;
   EventConfig := TEventConfig.Create;
   // Create forms
   Application.CreateForm(TMainWindow, MainWindow);
@@ -88,6 +90,7 @@ begin
   Sounds.init;
   StringTable.init;
   Launcher.init;
+  GameLists.init;
   EventConfig.init;
   // Load map given as first parameter
   if ParamCount > 0 then

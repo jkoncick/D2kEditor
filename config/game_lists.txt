@@ -1,0 +1,220 @@
+[UnitBehavior]
+None
+Harvester
+Carryall
+Engineer
+Saboteur
+Sandworm
+MCV
+Devastator
+Frigate
+Ornithopter
+DH missile
+Sardaukar
+Fremen
+(unused?)
+Thumper
+(crash)
+
+[UnitFlag]
+Flag0
+Flag1
+Flag2
+Flag3
+Stealth
+Flag5
+Flag6
+Flag7
+Flag8
+Flag9
+Flag10
+Flag11
+Deviated
+Flag13
+Flag14
+Fixed barrel
+Flag16
+DH missile
+Flag18
+Flag19
+Flag20
+Flag21
+Flag22
+Self-healing
+Flag24
+Flag25
+Flag26
+Invulnerable
+Block To Marked
+Flag29
+Flag30
+Flag31
+
+[UnitState]
+State0
+State1
+Idle
+Guarding
+Attacking unit
+Attacking building
+Attacking tile
+Moving
+Leaving building
+Moving away
+State10
+Moving to harvest
+Harvesting
+Moving to refinery
+Entering refinery
+Unloading spice
+Leaving refinery
+Destroyed
+Awaiting airlift
+Airlifted
+(Invalid)
+Flying down
+Flying up
+Infiltrating
+Moving to repair pad
+Repairing
+State26
+Wandering
+Eating
+Sleeping
+Deploying
+Selfdestruct
+Thumpering
+State33
+
+[BuildingBehavior]
+None
+Radar
+Construction Yard
+Unknown/Unused
+Refinery
+Silo
+Repair Pad
+Production (Light F)
+Production (Heavy F)
+Production (HTF)
+Production (AT HTF)
+Production (Barracks)
+Production (Unused)
+Starport
+Wall
+Concrete
+Turret
+Production (H Palace)
+Production (O Palace)
+Production (A Palace)
+
+[BuildingFlag]
+Repairing
+Buildup
+Selling
+Flag3
+Animate still
+Animate once
+Has animation
+Primary
+Flag8
+Selectable & Repairable
+Can be captured
+Flag11
+Flag12
+Flag13
+Flag14
+Always decay
+Flag16
+Flag17
+Flag18
+Flag19
+Flag20
+Has skirt
+No concrete
+Alpha animation
+Infiltrated
+Was captured
+Flag26
+Flag27
+Flag28
+Flag29
+Flag30
+Flag31
+
+[BuildingState]
+State0
+State1
+Idle
+State3
+Attacking unit
+Attacking building
+Attacking tile
+State7
+State8
+State9
+State10
+State11
+State12
+State13
+State14
+State15
+State16
+Destroyed
+
+[CrateType]
+Cash
+Explode
+Reveal Map
+Hide Map
+Unit
+Powerup
+Execute Event
+Bloom Spawner
+Small Bloom
+Medium Bloom
+Large Bloom
+
+[CrateImage]
+Blue Crate
+Red Crate
+Green Crate
+Purple Crate
+Invisible
+Small Bloom
+Medium Bloom
+Large Bloom
+
+[TileAtr]
+Building/Unit owner side (bit1)
+Building/Unit owner side (bit2)
+Building/Unit owner side (bit3)
+Occupied by Unit
+Occupied by Building
+Occupied by Infantry (middle)
+Occupied by Infantry (top-right)
+Occupied by Infantry (down-right)
+Occupied by Infantry (down-left)
+Occupied by Infantry (top-left)
+Wall
+Concrete
+Occupied by Crate
+Vehicles can pass
+Infantry can pass
+Buildings can be placed, Rock craters
+Sandworm can pass, Sand craters
+Concrete owner side (bit 1)
+Concrete owner side (bit 2)
+Concrete owner side (bit 3)
+Spice amount (bit 1)
+Spice amount (bit 2)
+Spice amount (bit 3)
+Unknown/Unused
+Unknown/Unused
+Owner side 2 (bit1)
+Owner side 2 (bit2)
+Owner side 2 (bit3)
+Unknown/Unused
+Terrain type (bit1)
+Terrain type (bit2)
+Terrain type (bit3)

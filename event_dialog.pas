@@ -45,6 +45,27 @@ type
   TArgControlGroupPtr = ^TArgControlGroup;
 
 type
+  TFilterControlGroup = record
+    object_type: integer;
+    filter_ptr: TObjectFilterPtr;
+    cb_check_position: TCheckBox;
+    cb_position_negation: TCheckBox;
+    se_position_minx: TSpinEdit;
+    se_position_miny: TSpinEdit;
+    se_position_maxx: TSpinEdit;
+    se_position_maxy: TSpinEdit;
+    btn_position_select: TButton;
+    cbx_criteria: array[0..7] of TComboBox;
+    criteria_type: array[0..7] of integer;
+    cbx_operation: array[0..7] of TComboBox;
+    se_value: array[0..7] of TSpinEdit;
+    cbx_value: array[0..7] of TComboBox;
+    cbx_and_or: array[0..6] of TComboBox;
+  end;
+
+  TFilterControlGroupPtr = ^TFilterControlGroup;
+
+type
   TEventDialog = class(TForm)
     EventGrid: TStringGrid;
     LowerPanel: TPanel;
@@ -155,6 +176,14 @@ type
     pnEventExportMarker: TPanel;
     ExportEventsDialog: TSaveDialog;
     ImportEventsDialog: TOpenDialog;
+    edpFilter: TPanel;
+    lblEventFilterLimit: TLabel;
+    seEventFilterLimit: TSpinEdit;
+    pnConditionFilter: TPanel;
+    lblConditionFilterAmount: TLabel;
+    seConditionFilterAmount: TSpinEdit;
+    rbConditionFilterAmoutGtEq: TRadioButton;
+    rbConditionFilterAmoutEq: TRadioButton;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -212,6 +241,8 @@ type
     procedure imgTileBlockMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     // -- Tile pairs
     procedure sgTilePairsSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+    // -- Object filter
+    procedure seEventFilterLimitChange(Sender: TObject);
     // Event condition list panel actions
     procedure EventConditionListClickCheck(Sender: TObject);
     procedure EventConditionListDblClick(Sender: TObject);
@@ -244,6 +275,8 @@ type
     procedure cbxConditionTypeChange(Sender: TObject);
     procedure btnApplyConditionChangesClick(Sender: TObject);
     procedure cbMarkEventsHavingConditionClick(Sender: TObject);
+    // Condition filter panel actions
+    procedure seConditionFilterAmountChange(Sender: TObject);
     // Miscellaneous
     procedure PopupMenuPopup(Sender: TObject);
     // Coord control group actions
@@ -251,6 +284,11 @@ type
     procedure CCGBtnSelectClick(Sender: TObject);
     // Arg control group actions
     procedure ACGValueChange(Sender: TObject);
+    // Filter control group actions
+    procedure FCGValueChange(Sender: TObject);
+    procedure FCGCriteriaChange(Sender: TObject);
+    procedure FCGBtnSelectClick(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -266,9 +304,10 @@ type
 
     pending_update_contents: boolean;
 
-    cached_lists: array[2..7] of TStringList;
+    cached_lists: array[-2..11] of TStringList;
     ccgs: array[0..5] of TCoordControlGroup;
     acgs: array[0..12] of TArgControlGroup;
+    fcgs: array[0..1] of TFilterControlGroup;
 
   public
     // Dispatcher events
@@ -286,7 +325,7 @@ type
     procedure fill_event_grid_row(index: integer);
     procedure select_event(index: integer);
     procedure fill_event_ui;
-    procedure fill_event_data_panel(panel: TPanel; active: boolean);
+    procedure fill_event_data_panel(panel: TPanel; active: boolean; object_type: integer);
     procedure fill_event_condition_list;
     procedure change_event_type(new_event_type: integer);
     procedure apply_event_changes;
@@ -306,6 +345,9 @@ type
     procedure create_arg_control_group(index: integer; data_ptr: Pointer; struct_def: TStructDefinitionPtr; struct_member: integer; parent_panel: TPanel);
     procedure fill_arg_control_group(acg: TArgControlGroupPtr; argdef: TArgDefinitionPtr; var panel_top: integer);
     procedure fill_arg_combo_box(acg: TArgControlGroupPtr; value: integer; force_update_list: boolean);
+    // Filter control group procedures
+    procedure create_filter_control_group(index: integer; filter_ptr: Pointer; parent_panel: TPanel);
+    procedure fill_filter_control_group(fcg: TFilterControlGroupPtr; object_type: integer);
   public
     // Procedures called from different forms
     procedure finish_point_selection(x, y: integer);
@@ -318,7 +360,7 @@ var
 
 implementation
 
-uses Math, main, _missionini, _stringtable, _settings, _structures, _dispatcher, _tileset, _map,
+uses Math, main, _missionini, _stringtable, _settings, _structures, _dispatcher, _tileset, _map, _gamelists,
   StrUtils;
 
 {$R *.dfm}
@@ -376,6 +418,10 @@ begin
   // Initialize cached lists
   for i := Low(cached_lists) to High(cached_lists) do
     cached_lists[i] := TStringList.Create;
+  for i := 0 to High(object_filter_comp_operation) do
+    cached_lists[-1].Add(object_filter_comp_operation[i]);
+  cached_lists[-2].Add(object_filter_comp_operation[0]);
+  cached_lists[-2].Add(object_filter_comp_operation[1]);
   // Initialize coord control groups
   for i := 0 to High(ccgs) do
   begin
@@ -392,6 +438,9 @@ begin
     else
       create_arg_control_group(i, Addr(tmp_condition), Addr(condition_args_struct_members), i - Length(event_args_struct_members), ConditionPropertiesPanel);
   end;
+  // Initialize filter control groups
+  create_filter_control_group(0, Addr(tmp_event.data[1]), edpFilter);
+  create_filter_control_group(1, Addr(tmp_condition), pnConditionFilter);
   //select_event(0);
   select_condition(0);
 end;
@@ -405,6 +454,21 @@ end;
 procedure TEventDialog.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   apply_changes;
+end;
+
+procedure TEventDialog.FormResize(Sender: TObject);
+begin
+  if ClientWidth >= (lbConditionTypeList.Left + lbConditionTypeList.Width + pnConditionFilter.Width) then
+  begin
+    pnConditionFilter.Parent := LowerPanel;
+    pnConditionFilter.Top := 0;
+    pnConditionFilter.Left := lbConditionTypeList.Left + lbConditionTypeList.Width;
+  end else
+  begin
+    pnConditionFilter.Parent := EventDialog;
+    pnConditionFilter.Top := Splitter1.Top - pnConditionFilter.Height;
+    pnConditionFilter.Left := ClientWidth - pnConditionFilter.Width;
+  end;
 end;
 
 procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word;
@@ -875,6 +939,11 @@ begin
   draw_tile_pairs;
 end;
 
+procedure TEventDialog.seEventFilterLimitChange(Sender: TObject);
+begin
+  tmp_event.data[0] := StrToIntDef(seEventFilterLimit.Text, 0);
+end;
+
 procedure TEventDialog.EventConditionListClickCheck(Sender: TObject);
 var
   i: integer;
@@ -1171,6 +1240,14 @@ begin
   EventGrid.Invalidate;
 end;
 
+procedure TEventDialog.seConditionFilterAmountChange(Sender: TObject);
+begin
+  if loading then
+    exit;
+  tmp_condition.arg2 := StrToIntDef(seConditionFilterAmount.Text, 0);
+  tmp_condition.arg1 := IfThen(rbConditionFilterAmoutEq.Checked, 1, 0);
+end;
+
 procedure TEventDialog.PopupMenuPopup(Sender: TObject);
 begin
   apply_changes;
@@ -1232,7 +1309,103 @@ begin
     acgs[i].container.Visible := (acgs[i].argdef.arg_type <> atNone) and evaluate_show_if(Addr(acgs[i].argdef.show_if), acgs[i].data_ptr, acgs[i].struct_def);
   // Update amount of tile pairs
   if EventConfig.event_types[tmp_event.event_type].event_data = edTilePairs then
-    fill_event_data_panel(edpTilePairs, true);
+    fill_event_data_panel(edpTilePairs, true, 0);
+end;
+
+procedure TEventDialog.FCGValueChange(Sender: TObject);
+var
+  fcg: TFilterControlGroupPtr;
+  i: integer;
+begin
+  if loading then
+    exit;
+  fcg := Addr(fcgs[(Sender as TControl).Tag]);
+  fcg.filter_ptr.pos_flags := 0;
+  fcg.filter_ptr.pos_flags := fcg.filter_ptr.pos_flags or IfThen(fcg.cb_check_position.Checked, 1, 0);
+  fcg.filter_ptr.pos_flags := fcg.filter_ptr.pos_flags or IfThen(fcg.cb_position_negation.Checked, 2, 0);
+  fcg.filter_ptr.pos_min_x := StrToIntDef(fcg.se_position_minx.Text, 0);
+  fcg.filter_ptr.pos_min_y := StrToIntDef(fcg.se_position_miny.Text, 0);
+  fcg.filter_ptr.pos_max_x := StrToIntDef(fcg.se_position_maxx.Text, 0);
+  fcg.filter_ptr.pos_max_y := StrToIntDef(fcg.se_position_maxy.Text, 0);
+  fcg.cb_position_negation.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_minx.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_miny.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_maxx.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_maxy.Enabled := fcg.cb_check_position.Checked;
+  fcg.btn_position_select.Enabled := fcg.cb_check_position.Checked;
+  for i := 0 to High(fcg.cbx_criteria) do
+  begin
+    fcg.filter_ptr.criteria_type[i] := fcg.cbx_criteria[i].ItemIndex;
+    fcg.filter_ptr.criteria_type[i] := fcg.filter_ptr.criteria_type[i] or (IfThen(fcg.cbx_operation[i].Visible, fcg.cbx_operation[i].ItemIndex shl 6, 0));
+    if EventConfig.filter_criteria[fcg.object_type, fcg.cbx_criteria[i].ItemIndex].list_type = ltNone then
+      fcg.filter_ptr.criteria_value[i] := StrToIntDef(fcg.se_value[i].Text, 0)
+    else
+      fcg.filter_ptr.criteria_value[i] := fcg.cbx_value[i].ItemIndex;
+  end;
+  fcg.filter_ptr.criteria_and_or := 0;
+  for i := 0 to High(fcg.cbx_and_or) do
+    fcg.filter_ptr.criteria_and_or := fcg.filter_ptr.criteria_and_or or (fcg.cbx_and_or[i].ItemIndex shl (i * 2));
+end;
+
+procedure TEventDialog.FCGCriteriaChange(Sender: TObject);
+var
+  fcg: TFilterControlGroupPtr;
+  fcd: TFilterCriteriaDefinitionPtr;
+  i: integer;
+begin
+  fcg := Addr(fcgs[(Sender as TControl).Tag]);
+  for i := 0 to High(fcg.cbx_criteria) do
+  begin
+    if fcg.criteria_type[i] = fcg.cbx_criteria[i].ItemIndex then
+      continue;
+    fcg.criteria_type[i] := fcg.cbx_criteria[i].ItemIndex;
+    // None criteria - hide controls
+    if fcg.cbx_criteria[i].ItemIndex = 0 then
+    begin
+      fcg.cbx_operation[i].Visible := false;
+      fcg.se_value[i].Visible := false;
+      fcg.cbx_value[i].Visible := false;
+      continue;
+    end;
+    // Actual criteria
+    fcd := Addr(EventConfig.filter_criteria[fcg.object_type, fcg.criteria_type[i]]);
+    fcg.cbx_operation[i].Visible := true;
+    fcg.se_value[i].Visible := fcd.list_type = ltNone;
+    fcg.cbx_value[i].Visible := fcd.list_type <> ltNone;
+    // Operation list
+    if fcd.is_flag then
+      fcg.cbx_operation[i].Items := cached_lists[-2]
+    else
+      fcg.cbx_operation[i].Items := cached_lists[-1];
+    fcg.cbx_operation[i].ItemIndex := 0;
+    // No list - use spin edit for numeric value
+    if fcd.list_type = ltNone then
+    begin
+      fcg.se_value[i].MaxValue := fcd.maxval;
+      fcg.se_value[i].Value := fcd.default;
+      continue;
+    end;
+    // Actual list - initialize combo box
+    case fcd.list_type of
+      ltCustom: fcg.cbx_value[i].Items := fcd.values;
+      ltGame: fcg.cbx_value[i].Items := GameLists.lists[Ord(fcd.game_list_type)];
+      ltItem: fcg.cbx_value[i].Items := cached_lists[Ord(fcd.item_list_type)];
+    end;
+    fcg.cbx_value[i].ItemIndex := 0;
+  end;
+  FCGValueChange(Sender);
+end;
+
+procedure TEventDialog.FCGBtnSelectClick(Sender: TObject);
+var
+  fcg_index: integer;
+  fcg: TFilterControlGroupPtr;
+begin
+  fcg_index := (Sender as TControl).Tag;
+  fcg := Addr(fcgs[fcg_index]);
+  MainWindow.start_position_selection(fcg.se_position_minx.Value, fcg.se_position_miny.Value, psmEventArea);
+  selected_coord_index := not fcg_index;
+  close;
 end;
 
 procedure TEventDialog.update_event_type_configuration;
@@ -1279,10 +1452,12 @@ begin
   prev_index := cbCreateEventsPlayer.ItemIndex;
   cbCreateEventsPlayer.Items := player_list;
   cbCreateEventsPlayer.ItemIndex := Max(prev_index, 0);
-  cached_lists[Byte(ltPlayers)].Assign(player_list);
+  cached_lists[Byte(ilPlayers)].Assign(player_list);
+  cached_lists[Byte(ilPlayersAny)].Assign(player_list);
+  cached_lists[Byte(ilPlayersAny)].Add('Any');
   // Update currently visible arg combo boxes
   for i := 0 to High(acgs) do
-    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type = ltPlayers) then
+    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type = ltItem) and ((acgs[i].argdef.item_list_type = ilPlayers) or (acgs[i].argdef.item_list_type = ilPlayersAny)) then
       fill_arg_combo_box(Addr(acgs[i]), acgs[i].combo_box.ItemIndex, true);
 end;
 
@@ -1290,26 +1465,42 @@ procedure TEventDialog.update_structures_list;
 var
   i: integer;
 begin
-  // Building list
-  cached_lists[Byte(ltBuildings)].Clear;
-  for i:= 0 to Structures.templates.BuildingCount -1 do
-    cached_lists[Byte(ltBuildings)].Add(inttostr(i) + ' - ' + Structures.get_building_name_str(i));
   // Unit list
-  cached_lists[Byte(ltUnits)].Clear;
+  cached_lists[Byte(ilUnits)].Clear;
   for i:= 0 to Structures.templates.UnitCount -1 do
-    cached_lists[Byte(ltUnits)].Add(inttostr(i) + ' - ' + Structures.get_unit_name_str(i));
-  UnitSelectionList.Items := cached_lists[Byte(ltUnits)];
+    cached_lists[Byte(ilUnits)].Add(inttostr(i) + ' - ' + Structures.get_unit_name_str(i));
+  UnitSelectionList.Items := cached_lists[Byte(ilUnits)];
+  // Unit group list
+  cached_lists[Byte(ilUnitGroups)].Clear;
+  for i:= 0 to Structures.templates.UnitGroupCount -1 do
+    cached_lists[Byte(ilUnitGroups)].Add(inttostr(i) + ' - ' + Structures.get_unit_group_str(i));
+  // Building list
+  cached_lists[Byte(ilBuildings)].Clear;
+  for i:= 0 to Structures.templates.BuildingCount -1 do
+    cached_lists[Byte(ilBuildings)].Add(inttostr(i) + ' - ' + Structures.get_building_name_str(i));
+  // Building group list
+  cached_lists[Byte(ilBuildingGroups)].Clear;
+  for i:= 0 to Structures.templates.BuildingGroupCount -1 do
+    cached_lists[Byte(ilBuildingGroups)].Add(inttostr(i) + ' - ' + Structures.get_building_group_str(i));
   // Weapon list
-  cached_lists[Byte(ltWeapons)].Clear;
+  cached_lists[Byte(ilWeapons)].Clear;
   for i:= 0 to Structures.templates.WeaponCount -1 do
-    cached_lists[Byte(ltWeapons)].Add(inttostr(i) + ' - ' + Structures.templates.WeaponStrings[i]);
+    cached_lists[Byte(ilWeapons)].Add(inttostr(i) + ' - ' + Structures.templates.WeaponStrings[i]);
   // Explosion list
-  cached_lists[Byte(ltExplosions)].Clear;
+  cached_lists[Byte(ilExplosions)].Clear;
   for i:= 0 to Structures.templates.ExplosionCount -1 do
-    cached_lists[Byte(ltExplosions)].Add(inttostr(i) + ' - ' + Structures.templates.ExplosionStrings[i]);
+    cached_lists[Byte(ilExplosions)].Add(inttostr(i) + ' - ' + Structures.templates.ExplosionStrings[i]);
+  // Armour type list
+  cached_lists[Byte(ilArmourTypes)].Clear;
+  for i:= 0 to Structures.armour.ArmourTypeCount -1 do
+    cached_lists[Byte(ilArmourTypes)].Add(inttostr(i) + ' - ' + Structures.armour.ArmourTypeStrings[i]);
+  // Speed type list
+  cached_lists[Byte(ilSpeedTypes)].Clear;
+  for i:= 0 to High(Structures.speed.SpeedNameStrings) do
+    cached_lists[Byte(ilSpeedTypes)].Add(inttostr(i) + ' - ' + Structures.speed.SpeedNameStrings[i]);
   // Update currently visible arg combo boxes
   for i := 0 to High(acgs) do
-    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type >= ltBuildings) then
+    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type = ltItem) and (acgs[i].argdef.item_list_type >= ilBuildings) then
       fill_arg_combo_box(Addr(acgs[i]), acgs[i].combo_box.ItemIndex, true);
 end;
 
@@ -1317,12 +1508,12 @@ procedure TEventDialog.update_sound_list;
 var
   i: integer;
 begin
-  cached_lists[Byte(ltSounds)].Clear;
+  cached_lists[Byte(ilSounds)].Clear;
   for i := 0 to StringTable.samples_uib.Count - 1 do
-    cached_lists[Byte(ltSounds)].Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
+    cached_lists[Byte(ilSounds)].Add(inttostr(i) + ' - ' + StringTable.samples_uib.ValueFromIndex[i]);
   // Update currently visible arg combo boxes
   for i := 0 to High(acgs) do
-    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type = ltSounds) then
+    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type = ltItem) and (acgs[i].argdef.item_list_type = ilSounds) then
       fill_arg_combo_box(Addr(acgs[i]), acgs[i].combo_box.ItemIndex, true);
 end;
 
@@ -1387,7 +1578,7 @@ begin
   else
     EventGrid.Cells[3,row] := '';
   if et.has_player and evaluate_show_if(Addr(et.args[0].show_if), event, Addr(event_args_struct_members)) then
-    EventGrid.Cells[4,row] := Structures.player_names[event.player]
+    EventGrid.Cells[4,row] := IfThen(event.player < 8, Structures.player_names[event.player], 'Any')
   else
     EventGrid.Cells[4,row] := '';
   // Contents
@@ -1445,12 +1636,13 @@ begin
   for i := 0 to High(et.args) do
     fill_arg_control_group(Addr(acgs[i]), Addr(et.args[i]), panel_top);
   // Fill event data UI
-  fill_event_data_panel(edpUnitList,     ed = edUnitList);
-  fill_event_data_panel(edpByteValues,   ed = edByteValues);
-  fill_event_data_panel(edpMessage,      ed = edMessage);
-  fill_event_data_panel(edpMusic,        ed = edMusic);
-  fill_event_data_panel(edpTileBlock,    ed = edTileBlock);
-  fill_event_data_panel(edpTilePairs,    ed = edTilePairs);
+  fill_event_data_panel(edpUnitList,     ed = edUnitList, 0);
+  fill_event_data_panel(edpByteValues,   ed = edByteValues, 0);
+  fill_event_data_panel(edpMessage,      ed = edMessage, 0);
+  fill_event_data_panel(edpMusic,        ed = edMusic, 0);
+  fill_event_data_panel(edpTileBlock,    ed = edTileBlock, 0);
+  fill_event_data_panel(edpTilePairs,    ed = edTilePairs, 0);
+  fill_event_data_panel(edpFilter,       ed >= edUnitFilter, ord(ed) - ord(edUnitFilter));
   // Fill event note
   if notes_enabled then
     edEventNote.Text := MissionIni.event_notes[selected_event];
@@ -1458,7 +1650,7 @@ begin
   fill_event_condition_list;
 end;
 
-procedure TEventDialog.fill_event_data_panel(panel: TPanel; active: boolean);
+procedure TEventDialog.fill_event_data_panel(panel: TPanel; active: boolean; object_type: integer);
 var
   i, j: integer;
   tmp: string;
@@ -1505,6 +1697,11 @@ begin
       sgTilePairs.Cells[1, i] := IntToStr(get_integer_value(Addr(tmp_event.data[1]), i * 4 + 2, 2));
     end;
     draw_tile_pairs;
+  end;
+  if panel = edpFilter then
+  begin
+    seEventFilterLimit.Value := tmp_event.data[0];
+    fill_filter_control_group(Addr(fcgs[0]), object_type);
   end;
 end;
 
@@ -1644,7 +1841,7 @@ begin
   // Basic information
   ConditionGrid.Cells[1,row] := ct.name;
   if ct.has_player and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
-    ConditionGrid.Cells[2,row] := Structures.player_names[cond.player]
+    ConditionGrid.Cells[2,row] := IfThen(cond.player < 8, Structures.player_names[cond.player], 'Any')
   else
     ConditionGrid.Cells[2,row] := '';
   // Contents
@@ -1691,6 +1888,20 @@ begin
   // Fill event arguments
   for i := 0 to High(ct.args) do
     fill_arg_control_group(Addr(acgs[i+Length(event_args_struct_members)]), Addr(ct.args[i]), panel_top);
+  // Fill condition data UI
+  if ct.condition_data >= cdUnitFilter then
+  begin
+    pnConditionFilter.Visible := true;
+    loading := true;
+    seConditionFilterAmount.Value := tmp_condition.arg2;
+    if (tmp_condition.arg1 and 1) <> 0 then
+      rbConditionFilterAmoutEq.Checked := true
+    else
+      rbConditionFilterAmoutGtEq.Checked := true;
+    loading := false;
+    fill_filter_control_group(Addr(fcgs[1]), Ord(ct.condition_data) - Ord(cdUnitFilter));
+  end else
+    pnConditionFilter.Visible := false;
   // Fill condition note
   if notes_enabled then
     edConditionNote.Text := MissionIni.condition_notes[selected_condition];
@@ -1951,13 +2162,225 @@ end;
 
 procedure TEventDialog.fill_arg_combo_box(acg: TArgControlGroupPtr; value: integer; force_update_list: boolean);
 begin
-  if acg.argdef.list_type = ltNone then
-    exit;
-  if acg.argdef.list_type = ltCustom then
-    acg.combo_box.Items := acg.argdef.values
-  else
-    acg.combo_box.Items := cached_lists[Byte(acg.argdef.list_type)];
+  case acg.argdef.list_type of
+    ltNone: exit;
+    ltCustom: acg.combo_box.Items := acg.argdef.values;
+    ltGame: acg.combo_box.Items := GameLists.lists[Ord(acg.argdef.game_list_type)];
+    ltItem: acg.combo_box.Items := cached_lists[Ord(acg.argdef.item_list_type)];
+  end;
   acg.combo_box.ItemIndex := value;
+end;
+
+procedure TEventDialog.create_filter_control_group(index: integer; filter_ptr: Pointer; parent_panel: TPanel);
+var
+  lbl: TLabel;
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  fcgs[index].object_type := -1;
+  fcgs[index].filter_ptr := filter_ptr;
+  with fcgs[index] do
+  begin
+    cb_check_position := TCheckBox.Create(self);
+    cb_check_position.Top := 24;
+    cb_check_position.Caption := 'Check for position';
+    cb_check_position.Width := 108;
+    cb_check_position.Tag := index;
+    cb_check_position.OnClick := FCGValueChange;
+    cb_check_position.Parent := parent_panel;
+    cb_position_negation := TCheckBox.Create(self);
+    cb_position_negation.Top := 24;
+    cb_position_negation.Left := 112;
+    cb_position_negation.Caption := 'Negation';
+    cb_position_negation.Tag := index;
+    cb_position_negation.OnClick := FCGValueChange;
+    cb_position_negation.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 0;
+    lbl.Top := 42;
+    lbl.Caption := 'Min X';
+    lbl.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 56;
+    lbl.Top := 42;
+    lbl.Caption := 'Min Y';
+    lbl.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 112;
+    lbl.Top := 42;
+    lbl.Caption := 'Max X';
+    lbl.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 168;
+    lbl.Top := 42;
+    lbl.Caption := 'Max Y';
+    lbl.Parent := parent_panel;
+    se_position_minx := TSpinEdit.Create(self);
+    se_position_minx.Top := 56;
+    se_position_minx.Left := 0;
+    se_position_minx.Width := 49;
+    se_position_minx.MaxValue := 127;
+    se_position_minx.Tag := index;
+    se_position_minx.OnChange := FCGValueChange;
+    se_position_minx.Parent := parent_panel;
+    se_position_miny := TSpinEdit.Create(self);
+    se_position_miny.Top := 56;
+    se_position_miny.Left := 56;
+    se_position_miny.Width := 49;
+    se_position_miny.MaxValue := 127;
+    se_position_miny.Tag := index;
+    se_position_miny.OnChange := FCGValueChange;
+    se_position_miny.Parent := parent_panel;
+    se_position_maxx := TSpinEdit.Create(self);
+    se_position_maxx.Top := 56;
+    se_position_maxx.Left := 112;
+    se_position_maxx.Width := 49;
+    se_position_maxx.MaxValue := 127;
+    se_position_maxx.Tag := index;
+    se_position_maxx.OnChange := FCGValueChange;
+    se_position_maxx.Parent := parent_panel;
+    se_position_maxy := TSpinEdit.Create(self);
+    se_position_maxy.Top := 56;
+    se_position_maxy.Left := 168;
+    se_position_maxy.Width := 49;
+    se_position_maxy.MaxValue := 127;
+    se_position_maxy.Tag := index;
+    se_position_maxy.OnChange := FCGValueChange;
+    se_position_maxy.Parent := parent_panel;
+    btn_position_select := TButton.Create(self);
+    btn_position_select.Left := 232;
+    btn_position_select.Top := 56;
+    btn_position_select.Width := 49;
+    btn_position_select.Height := 22;
+    btn_position_select.Caption := 'Select';
+    btn_position_select.Tag := index;
+    btn_position_select.OnClick := FCGBtnSelectClick;
+    btn_position_select.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 0;
+    lbl.Top := 94;
+    lbl.Caption := 'And/Or';
+    lbl.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 40;
+    lbl.Top := 82;
+    lbl.Caption := 'Criteria';
+    lbl.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 117;
+    lbl.Top := 82;
+    lbl.Caption := 'Comp.';
+    lbl.Parent := parent_panel;
+    lbl := TLabel.Create(self);
+    lbl.Left := 152;
+    lbl.Top := 82;
+    lbl.Caption := 'Value';
+    lbl.Parent := parent_panel;
+    for i := 0 to 7 do
+    begin
+      cbx_criteria[i] := TComboBox.Create(self);
+      cbx_criteria[i].Top := 96 + i * 24;
+      cbx_criteria[i].Left := 40;
+      cbx_criteria[i].Width := 78;
+      cbx_criteria[i].Style := csDropDownList;
+      cbx_criteria[i].Tag := index;
+      cbx_criteria[i].OnChange := FCGCriteriaChange;
+      cbx_criteria[i].Parent := parent_panel;
+      criteria_type[i] := -1;
+      cbx_operation[i] := TComboBox.Create(self);
+      cbx_operation[i].Top := 96 + i * 24;
+      cbx_operation[i].Left := 117;
+      cbx_operation[i].Width := 36;
+      cbx_operation[i].Style := csDropDownList;
+      cbx_operation[i].Tag := index;
+      cbx_operation[i].OnChange := FCGValueChange;
+      cbx_operation[i].Parent := parent_panel;
+      se_value[i] := TSpinEdit.Create(self);
+      se_value[i].Top := 96 + i * 24;
+      se_value[i].Left := 152;
+      se_value[i].Width := 64;
+      se_value[i].Tag := index;
+      se_value[i].OnChange := FCGValueChange;
+      se_value[i].Parent := parent_panel;
+      cbx_value[i] := TComboBox.Create(self);
+      cbx_value[i].Top := 96 + i * 24;
+      cbx_value[i].Left := 152;
+      cbx_value[i].Width := 136;
+      cbx_value[i].Style := csDropDownList;
+      cbx_value[i].Tag := index;
+      cbx_value[i].OnChange := FCGValueChange;
+      cbx_value[i].Parent := parent_panel;
+    end;
+    tmp_strings := TStringList.Create;
+    tmp_strings.Add('1&');
+    tmp_strings.Add('2o');
+    tmp_strings.Add('3&');
+    tmp_strings.Add('4o');
+    for i := 0 to 6 do
+    begin
+      cbx_and_or[i] := TComboBox.Create(self);
+      cbx_and_or[i].Top := 108 + i * 24;
+      cbx_and_or[i].Left := 0;
+      cbx_and_or[i].Width := 40;
+      cbx_and_or[i].Style := csDropDownList;
+      cbx_and_or[i].Tag := index;
+      cbx_and_or[i].OnChange := FCGValueChange;
+      cbx_and_or[i].Parent := parent_panel;
+      cbx_and_or[i].Items := tmp_strings;
+    end;
+    tmp_strings.Destroy;
+  end;
+end;
+
+procedure TEventDialog.fill_filter_control_group(fcg: TFilterControlGroupPtr; object_type: integer);
+var
+  tmp_strings: TStringList;
+  i: integer;
+begin
+  // Fill criteria type combo boxes
+  if fcg.object_type <> object_type then
+  begin
+    tmp_strings := TStringList.Create;
+    for i := 0 to Length(EventConfig.filter_criteria[object_type]) - 1 do
+      tmp_strings.Add(EventConfig.filter_criteria[object_type, i].name);
+    for i := 0 to High(fcg.cbx_criteria) do
+    begin
+      fcg.cbx_criteria[i].Items := tmp_strings;
+      fcg.criteria_type[i] := -1;
+    end;
+    tmp_strings.Destroy;
+    fcg.object_type := object_type;
+  end;
+  // Fill data fields
+  loading := true;
+  fcg.cb_check_position.Checked := (fcg.filter_ptr.pos_flags and 1) <> 0;
+  fcg.cb_position_negation.Checked := (fcg.filter_ptr.pos_flags and 2) <> 0;
+  fcg.se_position_minx.Value := fcg.filter_ptr.pos_min_x;
+  fcg.se_position_miny.Value := fcg.filter_ptr.pos_min_y;
+  fcg.se_position_maxx.Value := fcg.filter_ptr.pos_max_x;
+  fcg.se_position_maxy.Value := fcg.filter_ptr.pos_max_y;
+  fcg.cb_position_negation.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_minx.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_miny.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_maxx.Enabled := fcg.cb_check_position.Checked;
+  fcg.se_position_maxy.Enabled := fcg.cb_check_position.Checked;
+  fcg.btn_position_select.Enabled := fcg.cb_check_position.Checked;
+  for i := 0 to High(fcg.cbx_criteria) do
+    fcg.cbx_criteria[i].ItemIndex := fcg.filter_ptr.criteria_type[i] and 63;
+  FCGCriteriaChange(fcg.cbx_criteria[0]);
+  for i := 0 to High(fcg.cbx_criteria) do
+  begin
+    fcg.cbx_operation[i].ItemIndex := fcg.filter_ptr.criteria_type[i] shr 6;
+    if EventConfig.filter_criteria[object_type, fcg.cbx_criteria[i].ItemIndex].list_type = ltNone then
+      fcg.se_value[i].Value := fcg.filter_ptr.criteria_value[i]
+    else
+      fcg.cbx_value[i].ItemIndex := fcg.filter_ptr.criteria_value[i];
+  end;
+  for i := 0 to High(fcg.cbx_and_or) do
+  begin
+    fcg.cbx_and_or[i].ItemIndex := (fcg.filter_ptr.criteria_and_or shr (i * 2)) and 3;
+  end;
+  loading := false;
 end;
 
 procedure TEventDialog.finish_point_selection(x, y: integer);
@@ -1975,6 +2398,7 @@ end;
 procedure TEventDialog.finish_area_selection(min_x, max_x, min_y, max_y: integer);
 var
   ccg: TCoordControlGroupPtr;
+  fcg: TFilterControlGroupPtr;
   width, height, tiles: integer;
   i, j: integer;
 begin
@@ -1991,12 +2415,25 @@ begin
     exit;
   end;
   // Set up spin edits
-  ccg := Addr(ccgs[selected_coord_index]);
-  ccg.spin_x.Value := min_x;
-  ccg.spin_y.Value := min_y;
-  ccg := Addr(ccgs[selected_coord_index + 1]);
-  ccg.spin_x.Value := width;
-  ccg.spin_y.Value := height;
+  if (selected_coord_index < 0) then
+  begin
+    fcg := Addr(fcgs[not selected_coord_index]);
+    loading := true;
+    fcg.se_position_minx.Value := min_x;
+    fcg.se_position_miny.Value := min_y;
+    fcg.se_position_maxx.Value := max_x;
+    fcg.se_position_maxy.Value := max_y;
+    loading := false;
+    FCGValueChange(fcg.se_position_minx);
+  end else
+  begin
+    ccg := Addr(ccgs[selected_coord_index]);
+    ccg.spin_x.Value := min_x;
+    ccg.spin_y.Value := min_y;
+    ccg := Addr(ccgs[selected_coord_index + 1]);
+    ccg.spin_x.Value := width;
+    ccg.spin_y.Value := height;
+  end;
   // Copy tile block from map
   if EventConfig.event_types[tmp_event.event_type].event_data = edTileBlock then
   begin

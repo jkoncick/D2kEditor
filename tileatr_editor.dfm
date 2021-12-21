@@ -125,39 +125,6 @@ object TileAtrEditor: TTileAtrEditor
     Font.Name = 'MS Sans Serif'
     Font.Style = []
     ItemHeight = 17
-    Items.Strings = (
-      'Building/Unit owner side (bit1)'
-      'Building/Unit owner side (bit2)'
-      'Building/Unit owner side (bit3)'
-      'Occupied by Unit'
-      'Occupied by Building'
-      'Occupied by Infantry (middle)'
-      'Occupied by Infantry (top-right)'
-      'Occupied by Infantry (down-right)'
-      'Occupied by Infantry (down-left)'
-      'Occupied by Infantry (top-left)'
-      'Wall'
-      'Concrete'
-      'Non-buildable'
-      'Vehicles can pass'
-      'Infantry can pass'
-      'Buildings can be placed, Rock craters'
-      'Sandworm can pass, Sand craters'
-      'Concrete owner side (bit 1)'
-      'Concrete owner side (bit 2)'
-      'Concrete owner side (bit 3)'
-      'Spice amount (bit 1)'
-      'Spice amount (bit 2)'
-      'Spice amount (bit 3)'
-      'Unknown/Unused'
-      'Unknown/Unused'
-      'Unknown (side bit 1)'
-      'Unknown (side bit 2)'
-      'Unknown (side bit 3)'
-      'Unknown/Unused'
-      'Speed modifier (bit1)'
-      'Speed modifier (bit2)'
-      'Speed modifier (bit3)')
     ParentFont = False
     Style = lbOwnerDrawFixed
     TabOrder = 3

@@ -2,7 +2,7 @@ unit _eventconfig;
 
 interface
 
-uses Classes, IniFiles, _utils;
+uses Classes, IniFiles, _utils, _gamelists;
 
 type  CoordType =                           (ctNone, ctPoint, ctArea);
 const CoordTypeStr: array[0..2] of string = ('None', 'Point', 'Area');
@@ -10,14 +10,20 @@ const CoordTypeStr: array[0..2] of string = ('None', 'Point', 'Area');
 type  ArgType =                           (atNone, atNumber, atBigNumber, atHexNumber, atFloat, atList, atBool, atSwitch);
 const ArgTypeStr: array[0..7] of String = ('None', 'Number', 'BigNumber', 'HexNumber', 'Float', 'List', 'Bool', 'Switch');
 
-type  ListType =                           (ltNone, ltCustom, ltPlayers, ltSounds, ltBuildings, ltUnits, ltWeapons, ltExplosions);
-const ListTypeStr: array[0..7] of String = ('None', 'Custom', 'Players', 'Sounds', 'Buildings', 'Units', 'Weapons', 'Explosions');
+type  ListType =                           (ltNone, ltCustom, ltGame, ltItem);
+const ListTypeStr: array[0..3] of String = ('None', 'Custom', 'Game', 'Item');
+
+type  ItemListType =                            (ilNone, ilPlayers, ilPlayersAny, ilSounds, ilUnits, ilUnitGroups, ilBuildings, ilBuildingGroups, ilWeapons, ilExplosions, ilArmourTypes, ilSpeedTypes);
+const ItemListTypeStr: array[0..11] of String = ('None', 'Players', 'PlayersAny', 'Sounds', 'Units', 'UnitGroups', 'Buildings', 'BuildingGroups', 'Weapons', 'Explosions', 'ArmourTypes', 'SpeedTypes');
 
 type  ReferenceType =                           (rtNone, rtEvent, rtCondition);
 const ReferenceTypeStr: array[0..2] of String = ('None', 'Event', 'Condition');
 
-type  EventData =                           (edNone, edUnitList, edByteValues, edMessage, edMusic, edTileBlock, edTilePairs);
-const EventDataStr: array[0..6] of String = ('None', 'UnitList', 'ByteValues', 'Message', 'Music', 'TileBlock', 'TilePairs');
+type  EventData =                            (edNone, edUnitList, edByteValues, edMessage, edMusic, edTileBlock, edTilePairs, edUnitFilter, edBuildingFilter, edCrateFilter, edTileFilter);
+const EventDataStr: array[0..10] of String = ('None', 'UnitList', 'ByteValues', 'Message', 'Music', 'TileBlock', 'TilePairs', 'UnitFilter', 'BuildingFilter', 'CrateFilter', 'TileFilter');
+
+type  ConditionData =                           (cdNone, cdUnitFilter, cdBuildingFilter, cdCrateFilter, cdTileFilter);
+const ConditionDataStr: array[0..4] of String = ('None', 'UnitFilter', 'BuildingFilter', 'CrateFilter', 'TileFilter');
 
 type
   TShowIfDefinition = record
@@ -47,6 +53,8 @@ type
     show_if: TShowIfDefinition;
     arg_type: ArgType;
     list_type: ListType;
+    game_list_type: GameListType;
+    item_list_type: ItemListType;
     reference: ReferenceType;
     default: integer;
     maxval: integer;
@@ -74,6 +82,7 @@ type
     name: String;
     coords: array[0..1] of TCoordDefinition;
     args: array[0..6] of TArgDefinition;
+    condition_data: ConditionData;
     contents: String;
     has_map_pos: boolean;
     has_player: boolean;
@@ -87,6 +96,22 @@ type
     ctSpiceHarvested, ctFlag);
 
 type
+  TFilterCriteriaDefinition = record
+    name: String;
+    list_type: ListType;
+    game_list_type: GameListType;
+    item_list_type: ItemListType;
+    is_flag: boolean;
+    default: integer;
+    maxval: integer;
+    values: TStringList;
+  end;
+
+  TFilterCriteriaDefinitionPtr = ^TFilterCriteriaDefinition;
+
+  TFilterCriteriaDefinitionArr = array of TFilterCriteriaDefinition;
+
+type
   TEventConfig = class
 
   public
@@ -98,6 +123,8 @@ type
     condition_types: array[-1..255] of TConditionTypeDefinition;
     condition_type_mapping: array[0..255] of byte;
     cnt_valid_condition_types: integer;
+    // Filter criteria configuration
+    filter_criteria: array[0..3] of TFilterCriteriaDefinitionArr;
 
   public
     procedure init;
@@ -107,6 +134,7 @@ type
     procedure load_show_if_definition(show_if: TShowIfDefinitionPtr; string_def: string);
     procedure load_coord_definition(coord: TCoordDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
     procedure load_argument_definition(arg: TArgDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
+    procedure load_filter_criteria(index: integer; object_name: string);
   end;
 
 function evaluate_show_if(show_if: TShowIfDefinitionPtr; data_ptr: Pointer; struct_def: TStructDefinitionPtr): boolean;
@@ -122,6 +150,10 @@ procedure TEventConfig.init;
 begin
   load_event_types_ini;
   load_condition_types_ini;
+  load_filter_criteria(0, 'unit');
+  load_filter_criteria(1, 'building');
+  load_filter_criteria(2, 'crate');
+  load_filter_criteria(3, 'tile');
   Dispatcher.register_event(evLoadEventTypeConfiguration);
 end;
 
@@ -184,6 +216,7 @@ procedure TEventConfig.load_condition_types_ini;
 var
   tmp_filename: String;
   i, j: integer;
+  s: string;
   ini: TMemIniFile;
   tmp_strings, decoder: TStringList;
 begin
@@ -215,6 +248,14 @@ begin
     // Load args
     for j := 0 to Length(condition_types[i].args) - 1 do
       load_argument_definition(Addr(condition_types[i].args[j]), ini, tmp_strings[i], j);
+    // Load condition data
+    s := ini.ReadString(tmp_strings[i], 'data', 'None');
+    for j := 0 to High(ConditionDataStr) do
+      if s = ConditionDataStr[j] then
+      begin
+        condition_types[i].condition_data := ConditionData(j);
+        break;
+      end;
     // Load contents
     condition_types[i].contents := ini.ReadString(tmp_strings[i], 'contents', '');
     // Fill auxiliary properties
@@ -289,6 +330,21 @@ begin
       arg.list_type := ListType(i);
       break;
     end;
+  // Load game list type
+  if (arg.list_type = ltGame) then
+    arg.game_list_type := GameListType(GameLists.get_game_list_type(ini.ReadString(ini_sect, n + '.list_type', 'None')));
+  // Load item list type
+  if (arg.list_type = ltItem) then
+  begin
+    arg.item_list_type := ilNone;
+    s := ini.ReadString(ini_sect, n + '.list_type', 'None');
+    for i := 0 to High(ItemListTypeStr) do
+      if s = ItemListTypeStr[i] then
+      begin
+        arg.item_list_type := ItemListType(i);
+        break;
+      end;
+  end;
   // Load reference type
   arg.reference := rtNone;
   s := ini.ReadString(ini_sect, n + '.reference', 'None');
@@ -316,6 +372,72 @@ begin
       end;
     arg.values.Add(Copy(s, start, Length(s) - start + 1));
   end;
+end;
+
+procedure TEventConfig.load_filter_criteria(index: integer; object_name: string);
+var
+  tmp_filename: String;
+  s: String;
+  i, j, start: integer;
+  ini: TMemIniFile;
+  tmp_strings: TStringList;
+begin
+  tmp_filename := find_file('config\'+ object_name + '_criteria.ini', 'configuration');
+  if tmp_filename = '' then
+    exit;
+  // Load criteria from ini file
+  tmp_strings := TStringList.Create;
+  ini := TMemIniFile.Create(tmp_filename);
+  ini.ReadSections(tmp_strings);
+  SetLength(filter_criteria[index], tmp_strings.Count);
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    filter_criteria[index, i].name := tmp_strings[i];
+    // Load list type
+    filter_criteria[index, i].list_type := ltNone;
+    s := ini.ReadString(tmp_strings[i], 'list', 'None');
+    for j := 0 to High(ListTypeStr) do
+      if s = ListTypeStr[j] then
+      begin
+        filter_criteria[index, i].list_type := ListType(j);
+        break;
+      end;
+    // Load game list type
+    if (filter_criteria[index, i].list_type = ltGame) then
+      filter_criteria[index, i].game_list_type := GameListType(GameLists.get_game_list_type(ini.ReadString(tmp_strings[i], 'list_type', 'None')));
+    // Load item list type
+    if (filter_criteria[index, i].list_type = ltItem) then
+    begin
+      filter_criteria[index, i].item_list_type := ilNone;
+      s := ini.ReadString(tmp_strings[i], 'list_type', 'None');
+      for j := 0 to High(ItemListTypeStr) do
+        if s = ItemListTypeStr[j] then
+        begin
+          filter_criteria[index, i].item_list_type := ItemListType(j);
+          break;
+        end;
+    end;
+    // Load properties
+    filter_criteria[index, i].is_flag := ini.ReadBool(tmp_strings[i], 'flag', false);
+    filter_criteria[index, i].default := ini.ReadInteger(tmp_strings[i], 'default', 0);
+    filter_criteria[index, i].maxval := ini.ReadInteger(tmp_strings[i], 'maxval', 255);
+    // Load list of values
+    if (filter_criteria[index, i].list_type = ltCustom) then
+    begin
+      filter_criteria[index, i].values := TStringList.Create;
+      s := ini.ReadString(tmp_strings[i], 'values', '');
+      start := 1;
+      for j := 1 to Length(s) do
+        if s[j] = ';' then
+        begin
+          filter_criteria[index, i].values.Add(Copy(s, start, j - start));
+          start := j + 1;
+        end;
+      filter_criteria[index, i].values.Add(Copy(s, start, Length(s) - start + 1));
+    end;
+  end;
+  ini.Destroy;
+  tmp_strings.Destroy;
 end;
 
 function evaluate_show_if(show_if: TShowIfDefinitionPtr; data_ptr: Pointer; struct_def: TStructDefinitionPtr): boolean;

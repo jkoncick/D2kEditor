@@ -719,6 +719,7 @@ type
     pending_update_tileset: boolean;
   public
     // Dispatcher procedures
+    procedure update_game_lists;
     procedure update_sound_list;
     procedure update_contents;
     procedure update_tileset;
@@ -772,7 +773,7 @@ var
 
 implementation
 
-uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, test_map_dialog;
+uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, _gamelists, test_map_dialog;
 
 {$R *.dfm}
 
@@ -2352,6 +2353,18 @@ end;
 procedure TStructuresEditor.imgImagePaletteClick(Sender: TObject);
 begin
   pnImagePalette.Visible := false;
+end;
+
+procedure TStructuresEditor.update_game_lists;
+var
+  list: TStringList;
+begin
+  list := GameLists.get_numbered_list(glBuildingBehavior);
+  cbxBuildingSpecialBehavior.Items := list;
+  list.Destroy;
+  list := GameLists.get_numbered_list(glUnitBehavior);
+  cbxUnitSpecialBehavior.Items := list;
+  list.Destroy;
 end;
 
 procedure TStructuresEditor.update_sound_list;

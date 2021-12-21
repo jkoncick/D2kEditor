@@ -8,7 +8,7 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Units
-  _utils, _dispatcher, _renderer, _map, _mission, _missionini, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher, _eventconfig;
+  _utils, _dispatcher, _renderer, _map, _mission, _missionini, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher, _gamelists, _eventconfig;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -368,6 +368,7 @@ type
     editing_marker_disabled: boolean;
 
     // Dispatcher procedures
+    procedure update_game_lists;
     procedure update_structures_list(building_list, unit_list: TStringList);
     procedure update_player_list(player_list: TStringList);
     procedure update_misc_object_list;
@@ -1726,6 +1727,20 @@ begin
   if BlockPresetDialog.Visible then
     BlockPresetDialog.Show;
   BlockPresetDialog.init_presets;
+end;
+
+procedure TMainWindow.update_game_lists;
+var
+  list: TStringList;
+begin
+  list := GameLists.get_numbered_list(glCrateType);
+  cbxCrateType.Items := list;
+  cbxCrateType.ItemIndex := 0;
+  list.Destroy;
+  list := GameLists.get_numbered_list(glCrateImage);
+  cbxCrateImage.Items := list;
+  cbxCrateImage.ItemIndex := 0;
+  list.Destroy;
 end;
 
 procedure TMainWindow.update_structures_list(building_list, unit_list: TStringList);

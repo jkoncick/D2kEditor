@@ -1,6 +1,6 @@
 object EventDialog: TEventDialog
   Left = 190
-  Top = 71
+  Top = 0
   Width = 1378
   Height = 720
   Caption = 'Events and Conditions'
@@ -18,6 +18,7 @@ object EventDialog: TEventDialog
   OnClose = FormClose
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
+  OnResize = FormResize
   OnShortCut = FormShortCut
   OnShow = FormShow
   PixelsPerInch = 96
@@ -29,6 +30,7 @@ object EventDialog: TEventDialog
     Height = 4
     Cursor = crVSplit
     Align = alBottom
+    OnMoved = FormResize
   end
   object BevelSizeHolder: TBevel
     Left = 0
@@ -103,7 +105,7 @@ object EventDialog: TEventDialog
       ColCount = 4
       DefaultRowHeight = 18
       RowCount = 2
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowSelect, goThumbTracking]
       PopupMenu = ConditionGridPopupMenu
       TabOrder = 0
       OnDblClick = ConditionGridDblClick
@@ -482,6 +484,33 @@ object EventDialog: TEventDialog
           OnSetEditText = sgTilePairsSetEditText
         end
       end
+      object edpFilter: TPanel
+        Left = 0
+        Top = 0
+        Width = 288
+        Height = 288
+        Align = alClient
+        BevelOuter = bvNone
+        TabOrder = 6
+        object lblEventFilterLimit: TLabel
+          Left = 0
+          Top = 0
+          Width = 62
+          Height = 13
+          Caption = 'Limit amount:'
+        end
+        object seEventFilterLimit: TSpinEdit
+          Left = 72
+          Top = 0
+          Width = 57
+          Height = 22
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 0
+          Value = 0
+          OnChange = seEventFilterLimitChange
+        end
+      end
     end
     object EventConditionListPanel: TPanel
       Left = 528
@@ -826,6 +855,53 @@ object EventDialog: TEventDialog
       Caption = 
         'Select a contiguous range of events to export. Press Esc to canc' +
         'el.'
+    end
+  end
+  object pnConditionFilter: TPanel
+    Left = 840
+    Top = 96
+    Width = 288
+    Height = 288
+    BevelOuter = bvNone
+    TabOrder = 4
+    Visible = False
+    object lblConditionFilterAmount: TLabel
+      Left = 0
+      Top = 0
+      Width = 39
+      Height = 13
+      Caption = 'Amount:'
+    end
+    object seConditionFilterAmount: TSpinEdit
+      Left = 120
+      Top = 0
+      Width = 57
+      Height = 22
+      MaxValue = 255
+      MinValue = 0
+      TabOrder = 0
+      Value = 0
+      OnChange = seConditionFilterAmountChange
+    end
+    object rbConditionFilterAmoutGtEq: TRadioButton
+      Left = 48
+      Top = 0
+      Width = 33
+      Height = 17
+      Caption = '>='
+      Checked = True
+      TabOrder = 1
+      TabStop = True
+      OnClick = seConditionFilterAmountChange
+    end
+    object rbConditionFilterAmoutEq: TRadioButton
+      Left = 88
+      Top = 0
+      Width = 29
+      Height = 17
+      Caption = '='
+      TabOrder = 2
+      OnClick = seConditionFilterAmountChange
     end
   end
   object EventGridPopupMenu: TPopupMenu
