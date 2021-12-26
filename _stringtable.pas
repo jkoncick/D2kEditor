@@ -28,6 +28,7 @@ type
 
   public
     function get_text(index: integer; accept_custom: boolean; var is_custom: boolean): String;
+    function get_sample(index: integer): String;
     function find_samples_uib_value(value: string; hint_index: integer): integer;
     function add_samples_uib_entry(key, value: string): integer;
     procedure store_samples_uib_data_from_stringgrid(sg: TStringGrid);
@@ -167,6 +168,14 @@ begin
     result := '(undefined)'
   else
     result := text_uib.ValueFromIndex[index];
+end;
+
+function TStringTable.get_sample(index: integer): String;
+begin
+  if (index >= samples_uib.Count) or (index < 0) then
+    result := '(undefined)'
+  else
+    result := samples_uib.ValueFromIndex[index];
 end;
 
 function TStringTable.find_samples_uib_value(value: string; hint_index: integer): integer;

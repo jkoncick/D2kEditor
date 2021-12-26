@@ -637,7 +637,7 @@ begin
     ltGame: result := GameLists.lists[Ord(game_list_type)][value];
     ltItem: case item_list_type of
       ilPlayers: result := Structures.player_names[value];
-      ilSounds: result := StringTable.samples_uib.ValueFromIndex[value];
+      ilSounds: result := StringTable.get_sample(value);
       ilBuildings: result := Structures.get_building_name_str(value);
       ilBuildingGroups: result := Structures.get_building_group_str(value);
       ilUnits: result := Structures.get_unit_name_str(value);
