@@ -1733,11 +1733,11 @@ procedure TMainWindow.update_game_lists;
 var
   list: TStringList;
 begin
-  list := GameLists.get_numbered_list(glCrateType);
+  list := GameLists.get_numbered_list('CrateType');
   cbxCrateType.Items := list;
   cbxCrateType.ItemIndex := 0;
   list.Destroy;
-  list := GameLists.get_numbered_list(glCrateImage);
+  list := GameLists.get_numbered_list('CrateImage');
   cbxCrateImage.Items := list;
   cbxCrateImage.ItemIndex := 0;
   list.Destroy;

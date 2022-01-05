@@ -171,7 +171,7 @@ type
     function get_condition_contents(index: integer; show_player: boolean): String;
     function get_coords_contents(x, y: integer): String;
     function get_argument_contents(value: integer; argdef: TArgDefinitionPtr): String;
-    function get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: GameListType; item_list_type: ItemListType): String;
+    function get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: integer; item_list_type: ItemListType): String;
     function get_event_data_contents(event_id: integer): string;
     function get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer): string;
     function check_event_has_condition(index: integer; condition_index: integer): boolean;
@@ -629,14 +629,15 @@ begin
   end;
 end;
 
-function TMission.get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: GameListType; item_list_type: ItemListType): String;
+function TMission.get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: integer; item_list_type: ItemListType): String;
 begin
   case list_type of
     ltNone: result := IntToStr(value);
     ltCustom: result := value_list[value];
-    ltGame: result := GameLists.lists[Ord(game_list_type)][value];
+    ltGame: result := GameLists.get_list_ref(game_list_type)[value];
     ltItem: case item_list_type of
       ilPlayers: result := Structures.player_names[value];
+      ilPlayersAny: if value < 8 then result := Structures.player_names[value] else result := 'Any';
       ilSounds: result := StringTable.get_sample(value);
       ilBuildings: result := Structures.get_building_name_str(value);
       ilBuildingGroups: result := Structures.get_building_group_str(value);

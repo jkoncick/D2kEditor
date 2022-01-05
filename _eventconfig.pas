@@ -53,7 +53,7 @@ type
     show_if: TShowIfDefinition;
     arg_type: ArgType;
     list_type: ListType;
-    game_list_type: GameListType;
+    game_list_type: integer;
     item_list_type: ItemListType;
     reference: ReferenceType;
     default: integer;
@@ -99,7 +99,7 @@ type
   TFilterCriteriaDefinition = record
     name: String;
     list_type: ListType;
-    game_list_type: GameListType;
+    game_list_type: integer;
     item_list_type: ItemListType;
     is_flag: boolean;
     default: integer;
@@ -332,7 +332,7 @@ begin
     end;
   // Load game list type
   if (arg.list_type = ltGame) then
-    arg.game_list_type := GameListType(GameLists.get_game_list_type(ini.ReadString(ini_sect, n + '.list_type', 'None')));
+    arg.game_list_type := GameLists.get_list_index(ini.ReadString(ini_sect, n + '.list_type', 'None'));
   // Load item list type
   if (arg.list_type = ltItem) then
   begin
@@ -404,7 +404,7 @@ begin
       end;
     // Load game list type
     if (filter_criteria[index, i].list_type = ltGame) then
-      filter_criteria[index, i].game_list_type := GameListType(GameLists.get_game_list_type(ini.ReadString(tmp_strings[i], 'list_type', 'None')));
+      filter_criteria[index, i].game_list_type := GameLists.get_list_index(ini.ReadString(tmp_strings[i], 'list_type', 'None'));
     // Load item list type
     if (filter_criteria[index, i].list_type = ltItem) then
     begin

@@ -4,22 +4,23 @@ interface
 
 uses Classes;
 
-type  GameListType =                           (glNone, glUnitBehavior, glUnitFlag, glUnitState, glBuildingBehavior, glBuildingFlag, glBuildingState, glCrateType, glCrateImage, glTileAtr);
-const GameListTypeStr: array[0..9] of String = ('None', 'UnitBehavior', 'UnitFlag', 'UnitState', 'BuildingBehavior', 'BuildingFlag', 'BuildingState', 'CrateType', 'CrateImage', 'TileAtr');
-
 type
   TGameLists = class
 
-  public
-    lists: array[0..9] of TStringList;
+  private
+    list_index: TStringList;
+    lists: array of TStringList;
 
   public
     procedure init;
   private
     procedure load_game_lists_txt;
   public
-    function get_game_list_type(name: string): integer;
-    function get_numbered_list(list_type: GameListType): TStringList;
+    function get_list_index(name: string): integer;
+    function get_list_ref(index: integer): TStringList; overload;
+    function get_list_ref(name: string): TStringList; overload;
+    function get_numbered_list(index: integer): TStringList; overload;
+    function get_numbered_list(name: string): TStringList; overload;
   end;
 
 var
@@ -31,6 +32,10 @@ uses SysUtils, _dispatcher, _utils;
 
 procedure TGameLists.init;
 begin
+  list_index := TStringList.Create;
+  list_index.Add('None');
+  SetLength(lists, 1);
+  lists[0] := TStringList.Create;
   load_game_lists_txt;
   Dispatcher.register_event(evLoadGameLists);
 end;
@@ -38,19 +43,14 @@ end;
 procedure TGameLists.load_game_lists_txt;
 var
   tmp_filename: String;
-  i: integer;
   f: TextFile;
   line, section: string;
-  game_list_type: integer;
 begin
   tmp_filename := find_file('config\game_lists.txt', 'configuration');
   if tmp_filename = '' then
     exit;
-  for i := 0 to High(lists) do
-    lists[i] := TStringList.Create;
   AssignFile(f, tmp_filename);
   Reset(f);
-  game_list_type := 0;
   while not Eof(f) do
   begin
     Readln(f, line);
@@ -59,36 +59,51 @@ begin
     if line[1] = '[' then
     begin
       section := copy(line, 2, Length(line) - 2);
-      game_list_type := get_game_list_type(section);
+      list_index.Add(section);
+      SetLength(lists, list_index.Count);
+      lists[list_index.Count-1] := TStringList.Create;
       continue;
     end;
-    if game_list_type = 0 then
-      continue;
-    lists[game_list_type].Add(line);
+    lists[list_index.Count-1].Add(line);
   end;
   CloseFile(f);
 end;
 
-function TGameLists.get_game_list_type(name: string): integer;
+function TGameLists.get_list_index(name: string): integer;
 var
   i: integer;
 begin
+  for i := 0 to list_index.Count - 1 do
+    if list_index[i] = name then
+      begin
+        result := i;
+        exit;
+      end;
   result := 0;
-  for i := 0 to High(GameListTypeStr) do
-    if name = GameListTypeStr[i] then
-    begin
-      result := i;
-      exit;
-    end;
 end;
 
-function TGameLists.get_numbered_list(list_type: GameListType): TStringList;
+function TGameLists.get_list_ref(index: integer): TStringList;
+begin
+  result := lists[index];
+end;
+
+function TGameLists.get_list_ref(name: string): TStringList;
+begin
+  result := lists[get_list_index(name)];
+end;
+
+function TGameLists.get_numbered_list(index: integer): TStringList;
 var
   i: integer;
 begin
   result := TStringList.Create;
-  for i := 0 to lists[Ord(list_type)].Count - 1 do
-    result.Add(IntToStr(i) + ' - ' + lists[Ord(list_type)][i]);
+  for i := 0 to lists[index].Count - 1 do
+    result.Add(IntToStr(i) + ' - ' + lists[index][i]);
+end;
+
+function TGameLists.get_numbered_list(name: string): TStringList;
+begin
+  result := get_numbered_list(get_list_index(name));
 end;
 
 end.

@@ -47,9 +47,9 @@ object EventDialog: TEventDialog
     BevelOuter = bvNone
     TabOrder = 2
     object EventGrid: TStringGrid
-      Left = 140
+      Left = 168
       Top = 0
-      Width = 1230
+      Width = 1202
       Height = 394
       Align = alClient
       ColCount = 8
@@ -79,7 +79,7 @@ object EventDialog: TEventDialog
     object lbEventTypeList: TListBox
       Left = 0
       Top = 0
-      Width = 140
+      Width = 168
       Height = 394
       Align = alLeft
       ItemHeight = 13

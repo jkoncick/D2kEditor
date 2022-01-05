@@ -2359,10 +2359,10 @@ procedure TStructuresEditor.update_game_lists;
 var
   list: TStringList;
 begin
-  list := GameLists.get_numbered_list(glBuildingBehavior);
+  list := GameLists.get_numbered_list('BuildingBehavior');
   cbxBuildingSpecialBehavior.Items := list;
   list.Destroy;
-  list := GameLists.get_numbered_list(glUnitBehavior);
+  list := GameLists.get_numbered_list('UnitBehavior');
   cbxUnitSpecialBehavior.Items := list;
   list.Destroy;
 end;

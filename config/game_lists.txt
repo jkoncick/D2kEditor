@@ -68,7 +68,7 @@ Moving to refinery
 Entering refinery
 Unloading spice
 Leaving refinery
-Destroyed
+Dead
 Awaiting airlift
 Airlifted
 (Invalid)
@@ -77,7 +77,7 @@ Flying up
 Infiltrating
 Moving to repair pad
 Repairing
-State26
+Leaving repair pad
 Wandering
 Eating
 Sleeping
@@ -160,7 +160,7 @@ State13
 State14
 State15
 State16
-Destroyed
+Dead
 
 [CrateType]
 Cash
@@ -218,3 +218,20 @@ Unknown/Unused
 Terrain type (bit1)
 Terrain type (bit2)
 Terrain type (bit3)
+
+[ValueOperation]
+Set
+Add
+Substract
+MulPercent
+Modulo
+CapMax
+CapMin
+BitAnd
+BitOr
+BitXor
+
+[FlagOperation]
+Set
+Unset
+Toggle

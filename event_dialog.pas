@@ -1388,7 +1388,7 @@ begin
     // Actual list - initialize combo box
     case fcd.list_type of
       ltCustom: fcg.cbx_value[i].Items := fcd.values;
-      ltGame: fcg.cbx_value[i].Items := GameLists.lists[Ord(fcd.game_list_type)];
+      ltGame: fcg.cbx_value[i].Items := GameLists.get_list_ref(fcd.game_list_type);
       ltItem: fcg.cbx_value[i].Items := cached_lists[Ord(fcd.item_list_type)];
     end;
     fcg.cbx_value[i].ItemIndex := 0;
@@ -2165,7 +2165,7 @@ begin
   case acg.argdef.list_type of
     ltNone: exit;
     ltCustom: acg.combo_box.Items := acg.argdef.values;
-    ltGame: acg.combo_box.Items := GameLists.lists[Ord(acg.argdef.game_list_type)];
+    ltGame: acg.combo_box.Items := GameLists.get_list_ref(acg.argdef.game_list_type);
     ltItem: acg.combo_box.Items := cached_lists[Ord(acg.argdef.item_list_type)];
   end;
   acg.combo_box.ItemIndex := value;

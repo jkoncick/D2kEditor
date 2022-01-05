@@ -733,7 +733,7 @@ end;
 
 procedure TTileAtrEditor.update_game_lists;
 begin
-  TileAtrList.Items := GameLists.lists[Ord(glTileAtr)];
+  TileAtrList.Items := GameLists.get_list_ref('TileAtr');
 end;
 
 procedure TTileAtrEditor.update_tileset_list;
