@@ -500,6 +500,31 @@ begin
             cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
             cnv_target.Brush.Style := bsClear;
           end;
+          // Draw tagged marker
+          if o_mark_defence_areas and ((special and 49152) = 0) and ((special and 8192) <> 0) and ((special and 4096) <> 0) then
+          begin
+            cnv_target.Brush.Style := bsSolid;
+            cnv_target.Brush.Color := clLime;
+            cnv_target.Pen.Color := clBlack;
+            cnv_target.Ellipse(x*32+12, y*32+12, x*32+20, y*32+20);
+            cnv_target.Brush.Style := bsClear;
+          end;
+          // Draw primary marker
+          if o_mark_defence_areas and ((special and 49152) = 0) and ((special and 8192) <> 0) and ((special and 2048) <> 0) and (building_template.SpecialBehavior <> 16) then
+          begin
+            cnv_target.Brush.Style := bsClear;
+            cnv_target.Font.Color := clLime;
+            cnv_target.TextOut(x*32+4, y*32+2, '1');
+            cnv_target.Font.Color := clBlack;
+          end;
+          // Draw no new harv marker
+          if o_mark_defence_areas and ((special and 49152) = 0) and ((special and 8192) <> 0) and ((special and 1024) <> 0) and (building_template.SpecialBehavior <> 16) then
+          begin
+            cnv_target.Brush.Style := bsClear;
+            cnv_target.Font.Color := clLime;
+            cnv_target.TextOut(x*32+8, y*32+2, 'NoHarv');
+            cnv_target.Font.Color := clBlack;
+          end;
         end else
           draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, $FF00FF, 2);
       end else
@@ -542,6 +567,15 @@ begin
             cnv_target.CopyMode := cmSrcPaint;
             cnv_target.CopyRect(dest_rect,StructGraphics.graphics_misc_objects.Canvas,src_rect);
             cnv_target.CopyMode := cmSrcCopy;
+          end;
+          // Draw tagged marker
+          if o_mark_defence_areas and ((special and 32768) = 0) and ((special and 16384) <> 0) and ((special and 8192) <> 0) then
+          begin
+            cnv_target.Brush.Style := bsSolid;
+            cnv_target.Brush.Color := clLime;
+            cnv_target.Pen.Color := clBlack;
+            cnv_target.Ellipse(x*32+12, y*32+12, x*32+20, y*32+20);
+            cnv_target.Brush.Style := bsClear;
           end;
         end else
           draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, $FF00FF, 2);
