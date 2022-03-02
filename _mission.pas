@@ -174,7 +174,7 @@ type
     function get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: integer; item_list_type: ItemListType): String;
     function get_event_data_contents(event_id: integer): string;
     function get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer): string;
-    function check_event_has_condition(index: integer; condition_index: integer): boolean;
+    function check_event_has_condition(index: integer; condition_index: integer; var negation: boolean): boolean;
     // Creating/deleting events/conditions
     function add_event(position, event_type: integer): integer;
     function add_condition(condition_type: integer): boolean;
@@ -739,7 +739,7 @@ begin
   result := contents;
 end;
 
-function TMission.check_event_has_condition(index, condition_index: integer): boolean;
+function TMission.check_event_has_condition(index, condition_index: integer; var negation: boolean): boolean;
 var
   event: ^TEvent;
   i: integer;
@@ -749,6 +749,7 @@ begin
   begin
     if event.condition_index[i] = condition_index then
     begin
+      negation := event.condition_not[i] <> 0;
       result := true;
       exit;
     end;

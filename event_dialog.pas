@@ -604,16 +604,20 @@ begin
   Handled := true;
 end;
 
-procedure TEventDialog.EventGridDrawCell(Sender: TObject; ACol,
-  ARow: Integer; Rect: TRect; State: TGridDrawState);
+procedure TEventDialog.EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+var
+  negation: boolean;
 begin
   if not cbMarkEventsHavingCondition.Checked then
     exit;
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) then
     exit;
-  if Mission.check_event_has_condition(ARow - 1, selected_condition) then
+  if Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
   begin
-    EventGrid.Canvas.Brush.Color := clYellow;
+    if not negation then
+      EventGrid.Canvas.Brush.Color := clYellow
+    else
+      EventGrid.Canvas.Brush.Color := $00E0E0;
     EventGrid.Canvas.FillRect(Rect);
     EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
   end;
@@ -1937,6 +1941,7 @@ var
   ct: TConditionTypeDefinitionPtr;
   old_condition_used_position: boolean;
   i: integer;
+  negation: boolean;
 begin
   if selected_condition >= Mission.num_conditions then
     exit;
@@ -1954,9 +1959,9 @@ begin
   // Update GUI
   fill_condition_grid_row(selected_condition);
   for i := 0 to Mission.num_events - 1 do
-    if Mission.check_event_has_condition(i, selected_condition) then
+    if Mission.check_event_has_condition(i, selected_condition, negation) then
       fill_event_grid_row(i);
-  if Mission.check_event_has_condition(selected_event, selected_condition) then
+  if Mission.check_event_has_condition(selected_event, selected_condition, negation) then
     fill_event_condition_list;
   // Update event markers on map if condition has position
   if old_condition_used_position or (ct.has_map_pos) then
