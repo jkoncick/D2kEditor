@@ -135,7 +135,6 @@ type
     lblMusic: TLabel;
     BevelSizeHolder: TBevel;
     cbMusicName: TComboBox;
-    cbMarkEventsHavingCondition: TCheckBox;
     MoveUp2: TMenuItem;
     MoveDown2: TMenuItem;
     btnMoveConditionUp: TButton;
@@ -184,6 +183,13 @@ type
     seConditionFilterAmount: TSpinEdit;
     rbConditionFilterAmoutGtEq: TRadioButton;
     rbConditionFilterAmoutEq: TRadioButton;
+    N3: TMenuItem;
+    Marknothing1: TMenuItem;
+    Markselcondition1: TMenuItem;
+    Markseltype1: TMenuItem;
+    N4: TMenuItem;
+    Marknothing2: TMenuItem;
+    Markseltype2: TMenuItem;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -191,6 +197,7 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
     // Event type list actions
+    procedure lbEventTypeListClick(Sender: TObject);
     procedure lbEventTypeListDblClick(Sender: TObject);
     // Event grid actions
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -214,6 +221,7 @@ type
     procedure Createrunonceflag1Click(Sender: TObject);
     procedure Exportevents1Click(Sender: TObject);
     procedure Importevents1Click(Sender: TObject);
+    procedure MarkEventsClick(Sender: TObject);
     // Create events panel actions
     procedure btnCreateEventsCancelClick(Sender: TObject);
     procedure cbCreateEventsPlayerChange(Sender: TObject);
@@ -256,6 +264,7 @@ type
     procedure btnEventConditionListCopyClick(Sender: TObject);
     procedure btnEventConditionListPasteClick(Sender: TObject);
     // Condition type list actions
+    procedure lbConditionTypeListClick(Sender: TObject);
     procedure lbConditionTypeListDblClick(Sender: TObject);
     // Condition grid actions
     procedure ConditionGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -264,6 +273,7 @@ type
     procedure ConditionGridMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure ConditionGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure ConditionGridMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure ConditionGridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
     // Condition grid popup menu actions
     procedure Addcondition1Click(Sender: TObject);
     procedure Duplicatecondition1Click(Sender: TObject);
@@ -271,10 +281,10 @@ type
     procedure Deletelastcondition1Click(Sender: TObject);
     procedure MoveUp2Click(Sender: TObject);
     procedure MoveDown2Click(Sender: TObject);
+    procedure MarkConditionsClick(Sender: TObject);
     // Condition properties panel actions
     procedure cbxConditionTypeChange(Sender: TObject);
     procedure btnApplyConditionChangesClick(Sender: TObject);
-    procedure cbMarkEventsHavingConditionClick(Sender: TObject);
     // Condition filter panel actions
     procedure seConditionFilterAmountChange(Sender: TObject);
     // Miscellaneous
@@ -516,6 +526,12 @@ begin
   end;
 end;
 
+procedure TEventDialog.lbEventTypeListClick(Sender: TObject);
+begin
+  if Markseltype1.Checked then
+    EventGrid.Invalidate;
+end;
+
 procedure TEventDialog.lbEventTypeListDblClick(Sender: TObject);
 var
   newpos: integer;
@@ -608,16 +624,22 @@ procedure TEventDialog.EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; R
 var
   negation: boolean;
 begin
-  if not cbMarkEventsHavingCondition.Checked then
+  if Marknothing1.Checked then
     exit;
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) then
     exit;
-  if Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
+  if Markselcondition1.Checked and Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
   begin
     if not negation then
       EventGrid.Canvas.Brush.Color := clYellow
     else
       EventGrid.Canvas.Brush.Color := $00E0E0;
+    EventGrid.Canvas.FillRect(Rect);
+    EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
+  end else
+  if Markseltype1.Checked and (Mission.event_data[ARow - 1].event_type = lbEventTypeList.ItemIndex) and (ARow - 1 < Mission.num_events) then
+  begin
+    EventGrid.Canvas.Brush.Color := clYellow;
     EventGrid.Canvas.FillRect(Rect);
     EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
   end;
@@ -748,6 +770,11 @@ procedure TEventDialog.Importevents1Click(Sender: TObject);
 begin
   if ImportEventsDialog.Execute then
     Mission.import_events(ImportEventsDialog.FileName);
+end;
+
+procedure TEventDialog.MarkEventsClick(Sender: TObject);
+begin
+  EventGrid.Invalidate;
 end;
 
 procedure TEventDialog.btnCreateEventsCancelClick(Sender: TObject);
@@ -1088,6 +1115,12 @@ begin
   EventGrid.SetFocus;
 end;
 
+procedure TEventDialog.lbConditionTypeListClick(Sender: TObject);
+begin
+  if Markseltype2.Checked then
+    ConditionGrid.Invalidate;
+end;
+
 procedure TEventDialog.lbConditionTypeListDblClick(Sender: TObject);
 begin
   if Mission.add_condition(EventConfig.condition_type_mapping[lbConditionTypeList.ItemIndex]) then
@@ -1161,6 +1194,20 @@ begin
   Handled := true;
 end;
 
+procedure TEventDialog.ConditionGridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+  if Marknothing2.Checked then
+    exit;
+  if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_condition) then
+    exit;
+  if Markseltype2.Checked and (Mission.condition_data[ARow - 1].condition_type = lbConditionTypeList.ItemIndex) and (ARow - 1 < Mission.num_conditions) then
+  begin
+    ConditionGrid.Canvas.Brush.Color := clYellow;
+    ConditionGrid.Canvas.FillRect(Rect);
+    ConditionGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,ConditionGrid.Cells[ACol,ARow]);
+  end;
+end;
+
 procedure TEventDialog.Addcondition1Click(Sender: TObject);
 begin
   if Mission.add_condition(0) then
@@ -1228,6 +1275,11 @@ begin
   update_contents;
 end;
 
+procedure TEventDialog.MarkConditionsClick(Sender: TObject);
+begin
+  ConditionGrid.Invalidate;
+end;
+
 procedure TEventDialog.cbxConditionTypeChange(Sender: TObject);
 begin
   change_condition_type(EventConfig.condition_type_mapping[cbxConditionType.ItemIndex]);
@@ -1237,11 +1289,6 @@ procedure TEventDialog.btnApplyConditionChangesClick(Sender: TObject);
 begin
   apply_condition_changes;
   ConditionGrid.SetFocus;
-end;
-
-procedure TEventDialog.cbMarkEventsHavingConditionClick(Sender: TObject);
-begin
-  EventGrid.Invalidate;
 end;
 
 procedure TEventDialog.seConditionFilterAmountChange(Sender: TObject);
@@ -1553,8 +1600,10 @@ begin
   for i := 0 to Mission.num_conditions do
     fill_condition_grid_row(i);
   // All event grid must be redrawn
-  if cbMarkEventsHavingCondition.Checked then
+  if Markselcondition1.Checked or Markseltype1.Checked then
     EventGrid.Invalidate;
+  if Markseltype2.Checked then
+    ConditionGrid.Invalidate;
   loading := false;
 end;
 
@@ -1874,7 +1923,7 @@ begin
   btnApplyConditionChanges.Enabled := condition_valid;
   edConditionNote.Enabled := condition_valid;
   fill_condition_ui;
-  if cbMarkEventsHavingCondition.Checked then
+  if Markselcondition1.Checked then
     EventGrid.Invalidate;
 end;
 

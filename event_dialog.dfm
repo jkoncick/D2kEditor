@@ -84,6 +84,7 @@ object EventDialog: TEventDialog
       Align = alLeft
       ItemHeight = 13
       TabOrder = 1
+      OnClick = lbEventTypeListClick
       OnDblClick = lbEventTypeListDblClick
     end
   end
@@ -109,6 +110,7 @@ object EventDialog: TEventDialog
       PopupMenu = ConditionGridPopupMenu
       TabOrder = 0
       OnDblClick = ConditionGridDblClick
+      OnDrawCell = ConditionGridDrawCell
       OnKeyDown = ConditionGridKeyDown
       OnMouseDown = ConditionGridMouseDown
       OnMouseWheelDown = ConditionGridMouseWheelDown
@@ -185,7 +187,7 @@ object EventDialog: TEventDialog
       end
       object btnApplyEventChanges: TBitBtn
         Left = 120
-        Top = 220
+        Top = 232
         Width = 115
         Height = 25
         Caption = 'Apply changes'
@@ -702,7 +704,7 @@ object EventDialog: TEventDialog
       end
       object lblConditionNote: TLabel
         Left = 4
-        Top = 224
+        Top = 244
         Width = 26
         Height = 13
         Caption = 'Note:'
@@ -720,23 +722,14 @@ object EventDialog: TEventDialog
       end
       object edConditionNote: TEdit
         Left = 4
-        Top = 240
+        Top = 260
         Width = 196
         Height = 21
         TabOrder = 2
       end
-      object cbMarkEventsHavingCondition: TCheckBox
-        Left = 8
-        Top = 264
-        Width = 185
-        Height = 17
-        Caption = 'Mark events having this condition'
-        TabOrder = 3
-        OnClick = cbMarkEventsHavingConditionClick
-      end
       object btnApplyConditionChanges: TBitBtn
         Left = 85
-        Top = 200
+        Top = 232
         Width = 115
         Height = 25
         Caption = 'Apply changes'
@@ -753,6 +746,7 @@ object EventDialog: TEventDialog
       Align = alLeft
       ItemHeight = 13
       TabOrder = 5
+      OnClick = lbConditionTypeListClick
       OnDblClick = lbConditionTypeListDblClick
     end
   end
@@ -981,6 +975,31 @@ object EventDialog: TEventDialog
       ShortCut = 16457
       OnClick = Importevents1Click
     end
+    object N3: TMenuItem
+      Caption = '-'
+    end
+    object Marknothing1: TMenuItem
+      AutoCheck = True
+      Caption = 'Mark nothing'
+      Checked = True
+      RadioItem = True
+      ShortCut = 116
+      OnClick = MarkEventsClick
+    end
+    object Markselcondition1: TMenuItem
+      AutoCheck = True
+      Caption = 'Mark sel. condition'
+      RadioItem = True
+      ShortCut = 117
+      OnClick = MarkEventsClick
+    end
+    object Markseltype1: TMenuItem
+      AutoCheck = True
+      Caption = 'Mark sel. type'
+      RadioItem = True
+      ShortCut = 118
+      OnClick = MarkEventsClick
+    end
   end
   object ConditionGridPopupMenu: TPopupMenu
     OnPopup = PopupMenuPopup
@@ -1014,6 +1033,22 @@ object EventDialog: TEventDialog
       Caption = 'Move Down'
       ShortCut = 34
       OnClick = MoveDown2Click
+    end
+    object N4: TMenuItem
+      Caption = '-'
+    end
+    object Marknothing2: TMenuItem
+      AutoCheck = True
+      Caption = 'Mark nothing'
+      Checked = True
+      RadioItem = True
+      OnClick = MarkConditionsClick
+    end
+    object Markseltype2: TMenuItem
+      AutoCheck = True
+      Caption = 'Mark sel. type'
+      RadioItem = True
+      OnClick = MarkConditionsClick
     end
   end
   object ExportEventsDialog: TSaveDialog

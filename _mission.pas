@@ -565,7 +565,10 @@ begin
   ct := Addr(EventConfig.condition_types[cond.condition_type]);
   if (ct.has_player) and show_player and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
   begin
-    contents := contents + Structures.player_names[cond.player];
+    if cond.player < Length(Structures.player_names) then
+      contents := contents + Structures.player_names[cond.player]
+    else
+      contents := contents + 'Any';
     if Length(ct.contents) > 0 then
       contents := contents + ' ';
   end;
