@@ -14,7 +14,7 @@ type
   public
     procedure init;
   private
-    procedure load_game_lists_txt;
+    procedure load_game_lists_ini;
   public
     function get_list_index(name: string): integer;
     function get_list_ref(index: integer): TStringList; overload;
@@ -36,17 +36,17 @@ begin
   list_index.Add('None');
   SetLength(lists, 1);
   lists[0] := TStringList.Create;
-  load_game_lists_txt;
+  load_game_lists_ini;
   Dispatcher.register_event(evLoadGameLists);
 end;
 
-procedure TGameLists.load_game_lists_txt;
+procedure TGameLists.load_game_lists_ini;
 var
   tmp_filename: String;
   f: TextFile;
   line, section: string;
 begin
-  tmp_filename := find_file('config\game_lists.txt', 'configuration');
+  tmp_filename := find_file('config\game_lists.ini', 'configuration');
   if tmp_filename = '' then
     exit;
   AssignFile(f, tmp_filename);

@@ -637,7 +637,7 @@ begin
     EventGrid.Canvas.FillRect(Rect);
     EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
   end else
-  if Markseltype1.Checked and (Mission.event_data[ARow - 1].event_type = lbEventTypeList.ItemIndex) and (ARow - 1 < Mission.num_events) then
+  if Markseltype1.Checked and (Mission.event_data[ARow - 1].event_type = EventConfig.event_type_mapping[lbEventTypeList.ItemIndex]) and (ARow - 1 < Mission.num_events) then
   begin
     EventGrid.Canvas.Brush.Color := clYellow;
     EventGrid.Canvas.FillRect(Rect);
@@ -1200,7 +1200,7 @@ begin
     exit;
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_condition) then
     exit;
-  if Markseltype2.Checked and (Mission.condition_data[ARow - 1].condition_type = lbConditionTypeList.ItemIndex) and (ARow - 1 < Mission.num_conditions) then
+  if Markseltype2.Checked and (Mission.condition_data[ARow - 1].condition_type = EventConfig.condition_type_mapping[lbConditionTypeList.ItemIndex]) and (ARow - 1 < Mission.num_conditions) then
   begin
     ConditionGrid.Canvas.Brush.Color := clYellow;
     ConditionGrid.Canvas.FillRect(Rect);

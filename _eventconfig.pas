@@ -131,10 +131,11 @@ type
   private
     procedure load_event_types_ini;
     procedure load_condition_types_ini;
+    procedure load_filter_criteria_ini;
     procedure load_show_if_definition(show_if: TShowIfDefinitionPtr; string_def: string);
     procedure load_coord_definition(coord: TCoordDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
     procedure load_argument_definition(arg: TArgDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
-    procedure load_filter_criteria(index: integer; object_name: string);
+    procedure load_filter_criteria(ini: TMemIniFile; index: integer; object_name: string);
   end;
 
 function evaluate_show_if(show_if: TShowIfDefinitionPtr; data_ptr: Pointer; struct_def: TStructDefinitionPtr): boolean;
@@ -150,10 +151,7 @@ procedure TEventConfig.init;
 begin
   load_event_types_ini;
   load_condition_types_ini;
-  load_filter_criteria(0, 'unit');
-  load_filter_criteria(1, 'building');
-  load_filter_criteria(2, 'crate');
-  load_filter_criteria(3, 'tile');
+  load_filter_criteria_ini;
   Dispatcher.register_event(evLoadEventTypeConfiguration);
 end;
 
@@ -163,15 +161,13 @@ var
   i, j: integer;
   s: string;
   ini: TMemIniFile;
-  tmp_strings, decoder: TStringList;
+  tmp_strings: TStringList;
 begin
   tmp_filename := find_file('config\event_types.ini', 'configuration');
   if tmp_filename = '' then
     exit;
   // Load event types from ini file
   tmp_strings := TStringList.Create;
-  decoder := TStringList.Create;
-  decoder.Delimiter := ';';
   ini := TMemIniFile.Create(tmp_filename);
   ini.ReadSections(tmp_strings);
   cnt_valid_event_types := 0;
@@ -209,7 +205,6 @@ begin
   end;
   ini.Destroy;
   tmp_strings.Destroy;
-  decoder.Destroy;
 end;
 
 procedure TEventConfig.load_condition_types_ini;
@@ -218,15 +213,13 @@ var
   i, j: integer;
   s: string;
   ini: TMemIniFile;
-  tmp_strings, decoder: TStringList;
+  tmp_strings: TStringList;
 begin
   tmp_filename := find_file('config\condition_types.ini', 'configuration');
   if tmp_filename = '' then
     exit;
   // Load condition types from ini file
   tmp_strings := TStringList.Create;
-  decoder := TStringList.Create;
-  decoder.Delimiter := ';';
   ini := TMemIniFile.Create(tmp_filename);
   ini.ReadSections(tmp_strings);
   cnt_valid_condition_types := 0;
@@ -264,7 +257,23 @@ begin
   end;
   ini.Destroy;
   tmp_strings.Destroy;
-  decoder.Destroy;
+end;
+
+procedure TEventConfig.load_filter_criteria_ini;
+var
+  tmp_filename: String;
+  ini: TMemIniFile;
+begin
+  tmp_filename := find_file('config\filter_criteria.ini', 'configuration');
+  if tmp_filename = '' then
+    exit;
+  // Load filter criteria from ini file
+  ini := TMemIniFile.Create(tmp_filename);
+  load_filter_criteria(ini, 0, 'Unit');
+  load_filter_criteria(ini, 1, 'Building');
+  load_filter_criteria(ini, 2, 'Crate');
+  load_filter_criteria(ini, 3, 'Tile');
+  ini.Destroy;
 end;
 
 procedure TEventConfig.load_show_if_definition(show_if: TShowIfDefinitionPtr; string_def: string);
@@ -374,70 +383,73 @@ begin
   end;
 end;
 
-procedure TEventConfig.load_filter_criteria(index: integer; object_name: string);
+procedure TEventConfig.load_filter_criteria(ini: TMemIniFile; index: integer; object_name: string);
 var
-  tmp_filename: String;
   s: String;
   i, j, start: integer;
-  ini: TMemIniFile;
-  tmp_strings: TStringList;
+  tmp_strings, decoder: TStringList;
 begin
-  tmp_filename := find_file('config\'+ object_name + '_criteria.ini', 'configuration');
-  if tmp_filename = '' then
-    exit;
-  // Load criteria from ini file
   tmp_strings := TStringList.Create;
-  ini := TMemIniFile.Create(tmp_filename);
-  ini.ReadSections(tmp_strings);
+  decoder := TStringList.Create;
+  decoder.Delimiter := ';';
+  ini.ReadSection(object_name, tmp_strings);
   SetLength(filter_criteria[index], tmp_strings.Count);
   for i := 0 to tmp_strings.Count - 1 do
   begin
     filter_criteria[index, i].name := tmp_strings[i];
+    decoder.DelimitedText := ini.ReadString(object_name, tmp_strings[i], '');
     // Load list type
     filter_criteria[index, i].list_type := ltNone;
-    s := ini.ReadString(tmp_strings[i], 'list', 'None');
-    for j := 0 to High(ListTypeStr) do
-      if s = ListTypeStr[j] then
-      begin
-        filter_criteria[index, i].list_type := ListType(j);
-        break;
-      end;
+    if decoder.Count > 0 then
+      for j := 0 to High(ListTypeStr) do
+        if decoder[0] = ListTypeStr[j] then
+        begin
+          filter_criteria[index, i].list_type := ListType(j);
+          break;
+        end;
     // Load game list type
     if (filter_criteria[index, i].list_type = ltGame) then
-      filter_criteria[index, i].game_list_type := GameLists.get_list_index(ini.ReadString(tmp_strings[i], 'list_type', 'None'));
+      filter_criteria[index, i].game_list_type := GameLists.get_list_index(decoder[1]);
     // Load item list type
     if (filter_criteria[index, i].list_type = ltItem) then
     begin
       filter_criteria[index, i].item_list_type := ilNone;
-      s := ini.ReadString(tmp_strings[i], 'list_type', 'None');
       for j := 0 to High(ItemListTypeStr) do
-        if s = ItemListTypeStr[j] then
+        if decoder[1] = ItemListTypeStr[j] then
         begin
           filter_criteria[index, i].item_list_type := ItemListType(j);
           break;
         end;
     end;
-    // Load properties
-    filter_criteria[index, i].is_flag := ini.ReadBool(tmp_strings[i], 'flag', false);
-    filter_criteria[index, i].default := ini.ReadInteger(tmp_strings[i], 'default', 0);
-    filter_criteria[index, i].maxval := ini.ReadInteger(tmp_strings[i], 'maxval', 255);
     // Load list of values
     if (filter_criteria[index, i].list_type = ltCustom) then
     begin
       filter_criteria[index, i].values := TStringList.Create;
-      s := ini.ReadString(tmp_strings[i], 'values', '');
+      s := decoder[1];
       start := 1;
       for j := 1 to Length(s) do
-        if s[j] = ';' then
+        if s[j] = ',' then
         begin
           filter_criteria[index, i].values.Add(Copy(s, start, j - start));
           start := j + 1;
         end;
       filter_criteria[index, i].values.Add(Copy(s, start, Length(s) - start + 1));
     end;
+    // Load properties
+    if (filter_criteria[index, i].list_type = ltNone) then
+    begin
+      filter_criteria[index, i].is_flag := (decoder.Count > 3) and (decoder[3] = '1');
+      filter_criteria[index, i].default := 0;
+      filter_criteria[index, i].maxval := 255;
+      if decoder.Count > 1 then
+        filter_criteria[index, i].default := StrToInt(decoder[1]);
+      if decoder.Count > 2 then
+        filter_criteria[index, i].maxval := StrToInt(decoder[2]);
+    end else
+      filter_criteria[index, i].is_flag := (decoder.Count > 2) and (decoder[2] = '1');
   end;
-  ini.Destroy;
   tmp_strings.Destroy;
+  decoder.Destroy;
 end;
 
 function evaluate_show_if(show_if: TShowIfDefinitionPtr; data_ptr: Pointer; struct_def: TStructDefinitionPtr): boolean;
