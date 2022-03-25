@@ -495,14 +495,21 @@ object EventDialog: TEventDialog
         BevelOuter = bvNone
         TabOrder = 6
         object lblEventFilterLimit: TLabel
+          Left = 96
+          Top = 0
+          Width = 24
+          Height = 13
+          Caption = 'Limit:'
+        end
+        object lblEventFilterSkip: TLabel
           Left = 0
           Top = 0
-          Width = 62
+          Width = 24
           Height = 13
-          Caption = 'Limit amount:'
+          Caption = 'Skip:'
         end
         object seEventFilterLimit: TSpinEdit
-          Left = 72
+          Left = 128
           Top = 0
           Width = 57
           Height = 22
@@ -511,6 +518,17 @@ object EventDialog: TEventDialog
           TabOrder = 0
           Value = 0
           OnChange = seEventFilterLimitChange
+        end
+        object seEventFilterSkip: TSpinEdit
+          Left = 32
+          Top = 0
+          Width = 57
+          Height = 22
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 1
+          Value = 0
+          OnChange = seEventFilterSkipChange
         end
       end
     end

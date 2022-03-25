@@ -190,10 +190,13 @@ type
     N4: TMenuItem;
     Marknothing2: TMenuItem;
     Markseltype2: TMenuItem;
+    lblEventFilterSkip: TLabel;
+    seEventFilterSkip: TSpinEdit;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormResize(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
     // Event type list actions
@@ -250,6 +253,7 @@ type
     // -- Tile pairs
     procedure sgTilePairsSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
     // -- Object filter
+    procedure seEventFilterSkipChange(Sender: TObject);
     procedure seEventFilterLimitChange(Sender: TObject);
     // Event condition list panel actions
     procedure EventConditionListClickCheck(Sender: TObject);
@@ -298,7 +302,6 @@ type
     procedure FCGValueChange(Sender: TObject);
     procedure FCGCriteriaChange(Sender: TObject);
     procedure FCGBtnSelectClick(Sender: TObject);
-    procedure FormResize(Sender: TObject);
   private
     tmp_event: TEvent;
     tmp_condition: TCondition;
@@ -968,6 +971,11 @@ procedure TEventDialog.sgTilePairsSetEditText(Sender: TObject; ACol, ARow: Integ
 begin
   set_integer_value(Addr(tmp_event.data[1]), (ARow * 2 + ACol) * 2, 2, StrToIntDef(sgTilePairs.Cells[ACol, ARow], 0));
   draw_tile_pairs;
+end;
+
+procedure TEventDialog.seEventFilterSkipChange(Sender: TObject);
+begin
+  tmp_event.filter_skip := StrToIntDef(seEventFilterSkip.Text, 0);
 end;
 
 procedure TEventDialog.seEventFilterLimitChange(Sender: TObject);
@@ -1753,6 +1761,7 @@ begin
   end;
   if panel = edpFilter then
   begin
+    seEventFilterSkip.Value := tmp_event.filter_skip;
     seEventFilterLimit.Value := tmp_event.data[0];
     fill_filter_control_group(Addr(fcgs[0]), object_type);
   end;

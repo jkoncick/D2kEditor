@@ -28,7 +28,7 @@ type
     coord_var_flags: byte;                 // 31
     arg_var_flags: byte;                   // 32
     condition_not: array[0..11] of byte;   // 33
-    unused: byte;                          // 45
+    filter_skip: byte;                     // 45
     event_flags: byte;                     // 46
     data: array[0..24] of byte;            // 47
   end;                                     // 72
@@ -699,6 +699,8 @@ begin
   if et.event_data >= edUnitFilter then
   begin
     contents := 'Filter: ';
+    if event.filter_skip > 0 then
+      contents := contents + 'Skip(' + IntToStr(event.filter_skip) + ') ';
     if event.data[0] > 0 then
       contents := contents + 'Limit(' + IntToStr(event.data[0]) + ') ';
     contents := contents + get_object_filter_contents(Addr(event.data[1]), Ord(et.event_data) - Ord(edUnitFilter));
