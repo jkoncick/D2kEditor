@@ -1368,6 +1368,10 @@ object MainWindow: TMainWindow
         Caption = 'Assign .mis file'
         OnClick = Assignmisfile1Click
       end
+      object Remapfiltercriteria1: TMenuItem
+        Caption = 'Remap filter criteria'
+        OnClick = Remapfiltercriteria1Click
+      end
     end
     object Launchgame1: TMenuItem
       Caption = 'Test'

@@ -216,6 +216,7 @@ type
     cbCrateBloomSpawnerRespawning: TCheckBox;
     lblCrateBloomRadiusPlus: TLabel;
     Converttoadvanced1: TMenuItem;
+    Remapfiltercriteria1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -264,6 +265,7 @@ type
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
     procedure Assignmisfile1Click(Sender: TObject);
+    procedure Remapfiltercriteria1Click(Sender: TObject);
     procedure Quicklaunch1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
     procedure OpenHelpDoc(Sender: TObject);
@@ -1162,6 +1164,11 @@ begin
       Mission.unload_mission;
   end else
     Mission.assign_mission;
+end;
+
+procedure TMainWindow.Remapfiltercriteria1Click(Sender: TObject);
+begin
+  Mission.remap_filter_criteria(current_dir + 'remap_filter_criteria.ini');
 end;
 
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);

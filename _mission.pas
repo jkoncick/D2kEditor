@@ -196,6 +196,8 @@ type
     procedure adjust_event_positions(shift_x: integer; shift_y: integer);
     function check_errors: String;
     function get_player_alloc_index(player: integer): integer;
+    procedure remap_filter_criteria(filename: string);
+    procedure remap_filter_criteria_for_object_type(ini: TMemIniFile; obj_name: string; ed: EventData; cd: ConditionData);
   end;
 
 var
@@ -1458,6 +1460,42 @@ begin
   if not mis_assigned then
     exit;
   result := Min(allocation_index[player], CNT_PLAYERS - 1);
+end;
+
+procedure TMission.remap_filter_criteria(filename: string);
+var
+  ini: TMemIniFile;
+begin
+  ini := TMemIniFile.Create(filename);
+  remap_filter_criteria_for_object_type(ini, 'Unit', edUnitFilter, cdUnitFilter);
+  remap_filter_criteria_for_object_type(ini, 'Building', edBuildingFilter, cdBuildingFilter);
+  remap_filter_criteria_for_object_type(ini, 'Crate', edCrateFilter, cdCrateFilter);
+  remap_filter_criteria_for_object_type(ini, 'Tile', edTileFilter, cdTileFilter);
+  ini.Destroy;
+end;
+
+procedure TMission.remap_filter_criteria_for_object_type(ini: TMemIniFile; obj_name: string; ed: EventData; cd: ConditionData);
+var
+  remap_values: array[0..63] of byte;
+  filter: TObjectFilterPtr;
+  i, j: integer;
+begin
+  for i := 0 to 63 do
+    remap_values[i] := ini.ReadInteger(obj_name, IntToStr(i), i);
+  for i := 0 to num_events - 1 do
+    if EventConfig.event_types[event_data[i].event_type].event_data = ed then
+    begin
+      filter := Addr(event_data[i].data[1]);
+      for j := 0 to 7 do
+        filter.criteria_type[j] := remap_values[filter.criteria_type[j] and 63] or (filter.criteria_type[j] and 192);
+    end;
+  for i := 0 to num_conditions - 1 do
+    if EventConfig.condition_types[condition_data[i].condition_type].condition_data = cd then
+    begin
+      filter := Addr(condition_data[i]);
+      for j := 0 to 7 do
+        filter.criteria_type[j] := remap_values[filter.criteria_type[j] and 63] or (filter.criteria_type[j] and 192);
+    end;
 end;
 
 end.
