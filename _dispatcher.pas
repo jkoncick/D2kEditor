@@ -66,7 +66,7 @@ type
     paUpdateStructuresListTranslated,
     paUpdateMiscObjectList,
     paUpdatePlayerList,
-    paUpdateMisAIPropertyList,
+    paUpdateGameStructMembers,
     // Update various contents
     paUpdateTileset,
     paUpdateStructureControls,
@@ -109,7 +109,7 @@ type
   private
     procedure update_structures_list_translated;
     procedure update_player_list;
-    procedure update_mis_ai_property_list;
+    procedure update_game_struct_members;
     procedure update_tileset;
     procedure update_map_name;
     procedure update_mission_load_status;
@@ -125,7 +125,7 @@ var
 implementation
 
 uses
-  Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _misai, _map, _mission, main, set_dialog,
+  Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
   tileatr_editor, structures_editor, debug_window;
@@ -158,7 +158,7 @@ begin
     evTileatrModify:              pact := pact + [paRenderMap, paRenderMinimap, paRenderCursorImage];
     evTileatrFilenameChange:      pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paUpdateDebugValues];
     // Structures events
-    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
     evFLArmourBin:                pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
     evFLSpeedBin:                 pact := pact + [paUpdateSpeedModifiers, paUpdateStructuresEditor, paUpdateDebugValues];
@@ -191,7 +191,7 @@ begin
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
-    evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateMisAIPropertyList, paUpdateMapStats, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
   end;
 end;
 
@@ -207,7 +207,7 @@ begin
   if paUpdateStructuresListTranslated in pact then update_structures_list_translated;
   if paUpdateMiscObjectList     in pact then MainWindow.update_misc_object_list;
   if paUpdatePlayerList         in pact then update_player_list;
-  if paUpdateMisAIPropertyList  in pact then update_mis_ai_property_list;
+  if paUpdateGameStructMembers  in pact then update_game_struct_members;
   if paUpdateTileset            in pact then update_tileset;
   // Update various contents
   if paUpdateStructureControls  in pact then MainWindow.update_structure_controls;
@@ -272,9 +272,9 @@ begin
   player_list.Destroy;
 end;
 
-procedure TDispatcher.update_mis_ai_property_list;
+procedure TDispatcher.update_game_struct_members;
 begin
-  MisAI.cache_mis_ai_property_list;
+  GameStructs.cache_struct_member_names;
   pact := pact + [paUpdateMisAiValues];
 end;
 

@@ -59,6 +59,7 @@ type
     default: integer;
     maxval: integer;
     readonly: boolean;
+    is_gamestruct_arg: boolean;
     values: TStringList;
   end;
 
@@ -68,7 +69,11 @@ type
   TEventTypeDefinition = record
     name: String;
     coords: array[0..3] of TCoordDefinition;
-    args: array[0..5] of TArgDefinition;
+    args: array[0..6] of TArgDefinition;
+    gamestruct_index: integer;
+    gamestruct_datatype_arg: integer;
+    gamestruct_offset_arg: integer;
+    gamestruct_value_arg: integer;
     event_data: EventData;
     contents: String;
     has_map_pos: boolean;
@@ -145,7 +150,7 @@ var
 
 implementation
 
-uses SysUtils, _dispatcher;
+uses SysUtils, _dispatcher, _gamestructs;
 
 procedure TEventConfig.init;
 begin
@@ -189,6 +194,16 @@ begin
     // Load args
     for j := 0 to Length(event_types[i].args) - 1 do
       load_argument_definition(Addr(event_types[i].args[j]), ini, tmp_strings[i], j);
+    // Load gamestruct properties
+    event_types[i].gamestruct_index := GameStructs.struct_name_to_index(ini.ReadString(tmp_strings[i], 'gamestruct_name', ''));
+    event_types[i].gamestruct_datatype_arg := ini.ReadInteger(tmp_strings[i], 'gamestruct_datatype_arg', 1);
+    event_types[i].gamestruct_offset_arg := ini.ReadInteger(tmp_strings[i], 'gamestruct_offset_arg', 2);
+    event_types[i].gamestruct_value_arg := ini.ReadInteger(tmp_strings[i], 'gamestruct_value_arg', 5);
+    if event_types[i].gamestruct_index <> -1 then
+    begin
+      event_types[i].args[event_types[i].gamestruct_datatype_arg].is_gamestruct_arg := true;
+      event_types[i].args[event_types[i].gamestruct_offset_arg].is_gamestruct_arg := true;
+    end;
     // Load event data
     s := ini.ReadString(tmp_strings[i], 'data', 'None');
     for j := 0 to High(EventDataStr) do

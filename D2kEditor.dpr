@@ -32,6 +32,7 @@ uses
   _randomgen in '_randomgen.pas',
   _launcher in '_launcher.pas',
   _gamelists in '_gamelists.pas',
+  _gamestructs in '_gamestructs.pas',
   _eventconfig in '_eventconfig.pas';
 
 {$R *.res}
@@ -63,6 +64,7 @@ begin
   //--RandomGen := TRandomGen.Create;
   Launcher := TLauncher.Create;
   GameLists := TGameLists.Create;
+  GameStructs := TGameStructs.Create;
   EventConfig := TEventConfig.Create;
   // Create forms
   Application.CreateForm(TMainWindow, MainWindow);
@@ -91,6 +93,7 @@ begin
   StringTable.init;
   Launcher.init;
   GameLists.init;
+  GameStructs.init;
   EventConfig.init;
   // Load map given as first parameter
   if ParamCount > 0 then

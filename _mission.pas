@@ -33,14 +33,15 @@ type
     data: array[0..24] of byte;            // 47
   end;                                     // 72
 
-const event_args_struct_members: array[0..5] of TStructMemberDefinition =
+const event_args_struct_members: array[0..6] of TStructMemberDefinition =
   (
     (pos: 15; bytes: 1), // player
     (pos: 14; bytes: 1), // amount
     (pos: 16; bytes: 1), // arg2
     (pos: 17; bytes: 1), // arg3
     (pos: 18; bytes: 1), // arg4
-    (pos: 8;  bytes: 4)  // value
+    (pos: 8;  bytes: 4), // value
+    (pos: 48; bytes: 4)  // extra value
   );
 
 // *****************************************************************************
@@ -205,7 +206,7 @@ var
 
 implementation
 
-uses SysUtils, Math, Windows, Forms, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher, event_dialog,
+uses SysUtils, Math, Windows, Forms, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher, event_dialog, _gamestructs,
   StrUtils;
 
 procedure TMission.init;
@@ -491,6 +492,10 @@ var
   i: integer;
   start: integer;
   idx: integer;
+  data_type, offset, gamestruct_member_index: integer;
+  arg_def_override: TArgDefinition;
+  arg_def_ptr: TArgDefinitionPtr;
+  gamestruct_member: TGameStructMemberPtr;
 begin
   event := Addr(event_data[index]);
   et := Addr(EventConfig.event_types[event.event_type]);
@@ -515,16 +520,50 @@ begin
       idx := (Ord(et.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(et.args[idx].show_if), event, Addr(event_args_struct_members)) then
       begin
-        if et.args[idx].arg_type = atFloat then
+        arg_def_ptr := Addr(et.args[idx]);
+        // Override argument definition gamestruct member value
+        if (et.gamestruct_index <> -1) and (idx = et.gamestruct_value_arg) then
+        begin
+          arg_def_override := et.args[idx];
+          arg_def_ptr := Addr(arg_def_override);
+          data_type := get_integer_struct_member(event, Addr(event_args_struct_members), et.gamestruct_datatype_arg);
+          if data_type = Ord(dtFloat) then
+            arg_def_override.arg_type := atFloat
+          else
+          begin
+            offset := get_integer_struct_member(event, Addr(event_args_struct_members), et.gamestruct_offset_arg);
+            gamestruct_member := GameStructs.get_struct_member(et.gamestruct_index, data_type, offset);
+            if (gamestruct_member <> nil) and (gamestruct_member.list_type <> ltNone) then
+            begin
+              arg_def_override.arg_type := atList;
+              arg_def_override.list_type := gamestruct_member.list_type;
+              arg_def_override.game_list_type := gamestruct_member.game_list_type;
+              arg_def_override.item_list_type := gamestruct_member.item_list_type;
+            end;
+          end;
+        end;
+        // Get argument contents
+        if arg_def_ptr.arg_type = atFloat then
           contents := contents + floattostrf(get_float_struct_member(event, Addr(event_args_struct_members), idx), ffFixed, 8, 3)
         else
-          contents := contents + get_argument_contents(get_integer_struct_member(event, Addr(event_args_struct_members), idx), Addr(et.args[idx]));
+          contents := contents + get_argument_contents(get_integer_struct_member(event, Addr(event_args_struct_members), idx), arg_def_ptr);
       end;
       start := i + 3;
     end else
     if (et.contents[i+1]) = 's' then
     begin
       contents := contents + get_event_data_contents(index);
+      start := i + 2;
+    end else
+    if (et.contents[i+1]) = 'm' then
+    begin
+      data_type := get_integer_struct_member(event, Addr(event_args_struct_members), et.gamestruct_datatype_arg);
+      offset := get_integer_struct_member(event, Addr(event_args_struct_members), et.gamestruct_offset_arg);
+      gamestruct_member_index := GameStructs.get_struct_member_index(et.gamestruct_index, data_type, offset);
+      if gamestruct_member_index = -1 then
+        contents := contents + GameLists.get_list_ref('DataType')[data_type] + ' ' + IntToStr(offset)
+      else
+        contents := contents + GameStructs.get_struct_member_name(et.gamestruct_index, gamestruct_member_index);
       start := i + 2;
     end;
   end;

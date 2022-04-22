@@ -143,7 +143,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, ShellApi, _missionini, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher;
+  Math, StrUtils, ShellApi, _missionini, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher, _gamestructs;
 
 {$R *.dfm}
 
@@ -363,7 +363,7 @@ end;
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
 var
   i: integer;
-  prop: TMisAIPropertyPtr;
+  prop: TGameStructMemberPtr;
   i_val: integer;
   f_val: single;
   bytes: integer;
@@ -377,40 +377,35 @@ begin
     // Set same value to all rows within selected range
     if i <> AIValueList.Row then
       AIValueList.Cells[1,i] := AIValueList.Cells[1,AIValueList.Row];
-    prop := MisAI.get_misai_property(i-1);
+    prop := GameStructs.get_misai_property(i-1);
     // Check if defence area was affected
-    if (prop.position >= DEFENCE_AREAS_COUNT_BYTE) and (prop.position <= DEFENCE_AREAS_END_BYTE) then
+    if (prop.offset >= DEFENCE_AREAS_COUNT_BYTE) and (prop.offset <= DEFENCE_AREAS_END_BYTE) then
       Dispatcher.register_event(evMisDefenceAreaChange);
     // Determine data type
-    bytes := 1;
-    case prop.data_type of
-      'b': bytes := 1;
-      'w': bytes := 2;
-      'd': bytes := 4;
-      'f':
-        begin
-          f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Addr(MisAI.default_ai), prop.position));
-          set_float_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position, f_val);
-          continue;
-        end;
+    bytes := game_struct_data_type_size[Ord(prop.data_type)];
+    if prop.data_type = dtFloat then
+    begin
+      f_val := StrToFloatDef(AIValueList.Cells[1,AIValueList.Row], get_float_value(Addr(MisAI.default_ai), prop.offset));
+      set_float_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset, f_val);
+      continue;
     end;
-    i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Addr(MisAI.default_ai), prop.position, bytes));
-    set_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position, bytes, i_val);
+    i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Addr(MisAI.default_ai), prop.offset, bytes));
+    set_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset, bytes, i_val);
   end;
   loading := false;
 end;
 
 procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
-  prop: TMisAIPropertyPtr;
+  prop: TGameStructMemberPtr;
 begin
-  prop := MisAI.get_misai_property(ARow-1);
-  if (prop.position < DEFENCE_AREAS_START_BYTE) or (prop.position > DEFENCE_AREAS_END_BYTE) then
+  prop := GameStructs.get_misai_property(ARow-1);
+  if (prop.offset < DEFENCE_AREAS_START_BYTE) or (prop.offset > DEFENCE_AREAS_END_BYTE) then
   begin
     pnSelectDefenceAreaFromMap.Visible := false;
     exit;
   end;
-  defence_area_num := (prop.position - DEFENCE_AREAS_START_BYTE) div DEFENCE_AREA_SIZE;
+  defence_area_num := (prop.offset - DEFENCE_AREAS_START_BYTE) div DEFENCE_AREA_SIZE;
   pnSelectDefenceAreaFromMap.Visible := true;
   btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
 end;
@@ -648,36 +643,35 @@ var
   bytes: integer;
   i_val: integer;
   f_val: single;
-  prop: TMisAIPropertyPtr;
+  prop: TGameStructMemberPtr;
+  prop_name: string;
   tmp_strings: TStringList;
 begin
   if not Mission.mis_assigned then
     exit;
+  if GameStructs.ai_struct_index = -1 then
+    exit;
   loading := true;
   tmp_strings := TStringList.Create();
-  for i := 0 to MisAI.cnt_mis_ai_properties -1 do
+  for i := 0 to GameStructs.struct_member_count[GameStructs.ai_struct_index] -1 do
   begin
-    prop := MisAI.get_misai_property(i);
-    bytes := 1;
-    case prop.data_type of
-      'b': bytes := 1;
-      'w': bytes := 2;
-      'd': bytes := 4;
-      'f':
-        begin
-          f_val := get_float_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position);
-          if cbDiffMode.Checked and (f_val = get_float_value(Addr(MisAI.default_ai), prop.position)) then
-            tmp_strings.Add(prop.name + '=')
-          else
-            tmp_strings.Add(prop.name + '=' + floattostrf(f_val, ffFixed, 8, 3));
-          continue;
-        end;
-      end;
-    i_val := get_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.position, bytes);
-    if cbDiffMode.Checked and (i_val = get_integer_value(Addr(MisAI.default_ai), prop.position, bytes)) then
-      tmp_strings.Add(prop.name + '=')
+    prop := GameStructs.get_misai_property(i);
+    prop_name := GameStructs.struct_member_names[GameStructs.ai_struct_index][i];
+    bytes := game_struct_data_type_size[Ord(prop.data_type)];
+    if prop.data_type = dtFloat then
+    begin
+      f_val := get_float_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset);
+      if cbDiffMode.Checked and (f_val = get_float_value(Addr(MisAI.default_ai), prop.offset)) then
+        tmp_strings.Add(prop_name + '=')
+      else
+        tmp_strings.Add(prop_name + '=' + floattostrf(f_val, ffFixed, 8, 3));
+      continue;
+    end;
+    i_val := get_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset, bytes);
+    if cbDiffMode.Checked and (i_val = get_integer_value(Addr(MisAI.default_ai), prop.offset, bytes)) then
+      tmp_strings.Add(prop_name + '=')
     else
-      tmp_strings.Add(prop.name + '=' + inttostr(i_val));
+      tmp_strings.Add(prop_name + '=' + inttostr(i_val));
   end;
   AIValueList.Strings := tmp_strings;
   tmp_strings.Destroy;

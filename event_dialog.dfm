@@ -149,6 +149,14 @@ object EventDialog: TEventDialog
         Height = 13
         Caption = 'Note:'
       end
+      object lblEventGameStructMember: TLabel
+        Left = 4
+        Top = 204
+        Width = 42
+        Height = 13
+        Caption = 'Property:'
+        Visible = False
+      end
       object cbxEventType: TComboBox
         Left = 64
         Top = 24
@@ -194,6 +202,17 @@ object EventDialog: TEventDialog
         TabOrder = 1
         OnClick = btnApplyEventChangesClick
         Kind = bkOK
+      end
+      object cbxEventGameStructMember: TComboBox
+        Left = 48
+        Top = 200
+        Width = 185
+        Height = 21
+        Style = csDropDownList
+        ItemHeight = 13
+        TabOrder = 5
+        Visible = False
+        OnChange = cbxEventGameStructMemberChange
       end
     end
     object EventDataPanel: TPanel
