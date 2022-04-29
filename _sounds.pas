@@ -2,6 +2,8 @@ unit _sounds;
 
 interface
 
+const MAX_SOUND_SIZE = $80000;
+
 type
   TSoundEntry = record
     name: string;
@@ -182,9 +184,9 @@ end;
 
 function TSounds.check_sound_size(size: integer): boolean;
 begin
-  result := size <= 65536;
+  result := size <= MAX_SOUND_SIZE;
   if not result then
-    Application.MessageBox(PChar(Format('Cannot import sound bigger than 65536 bytes (actual %d bytes)', [size])), 'Import sound', MB_ICONERROR or MB_OK);
+    Application.MessageBox(PChar(Format('Cannot import sound bigger than %d bytes (actual %d bytes)', [MAX_SOUND_SIZE, size])), 'Import sound', MB_ICONERROR or MB_OK);
 end;
 
 procedure TSounds.export_sound(index: integer; filename: string);
