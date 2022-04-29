@@ -87,6 +87,10 @@ type
     name: String;
     coords: array[0..1] of TCoordDefinition;
     args: array[0..6] of TArgDefinition;
+    gamestruct_index: integer;
+    gamestruct_datatype_arg: integer;
+    gamestruct_offset_arg: integer;
+    gamestruct_value_arg: integer;
     condition_data: ConditionData;
     contents: String;
     has_map_pos: boolean;
@@ -168,6 +172,7 @@ var
   ini: TMemIniFile;
   tmp_strings: TStringList;
 begin
+  event_types[-1].gamestruct_index := -1;
   tmp_filename := find_file('config\event_types.ini', 'configuration');
   if tmp_filename = '' then
     exit;
@@ -230,6 +235,7 @@ var
   ini: TMemIniFile;
   tmp_strings: TStringList;
 begin
+  condition_types[-1].gamestruct_index := -1;
   tmp_filename := find_file('config\condition_types.ini', 'configuration');
   if tmp_filename = '' then
     exit;
@@ -256,6 +262,16 @@ begin
     // Load args
     for j := 0 to Length(condition_types[i].args) - 1 do
       load_argument_definition(Addr(condition_types[i].args[j]), ini, tmp_strings[i], j);
+    // Load gamestruct properties
+    condition_types[i].gamestruct_index := GameStructs.struct_name_to_index(ini.ReadString(tmp_strings[i], 'gamestruct_name', ''));
+    condition_types[i].gamestruct_datatype_arg := ini.ReadInteger(tmp_strings[i], 'gamestruct_datatype_arg', 1);
+    condition_types[i].gamestruct_offset_arg := ini.ReadInteger(tmp_strings[i], 'gamestruct_offset_arg', 2);
+    condition_types[i].gamestruct_value_arg := ini.ReadInteger(tmp_strings[i], 'gamestruct_value_arg', 5);
+    if condition_types[i].gamestruct_index <> -1 then
+    begin
+      condition_types[i].args[condition_types[i].gamestruct_datatype_arg].is_gamestruct_arg := true;
+      condition_types[i].args[condition_types[i].gamestruct_offset_arg].is_gamestruct_arg := true;
+    end;
     // Load condition data
     s := ini.ReadString(tmp_strings[i], 'data', 'None');
     for j := 0 to High(ConditionDataStr) do

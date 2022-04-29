@@ -35,13 +35,13 @@ type
 
 const event_args_struct_members: array[0..6] of TStructMemberDefinition =
   (
-    (pos: 15; bytes: 1), // player
-    (pos: 14; bytes: 1), // amount
-    (pos: 16; bytes: 1), // arg2
-    (pos: 17; bytes: 1), // arg3
-    (pos: 18; bytes: 1), // arg4
-    (pos: 8;  bytes: 4), // value
-    (pos: 48; bytes: 4)  // extra value
+    (pos: 15; bytes: 1), // player (arg0)
+    (pos: 14; bytes: 1), // amount (arg1)
+    (pos: 16; bytes: 1), // item   (arg2)
+    (pos: 17; bytes: 1), // enum   (arg3)
+    (pos: 18; bytes: 1), // bool   (arg4)
+    (pos: 8;  bytes: 4), // value  (arg5)
+    (pos: 48; bytes: 4)  // extra value (arg6)
   );
 
 // *****************************************************************************
@@ -71,10 +71,10 @@ const condition_args_struct_members: array[0..6] of TStructMemberDefinition =
     (pos: 24; bytes: 1), // player
     (pos: 26; bytes: 1), // arg1
     (pos: 27; bytes: 1), // arg2
-    (pos: 4;  bytes: 4), // val1
-    (pos: 0;  bytes: 4), // val2
-    (pos: 8;  bytes: 4), // value
-    (pos: 20; bytes: 4)  // float_val
+    (pos: 4;  bytes: 4), // val1  (arg3)
+    (pos: 0;  bytes: 4), // val2  (arg4)
+    (pos: 8;  bytes: 4), // value (arg5)
+    (pos: 20; bytes: 4)  // float_val (arg6)
   );
 
 // *****************************************************************************
@@ -601,6 +601,10 @@ var
   i: integer;
   start: integer;
   idx: integer;
+  data_type, offset, gamestruct_member_index: integer;
+  arg_def_override: TArgDefinition;
+  arg_def_ptr: TArgDefinitionPtr;
+  gamestruct_member: TGameStructMemberPtr;
 begin
   cond := Addr(condition_data[index]);
   ct := Addr(EventConfig.condition_types[cond.condition_type]);
@@ -633,10 +637,33 @@ begin
       idx := (Ord(ct.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(ct.args[idx].show_if), cond, Addr(condition_args_struct_members)) then
       begin
-        if ct.args[idx].arg_type = atFloat then
+        arg_def_ptr := Addr(ct.args[idx]);
+        // Override argument definition gamestruct member value
+        if (ct.gamestruct_index <> -1) and (idx = ct.gamestruct_value_arg) then
+        begin
+          arg_def_override := ct.args[idx];
+          arg_def_ptr := Addr(arg_def_override);
+          data_type := get_integer_struct_member(cond, Addr(condition_args_struct_members), ct.gamestruct_datatype_arg);
+          if data_type = Ord(dtFloat) then
+            arg_def_override.arg_type := atFloat
+          else
+          begin
+            offset := get_integer_struct_member(cond, Addr(condition_args_struct_members), ct.gamestruct_offset_arg);
+            gamestruct_member := GameStructs.get_struct_member(ct.gamestruct_index, data_type, offset);
+            if (gamestruct_member <> nil) and (gamestruct_member.list_type <> ltNone) then
+            begin
+              arg_def_override.arg_type := atList;
+              arg_def_override.list_type := gamestruct_member.list_type;
+              arg_def_override.game_list_type := gamestruct_member.game_list_type;
+              arg_def_override.item_list_type := gamestruct_member.item_list_type;
+            end;
+          end;
+        end;
+        // Get argument contents
+        if arg_def_ptr.arg_type = atFloat then
           contents := contents + floattostrf(get_float_struct_member(cond, Addr(condition_args_struct_members), idx), ffFixed, 8, 3)
         else
-          contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), Addr(ct.args[idx]));
+          contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), arg_def_ptr);
       end;
       start := i + 3;
     end else
@@ -648,6 +675,17 @@ begin
           contents := contents + 'Am(' + IfThen((cond.arg1 and 1) <> 0, '=', '>=') + IntToStr(cond.arg2) + ') ';
         contents := contents + get_object_filter_contents(TObjectFilterPtr(cond), Ord(ct.condition_data) - Ord(cdUnitFilter));
       end;
+      start := i + 2;
+    end else
+    if (ct.contents[i+1]) = 'm' then
+    begin
+      data_type := get_integer_struct_member(cond, Addr(condition_args_struct_members), ct.gamestruct_datatype_arg);
+      offset := get_integer_struct_member(cond, Addr(condition_args_struct_members), ct.gamestruct_offset_arg);
+      gamestruct_member_index := GameStructs.get_struct_member_index(ct.gamestruct_index, data_type, offset);
+      if gamestruct_member_index = -1 then
+        contents := contents + GameLists.get_list_ref('DataType')[data_type] + ' ' + IntToStr(offset)
+      else
+        contents := contents + GameStructs.get_struct_member_name(ct.gamestruct_index, gamestruct_member_index);
       start := i + 2;
     end;
   end;

@@ -746,6 +746,14 @@ object EventDialog: TEventDialog
         Height = 13
         Caption = 'Note:'
       end
+      object lblConditionGameStructMember: TLabel
+        Left = 4
+        Top = 204
+        Width = 42
+        Height = 13
+        Caption = 'Property:'
+        Visible = False
+      end
       object cbxConditionType: TComboBox
         Left = 80
         Top = 24
@@ -773,6 +781,17 @@ object EventDialog: TEventDialog
         TabOrder = 1
         OnClick = btnApplyConditionChangesClick
         Kind = bkOK
+      end
+      object cbxConditionGameStructMember: TComboBox
+        Left = 48
+        Top = 200
+        Width = 165
+        Height = 21
+        Style = csDropDownList
+        ItemHeight = 13
+        TabOrder = 3
+        Visible = False
+        OnChange = cbxConditionGameStructMemberChange
       end
     end
     object lbConditionTypeList: TListBox

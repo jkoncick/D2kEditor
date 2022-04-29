@@ -194,6 +194,8 @@ type
     seEventFilterSkip: TSpinEdit;
     cbxEventGameStructMember: TComboBox;
     lblEventGameStructMember: TLabel;
+    lblConditionGameStructMember: TLabel;
+    cbxConditionGameStructMember: TComboBox;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -291,6 +293,7 @@ type
     procedure MarkConditionsClick(Sender: TObject);
     // Condition properties panel actions
     procedure cbxConditionTypeChange(Sender: TObject);
+    procedure cbxConditionGameStructMemberChange(Sender: TObject);
     procedure btnApplyConditionChangesClick(Sender: TObject);
     // Condition filter panel actions
     procedure seConditionFilterAmountChange(Sender: TObject);
@@ -324,7 +327,8 @@ type
     ccgs: array[0..5] of TCoordControlGroup;
     acgs: array[0..13] of TArgControlGroup;
     fcgs: array[0..1] of TFilterControlGroup;
-    gamestruct_value_arg_def: TArgDefinition;
+    event_gamestruct_value_arg_def: TArgDefinition;
+    condition_gamestruct_value_arg_def: TArgDefinition;
 
   public
     // Dispatcher events
@@ -355,6 +359,8 @@ type
     procedure fill_condition_grid_row(index: integer);
     procedure select_condition(index: integer);
     procedure fill_condition_ui;
+    function  get_condition_arg_def(ct: TConditionTypeDefinitionPtr; arg_num: integer): TArgDefinitionPtr;
+    procedure fill_condition_gamestruct_member_combo(ct: TConditionTypeDefinitionPtr; var panel_top: integer);
     procedure change_condition_type(new_condition_type: integer);
     procedure apply_condition_changes;
     // Coord control group procedures
@@ -461,7 +467,7 @@ begin
   create_filter_control_group(0, Addr(tmp_event.data[1]), edpFilter);
   create_filter_control_group(1, Addr(tmp_condition), pnConditionFilter);
   //select_event(0);
-  select_condition(0);
+  //select_condition(0);
 end;
 
 procedure TEventDialog.FormShow(Sender: TObject);
@@ -844,8 +850,8 @@ begin
   member := GameStructs.get_struct_member(et.gamestruct_index, cbxEventGameStructMember.ItemIndex);
   if member = nil then
     exit;
-  set_integer_struct_member(acgs[et.gamestruct_datatype_arg].data_ptr, acgs[et.gamestruct_datatype_arg].struct_def, acgs[et.gamestruct_datatype_arg].struct_member, Ord(member.data_type));
-  set_integer_struct_member(acgs[et.gamestruct_offset_arg].data_ptr, acgs[et.gamestruct_offset_arg].struct_def, acgs[et.gamestruct_offset_arg].struct_member, member.offset);
+  set_integer_struct_member(Addr(tmp_event), Addr(event_args_struct_members), et.gamestruct_datatype_arg, Ord(member.data_type));
+  set_integer_struct_member(Addr(tmp_event), Addr(event_args_struct_members), et.gamestruct_offset_arg, member.offset);
   fill_event_ui;
 end;
 
@@ -1317,6 +1323,24 @@ begin
   change_condition_type(EventConfig.condition_type_mapping[cbxConditionType.ItemIndex]);
 end;
 
+procedure TEventDialog.cbxConditionGameStructMemberChange(Sender: TObject);
+var
+  ct: TConditionTypeDefinitionPtr;
+  member: TGameStructMemberPtr;
+begin
+  if cbxConditionGameStructMember.ItemIndex = -1 then
+    exit;
+  ct := Addr(EventConfig.condition_types[IfThen(selected_condition < Mission.num_conditions, tmp_condition.condition_type, -1)]);
+  if ct.gamestruct_index = -1 then
+    exit;
+  member := GameStructs.get_struct_member(ct.gamestruct_index, cbxConditionGameStructMember.ItemIndex);
+  if member = nil then
+    exit;
+  set_integer_struct_member(Addr(tmp_condition), Addr(condition_args_struct_members), ct.gamestruct_datatype_arg, Ord(member.data_type));
+  set_integer_struct_member(Addr(tmp_condition), Addr(condition_args_struct_members), ct.gamestruct_offset_arg, member.offset);
+  fill_condition_ui;
+end;
+
 procedure TEventDialog.btnApplyConditionChangesClick(Sender: TObject);
 begin
   apply_condition_changes;
@@ -1392,7 +1416,12 @@ begin
     acgs[i].container.Visible := (acgs[i].argdef.arg_type <> atNone) and evaluate_show_if(Addr(acgs[i].argdef.show_if), acgs[i].data_ptr, acgs[i].struct_def);
   // Update event gamestruct member combo
   if acg.argdef.is_gamestruct_arg then
-    fill_event_ui;
+  begin
+    if (Sender as TControl).Tag < Length(event_args_struct_members) then
+      fill_event_ui
+    else
+      fill_condition_ui;
+  end;
   // Update amount of tile pairs
   if EventConfig.event_types[tmp_event.event_type].event_data = edTilePairs then
     fill_event_data_panel(edpTilePairs, true, 0);
@@ -1752,22 +1781,22 @@ begin
   result := Addr(et.args[arg_num]);
   if (et.gamestruct_index = -1) or (arg_num <> et.gamestruct_value_arg) then
     exit;
-  gamestruct_value_arg_def := et.args[arg_num];
-  result := Addr(gamestruct_value_arg_def);
+  event_gamestruct_value_arg_def := et.args[arg_num];
+  result := Addr(event_gamestruct_value_arg_def);
   data_type := get_integer_struct_member(Addr(tmp_event), Addr(event_args_struct_members), et.gamestruct_datatype_arg);
   if data_type = Ord(dtFloat) then
   begin
-    gamestruct_value_arg_def.arg_type := atFloat;
+    event_gamestruct_value_arg_def.arg_type := atFloat;
     exit;
   end;
   offset := get_integer_struct_member(Addr(tmp_event), Addr(event_args_struct_members), et.gamestruct_offset_arg);
   gamestruct_member := GameStructs.get_struct_member(et.gamestruct_index, data_type, offset);
   if (gamestruct_member = nil) or (gamestruct_member.list_type = ltNone) then
     exit;
-  gamestruct_value_arg_def.arg_type := atList;
-  gamestruct_value_arg_def.list_type := gamestruct_member.list_type;
-  gamestruct_value_arg_def.game_list_type := gamestruct_member.game_list_type;
-  gamestruct_value_arg_def.item_list_type := gamestruct_member.item_list_type;
+  event_gamestruct_value_arg_def.arg_type := atList;
+  event_gamestruct_value_arg_def.list_type := gamestruct_member.list_type;
+  event_gamestruct_value_arg_def.game_list_type := gamestruct_member.game_list_type;
+  event_gamestruct_value_arg_def.item_list_type := gamestruct_member.item_list_type;
 end;
 
 procedure TEventDialog.fill_event_gamestruct_member_combo(et: TEventTypeDefinitionPtr; var panel_top: integer);
@@ -2033,8 +2062,14 @@ begin
   for i := 0 to High(ct.coords) do
     fill_coord_control_group(Addr(ccgs[i+4]), Addr(ct.coords[i]), panel_top);
   // Fill event arguments
+  lblConditionGameStructMember.Top := -20;
   for i := 0 to High(ct.args) do
-    fill_arg_control_group(Addr(acgs[i+Length(event_args_struct_members)]), Addr(ct.args[i]), panel_top);
+  begin
+    fill_arg_control_group(Addr(acgs[i+Length(event_args_struct_members)]), get_condition_arg_def(ct, i), panel_top);
+    // Fill gamestruct member combo box
+    if i = ct.gamestruct_offset_arg then
+      fill_condition_gamestruct_member_combo(ct, panel_top);
+  end;
   // Fill condition data UI
   if ct.condition_data >= cdUnitFilter then
   begin
@@ -2052,6 +2087,58 @@ begin
   // Fill condition note
   if notes_enabled then
     edConditionNote.Text := MissionIni.condition_notes[selected_condition];
+end;
+
+function TEventDialog.get_condition_arg_def(ct: TConditionTypeDefinitionPtr; arg_num: integer): TArgDefinitionPtr;
+var
+  data_type, offset: integer;
+  gamestruct_member: TGameStructMemberPtr;
+begin
+  result := Addr(ct.args[arg_num]);
+  if (ct.gamestruct_index = -1) or (arg_num <> ct.gamestruct_value_arg) then
+    exit;
+  condition_gamestruct_value_arg_def := ct.args[arg_num];
+  result := Addr(condition_gamestruct_value_arg_def);
+  data_type := get_integer_struct_member(Addr(tmp_condition), Addr(condition_args_struct_members), ct.gamestruct_datatype_arg);
+  if data_type = Ord(dtFloat) then
+  begin
+    condition_gamestruct_value_arg_def.arg_type := atFloat;
+    exit;
+  end;
+  offset := get_integer_struct_member(Addr(tmp_condition), Addr(condition_args_struct_members), ct.gamestruct_offset_arg);
+  gamestruct_member := GameStructs.get_struct_member(ct.gamestruct_index, data_type, offset);
+  if (gamestruct_member = nil) or (gamestruct_member.list_type = ltNone) then
+    exit;
+  condition_gamestruct_value_arg_def.arg_type := atList;
+  condition_gamestruct_value_arg_def.list_type := gamestruct_member.list_type;
+  condition_gamestruct_value_arg_def.game_list_type := gamestruct_member.game_list_type;
+  condition_gamestruct_value_arg_def.item_list_type := gamestruct_member.item_list_type;
+end;
+
+procedure TEventDialog.fill_condition_gamestruct_member_combo(ct: TConditionTypeDefinitionPtr; var panel_top: integer);
+var
+  data_type, offset: integer;
+  list: TStringList;
+begin
+  lblConditionGameStructMember.Visible := ct.gamestruct_index <> -1;
+  cbxConditionGameStructMember.Visible := ct.gamestruct_index <> -1;
+  if ct.gamestruct_index = -1 then
+    exit;
+  lblConditionGameStructMember.Top := panel_top + 8;
+  cbxConditionGameStructMember.Top := panel_top + 4;
+  inc(panel_top, 28);
+  if (tmp_condition.condition_type <> cbxConditionGameStructMember.Tag) then
+  begin
+    cbxConditionGameStructMember.Tag := tmp_condition.condition_type;
+    list := GameStructs.get_struct_member_name_list(ct.gamestruct_index);
+    if list <> nil then
+      cbxConditionGameStructMember.Items := list
+    else
+      cbxConditionGameStructMember.Clear;
+  end;
+  data_type := get_integer_struct_member(Addr(tmp_condition), Addr(condition_args_struct_members), ct.gamestruct_datatype_arg);
+  offset := get_integer_struct_member(Addr(tmp_condition), Addr(condition_args_struct_members), ct.gamestruct_offset_arg);
+  cbxConditionGameStructMember.ItemIndex := GameStructs.get_struct_member_index(ct.gamestruct_index, data_type, offset);
 end;
 
 procedure TEventDialog.change_condition_type(new_condition_type: integer);
