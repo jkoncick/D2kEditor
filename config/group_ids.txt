@@ -1,4 +1,4 @@
-B Starport
+Carryall unit group
 B Build queue (Barracks)
 B Build queue (Unused)
 B Build queue (Light Factory)
@@ -13,8 +13,8 @@ B Build queue (Harkonnen Palace)
 B Build queue (Ordos Palace)
 B Concrete
 U Frigate
-U Can be built (MCV)
-U Brought with refinery (Harvester)
+U MCV
+U Harvester
 U Carryall
 U Ornithopter
 U Death Hand Missile 
