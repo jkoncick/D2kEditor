@@ -1,5 +1,20 @@
 D2kEditor changelog
 
+Version 2.1 (released 2022-05-01)
+---------------------------------
+Added support for newly implemented features in singleplayer game modding.
+
+Added: Advanced Structures mode (place any unit, building or crate on map, with additional properties)
+Added: Extended Events and Conditions UI for new game features, made events configurable with ini files,
+       increased event and condition limits
+Added: Convert structures to advanced mode option
+Added: Structures editor: Added unit upgrade type field
+Added: Export and Import Events feature
+Fixed: Sound name lockup
+Added: Mark events using negated condition with different color
+Added: Marking of events and conditions of selected type
+Changed: Increased sound size limit from 64kB to 512kB
+
 Version 2.0 (released 2021-06-30)
 ---------------------------------
 Added: Smooth spice rendering. Thin spice and thick spice is now drawn exactly how it appears in game.

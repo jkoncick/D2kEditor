@@ -102,7 +102,7 @@ object MainWindow: TMainWindow
         Width = 150
       end
       item
-        Text = 'v2.1 dev3'
+        Text = 'v2.1'
         Width = 0
       end>
   end
@@ -1367,10 +1367,6 @@ object MainWindow: TMainWindow
       object Assignmisfile1: TMenuItem
         Caption = 'Assign .mis file'
         OnClick = Assignmisfile1Click
-      end
-      object Remapfiltercriteria1: TMenuItem
-        Caption = 'Remap filter criteria'
-        OnClick = Remapfiltercriteria1Click
       end
     end
     object Launchgame1: TMenuItem

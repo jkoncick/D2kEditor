@@ -216,7 +216,6 @@ type
     cbCrateBloomSpawnerRespawning: TCheckBox;
     lblCrateBloomRadiusPlus: TLabel;
     Converttoadvanced1: TMenuItem;
-    Remapfiltercriteria1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -265,7 +264,6 @@ type
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
     procedure Assignmisfile1Click(Sender: TObject);
-    procedure Remapfiltercriteria1Click(Sender: TObject);
     procedure Quicklaunch1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
     procedure OpenHelpDoc(Sender: TObject);
@@ -1166,11 +1164,6 @@ begin
     Mission.assign_mission;
 end;
 
-procedure TMainWindow.Remapfiltercriteria1Click(Sender: TObject);
-begin
-  Mission.remap_filter_criteria(current_dir + 'remap_filter_criteria.ini');
-end;
-
 procedure TMainWindow.Quicklaunch1Click(Sender: TObject);
 begin
   if not Launcher.check_map_can_be_tested then
@@ -1253,12 +1246,13 @@ begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13+
               'Part of D2K+ Editing tools'#13#13+
               'Made by Klofkac (kozten@seznam.cz)'#13+
-              'Version 2.1 dev3'#13+
-              'Date: 2021-11-01'#13#13+
+              'Version 2.1'#13+
+              'Date: 2022-05-01'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13+
               'mvi - for making the original Mission editor'#13+
               'FunkyFr3sh - for patching Dune 2000'#13+
+              'tomsons26 - for decompiling Dune 2000'#13+
               'FED2k community - for their support');
 end;
 
