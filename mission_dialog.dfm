@@ -474,6 +474,8 @@ object MissionDialog: TMissionDialog
           Enabled = False
           ScrollBars = ssVertical
           TabOrder = 1
+          OnEnter = MapBriefingEnter
+          OnExit = MapBriefingExit
         end
       end
     end

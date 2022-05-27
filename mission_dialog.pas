@@ -112,6 +112,8 @@ type
     procedure cbPlayersIniChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
     procedure btnModsFolderOpenClick(Sender: TObject);
+    procedure MapBriefingEnter(Sender: TObject);
+    procedure MapBriefingExit(Sender: TObject);
   private
     // Dynamic controls
     player_label: array[0..cnt_players-1] of TLabel;
@@ -582,6 +584,16 @@ procedure TMissionDialog.btnModsFolderOpenClick(Sender: TObject);
 begin
   if (cbCampaignFolder.Text <> '') then
     ShellExecute(0, 'open', PChar(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\' + cbModsFolder.Text), nil, nil, SW_SHOWNORMAL);
+end;
+
+procedure TMissionDialog.MapBriefingEnter(Sender: TObject);
+begin
+  MainWindow.Structureseditor1.ShortCut := 0;
+end;
+
+procedure TMissionDialog.MapBriefingExit(Sender: TObject);
+begin
+  MainWindow.Structureseditor1.ShortCut := 16472;
 end;
 
 procedure TMissionDialog.update_player_list(player_list: TStringList);
