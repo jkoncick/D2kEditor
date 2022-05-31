@@ -622,7 +622,7 @@ end;
 
 procedure TEventDialog.EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
-  if EventGrid.TopRow < (Mission.num_events + 2 - EventGrid.VisibleRowCount) then
+  if EventGrid.TopRow < (Min(Mission.num_events + IfThen(Settings.EventGridShowEmptyLines, EventGrid.Height div EventGrid.RowHeights[1], 2), MAX_EVENTS + 1) - EventGrid.VisibleRowCount) then
     EventGrid.TopRow := EventGrid.TopRow + 1;
   Handled := true;
 end;
@@ -1219,7 +1219,7 @@ end;
 procedure TEventDialog.ConditionGridMouseWheelDown(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
-  if ConditionGrid.TopRow < (Mission.num_conditions + 2 - ConditionGrid.VisibleRowCount) then
+  if ConditionGrid.TopRow < (Min(Mission.num_conditions + IfThen(Settings.EventGridShowEmptyLines, ConditionGrid.Height div ConditionGrid.RowHeights[1], 2), MAX_CONDITIONS + 1) - ConditionGrid.VisibleRowCount) then
     ConditionGrid.TopRow := ConditionGrid.TopRow + 1;
   Handled := true;
 end;
@@ -1656,12 +1656,12 @@ var
 begin
   loading := true;
   // Fill events
-  EventGrid.RowCount := Min(Mission.num_events + 2, MAX_EVENTS + 1);
-  for i := 0 to Mission.num_events do
+  EventGrid.RowCount := Min(Mission.num_events + IfThen(Settings.EventGridShowEmptyLines, EventGrid.Height div EventGrid.RowHeights[1], 2), MAX_EVENTS + 1);
+  for i := 0 to EventGrid.RowCount - 2 do
     fill_event_grid_row(i);
   // Fill conditions
-  ConditionGrid.RowCount := Min(Mission.num_conditions + 2, MAX_CONDITIONS + 1);
-  for i := 0 to Mission.num_conditions do
+  ConditionGrid.RowCount := Min(Mission.num_conditions + IfThen(Settings.EventGridShowEmptyLines, ConditionGrid.Height div ConditionGrid.RowHeights[1], 2), MAX_CONDITIONS + 1);
+  for i := 0 to ConditionGrid.RowCount - 2 do
     fill_condition_grid_row(i);
   // All event grid must be redrawn
   if Markselcondition1.Checked or Markseltype1.Checked then

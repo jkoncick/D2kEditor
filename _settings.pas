@@ -28,6 +28,7 @@ type
     UseRandomPaintMap: boolean;
     TranslateStructureNames: boolean;
     CleanUpExtraModFilesAfterLaunch: boolean;
+    EventGridShowEmptyLines: boolean;
     GridColor: Cardinal;
 
     // Default values
@@ -102,6 +103,7 @@ begin
   UseRandomPaintMap := ini.ReadBool('Preferences', 'UseRandomPaintMap', false);
   TranslateStructureNames := ini.ReadBool('Preferences', 'TranslateStructureNames', false);
   CleanUpExtraModFilesAfterLaunch := ini.ReadBool('Preferences', 'CleanUpExtraModFilesAfterLaunch', false);
+  EventGridShowEmptyLines := ini.ReadBool('Preferences', 'EventGridShowEmptyLines', false);
   GridColor := ini.ReadInteger('Preferences', 'GridColor', $000000);
   // Load default values
   DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
@@ -190,6 +192,7 @@ begin
   ini.WriteBool('Preferences', 'UseRandomPaintMap', UseRandomPaintMap);
   ini.WriteBool('Preferences', 'TranslateStructureNames', TranslateStructureNames);
   ini.WriteBool('Preferences', 'CleanUpExtraModFilesAfterLaunch', CleanUpExtraModFilesAfterLaunch);
+  ini.WriteBool('Preferences', 'EventGridShowEmptyLines', EventGridShowEmptyLines);
   ini.WriteInteger('Preferences', 'Gridcolor', GridColor);
   // Save default values
   ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);
