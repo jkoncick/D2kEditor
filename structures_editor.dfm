@@ -426,21 +426,21 @@ object StructuresEditor: TStructuresEditor
         Left = 400
         Top = 440
         Width = 289
-        Height = 129
+        Height = 145
         Caption = 'Space requirements'
         TabOrder = 4
         object imgBuildingTilesOccupiedAll: TImage
           Left = 8
           Top = 32
-          Width = 67
-          Height = 67
+          Width = 63
+          Height = 63
           OnMouseDown = imgBuildingTilesOccupiedAllMouseDown
         end
         object imgBuildingTilesOccupiedSolid: TImage
           Left = 88
           Top = 33
-          Width = 67
-          Height = 67
+          Width = 63
+          Height = 63
           OnMouseDown = imgBuildingTilesOccupiedSolidMouseDown
         end
         object lblBuildingTilesOccupiedAll: TLabel
@@ -457,37 +457,44 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Building tiles'
         end
-        object lblBuildingExitPoint1X: TLabel
+        object lblBuildingExitPoint1: TLabel
           Left = 160
           Top = 16
-          Width = 65
+          Width = 86
           Height = 13
-          Caption = 'Exit point 1 X:'
+          Caption = 'Exit point 1  X / Y:'
         end
-        object lblBuildingExitPoint1Y: TLabel
+        object lblBuildingExitPoint2: TLabel
           Left = 160
-          Top = 40
-          Width = 65
+          Top = 56
+          Width = 86
           Height = 13
-          Caption = 'Exit point 1 Y:'
+          Caption = 'Exit point 2  X / Y:'
         end
-        object lblBuildingExitPoint2X: TLabel
-          Left = 160
-          Top = 64
-          Width = 65
+        object lblBuildingBuildRestriction: TLabel
+          Left = 96
+          Top = 100
+          Width = 74
           Height = 13
-          Caption = 'Exit point 2 X:'
+          Caption = 'Build restriction:'
         end
-        object lblBuildingExitPoint2Y: TLabel
-          Left = 160
-          Top = 88
-          Width = 65
+        object lblBuildingBuildMaxDistance: TLabel
+          Left = 184
+          Top = 100
+          Width = 66
           Height = 13
-          Caption = 'Exit point 2 Y:'
+          Caption = 'Max distance:'
+        end
+        object lblBuildingBuildMaxDistanceHint: TLabel
+          Left = 228
+          Top = 116
+          Width = 50
+          Height = 13
+          Caption = '0 = default'
         end
         object seBuildingExitPoint1X: TSpinEdit
-          Left = 232
-          Top = 16
+          Left = 160
+          Top = 32
           Width = 49
           Height = 22
           MaxLength = 3
@@ -498,8 +505,8 @@ object StructuresEditor: TStructuresEditor
           OnChange = RedrawBuildingPreview
         end
         object seBuildingExitPoint1Y: TSpinEdit
-          Left = 232
-          Top = 40
+          Left = 216
+          Top = 32
           Width = 49
           Height = 22
           MaxLength = 3
@@ -509,8 +516,8 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object seBuildingExitPoint2X: TSpinEdit
-          Left = 232
-          Top = 64
+          Left = 160
+          Top = 72
           Width = 49
           Height = 22
           MaxLength = 3
@@ -520,8 +527,8 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object seBuildingExitPoint2Y: TSpinEdit
-          Left = 232
-          Top = 88
+          Left = 216
+          Top = 72
           Width = 49
           Height = 22
           MaxLength = 3
@@ -533,8 +540,8 @@ object StructuresEditor: TStructuresEditor
         object cbBuildingFlagHAS_SKIRT: TCheckBox
           Tag = 2097152
           Left = 8
-          Top = 104
-          Width = 97
+          Top = 100
+          Width = 73
           Height = 17
           Caption = 'Has skirt'
           TabOrder = 4
@@ -542,13 +549,50 @@ object StructuresEditor: TStructuresEditor
         end
         object cbBuildingFlagNO_CONCRETE: TCheckBox
           Tag = 4194304
-          Left = 80
-          Top = 104
-          Width = 145
+          Left = 8
+          Top = 120
+          Width = 81
           Height = 17
-          Caption = 'Does not require concrete'
+          Caption = 'No concrete'
           TabOrder = 5
           OnClick = BuildingFlagCheckboxChange
+        end
+        object cbxBuildingBuildRestriction: TComboBox
+          Left = 96
+          Top = 116
+          Width = 77
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 6
+          Items.Strings = (
+            'Buildable'
+            'Terrain 1'
+            'Terrain 2'
+            'Terrain 3'
+            'Terrain 4'
+            'Terrain 5'
+            'Terrain 6'
+            'Terrain 7'
+            'Anywhere'
+            'Ter.bit 1'
+            'Ter.bit 2'
+            'Ter.bit 1+2'
+            'Ter.bit 3'
+            'Ter.bit 3+1'
+            'Ter.bit 3+2'
+            'Sandy')
+        end
+        object seBuildingBuildMaxDistance: TSpinEdit
+          Left = 184
+          Top = 116
+          Width = 41
+          Height = 22
+          MaxLength = 1
+          MaxValue = 7
+          MinValue = 0
+          TabOrder = 7
+          Value = 0
         end
       end
       object gbBuildingProperties: TGroupBox
@@ -653,39 +697,39 @@ object StructuresEditor: TStructuresEditor
           Tag = 512
           Left = 8
           Top = 88
-          Width = 137
+          Width = 97
           Height = 17
-          Caption = 'Selectable && Repairable'
+          Caption = 'Select && Repair'
           TabOrder = 5
           OnClick = BuildingFlagCheckboxChange
         end
         object cbBuildingFlagCAN_CAPTURE: TCheckBox
           Tag = 1024
-          Left = 160
+          Left = 112
           Top = 88
-          Width = 121
+          Width = 81
           Height = 17
-          Caption = 'Can be captured'
+          Caption = 'Can capture'
           TabOrder = 6
           OnClick = BuildingFlagCheckboxChange
         end
-        object cbBuildingFlagALWAYS_DECAY: TCheckBox
+        object cbBuildingFlagDECAY: TCheckBox
           Tag = 32768
           Left = 8
           Top = 112
-          Width = 137
+          Width = 97
           Height = 17
-          Caption = 'Decay even on concrete'
+          Caption = 'Always decay'
           TabOrder = 7
           OnClick = BuildingFlagCheckboxChange
         end
         object cbBuildingFlagCANNOT_SELL: TCheckBox
           Tag = 16777216
-          Left = 160
+          Left = 112
           Top = 112
-          Width = 97
+          Width = 81
           Height = 17
-          Caption = 'Cannot be sold'
+          Caption = 'Cannot sell'
           TabOrder = 8
           OnClick = BuildingFlagCheckboxChange
         end
@@ -699,6 +743,24 @@ object StructuresEditor: TStructuresEditor
           MinValue = 0
           TabOrder = 9
           Value = 0
+        end
+        object cbBuildingScreenShake: TCheckBox
+          Left = 200
+          Top = 88
+          Width = 97
+          Height = 17
+          Caption = 'Screen shake'
+          TabOrder = 10
+        end
+        object cbBuildingFlagREPAIRING: TCheckBox
+          Tag = 1
+          Left = 200
+          Top = 112
+          Width = 81
+          Height = 17
+          Caption = 'Repairing'
+          TabOrder = 11
+          OnClick = BuildingFlagCheckboxChange
         end
       end
       object gbBuildingTurret: TGroupBox
@@ -1072,13 +1134,13 @@ object StructuresEditor: TStructuresEditor
       end
       object gbBuildingOther: TGroupBox
         Left = 400
-        Top = 576
+        Top = 592
         Width = 289
-        Height = 61
+        Height = 45
         Caption = 'Others'
         TabOrder = 8
         object lblBuildingSellPriority: TLabel
-          Left = 88
+          Left = 108
           Top = 16
           Width = 53
           Height = 13
@@ -1092,7 +1154,7 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Flags:'
         end
         object seBuildingSellPriority: TSpinEdit
-          Left = 144
+          Left = 164
           Top = 16
           Width = 49
           Height = 22
@@ -1103,40 +1165,23 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object edBuildingFlags: TEdit
-          Left = 8
-          Top = 32
-          Width = 73
+          Left = 40
+          Top = 16
+          Width = 65
           Height = 21
+          MaxLength = 8
           TabOrder = 1
           OnChange = edBuildingFlagsChange
         end
-        object cbBuildingFlagAUTOREPAIR: TCheckBox
-          Tag = 1
-          Left = 200
-          Top = 38
-          Width = 81
-          Height = 17
-          Caption = 'Repairing'
-          TabOrder = 2
-          OnClick = BuildingFlagCheckboxChange
-        end
         object cbBuildingFlagUNKNOWN9: TCheckBox
           Tag = 256
-          Left = 200
+          Left = 218
           Top = 14
-          Width = 87
+          Width = 65
           Height = 17
-          Caption = 'Unknown flag'
-          TabOrder = 3
+          Caption = 'Unknown'
+          TabOrder = 2
           OnClick = BuildingFlagCheckboxChange
-        end
-        object cbBuildingScreenShake: TCheckBox
-          Left = 88
-          Top = 38
-          Width = 97
-          Height = 17
-          Caption = 'Screen shake'
-          TabOrder = 4
         end
       end
     end
@@ -1599,39 +1644,46 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Speed:'
         end
         object lblUnitSpeedType: TLabel
-          Left = 120
+          Left = 96
           Top = 16
-          Width = 57
+          Width = 27
           Height = 13
-          Caption = 'Speed type:'
+          Caption = 'Type:'
         end
         object lblUnitUnitRotationSpeed: TLabel
           Left = 8
           Top = 40
-          Width = 71
+          Width = 57
           Height = 13
-          Caption = 'Turning speed:'
+          Caption = 'Turn speed:'
+        end
+        object lblUnitMovementRestriction: TLabel
+          Left = 220
+          Top = 12
+          Width = 53
+          Height = 26
+          Caption = 'Movement'#13'Restriction:'
         end
         object edUnitSpeed: TEdit
           Left = 48
           Top = 16
-          Width = 65
+          Width = 41
           Height = 21
           TabOrder = 0
         end
         object cbxUnitSpeedType: TComboBox
-          Left = 184
+          Left = 128
           Top = 16
-          Width = 113
+          Width = 85
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 1
         end
         object seUnitUnitRotationSpeed: TSpinEdit
-          Left = 88
+          Left = 72
           Top = 40
-          Width = 57
+          Width = 49
           Height = 22
           MaxLength = 3
           MaxValue = 255
@@ -1640,12 +1692,38 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object cbUnitCanCrushInfantry: TCheckBox
-          Left = 152
+          Left = 128
           Top = 40
-          Width = 113
+          Width = 81
           Height = 17
-          Caption = 'Can crush infantry'
+          Caption = 'Can crush'
           TabOrder = 3
+        end
+        object cbxUnitMovementRestriction: TComboBox
+          Left = 220
+          Top = 40
+          Width = 77
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 4
+          Items.Strings = (
+            'Normal'
+            'Terrain 1'
+            'Terrain 2'
+            'Terrain 3'
+            'Terrain 4'
+            'Terrain 5'
+            'Terrain 6'
+            'Terrain 7'
+            'Anywhere'
+            'Ter.bit 1'
+            'Ter.bit 2'
+            'Ter.bit 1+2'
+            'Ter.bit 3'
+            'Ter.bit 3+1'
+            'Ter.bit 3+2'
+            'Sandy')
         end
       end
       object gbUnitWeapons: TGroupBox

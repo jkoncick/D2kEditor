@@ -234,7 +234,7 @@ type
     cbxBuildingSpecialBehavior: TComboBox;
     cbBuildingFlagSELECT_REPAIR: TCheckBox;
     cbBuildingFlagCAN_CAPTURE: TCheckBox;
-    cbBuildingFlagALWAYS_DECAY: TCheckBox;
+    cbBuildingFlagDECAY: TCheckBox;
     cbBuildingFlagCANNOT_SELL: TCheckBox;
     lblBuildingSightRadius: TLabel;
     seBuildingSightRadius: TSpinEdit;
@@ -271,10 +271,8 @@ type
     imgBuildingTilesOccupiedSolid: TImage;
     lblBuildingTilesOccupiedAll: TLabel;
     lblBuildingTilesOccupiedSolid: TLabel;
-    lblBuildingExitPoint1X: TLabel;
-    lblBuildingExitPoint1Y: TLabel;
-    lblBuildingExitPoint2X: TLabel;
-    lblBuildingExitPoint2Y: TLabel;
+    lblBuildingExitPoint1: TLabel;
+    lblBuildingExitPoint2: TLabel;
     seBuildingExitPoint1X: TSpinEdit;
     seBuildingExitPoint1Y: TSpinEdit;
     seBuildingExitPoint2X: TSpinEdit;
@@ -292,7 +290,7 @@ type
     seBuildingSellPriority: TSpinEdit;
     lblBuildingFlags: TLabel;
     edBuildingFlags: TEdit;
-    cbBuildingFlagAUTOREPAIR: TCheckBox;
+    cbBuildingFlagREPAIRING: TCheckBox;
     cbBuildingFlagUNKNOWN9: TCheckBox;
     cbBuildingFlagANIM_ALPHA: TCheckBox;
     btnBuildingDirectionFrames0: TButton;
@@ -576,6 +574,13 @@ type
     lblGroupIDs: TLabel;
     cbxUnitUpgradeTargetType: TComboBox;
     cbUnitUpgradeAllowed: TCheckBox;
+    cbxBuildingBuildRestriction: TComboBox;
+    lblBuildingBuildRestriction: TLabel;
+    lblUnitMovementRestriction: TLabel;
+    cbxUnitMovementRestriction: TComboBox;
+    lblBuildingBuildMaxDistance: TLabel;
+    seBuildingBuildMaxDistance: TSpinEdit;
+    lblBuildingBuildMaxDistanceHint: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -1042,8 +1047,8 @@ end;
 
 procedure TStructuresEditor.imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  X := X div 17;
-  Y := Y div 17;
+  X := X div 16;
+  Y := Y div 16;
   if Button = mbLeft then
     tmp_building_tiles_occupied_all := tmp_building_tiles_occupied_all or (1 shl (Y * MAX_BUILDING_SIZE + x))
   else if Button = mbRight then
@@ -1054,8 +1059,8 @@ end;
 
 procedure TStructuresEditor.imgBuildingTilesOccupiedSolidMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  X := X div 17;
-  Y := Y div 17;
+  X := X div 16;
+  Y := Y div 16;
   if Button = mbLeft then
     tmp_building_tiles_occupied_solid := tmp_building_tiles_occupied_solid or (1 shl (Y * MAX_BUILDING_SIZE + x))
   else if Button = mbRight then
@@ -1073,14 +1078,14 @@ begin
   loading := true;
   cbBuildingFlagSELECT_REPAIR.Checked := (value and BF_SELECT_REPAIR) <> 0;
   cbBuildingFlagCAN_CAPTURE.Checked := (value and BF_CAN_CAPTURE) <> 0;
-  cbBuildingFlagALWAYS_DECAY.Checked := (value and BF_ALWAYS_DECAY) <> 0;
+  cbBuildingFlagDECAY.Checked := (value and BF_DECAY) <> 0;
   cbBuildingFlagCANNOT_SELL.Checked := (value and BF_CANNOT_SELL) <> 0;
   cbBuildingFlagHAS_ANIMATION.Checked := (value and BF_HAS_ANIMATION) <> 0;
   cbBuildingFlagANIM_PERMANENT.Checked := (value and BF_ANIM_PERMANENT) <> 0;
   cbBuildingFlagANIM_ALPHA.Checked := (value and BF_ANIM_ALPHA) <> 0;
   cbBuildingFlagHAS_SKIRT.Checked := (value and BF_HAS_SKIRT) <> 0;
   cbBuildingFlagNO_CONCRETE.Checked := (value and BF_NO_CONCRETE) <> 0;
-  cbBuildingFlagAUTOREPAIR.Checked := (value and BF_AUTOREPAIR) <> 0;
+  cbBuildingFlagREPAIRING.Checked := (value and BF_REPAIRING) <> 0;
   cbBuildingFlagUNKNOWN9.Checked := (value and BF_UNKNOWN9) <> 0;
   loading := false;
   draw_building_preview(true);
@@ -2813,6 +2818,8 @@ begin
   seBuildingExitPoint1Y.Value := bld.ExitPoint1Y;
   seBuildingExitPoint2X.Value := bld.ExitPoint2X;
   seBuildingExitPoint2Y.Value := bld.ExitPoint2Y;
+  cbxBuildingBuildRestriction.ItemIndex := bld.BuildRestriction;
+  seBuildingBuildMaxDistance.Value := bld.BuildMaxDistance;
   // Others and unknown group box
   edBuildingFlags.Text := IntToHex(bld.Flags, 8);
   seBuildingSellPriority.Value := bld.SellPriority;
@@ -2869,11 +2876,12 @@ begin
   cbxUnitHealthBarSize.ItemIndex := unt.HealthBarSize;
   cbUnitIsInfantry.Checked := unt.IsInfantry <> 0;
   cbxUnitSpecialBehavior.ItemIndex := unt.SpecialBehavior;
-  cbUnitCanCrushInfantry.Checked := unt.CanCrushInfantry <> 0;
   // Movement group box
   edUnitSpeed.Text := inttostr(unt.Speed shr 12);
   cbxUnitSpeedType.ItemIndex := unt.SpeedType;
   seUnitUnitRotationSpeed.Value := unt.UnitRotationSpeed;
+  cbUnitCanCrushInfantry.Checked := unt.CanCrushInfantry <> 0;
+  cbxUnitMovementRestriction.ItemIndex := unt.MovementRestriction;
   // Weapons group box
   cbxUnitPrimaryWeapon.ItemIndex := unt.PrimaryWeapon + 1;
   cbxUnitSecondaryWeapon.ItemIndex := unt.SecondaryWeapon + 1;
@@ -3172,6 +3180,8 @@ begin
   bld.ExitPoint1Y := seBuildingExitPoint1Y.Value;
   bld.ExitPoint2X := seBuildingExitPoint2X.Value;
   bld.ExitPoint2Y := seBuildingExitPoint2Y.Value;
+  bld.BuildRestriction := cbxBuildingBuildRestriction.ItemIndex;
+  bld.BuildMaxDistance := seBuildingBuildMaxDistance.Value;
   // Others and unknown group box
   bld.Flags := strtointdef('$' + edBuildingFlags.Text, 0);
   bld.SellPriority := seBuildingSellPriority.Value;
@@ -3224,6 +3234,7 @@ begin
   unt.SpeedType := cbxUnitSpeedType.ItemIndex;
   unt.UnitRotationSpeed := seUnitUnitRotationSpeed.Value;
   unt.CanCrushInfantry := IfThen(cbUnitCanCrushInfantry.Checked, 1, 0);
+  unt.MovementRestriction := cbxUnitMovementRestriction.ItemIndex;
   // Weapons group box
   unt.PrimaryWeapon := cbxUnitPrimaryWeapon.ItemIndex - 1;
   unt.SecondaryWeapon := cbxUnitSecondaryWeapon.ItemIndex - 1;
@@ -3723,7 +3734,7 @@ begin
         img_target.Canvas.Brush.Color := clGray
       else
         img_target.Canvas.Brush.Color := clWhite;
-      img_target.Canvas.Rectangle(x*17, y*17, x*17+16, y*17+16);
+      img_target.Canvas.Rectangle(x*16, y*16, x*16+15, y*16+15);
     end;
 end;
 

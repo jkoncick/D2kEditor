@@ -54,20 +54,22 @@ type
     MuzzleFlashExplosion:  shortint;
     SpeedType:             byte;
     MultiplayerOnly:       byte;
+    // Extra properties added by mod
     UpgradeAllowed:        byte;
     UpgradeTargetType:     byte;
-    _ZeroBytes:            array[0..82] of byte;
+    MovementRestriction:   byte;
+    _ZeroBytes:            array[0..81] of byte;
   end;
 
   TUnitTemplatePtr = ^TUnitTemplate;
 
-const BF_AUTOREPAIR     = $00000001;
+const BF_REPAIRING      = $00000001;
 const BF_ANIM_PERMANENT = $00000010;
 const BF_HAS_ANIMATION  = $00000040;
 const BF_UNKNOWN9       = $00000100;
 const BF_SELECT_REPAIR  = $00000200;
 const BF_CAN_CAPTURE    = $00000400;
-const BF_ALWAYS_DECAY   = $00008000;
+const BF_DECAY          = $00008000;
 const BF_HAS_SKIRT      = $00200000;
 const BF_NO_CONCRETE    = $00400000;
 const BF_ANIM_ALPHA     = $00800000;
@@ -131,7 +133,10 @@ type
     BuildupArt:            byte;
     BuildingAnimation:     byte;
     MuzzleFlashExplosion:  shortint;
-    _ZeroBytes:            array[0..126] of byte;
+    // Extra properties added by mod
+    BuildRestriction:      byte;
+    BuildMaxDistance:      byte;
+    _ZeroBytes:            array[0..124] of byte;
   end;
 
   TBuildingTemplatePtr = ^TBuildingTemplate;

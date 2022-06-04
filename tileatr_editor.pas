@@ -817,7 +817,7 @@ var
 begin
   value := StrToInt64('$' + TileAtrValue.Text);
   speed_modifier := (value shr 29) and 7;
-  str := 'Speed modifier ' + inttostr(speed_modifier) + ': ';
+  str := 'Terrain type ' + inttostr(speed_modifier) + ': ';
   for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
     str := str + Format('%s = %.3f  ', [Structures.speed.SpeedNameStrings[i], Round(Structures.speed.values[speed_modifier, i] * 100)/100]);
   stSpeedModifier.Caption := str;
@@ -1113,7 +1113,7 @@ begin
   concrete_owner := (value shr 17) and 7;
   spice_amount := (value shr 20) and 7;
   unknown_owner := (value shr 25) and 7;
-  stSideBitValues.Caption := Format('Owner: %d  Conc: %d  Spice: %d  Unkn.Own: %d', [building_unit_owner, concrete_owner, spice_amount, unknown_owner]);
+  stSideBitValues.Caption := Format('Owner: %d  Conc: %d  Spice: %d  SecOwner: %d', [building_unit_owner, concrete_owner, spice_amount, unknown_owner]);
   // Set speed modifier label
   update_speed_modifiers;
 end;
