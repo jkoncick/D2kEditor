@@ -1,5 +1,13 @@
 D2kEditor changelog
 
+Version 2.11 (released 2022-06-06)
+---------------------------------
+Added: Deactivate Ctrl+X shortcut when on Briefing text box
+Added: Show empty lines in event/condition lists. Controlled by "EventGridShowEmptyLines" setting in D2kEditor.ini.
+Added: Unit and building terrain restriction fields in structures editor (new features in Dune 2000 mod)
+Added: New event types and rules (new features in Dune 2000 mod)
+
+
 Version 2.1 (released 2022-05-01)
 ---------------------------------
 Added support for newly implemented features in singleplayer game modding.
@@ -14,6 +22,7 @@ Fixed: Sound name lockup
 Added: Mark events using negated condition with different color
 Added: Marking of events and conditions of selected type
 Changed: Increased sound size limit from 64kB to 512kB
+
 
 Version 2.0 (released 2021-06-30)
 ---------------------------------
