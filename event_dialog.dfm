@@ -160,7 +160,7 @@ object EventDialog: TEventDialog
       object cbxEventType: TComboBox
         Left = 64
         Top = 24
-        Width = 169
+        Width = 173
         Height = 21
         Style = csDropDownList
         ItemHeight = 13
@@ -952,6 +952,73 @@ object EventDialog: TEventDialog
       Caption = '='
       TabOrder = 2
       OnClick = seConditionFilterAmountChange
+    end
+  end
+  object SelectVariablePanel: TPanel
+    Left = 200
+    Top = 0
+    Width = 185
+    Height = 329
+    TabOrder = 5
+    Visible = False
+    object lblSelectVariableList: TLabel
+      Left = 8
+      Top = 4
+      Width = 73
+      Height = 13
+      Caption = 'Select variable:'
+    end
+    object lbSelectVariableList: TListBox
+      Left = 8
+      Top = 20
+      Width = 169
+      Height = 229
+      ItemHeight = 13
+      TabOrder = 0
+      OnClick = lbSelectVariableListClick
+      OnDblClick = btnSelectVariableOkClick
+    end
+    object pnSelectVariableBottomPanel: TPanel
+      Left = 1
+      Top = 256
+      Width = 183
+      Height = 72
+      Align = alBottom
+      BevelOuter = bvNone
+      TabOrder = 1
+      object lblSelectVariableName: TLabel
+        Left = 8
+        Top = 0
+        Width = 107
+        Height = 13
+        Caption = 'Custom variable name:'
+      end
+      object edSelectVariableName: TEdit
+        Left = 8
+        Top = 16
+        Width = 169
+        Height = 21
+        TabOrder = 0
+        OnChange = edSelectVariableNameChange
+      end
+      object btnSelectVariableOk: TBitBtn
+        Left = 100
+        Top = 40
+        Width = 75
+        Height = 25
+        TabOrder = 1
+        OnClick = btnSelectVariableOkClick
+        Kind = bkOK
+      end
+      object btnSelectVariableCancel: TBitBtn
+        Left = 8
+        Top = 40
+        Width = 75
+        Height = 25
+        TabOrder = 2
+        OnClick = btnSelectVariableCancelClick
+        Kind = bkCancel
+      end
     end
   end
   object EventGridPopupMenu: TPopupMenu

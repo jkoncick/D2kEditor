@@ -77,6 +77,7 @@ type
     paUpdateEventMarkers,
     paUpdatePlayerColours,
     paUpdateSpeedModifiers,
+    paUpdateVariableNames,
     paUpdateGameLists,
     paUpdateEventTypeConfiguration,
     // Update mission dialog contents
@@ -136,7 +137,7 @@ procedure TDispatcher.register_event(event: TDispatcherRegisteredEvent);
 begin
   case event of
     // Map events
-    evMapLoad:                    pact := pact + [paUpdateMapDimensions, paUpdateMapName, paUpdateMapStats, paRenderMap, paRenderMinimap];
+    evMapLoad:                    pact := pact + [paUpdateMapDimensions, paUpdateMapName, paUpdateMapStats, paUpdateVariableNames, paRenderMap, paRenderMinimap];
     evMapResize:                  pact := pact + [paUpdateMapDimensions, paUpdateMapStats, paUpdateEventMarkers, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapShift:                   pact := pact + [paUpdateMapStats, paUpdateEventMarkers, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapTilesModify:             pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap];
@@ -148,7 +149,7 @@ begin
     evMisEventPositionChange:     pact := pact + [paUpdateEventMarkers];
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
     // Mission ini events
-    evMissionIniLoad:             pact := pact + [paUpdateMissionIniData, paUpdateEventDialog];
+    evMissionIniLoad:             pact := pact + [paUpdateMissionIniData, paUpdateEventDialog, paUpdateVariableNames];
     evMissionIniCustomTextChange: pact := pact + [paUpdateEventDialog];
     // Tileset events
     evFLLTilesetList:             pact := pact + [paUpdateTilesetList];
@@ -218,6 +219,7 @@ begin
   if paUpdateEventMarkers       in pact then update_event_markers;
   if paUpdatePlayerColours      in pact then MissionDialog.update_player_colors;
   if paUpdateSpeedModifiers     in pact then TileAtrEditor.update_speed_modifiers;
+  if paUpdateVariableNames      in pact then EventDialog.update_variable_names;
   if paUpdateGameLists          in pact then update_game_lists;
   if paUpdateEventTypeConfiguration in pact then EventDialog.update_event_type_configuration;
   // Update mission dialog contents

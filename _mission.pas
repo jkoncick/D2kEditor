@@ -83,12 +83,8 @@ const condition_args_struct_members: array[0..6] of TStructMemberDefinition =
 
 type
   TObjectFilter = packed record
-    pos_min_x: byte;
-    pos_min_y: byte;
-    pos_max_x: byte;
-    pos_max_y: byte;
-    pos_flags: byte;
-    criteria_var_flags: byte;
+    pos_values: array[0..3] of byte;
+    pos_and_var_flags: word;
     criteria_and_or: word;
     criteria_type: array[0..7] of byte;
     criteria_value: array[0..7] of byte;
@@ -170,8 +166,8 @@ type
     function get_event_contents(index: integer): String;
     function get_event_conditions(index: integer): String;
     function get_condition_contents(index: integer; show_player: boolean): String;
-    function get_coords_contents(x, y: integer): String;
-    function get_argument_contents(value: integer; argdef: TArgDefinitionPtr): String;
+    function get_coords_contents(x, y: integer; x_var, y_var: boolean): String;
+    function get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr): String;
     function get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: integer; item_list_type: ItemListType): String;
     function get_event_data_contents(event_id: integer): string;
     function get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer): string;
@@ -424,7 +420,7 @@ begin
     event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     for j := 0 to Length(et.coords) - 1 do
-      if (et.coords[j].marker <> ' ') and evaluate_show_if(Addr(et.coords[j].show_if), event, Addr(event_args_struct_members)) then
+      if (et.coords[j].marker <> ' ') and (event.coord_var_flags and (3 shl (j * 2)) = 0) and evaluate_show_if(Addr(et.coords[j].show_if), event, Addr(event_args_struct_members)) then
       begin
         x := event.coord_x[j];
         y := event.coord_y[j];
@@ -457,7 +453,7 @@ begin
     condition := Addr(condition_data[i]);
     ct := Addr(EventConfig.condition_types[condition.condition_type]);
     for j := 0 to Length(ct.coords) - 1 do
-      if (ct.coords[j].marker <> ' ') and evaluate_show_if(Addr(ct.coords[j].show_if), condition, Addr(condition_args_struct_members)) then
+      if (ct.coords[j].marker <> ' ') and (condition.coord_var_flags and (3 shl (j * 2)) = 0) and evaluate_show_if(Addr(ct.coords[j].show_if), condition, Addr(condition_args_struct_members)) then
       begin
         x := condition.coord_x[j];
         y := condition.coord_y[j];
@@ -512,7 +508,7 @@ begin
     begin
       idx := (Ord(et.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(et.coords[idx].show_if), event, Addr(event_args_struct_members)) then
-        contents := contents + get_coords_contents(event.coord_x[idx], event.coord_y[idx]);
+        contents := contents + get_coords_contents(event.coord_x[idx], event.coord_y[idx], (event.coord_var_flags and (1 shl (idx * 2))) <> 0, (event.coord_var_flags and (1 shl (idx * 2 + 1))) <> 0);
       start := i + 3;
     end else
     if (et.contents[i+1]) = 'a' then
@@ -546,7 +542,7 @@ begin
         if arg_def_ptr.arg_type = atFloat then
           contents := contents + floattostrf(get_float_struct_member(event, Addr(event_args_struct_members), idx), ffFixed, 8, 3)
         else
-          contents := contents + get_argument_contents(get_integer_struct_member(event, Addr(event_args_struct_members), idx), arg_def_ptr);
+          contents := contents + get_argument_contents(get_integer_struct_member(event, Addr(event_args_struct_members), idx), (event.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr);
       end;
       start := i + 3;
     end else
@@ -629,7 +625,7 @@ begin
     begin
       idx := (Ord(ct.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(ct.coords[idx].show_if), cond, Addr(condition_args_struct_members)) then
-        contents := contents + get_coords_contents(cond.coord_x[idx], cond.coord_y[idx]);
+        contents := contents + get_coords_contents(cond.coord_x[idx], cond.coord_y[idx], (cond.coord_var_flags and (1 shl (idx * 2))) <> 0, (cond.coord_var_flags and (1 shl (idx * 2 + 1))) <> 0);
       start := i + 3;
     end else
     if (ct.contents[i+1]) = 'a' then
@@ -663,7 +659,7 @@ begin
         if arg_def_ptr.arg_type = atFloat then
           contents := contents + floattostrf(get_float_struct_member(cond, Addr(condition_args_struct_members), idx), ffFixed, 8, 3)
         else
-          contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), arg_def_ptr);
+          contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), (cond.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr);
       end;
       start := i + 3;
     end else
@@ -693,14 +689,29 @@ begin
   result := contents;
 end;
 
-function TMission.get_coords_contents(x, y: integer): String;
+function TMission.get_coords_contents(x, y: integer; x_var, y_var: boolean): String;
+var
+  x_str, y_str: string;
 begin
-  result := Format('%d , %d', [x, y]);
+  if x_var then
+    x_str := MissionIni.get_variable_name(x, true)
+  else
+    x_str := IntToStr(x);
+  if y_var then
+    y_str := MissionIni.get_variable_name(y, true)
+  else
+    y_str := IntToStr(y);
+  result := Format('%s , %s', [x_str, y_str]);
 end;
 
-function TMission.get_argument_contents(value: integer; argdef: TArgDefinitionPtr): String;
+function TMission.get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr): String;
 begin
   result := '';
+  if is_var then
+  begin
+    result := MissionIni.get_variable_name(value, true);
+    exit;
+  end;
   case argdef.arg_type of
     atBigNumber: result := inttostr(value);
     atNumber: result := inttostr(value);
@@ -708,6 +719,7 @@ begin
     atList: result := get_list_value_contents(value, argdef.list_type, argdef.values, argdef.game_list_type, argdef.item_list_type);
     atBool: if (value <> 0) then result := '(' + argdef.name + ')';
     atSwitch: result := argdef.values[IfThen(value <> 0, 1, 0)];
+    atVariable: result := MissionIni.get_variable_name(value, false);
   end;
 end;
 
@@ -791,11 +803,19 @@ function TMission.get_object_filter_contents(filter: TObjectFilterPtr; filter_ty
 var
   contents: string;
   i: integer;
+  pos_str: array[0..3] of string;
   and_or_op, and_or_level: integer;
   criteria: TFilterCriteriaDefinitionPtr;
 begin
-  if (filter.pos_flags and 1) = 1 then
-    contents := contents + IfThen((filter.pos_flags and 2) = 0, 'Pos', 'NegPos') + Format('(%d , %d : %d , %d) ', [filter.pos_min_x, filter.pos_min_y, filter.pos_max_x, filter.pos_max_y]);
+  for i := 0 to 3 do
+  begin
+    if filter.pos_and_var_flags and (1 shl (i + 4)) <> 0 then
+      pos_str[i] := MissionIni.get_variable_name(filter.pos_values[i], true)
+    else
+      pos_str[i] := IntToStr(filter.pos_values[i]);
+  end;
+  if (filter.pos_and_var_flags and 1) = 1 then
+    contents := contents + IfThen((filter.pos_and_var_flags and 2) = 0, 'Pos', 'NegPos') + Format('(%s , %s : %s , %s) ', [pos_str[0], pos_str[1], pos_str[2], pos_str[3]]);
   and_or_level := 0;
   for i := 0 to High(filter.criteria_type) do
   begin
@@ -813,7 +833,11 @@ begin
       contents := contents + '(';
       inc(and_or_level);
     end;
-    contents := contents + criteria.name + ' ' + object_filter_comp_operation[filter.criteria_type[i] shr 6] + ' ' + get_list_value_contents(filter.criteria_value[i], criteria.list_type, criteria.values, criteria.game_list_type, criteria.item_list_type);
+    contents := contents + criteria.name + ' ' + object_filter_comp_operation[filter.criteria_type[i] shr 6] + ' ';
+    if filter.pos_and_var_flags and (1 shl (i + 8)) <> 0 then
+      contents := contents + MissionIni.get_variable_name(filter.criteria_value[i], true)
+    else
+      contents := contents + get_list_value_contents(filter.criteria_value[i], criteria.list_type, criteria.values, criteria.game_list_type, criteria.item_list_type);
     while (and_or_op < and_or_level) do
     begin
       contents := contents + ')';
@@ -1471,6 +1495,7 @@ var
   et: TEventTypeDefinitionPtr;
   condition: ^TCondition;
   ct: TConditionTypeDefinitionPtr;
+  filter: TObjectFilterPtr;
 begin
   for i := 0 to num_events - 1 do
   begin
@@ -1479,14 +1504,33 @@ begin
     for j := 0 to High(et.coords) do
       if et.coords[j].coord_type <> ctNone then
       begin
-        event.coord_x[j] := min(Map.width - 1, max(0, Integer(event.coord_x[j]) + shift_x));
-        event.coord_y[j] := min(Map.height - 1, max(0, Integer(event.coord_y[j]) + shift_y));
+        if event.coord_var_flags and (1 shl (j * 2)) = 0 then
+          event.coord_x[j] := min(Map.width - 1, max(0, Integer(event.coord_x[j]) + shift_x));
+        if event.coord_var_flags and (1 shl (j * 2 + 1)) = 0 then
+          event.coord_y[j] := min(Map.height - 1, max(0, Integer(event.coord_y[j]) + shift_y));
         if et.coords[j].coord_type = ctArea then
         begin
-          event.coord_x[j+1] := min(Map.width - event.coord_x[j], event.coord_x[j+1]);
-          event.coord_y[j+1] := min(Map.height - event.coord_y[j], event.coord_y[j+1]);
+          if (event.coord_var_flags and (1 shl (j * 2)) = 0) and (event.coord_var_flags and (1 shl ((j+1) * 2)) = 0) then
+            event.coord_x[j+1] := min(Map.width - event.coord_x[j], event.coord_x[j+1]);
+          if (event.coord_var_flags and (1 shl (j * 2 + 1)) = 0) and (event.coord_var_flags and (1 shl ((j+1) * 2 + 1)) = 0) then
+            event.coord_y[j+1] := min(Map.height - event.coord_y[j], event.coord_y[j+1]);
         end;
       end;
+    if et.event_data >= edUnitFilter then
+    begin
+      filter := Addr(event.data[1]);
+      if (filter.pos_and_var_flags and 1) <> 0 then
+      begin
+        if (filter.pos_and_var_flags and 16) = 0 then
+          filter.pos_values[0] := min(Map.width - 1, max(0, Integer(filter.pos_values[0]) + shift_x));
+        if (filter.pos_and_var_flags and 32) = 0 then
+          filter.pos_values[1] := min(Map.height - 1, max(0, Integer(filter.pos_values[1]) + shift_y));
+        if (filter.pos_and_var_flags and 64) = 0 then
+          filter.pos_values[2] := min(Map.width - 1, max(0, Integer(filter.pos_values[2]) + shift_x));
+        if (filter.pos_and_var_flags and 128) = 0 then
+          filter.pos_values[3] := min(Map.height - 1, max(0, Integer(filter.pos_values[3]) + shift_y));
+      end;
+    end;
   end;
   for i := 0 to num_conditions - 1 do
   begin
@@ -1495,14 +1539,33 @@ begin
     for j := 0 to High(ct.coords) do
       if ct.coords[j].coord_type <> ctNone then
       begin
-        condition.coord_x[j] := min(Map.width - 1, max(0, Integer(condition.coord_x[j]) + shift_x));
-        condition.coord_y[j] := min(Map.height - 1, max(0, Integer(condition.coord_y[j]) + shift_y));
+        if condition.coord_var_flags and (1 shl (j * 2)) = 0 then
+          condition.coord_x[j] := min(Map.width - 1, max(0, Integer(condition.coord_x[j]) + shift_x));
+        if condition.coord_var_flags and (1 shl (j * 2 + 1)) = 0 then
+          condition.coord_y[j] := min(Map.height - 1, max(0, Integer(condition.coord_y[j]) + shift_y));
         if ct.coords[j].coord_type = ctArea then
         begin
-          condition.coord_x[j+1] := min(Map.width - condition.coord_x[j], condition.coord_x[j+1]);
-          condition.coord_y[j+1] := min(Map.height - condition.coord_y[j], condition.coord_y[j+1]);
+          if (condition.coord_var_flags and (1 shl (j * 2)) = 0) and (condition.coord_var_flags and (1 shl ((j+1) * 2)) = 0) then
+            condition.coord_x[j+1] := min(Map.width - condition.coord_x[j], condition.coord_x[j+1]);
+          if (condition.coord_var_flags and (1 shl (j * 2 + 1)) = 0) and (condition.coord_var_flags and (1 shl ((j+1) * 2 + 1)) = 0) then
+            condition.coord_y[j+1] := min(Map.height - condition.coord_y[j], condition.coord_y[j+1]);
         end;
       end;
+    if ct.condition_data >= cdUnitFilter then
+    begin
+      filter := Addr(condition_data[i]);
+      if (filter.pos_and_var_flags and 1) <> 0 then
+      begin
+        if (filter.pos_and_var_flags and 16) = 0 then
+          filter.pos_values[0] := min(Map.width - 1, max(0, Integer(filter.pos_values[0]) + shift_x));
+        if (filter.pos_and_var_flags and 32) = 0 then
+          filter.pos_values[1] := min(Map.height - 1, max(0, Integer(filter.pos_values[1]) + shift_y));
+        if (filter.pos_and_var_flags and 64) = 0 then
+          filter.pos_values[2] := min(Map.width - 1, max(0, Integer(filter.pos_values[2]) + shift_x));
+        if (filter.pos_and_var_flags and 128) = 0 then
+          filter.pos_values[3] := min(Map.height - 1, max(0, Integer(filter.pos_values[3]) + shift_y));
+      end;
+    end;
   end;
 end;
 

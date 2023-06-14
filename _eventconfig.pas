@@ -7,8 +7,8 @@ uses Classes, IniFiles, _utils, _gamelists;
 type  CoordType =                           (ctNone, ctPoint, ctArea);
 const CoordTypeStr: array[0..2] of string = ('None', 'Point', 'Area');
 
-type  ArgType =                           (atNone, atNumber, atBigNumber, atHexNumber, atFloat, atList, atBool, atSwitch);
-const ArgTypeStr: array[0..7] of String = ('None', 'Number', 'BigNumber', 'HexNumber', 'Float', 'List', 'Bool', 'Switch');
+type  ArgType =                           (atNone, atNumber, atBigNumber, atHexNumber, atFloat, atList, atBool, atSwitch, atVariable);
+const ArgTypeStr: array[0..8] of String = ('None', 'Number', 'BigNumber', 'HexNumber', 'Float', 'List', 'Bool', 'Switch', 'Variable');
 
 type  ListType =                           (ltNone, ltCustom, ltGame, ltItem);
 const ListTypeStr: array[0..3] of String = ('None', 'Custom', 'Game', 'Item');

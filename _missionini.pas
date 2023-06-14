@@ -5,6 +5,8 @@ interface
 uses
   StdCtrls, ValEdit, IniFiles, Classes, _mission;
 
+const MAX_VARIABLES = 256;
+
 type
   TRuleDefinition = record
     name: String;
@@ -43,6 +45,8 @@ type
     // Notes section
     event_notes: array[0..MAX_EVENTS-1] of String;
     condition_notes: array[0..MAX_CONDITIONS-1] of String;
+    // Variables section
+    variable_names: array[0..MAX_VARIABLES] of String;
 
   public
     procedure init;
@@ -60,6 +64,9 @@ type
     function get_custom_text(index: integer; var text: String): boolean;
     procedure set_custom_text(index: integer; text: String);
     procedure remove_custom_text(index: integer);
+    // Variable name related procedures
+    function get_variable_name(index: integer; brackets: boolean): string;
+    function set_variable_name(index: integer; name: string): boolean;
     // Data manipulation procedures
     procedure set_side_id(value: integer);
     procedure set_mission_number(value: integer);
@@ -185,6 +192,9 @@ begin
     event_notes[i] := ini.ReadString('Notes', 'event'+inttostr(i), '');
   for i := 0 to Length(condition_notes) - 1 do
     condition_notes[i] := ini.ReadString('Notes', 'condition'+inttostr(i), '');
+  // Load Variables section
+  for i := 0 to Length(variable_names) - 1 do
+    variable_names[i] := ini.ReadString('Variables', inttostr(i), '');
   // Loading is done - clean up
   tmp_strings.Destroy;
   ini.Destroy;
@@ -253,6 +263,10 @@ begin
   for i := 0 to Length(condition_notes) - 1 do
     if condition_notes[i] <> '' then
       ini.WriteString('Notes', 'condition'+inttostr(i), condition_notes[i]);
+  // Save Variables section
+  for i := 0 to Length(variable_names) - 1 do
+    if variable_names[i] <> '' then
+      ini.WriteString('Variables', inttostr(i), variable_names[i]);
   // Saving is done
   ini.UpdateFile;
   ini.Destroy;
@@ -303,6 +317,9 @@ begin
     event_notes[i] := '';
   for i := 0 to Length(condition_notes) - 1 do
     condition_notes[i] := '';
+  // Clear variable names
+  for i := 0 to Length(variable_names) - 1 do
+    variable_names[i] := '';
 end;
 
 procedure TMissionIni.reset_rules_to_defaults;
@@ -340,6 +357,28 @@ var
 begin
    if TextValueList.FindRow(inttostr(index), row) then
      TextValueList.DeleteRow(row);
+end;
+
+function TMissionIni.get_variable_name(index: integer; brackets: boolean): string;
+begin
+  if index >= MAX_VARIABLES then
+    result := ''
+  else if variable_names[index] = '' then
+    result := 'Var' + IntToStr(index)
+  else
+    result := variable_names[index];
+  if brackets then
+    result := '[' + result + ']';
+end;
+
+function TMissionIni.set_variable_name(index: integer; name: string): boolean;
+begin
+  result := false;
+  if index < MAX_VARIABLES then
+  begin
+    result := variable_names[index] <> name;
+    variable_names[index] := name;
+  end;
 end;
 
 procedure TMissionIni.set_side_id(value: integer);
