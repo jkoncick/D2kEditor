@@ -61,6 +61,8 @@ type
     filter_ptr: TObjectFilterPtr;
     cb_check_position: TCheckBox;
     cb_position_negation: TCheckBox;
+    cbx_position_type: TComboBox;
+    lbl_position: array[0..3] of TLabel;
     se_position: array[0..3] of TSpinEdit;
     btn_position_select: TButton;
     cbx_criteria: array[0..7] of TComboBox;
@@ -327,6 +329,7 @@ type
     procedure ACGVariableToggle(Sender: TObject);
     procedure ACGTextEditClick(Sender: TObject);
     // Filter control group actions
+    procedure FCGPositionTypeChange(Sender: TObject);
     procedure FCGValueChange(Sender: TObject);
     procedure FCGCriteriaChange(Sender: TObject);
     procedure FCGBtnSelectClick(Sender: TObject);
@@ -1536,6 +1539,46 @@ begin
     start_variable_selection(vsVarArg, (Sender as TControl).Tag, get_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member));
 end;
 
+procedure TEventDialog.FCGPositionTypeChange(Sender: TObject);
+var
+  fcg: TFilterControlGroupPtr;
+  i: integer;
+begin
+  fcg := Addr(fcgs[(Sender as TControl).Tag]);
+  for i := 0 to 3 do
+  begin
+    if fcg.cbx_position_type.ItemIndex = 0 then
+    begin
+      case i of
+        0: fcg.lbl_position[i].Caption := 'Min X';
+        1: fcg.lbl_position[i].Caption := 'Min Y';
+        2: fcg.lbl_position[i].Caption := 'Max X';
+        3: fcg.lbl_position[i].Caption := 'Max Y';
+      end;
+      fcg.lbl_position[3].Visible := True;
+      fcg.se_position[3].Visible := (fcg.filter_ptr.pos_and_var_flags and 128) = 0;
+      fcg.btn_var_toggle[7].Visible := True;
+      fcg.edit_var_name[7].Visible := (fcg.filter_ptr.pos_and_var_flags and 128) <> 0;
+    end else
+    begin
+      case i of
+        0: fcg.lbl_position[i].Caption := 'Center X';
+        1: fcg.lbl_position[i].Caption := 'Center Y';
+        2: fcg.lbl_position[i].Caption := 'Distance';
+        3: fcg.lbl_position[i].Caption := '';
+      end;
+      fcg.lbl_position[3].Visible := False;
+      fcg.se_position[3].Visible := False;
+      fcg.btn_var_toggle[7].Visible := False;
+      fcg.edit_var_name[7].Visible := False;
+    end;
+  end;
+  if loading then
+    exit;
+  fcg.filter_ptr.pos_and_var_flags := fcg.filter_ptr.pos_and_var_flags and (not 12);
+  fcg.filter_ptr.pos_and_var_flags := fcg.filter_ptr.pos_and_var_flags or (fcg.cbx_position_type.ItemIndex shl 2);
+end;
+
 procedure TEventDialog.FCGValueChange(Sender: TObject);
 var
   fcg: TFilterControlGroupPtr;
@@ -1557,6 +1600,7 @@ begin
     fcg.filter_ptr.pos_values[i] := StrToIntDef(fcg.se_position[i].Text, 0);
   end;
   fcg.cb_position_negation.Enabled := fcg.cb_check_position.Checked;
+  fcg.cbx_position_type.Enabled := fcg.cb_check_position.Checked;
   fcg.btn_position_select.Enabled := fcg.cb_check_position.Checked;
   for i := 0 to High(fcg.cbx_criteria) do
   begin
@@ -1639,7 +1683,10 @@ var
 begin
   fcg_index := (Sender as TControl).Tag;
   fcg := Addr(fcgs[fcg_index]);
-  MainWindow.start_position_selection(fcg.se_position[0].Value, fcg.se_position[1].Value, psmEventArea);
+  if (fcg.filter_ptr.pos_and_var_flags and 12) = 0 then
+    MainWindow.start_position_selection(fcg.se_position[0].Value, fcg.se_position[1].Value, psmEventArea)
+  else
+    MainWindow.start_position_selection(fcg.se_position[0].Value, fcg.se_position[1].Value, psmEventPoint);
   selected_coord_index := not fcg_index;
   close;
 end;
@@ -2729,6 +2776,7 @@ var
 begin
   fcgs[index].object_type := -1;
   fcgs[index].filter_ptr := filter_ptr;
+  tmp_strings := TStringList.Create;
   with fcgs[index] do
   begin
     cb_check_position := TCheckBox.Create(self);
@@ -2745,18 +2793,25 @@ begin
     cb_position_negation.Tag := index;
     cb_position_negation.OnClick := FCGValueChange;
     cb_position_negation.Parent := parent_panel;
+    cbx_position_type := TComboBox.Create(self);
+    cbx_position_type.Top := 20;
+    cbx_position_type.Left := 186;
+    cbx_position_type.Width := 100;
+    cbx_position_type.Style := csDropDownList;
+    cbx_position_type.Tag := index;
+    cbx_position_type.OnChange := FCGPositionTypeChange;
+    cbx_position_type.Parent := parent_panel;
+    tmp_strings.Add('Area');
+    tmp_strings.Add('Square');
+    tmp_strings.Add('Circle tiles');
+    tmp_strings.Add('Circle pixels');
+    cbx_position_type.Items := tmp_strings;
     for i := 0 to 3 do
     begin
-      lbl := TLabel.Create(self);
-      lbl.Left := i * 62;
-      lbl.Top := 42;
-      case i of
-        0: lbl.Caption := 'Min X';
-        1: lbl.Caption := 'Min Y';
-        2: lbl.Caption := 'Max X';
-        3: lbl.Caption := 'Max Y';
-      end;
-      lbl.Parent := parent_panel;
+      lbl_position[i] := TLabel.Create(self);
+      lbl_position[i].Left := i * 62;
+      lbl_position[i].Top := 42;
+      lbl_position[i].Parent := parent_panel;
       se_position[i] := TSpinEdit.Create(self);
       se_position[i].Top := 56;
       se_position[i].Left := i * 62;
@@ -2867,7 +2922,7 @@ begin
       edit_var_name[i+8].OnClick := FCGTextEditClick;
       edit_var_name[i+8].Parent := parent_panel;
     end;
-    tmp_strings := TStringList.Create;
+    tmp_strings.Clear;
     tmp_strings.Add('1&');
     tmp_strings.Add('2o');
     tmp_strings.Add('3&');
@@ -2911,6 +2966,7 @@ begin
   loading := true;
   fcg.cb_check_position.Checked := (fcg.filter_ptr.pos_and_var_flags and 1) <> 0;
   fcg.cb_position_negation.Checked := (fcg.filter_ptr.pos_and_var_flags and 2) <> 0;
+  fcg.cbx_position_type.ItemIndex := (fcg.filter_ptr.pos_and_var_flags shr 2) and 3;
   for i := 0 to High(fcg.se_position) do
   begin
     if (fcg.filter_ptr.pos_and_var_flags and (1 shl (i + 4))) <> 0 then
@@ -2930,7 +2986,9 @@ begin
     fcg.edit_var_name[i+4].Enabled := fcg.cb_check_position.Checked;
     fcg.se_position[i].Enabled := fcg.cb_check_position.Checked;
   end;
+  FCGPositionTypeChange(fcg.cbx_position_type);
   fcg.cb_position_negation.Enabled := fcg.cb_check_position.Checked;
+  fcg.cbx_position_type.Enabled := fcg.cb_check_position.Checked;
   fcg.btn_position_select.Enabled := fcg.cb_check_position.Checked;
   for i := 0 to High(fcg.cbx_criteria) do
     fcg.cbx_criteria[i].ItemIndex := fcg.filter_ptr.criteria_type[i] and 63;
@@ -3041,15 +3099,26 @@ end;
 procedure TEventDialog.finish_point_selection(x, y: integer);
 var
   ccg: TCoordControlGroupPtr;
+  fcg: TFilterControlGroupPtr;
 begin
   Show;
   if (x = -1) and (y = -1) then
     exit;
-  ccg := Addr(ccgs[selected_coord_index]);
-  set_integer_value(ccg.data_ptr, ccg.offset_x, 1, x);
-  set_integer_value(ccg.data_ptr, ccg.offset_y, 1, y);
-  ccg.var_flag_ptr^ := ccg.var_flag_ptr^ and (not (3 shl (ccg.coord_index * 2)));
-  fill_coord_control_group(ccg, ccg.coorddef);
+  if (selected_coord_index < 0) then
+  begin
+    fcg := Addr(fcgs[not selected_coord_index]);
+    fcg.filter_ptr.pos_and_var_flags := fcg.filter_ptr.pos_and_var_flags and (not 48);
+    fcg.filter_ptr.pos_values[0] := x;
+    fcg.filter_ptr.pos_values[1] := y;
+    fill_filter_control_group(fcg, fcg.object_type);
+  end else
+  begin
+    ccg := Addr(ccgs[selected_coord_index]);
+    set_integer_value(ccg.data_ptr, ccg.offset_x, 1, x);
+    set_integer_value(ccg.data_ptr, ccg.offset_y, 1, y);
+    ccg.var_flag_ptr^ := ccg.var_flag_ptr^ and (not (3 shl (ccg.coord_index * 2)));
+    fill_coord_control_group(ccg, ccg.coorddef);
+  end;
 end;
 
 procedure TEventDialog.finish_area_selection(min_x, max_x, min_y, max_y: integer);

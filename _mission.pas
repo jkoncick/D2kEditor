@@ -8,6 +8,7 @@ uses Graphics, Classes, IniFiles, _map, _misai, _utils, _gamelists, _eventconfig
 const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
 const allegiance_type: array[0..2] of string = ('Ally', 'Enemy', 'Neutral');
 const allegiance_type_color: array[0..2] of TColor = (clGreen, clRed, clOlive);
+const filter_position_type: array[0..3] of string = ('Area', 'Sqr', 'CrcTl', 'CrcPx');
 
 // *****************************************************************************
 // Event definition
@@ -815,7 +816,14 @@ begin
       pos_str[i] := IntToStr(filter.pos_values[i]);
   end;
   if (filter.pos_and_var_flags and 1) = 1 then
-    contents := contents + IfThen((filter.pos_and_var_flags and 2) = 0, 'Pos', 'NegPos') + Format('(%s , %s : %s , %s) ', [pos_str[0], pos_str[1], pos_str[2], pos_str[3]]);
+  begin
+    contents := contents + IfThen((filter.pos_and_var_flags and 2) = 0, 'Pos', 'NegPos');
+    contents := contents + ' ' + filter_position_type[(filter.pos_and_var_flags shr 2) and 3];
+    if (filter.pos_and_var_flags and 12) = 0 then
+      contents := contents + Format('(%s , %s : %s , %s) ', [pos_str[0], pos_str[1], pos_str[2], pos_str[3]])
+    else
+      contents := contents + Format('(%s , %s : %s) ', [pos_str[0], pos_str[1], pos_str[2]]);
+  end;
   and_or_level := 0;
   for i := 0 to High(filter.criteria_type) do
   begin
