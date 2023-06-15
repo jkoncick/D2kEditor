@@ -25,7 +25,7 @@ object EventDialog: TEventDialog
   TextHeight = 13
   object Splitter1: TSplitter
     Left = 0
-    Top = 394
+    Top = 401
     Width = 1370
     Height = 4
     Cursor = crVSplit
@@ -42,7 +42,7 @@ object EventDialog: TEventDialog
     Left = 0
     Top = 0
     Width = 1370
-    Height = 394
+    Height = 401
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 2
@@ -50,7 +50,7 @@ object EventDialog: TEventDialog
       Left = 168
       Top = 0
       Width = 1202
-      Height = 394
+      Height = 401
       Align = alClient
       ColCount = 8
       DefaultRowHeight = 18
@@ -80,7 +80,7 @@ object EventDialog: TEventDialog
       Left = 0
       Top = 0
       Width = 168
-      Height = 394
+      Height = 401
       Align = alLeft
       ItemHeight = 13
       TabOrder = 1
@@ -90,7 +90,7 @@ object EventDialog: TEventDialog
   end
   object LowerPanel: TPanel
     Left = 0
-    Top = 398
+    Top = 405
     Width = 1370
     Height = 288
     Align = alBottom
@@ -513,41 +513,120 @@ object EventDialog: TEventDialog
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 6
-        object lblEventFilterLimit: TLabel
-          Left = 96
+        object lblEventFilterIndexVar: TLabel
+          Left = 64
           Top = 0
-          Width = 24
+          Width = 80
           Height = 13
-          Caption = 'Limit:'
+          Caption = 'Object index var:'
+          Visible = False
         end
-        object lblEventFilterSkip: TLabel
+        object btnEventFilterIndexToggle: TButton
           Left = 0
           Top = 0
-          Width = 24
-          Height = 13
-          Caption = 'Skip:'
-        end
-        object seEventFilterLimit: TSpinEdit
-          Left = 128
-          Top = 0
           Width = 57
           Height = 22
-          MaxValue = 255
-          MinValue = 0
+          Caption = 'Index'
           TabOrder = 0
-          Value = 0
-          OnChange = seEventFilterLimitChange
+          OnClick = btnEventFilterIndexToggleClick
         end
-        object seEventFilterSkip: TSpinEdit
-          Left = 32
+        object pnEventFilterLimitSkip: TPanel
+          Left = 64
           Top = 0
-          Width = 57
+          Width = 224
           Height = 22
-          MaxValue = 255
-          MinValue = 0
+          BevelOuter = bvNone
           TabOrder = 1
-          Value = 0
-          OnChange = seEventFilterSkipChange
+          object lblEventFilterLimit: TLabel
+            Left = 112
+            Top = 0
+            Width = 24
+            Height = 13
+            Caption = 'Limit:'
+          end
+          object lblEventFilterSkip: TLabel
+            Left = 0
+            Top = 0
+            Width = 24
+            Height = 13
+            Caption = 'Skip:'
+          end
+          object seEventFilterLimit: TSpinEdit
+            Left = 140
+            Top = 0
+            Width = 62
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 0
+            Value = 0
+            OnChange = seEventFilterLimitChange
+          end
+          object seEventFilterSkip: TSpinEdit
+            Left = 26
+            Top = 0
+            Width = 62
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 1
+            Value = 0
+            OnChange = seEventFilterSkipChange
+          end
+          object btnEventFilterSkipVarToggle: TButton
+            Left = 88
+            Top = 0
+            Width = 20
+            Height = 22
+            Caption = 'V'
+            TabOrder = 2
+            OnClick = btnEventFilterSkipVarToggleClick
+          end
+          object btnEventFilterLimitVarToggle: TButton
+            Left = 202
+            Top = 0
+            Width = 20
+            Height = 22
+            Caption = 'V'
+            TabOrder = 3
+            OnClick = btnEventFilterLimitVarToggleClick
+          end
+          object edEventFilterSkipVar: TEdit
+            Left = 26
+            Top = 0
+            Width = 62
+            Height = 22
+            ReadOnly = True
+            TabOrder = 4
+            OnClick = edEventFilterSkipVarClick
+          end
+          object edEventFilterLimitVar: TEdit
+            Left = 140
+            Top = 0
+            Width = 62
+            Height = 22
+            ReadOnly = True
+            TabOrder = 5
+            OnClick = edEventFilterLimitVarClick
+          end
+        end
+        object pnEventFilterBody: TPanel
+          Left = 0
+          Top = 24
+          Width = 288
+          Height = 264
+          BevelOuter = bvNone
+          TabOrder = 2
+        end
+        object edEventFilterIndexVar: TEdit
+          Left = 152
+          Top = 0
+          Width = 97
+          Height = 21
+          ReadOnly = True
+          TabOrder = 3
+          Visible = False
+          OnClick = edEventFilterIndexVarClick
         end
       end
     end
@@ -925,7 +1004,7 @@ object EventDialog: TEventDialog
     object seConditionFilterAmount: TSpinEdit
       Left = 120
       Top = 0
-      Width = 57
+      Width = 68
       Height = 22
       MaxValue = 255
       MinValue = 0
@@ -952,6 +1031,32 @@ object EventDialog: TEventDialog
       Caption = '='
       TabOrder = 2
       OnClick = seConditionFilterAmountChange
+    end
+    object pnConditionFilterBody: TPanel
+      Left = 0
+      Top = 24
+      Width = 288
+      Height = 264
+      BevelOuter = bvNone
+      TabOrder = 3
+    end
+    object btnConditionFilterAmountVarToggle: TButton
+      Left = 188
+      Top = 0
+      Width = 20
+      Height = 22
+      Caption = 'V'
+      TabOrder = 4
+      OnClick = btnConditionFilterAmountVarToggleClick
+    end
+    object edConditionFilterAmountVar: TEdit
+      Left = 120
+      Top = 0
+      Width = 68
+      Height = 22
+      ReadOnly = True
+      TabOrder = 5
+      OnClick = edConditionFilterAmountVarClick
     end
   end
   object SelectVariablePanel: TPanel

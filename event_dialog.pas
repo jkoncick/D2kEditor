@@ -11,7 +11,7 @@ type
   CreateEventType = (ceUnitSpawn, ceHarvRepl, ceAnnihMsg);
 
 type
-  VariableSelectionType = (vsCoord, vsArg, vsVarArg, vsFilter, vsList);
+  VariableSelectionType = (vsCoord, vsArg, vsVarArg, vsEventFilterSkip, vsEventFilterLimit, vsEventObjectIndex, vsConditionFilterAmount, vsFilter);
 
 type
   TCoordControlGroup = record
@@ -216,6 +216,18 @@ type
     btnSelectVariableOk: TBitBtn;
     btnSelectVariableCancel: TBitBtn;
     lblSelectVariableList: TLabel;
+    btnEventFilterIndexToggle: TButton;
+    pnEventFilterLimitSkip: TPanel;
+    pnEventFilterBody: TPanel;
+    pnConditionFilterBody: TPanel;
+    edEventFilterIndexVar: TEdit;
+    lblEventFilterIndexVar: TLabel;
+    btnEventFilterSkipVarToggle: TButton;
+    btnEventFilterLimitVarToggle: TButton;
+    edEventFilterSkipVar: TEdit;
+    edEventFilterLimitVar: TEdit;
+    btnConditionFilterAmountVarToggle: TButton;
+    edConditionFilterAmountVar: TEdit;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -280,6 +292,12 @@ type
     // -- Object filter
     procedure seEventFilterSkipChange(Sender: TObject);
     procedure seEventFilterLimitChange(Sender: TObject);
+    procedure btnEventFilterSkipVarToggleClick(Sender: TObject);
+    procedure btnEventFilterLimitVarToggleClick(Sender: TObject);
+    procedure edEventFilterSkipVarClick(Sender: TObject);
+    procedure edEventFilterLimitVarClick(Sender: TObject);
+    procedure btnEventFilterIndexToggleClick(Sender: TObject);
+    procedure edEventFilterIndexVarClick(Sender: TObject);
     // Event condition list panel actions
     procedure EventConditionListClickCheck(Sender: TObject);
     procedure EventConditionListDblClick(Sender: TObject);
@@ -317,6 +335,8 @@ type
     procedure btnApplyConditionChangesClick(Sender: TObject);
     // Condition filter panel actions
     procedure seConditionFilterAmountChange(Sender: TObject);
+    procedure btnConditionFilterAmountVarToggleClick(Sender: TObject);
+    procedure edConditionFilterAmountVarClick(Sender: TObject);
     // Miscellaneous
     procedure PopupMenuPopup(Sender: TObject);
     // Coord control group actions
@@ -504,8 +524,8 @@ begin
       create_arg_control_group(i, Addr(tmp_condition), Addr(tmp_condition.arg_var_flags), Addr(condition_args_struct_members), i - Length(event_args_struct_members), ConditionPropertiesPanel);
   end;
   // Initialize filter control groups
-  create_filter_control_group(0, Addr(tmp_event.data[1]), edpFilter);
-  create_filter_control_group(1, Addr(tmp_condition), pnConditionFilter);
+  create_filter_control_group(0, Addr(tmp_event.data[1]), pnEventFilterBody);
+  create_filter_control_group(1, Addr(tmp_condition), pnConditionFilterBody);
   //select_event(0);
   //select_condition(0);
 end;
@@ -877,7 +897,7 @@ procedure TEventDialog.EventFlagsClick(Sender: TObject);
 begin
   if loading then
     exit;
-  tmp_event.event_flags := 0;
+  tmp_event.event_flags := tmp_event.event_flags and (not 7);
   if cbEventAutoBlock.Checked then
     tmp_event.event_flags := tmp_event.event_flags or 1;
   if cbEventBlocked.Checked then
@@ -1060,6 +1080,54 @@ end;
 procedure TEventDialog.seEventFilterLimitChange(Sender: TObject);
 begin
   tmp_event.data[0] := StrToIntDef(seEventFilterLimit.Text, 0);
+end;
+
+procedure TEventDialog.btnEventFilterSkipVarToggleClick(Sender: TObject);
+begin
+  if (tmp_event.event_flags and 16) = 0 then
+    start_variable_selection(vsEventFilterSkip, 0, 0)
+  else
+  begin
+    tmp_event.event_flags := tmp_event.event_flags and (not 16);
+    tmp_event.filter_skip := 0;
+    fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
+  end;
+end;
+
+procedure TEventDialog.btnEventFilterLimitVarToggleClick(Sender: TObject);
+begin
+  if (tmp_event.event_flags and 32) = 0 then
+    start_variable_selection(vsEventFilterLimit, 0, 0)
+  else
+  begin
+    tmp_event.event_flags := tmp_event.event_flags and (not 32);
+    tmp_event.data[0] := 0;
+    fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
+  end;
+end;
+
+procedure TEventDialog.edEventFilterSkipVarClick(Sender: TObject);
+begin
+  start_variable_selection(vsEventFilterSkip, 0, tmp_event.filter_skip);
+end;
+
+procedure TEventDialog.edEventFilterLimitVarClick(Sender: TObject);
+begin
+  start_variable_selection(vsEventFilterLimit, 0, tmp_event.data[0]);
+end;
+
+procedure TEventDialog.btnEventFilterIndexToggleClick(Sender: TObject);
+begin
+  tmp_event.event_flags := (tmp_event.event_flags and (not 8)) or ((not (tmp_event.event_flags and 8)) and 8);
+  tmp_event.filter_skip := 0;
+  fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
+  if (tmp_event.event_flags and 8) <> 0 then
+    start_variable_selection(vsEventObjectIndex, 0, 0);
+end;
+
+procedure TEventDialog.edEventFilterIndexVarClick(Sender: TObject);
+begin
+  start_variable_selection(vsEventObjectIndex, 0, tmp_event.filter_skip);
 end;
 
 procedure TEventDialog.EventConditionListClickCheck(Sender: TObject);
@@ -1401,7 +1469,24 @@ begin
   if loading then
     exit;
   tmp_condition.arg2 := StrToIntDef(seConditionFilterAmount.Text, 0);
-  tmp_condition.arg1 := IfThen(rbConditionFilterAmoutEq.Checked, 1, 0);
+  tmp_condition.arg1 := IfThen(rbConditionFilterAmoutEq.Checked, tmp_condition.arg1 or 1, tmp_condition.arg1 and (not 1));
+end;
+
+procedure TEventDialog.btnConditionFilterAmountVarToggleClick(Sender: TObject);
+begin
+  if (tmp_condition.arg1 and 2) = 0 then
+    start_variable_selection(vsConditionFilterAmount, 0, 0)
+  else
+  begin
+    tmp_condition.arg1 := tmp_condition.arg1 and (not 2);
+    tmp_condition.arg2 := 0;
+    fill_condition_ui;
+  end;
+end;
+
+procedure TEventDialog.edConditionFilterAmountVarClick(Sender: TObject);
+begin
+  start_variable_selection(vsConditionFilterAmount, 0, tmp_condition.arg2)
 end;
 
 procedure TEventDialog.PopupMenuPopup(Sender: TObject);
@@ -1564,7 +1649,7 @@ begin
       case i of
         0: fcg.lbl_position[i].Caption := 'Center X';
         1: fcg.lbl_position[i].Caption := 'Center Y';
-        2: fcg.lbl_position[i].Caption := 'Distance';
+        2: fcg.lbl_position[i].Caption := 'Radius';
         3: fcg.lbl_position[i].Caption := '';
       end;
       fcg.lbl_position[3].Visible := False;
@@ -2142,9 +2227,49 @@ begin
   end;
   if panel = edpFilter then
   begin
-    seEventFilterSkip.Value := tmp_event.filter_skip;
-    seEventFilterLimit.Value := tmp_event.data[0];
-    fill_filter_control_group(Addr(fcgs[0]), object_type);
+    if (tmp_event.event_flags and 8) <> 0 then
+    begin
+      btnEventFilterIndexToggle.Caption := 'Filter';
+      pnEventFilterBody.Visible := False;
+      pnEventFilterLimitSkip.Visible := False;
+      edEventFilterIndexVar.Visible := True;
+      lblEventFilterIndexVar.Visible := True;
+      edEventFilterIndexVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, false);
+    end else
+    begin
+      btnEventFilterIndexToggle.Caption := 'Index';
+      pnEventFilterBody.Visible := True;
+      pnEventFilterLimitSkip.Visible := True;
+      edEventFilterIndexVar.Visible := False;
+      lblEventFilterIndexVar.Visible := False;
+      if (tmp_event.event_flags and 16) <> 0 then
+      begin
+        seEventFilterSkip.Visible := False;
+        edEventFilterSkipVar.Visible := True;
+        edEventFilterSkipVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, true);
+        btnEventFilterSkipVarToggle.Caption := 'C';
+      end else
+      begin
+        seEventFilterSkip.Visible := True;
+        seEventFilterSkip.Value := tmp_event.filter_skip;
+        edEventFilterSkipVar.Visible := False;
+        btnEventFilterSkipVarToggle.Caption := 'V';
+      end;
+      if (tmp_event.event_flags and 32) <> 0 then
+      begin
+        seEventFilterLimit.Visible := False;
+        edEventFilterLimitVar.Visible := True;
+        edEventFilterLimitVar.Text := MissionIni.get_variable_name(tmp_event.data[0], true);
+        btnEventFilterLimitVarToggle.Caption := 'C';
+      end else
+      begin
+        seEventFilterLimit.Visible := True;
+        seEventFilterLimit.Value := tmp_event.data[0];
+        edEventFilterLimitVar.Visible := False;
+        btnEventFilterLimitVarToggle.Caption := 'V';
+      end;
+      fill_filter_control_group(Addr(fcgs[0]), object_type);
+    end;
   end;
 end;
 
@@ -2360,7 +2485,19 @@ begin
   begin
     pnConditionFilter.Visible := true;
     loading := true;
-    seConditionFilterAmount.Value := tmp_condition.arg2;
+    if (tmp_condition.arg1 and 2) <> 0 then
+    begin
+      seConditionFilterAmount.Visible := False;
+      edConditionFilterAmountVar.Visible := True;
+      edConditionFilterAmountVar.Text := MissionIni.get_variable_name(tmp_condition.arg2, True);
+      btnConditionFilterAmountVarToggle.Caption := 'C';
+    end else
+    begin
+      seConditionFilterAmount.Visible := True;
+      seConditionFilterAmount.Value := tmp_condition.arg2;
+      edConditionFilterAmountVar.Visible := False;
+      btnConditionFilterAmountVarToggle.Caption := 'V';
+    end;
     if (tmp_condition.arg1 and 1) <> 0 then
       rbConditionFilterAmoutEq.Checked := true
     else
@@ -2780,21 +2917,21 @@ begin
   with fcgs[index] do
   begin
     cb_check_position := TCheckBox.Create(self);
-    cb_check_position.Top := 24;
+    cb_check_position.Top := 0;
     cb_check_position.Caption := 'Check for position';
     cb_check_position.Width := 108;
     cb_check_position.Tag := index;
     cb_check_position.OnClick := FCGValueChange;
     cb_check_position.Parent := parent_panel;
     cb_position_negation := TCheckBox.Create(self);
-    cb_position_negation.Top := 24;
+    cb_position_negation.Top := 0;
     cb_position_negation.Left := 112;
     cb_position_negation.Caption := 'Negation';
     cb_position_negation.Tag := index;
     cb_position_negation.OnClick := FCGValueChange;
     cb_position_negation.Parent := parent_panel;
     cbx_position_type := TComboBox.Create(self);
-    cbx_position_type.Top := 20;
+    cbx_position_type.Top := 0;
     cbx_position_type.Left := 186;
     cbx_position_type.Width := 100;
     cbx_position_type.Style := csDropDownList;
@@ -2810,10 +2947,10 @@ begin
     begin
       lbl_position[i] := TLabel.Create(self);
       lbl_position[i].Left := i * 62;
-      lbl_position[i].Top := 42;
+      lbl_position[i].Top := 22;
       lbl_position[i].Parent := parent_panel;
       se_position[i] := TSpinEdit.Create(self);
-      se_position[i].Top := 56;
+      se_position[i].Top := 36;
       se_position[i].Left := i * 62;
       se_position[i].Width := 46;
       se_position[i].MaxValue := 127;
@@ -2821,7 +2958,7 @@ begin
       se_position[i].OnChange := FCGValueChange;
       se_position[i].Parent := parent_panel;
       btn_var_toggle[i+4] := TButton.Create(self);
-      btn_var_toggle[i+4].Top := 56;
+      btn_var_toggle[i+4].Top := 36;
       btn_var_toggle[i+4].Left := i * 62 + 46;
       btn_var_toggle[i+4].Width := 16;
       btn_var_toggle[i+4].Height := 21;
@@ -2830,7 +2967,7 @@ begin
       btn_var_toggle[i+4].OnClick := FCGVariableToggle;
       btn_var_toggle[i+4].Parent := parent_panel;
       edit_var_name[i+4] := TEdit.Create(self);
-      edit_var_name[i+4].Top := 56;
+      edit_var_name[i+4].Top := 36;
       edit_var_name[i+4].Left := i * 62;
       edit_var_name[i+4].Width := 46;
       edit_var_name[i+4].ReadOnly := true;
@@ -2841,7 +2978,7 @@ begin
     end;
     btn_position_select := TButton.Create(self);
     btn_position_select.Left := 248;
-    btn_position_select.Top := 56;
+    btn_position_select.Top := 36;
     btn_position_select.Width := 40;
     btn_position_select.Height := 22;
     btn_position_select.Caption := 'Select';
@@ -2850,28 +2987,28 @@ begin
     btn_position_select.Parent := parent_panel;
     lbl := TLabel.Create(self);
     lbl.Left := 0;
-    lbl.Top := 94;
+    lbl.Top := 72;
     lbl.Caption := 'And/Or';
     lbl.Parent := parent_panel;
     lbl := TLabel.Create(self);
     lbl.Left := 40;
-    lbl.Top := 82;
+    lbl.Top := 62;
     lbl.Caption := 'Criteria';
     lbl.Parent := parent_panel;
     lbl := TLabel.Create(self);
     lbl.Left := 117;
-    lbl.Top := 82;
+    lbl.Top := 62;
     lbl.Caption := 'Comp.';
     lbl.Parent := parent_panel;
     lbl := TLabel.Create(self);
     lbl.Left := 152;
-    lbl.Top := 82;
+    lbl.Top := 62;
     lbl.Caption := 'Value';
     lbl.Parent := parent_panel;
     for i := 0 to 7 do
     begin
       cbx_criteria[i] := TComboBox.Create(self);
-      cbx_criteria[i].Top := 96 + i * 24;
+      cbx_criteria[i].Top := 74 + i * 24;
       cbx_criteria[i].Left := 40;
       cbx_criteria[i].Width := 78;
       cbx_criteria[i].Style := csDropDownList;
@@ -2880,7 +3017,7 @@ begin
       cbx_criteria[i].Parent := parent_panel;
       criteria_type[i] := -1;
       cbx_operation[i] := TComboBox.Create(self);
-      cbx_operation[i].Top := 96 + i * 24;
+      cbx_operation[i].Top := 74 + i * 24;
       cbx_operation[i].Left := 117;
       cbx_operation[i].Width := 36;
       cbx_operation[i].Style := csDropDownList;
@@ -2888,14 +3025,14 @@ begin
       cbx_operation[i].OnChange := FCGValueChange;
       cbx_operation[i].Parent := parent_panel;
       se_value[i] := TSpinEdit.Create(self);
-      se_value[i].Top := 96 + i * 24;
+      se_value[i].Top := 74 + i * 24;
       se_value[i].Left := 152;
       se_value[i].Width := 64;
       se_value[i].Tag := index;
       se_value[i].OnChange := FCGValueChange;
       se_value[i].Parent := parent_panel;
       cbx_value[i] := TComboBox.Create(self);
-      cbx_value[i].Top := 96 + i * 24;
+      cbx_value[i].Top := 74 + i * 24;
       cbx_value[i].Left := 152;
       cbx_value[i].Width := 120;
       cbx_value[i].Style := csDropDownList;
@@ -2903,7 +3040,7 @@ begin
       cbx_value[i].OnChange := FCGValueChange;
       cbx_value[i].Parent := parent_panel;
       btn_var_toggle[i+8] := TButton.Create(self);
-      btn_var_toggle[i+8].Top := 96 + i * 24;
+      btn_var_toggle[i+8].Top := 74 + i * 24;
       btn_var_toggle[i+8].Left := 272;
       btn_var_toggle[i+8].Width := 16;
       btn_var_toggle[i+8].Height := 21;
@@ -2913,7 +3050,7 @@ begin
       btn_var_toggle[i+8].OnClick := FCGVariableToggle;
       btn_var_toggle[i+8].Parent := parent_panel;
       edit_var_name[i+8] := TEdit.Create(self);
-      edit_var_name[i+8].Top := 96 + i * 24;
+      edit_var_name[i+8].Top := 74 + i * 24;
       edit_var_name[i+8].Left := 152;
       edit_var_name[i+8].Width := 120;
       edit_var_name[i+8].ReadOnly := true;
@@ -2930,7 +3067,7 @@ begin
     for i := 0 to 6 do
     begin
       cbx_and_or[i] := TComboBox.Create(self);
-      cbx_and_or[i].Top := 108 + i * 24;
+      cbx_and_or[i].Top := 84 + i * 24;
       cbx_and_or[i].Left := 0;
       cbx_and_or[i].Width := 40;
       cbx_and_or[i].Style := csDropDownList;
@@ -3082,6 +3219,29 @@ begin
         set_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member, lbSelectVariableList.ItemIndex);
         fill_arg_control_group(acg, acg.argdef);
       end;
+    vsEventFilterSkip:
+      begin
+        tmp_event.event_flags := tmp_event.event_flags or 16;
+        tmp_event.filter_skip := lbSelectVariableList.ItemIndex;
+        fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
+      end;
+    vsEventFilterLimit:
+      begin
+        tmp_event.event_flags := tmp_event.event_flags or 32;
+        tmp_event.data[0] := lbSelectVariableList.ItemIndex;
+        fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
+      end;
+    vsEventObjectIndex:
+      begin
+        tmp_event.filter_skip := lbSelectVariableList.ItemIndex;
+        fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
+      end;
+    vsConditionFilterAmount:
+    begin
+        tmp_condition.arg1 := tmp_condition.arg1 or 2;
+        tmp_condition.arg2 := lbSelectVariableList.ItemIndex;
+        fill_condition_ui;
+    end;
     vsFilter:
       begin
         fcg := Addr(fcgs[variable_selection_index div 16]);

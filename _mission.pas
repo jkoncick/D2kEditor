@@ -668,8 +668,15 @@ begin
     begin
       if ct.condition_data >= cdUnitFilter then
       begin
-        if cond.arg2 > 0 then
-          contents := contents + 'Am(' + IfThen((cond.arg1 and 1) <> 0, '=', '>=') + IntToStr(cond.arg2) + ') ';
+        if (cond.arg2 > 0) or ((cond.arg1 and 2) <> 0) then
+        begin
+          contents := contents + 'Am(' + IfThen((cond.arg1 and 1) <> 0, '=', '>=');
+          if (cond.arg1 and 2) <> 0 then
+            contents := contents + MissionIni.get_variable_name(cond.arg2, true)
+          else
+            contents := contents + IntToStr(cond.arg2);
+          contents := contents + ') ';
+        end;
         contents := contents + get_object_filter_contents(TObjectFilterPtr(cond), Ord(ct.condition_data) - Ord(cdUnitFilter));
       end;
       start := i + 2;
@@ -790,12 +797,32 @@ begin
     SetString(contents, PChar(Addr(event.data[0])), StrLen(PChar(Addr(event.data[0]))));
   if et.event_data >= edUnitFilter then
   begin
-    contents := 'Filter: ';
-    if event.filter_skip > 0 then
-      contents := contents + 'Skip(' + IntToStr(event.filter_skip) + ') ';
-    if event.data[0] > 0 then
-      contents := contents + 'Limit(' + IntToStr(event.data[0]) + ') ';
-    contents := contents + get_object_filter_contents(Addr(event.data[1]), Ord(et.event_data) - Ord(edUnitFilter));
+    if (event.event_flags and 8) <> 0 then
+    begin
+      contents := 'Object index: ' + MissionIni.get_variable_name(event.filter_skip, true);
+    end else
+    begin
+      contents := 'Filter: ';
+      if (event.filter_skip > 0) or ((event.event_flags and 16) <> 0) then
+      begin
+        contents := contents + 'Skip(';
+        if (event.event_flags and 16) <> 0 then
+          contents := contents +  MissionIni.get_variable_name(event.filter_skip, true)
+        else
+          contents := contents + IntToStr(event.filter_skip);
+        contents := contents + ') ';
+      end;
+      if (event.data[0] > 0) or ((event.event_flags and 32) <> 0) then
+      begin
+        contents := contents + 'Limit(';
+        if (event.event_flags and 32) <> 0 then
+          contents := contents +  MissionIni.get_variable_name(event.data[0], true)
+        else
+          contents := contents + IntToStr(event.data[0]);
+        contents := contents + ') ';
+      end;
+      contents := contents + get_object_filter_contents(Addr(event.data[1]), Ord(et.event_data) - Ord(edUnitFilter));
+    end;
   end;
   result := contents;
 end;
