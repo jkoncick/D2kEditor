@@ -9,6 +9,7 @@ const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 60
 const allegiance_type: array[0..2] of string = ('Ally', 'Enemy', 'Neutral');
 const allegiance_type_color: array[0..2] of TColor = (clGreen, clRed, clOlive);
 const filter_position_type: array[0..3] of string = ('Area', 'Sqr', 'CrcTl', 'CrcPx');
+const message_var_data_type: array[0..3] of string = ('', 'Num', 'Tim', 'Str');
 
 // *****************************************************************************
 // Event definition
@@ -758,7 +759,9 @@ var
   event: ^TEvent;
   et: TEventTypeDefinitionPtr;
   contents: string;
-  i: integer;
+  str: string;
+  i, j: integer;
+  found: integer;
   dummy: boolean;
   tmp_unit_count: array[0..MAX_UNIT_TYPES-1] of byte;
   message_index: integer;
@@ -791,7 +794,22 @@ begin
   begin
     message_index := get_integer_value(Addr(event.data), 21, 4);
     contents := '(' + inttostr(message_index) + ') ';
-    contents := contents + StringTable.get_text(message_index, true, dummy);
+    str := StringTable.get_text(message_index, true, dummy);
+    for i := 0 to 3 do
+      if event.data[5 + i] <> 0 then
+        begin
+          found := 0;
+          for j := 1 to Length(str) do
+            if (str[j] = '@') then
+            begin
+              if found = i then
+              begin
+                Insert(message_var_data_type[event.data[5 + i]] + MissionIni.get_variable_name(event.data[13 + i], True), str, j+1);
+              end;
+              Inc(found);
+            end;
+        end;
+    contents := contents + str;
   end;
   if et.event_data = edMusic then
     SetString(contents, PChar(Addr(event.data[0])), StrLen(PChar(Addr(event.data[0]))));

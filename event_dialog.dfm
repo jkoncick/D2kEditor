@@ -223,6 +223,130 @@ object EventDialog: TEventDialog
       Align = alLeft
       BevelOuter = bvNone
       TabOrder = 2
+      object edpFilter: TPanel
+        Left = 0
+        Top = 0
+        Width = 288
+        Height = 288
+        Align = alClient
+        BevelOuter = bvNone
+        TabOrder = 6
+        object lblEventFilterIndexVar: TLabel
+          Left = 64
+          Top = 0
+          Width = 80
+          Height = 13
+          Caption = 'Object index var:'
+          Visible = False
+        end
+        object btnEventFilterIndexToggle: TButton
+          Left = 0
+          Top = 0
+          Width = 57
+          Height = 22
+          Caption = 'Index'
+          TabOrder = 0
+          OnClick = btnEventFilterIndexToggleClick
+        end
+        object pnEventFilterLimitSkip: TPanel
+          Left = 64
+          Top = 0
+          Width = 224
+          Height = 22
+          BevelOuter = bvNone
+          TabOrder = 1
+          object lblEventFilterLimit: TLabel
+            Left = 112
+            Top = 0
+            Width = 24
+            Height = 13
+            Caption = 'Limit:'
+          end
+          object lblEventFilterSkip: TLabel
+            Left = 0
+            Top = 0
+            Width = 24
+            Height = 13
+            Caption = 'Skip:'
+          end
+          object seEventFilterLimit: TSpinEdit
+            Left = 140
+            Top = 0
+            Width = 62
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 0
+            Value = 0
+            OnChange = seEventFilterLimitChange
+          end
+          object seEventFilterSkip: TSpinEdit
+            Left = 26
+            Top = 0
+            Width = 62
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 1
+            Value = 0
+            OnChange = seEventFilterSkipChange
+          end
+          object btnEventFilterSkipVarToggle: TButton
+            Left = 88
+            Top = 0
+            Width = 20
+            Height = 22
+            Caption = 'V'
+            TabOrder = 2
+            OnClick = btnEventFilterSkipVarToggleClick
+          end
+          object btnEventFilterLimitVarToggle: TButton
+            Left = 202
+            Top = 0
+            Width = 20
+            Height = 22
+            Caption = 'V'
+            TabOrder = 3
+            OnClick = btnEventFilterLimitVarToggleClick
+          end
+          object edEventFilterSkipVar: TEdit
+            Left = 26
+            Top = 0
+            Width = 62
+            Height = 21
+            ReadOnly = True
+            TabOrder = 4
+            OnClick = edEventFilterSkipVarClick
+          end
+          object edEventFilterLimitVar: TEdit
+            Left = 140
+            Top = 0
+            Width = 62
+            Height = 21
+            ReadOnly = True
+            TabOrder = 5
+            OnClick = edEventFilterLimitVarClick
+          end
+        end
+        object pnEventFilterBody: TPanel
+          Left = 0
+          Top = 24
+          Width = 288
+          Height = 264
+          BevelOuter = bvNone
+          TabOrder = 2
+        end
+        object edEventFilterIndexVar: TEdit
+          Left = 152
+          Top = 0
+          Width = 97
+          Height = 21
+          ReadOnly = True
+          TabOrder = 3
+          Visible = False
+          OnClick = edEventFilterIndexVarClick
+        end
+      end
       object edpTileBlock: TPanel
         Left = 0
         Top = 0
@@ -247,25 +371,6 @@ object EventDialog: TEventDialog
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 0
-        object UnitSelectionList: TListBox
-          Left = 0
-          Top = 16
-          Width = 128
-          Height = 272
-          Align = alLeft
-          ItemHeight = 13
-          TabOrder = 0
-          OnDblClick = btnAddUnitClick
-        end
-        object EventUnitListPaddingPanel: TPanel
-          Left = 280
-          Top = 16
-          Width = 8
-          Height = 272
-          Align = alRight
-          BevelOuter = bvNone
-          TabOrder = 1
-        end
         object EventUnitListLabelPanel: TPanel
           Left = 0
           Top = 0
@@ -288,6 +393,25 @@ object EventDialog: TEventDialog
             Height = 13
             Caption = 'Units in event'
           end
+        end
+        object UnitSelectionList: TListBox
+          Left = 0
+          Top = 16
+          Width = 128
+          Height = 272
+          Align = alLeft
+          ItemHeight = 13
+          TabOrder = 0
+          OnDblClick = btnAddUnitClick
+        end
+        object EventUnitListPaddingPanel: TPanel
+          Left = 280
+          Top = 16
+          Width = 8
+          Height = 272
+          Align = alRight
+          BevelOuter = bvNone
+          TabOrder = 1
         end
         object EventUnitList: TListBox
           Left = 152
@@ -402,49 +526,6 @@ object EventDialog: TEventDialog
           OnSetEditText = sgEventByteValuesSetEditText
         end
       end
-      object edpMessage: TPanel
-        Left = 0
-        Top = 0
-        Width = 288
-        Height = 62
-        BevelOuter = bvNone
-        TabOrder = 2
-        object lblMessage: TLabel
-          Left = 4
-          Top = 8
-          Width = 60
-          Height = 13
-          Caption = 'Message ID:'
-        end
-        object seMessageId: TSpinEdit
-          Left = 72
-          Top = 4
-          Width = 65
-          Height = 22
-          MaxValue = 2047
-          MinValue = 0
-          TabOrder = 0
-          Value = 0
-          OnChange = seMessageIdChange
-        end
-        object edMessageText: TEdit
-          Left = 4
-          Top = 36
-          Width = 277
-          Height = 21
-          ReadOnly = True
-          TabOrder = 1
-        end
-        object btnCustomMsgText: TButton
-          Left = 152
-          Top = 4
-          Width = 81
-          Height = 22
-          Caption = 'Custom text'
-          TabOrder = 2
-          OnClick = btnCustomMsgTextClick
-        end
-      end
       object edpMusic: TPanel
         Left = 0
         Top = 0
@@ -505,128 +586,61 @@ object EventDialog: TEventDialog
           OnSetEditText = sgTilePairsSetEditText
         end
       end
-      object edpFilter: TPanel
+      object edpMessage: TPanel
         Left = 0
         Top = 0
         Width = 288
-        Height = 288
-        Align = alClient
+        Height = 185
         BevelOuter = bvNone
-        TabOrder = 6
-        object lblEventFilterIndexVar: TLabel
-          Left = 64
-          Top = 0
-          Width = 80
+        TabOrder = 2
+        object lblMessage: TLabel
+          Left = 4
+          Top = 8
+          Width = 60
           Height = 13
-          Caption = 'Object index var:'
-          Visible = False
+          Caption = 'Message ID:'
         end
-        object btnEventFilterIndexToggle: TButton
-          Left = 0
-          Top = 0
-          Width = 57
+        object lblMessageVarDatatype: TLabel
+          Left = 24
+          Top = 64
+          Width = 46
+          Height = 13
+          Caption = 'Data type'
+        end
+        object lblMessageVariable: TLabel
+          Left = 140
+          Top = 64
+          Width = 38
+          Height = 13
+          Caption = 'Variable'
+        end
+        object seMessageId: TSpinEdit
+          Left = 72
+          Top = 4
+          Width = 65
           Height = 22
-          Caption = 'Index'
+          MaxValue = 2047
+          MinValue = 0
           TabOrder = 0
-          OnClick = btnEventFilterIndexToggleClick
+          Value = 0
+          OnChange = seMessageIdChange
         end
-        object pnEventFilterLimitSkip: TPanel
-          Left = 64
-          Top = 0
-          Width = 224
-          Height = 22
-          BevelOuter = bvNone
-          TabOrder = 1
-          object lblEventFilterLimit: TLabel
-            Left = 112
-            Top = 0
-            Width = 24
-            Height = 13
-            Caption = 'Limit:'
-          end
-          object lblEventFilterSkip: TLabel
-            Left = 0
-            Top = 0
-            Width = 24
-            Height = 13
-            Caption = 'Skip:'
-          end
-          object seEventFilterLimit: TSpinEdit
-            Left = 140
-            Top = 0
-            Width = 62
-            Height = 22
-            MaxValue = 255
-            MinValue = 0
-            TabOrder = 0
-            Value = 0
-            OnChange = seEventFilterLimitChange
-          end
-          object seEventFilterSkip: TSpinEdit
-            Left = 26
-            Top = 0
-            Width = 62
-            Height = 22
-            MaxValue = 255
-            MinValue = 0
-            TabOrder = 1
-            Value = 0
-            OnChange = seEventFilterSkipChange
-          end
-          object btnEventFilterSkipVarToggle: TButton
-            Left = 88
-            Top = 0
-            Width = 20
-            Height = 22
-            Caption = 'V'
-            TabOrder = 2
-            OnClick = btnEventFilterSkipVarToggleClick
-          end
-          object btnEventFilterLimitVarToggle: TButton
-            Left = 202
-            Top = 0
-            Width = 20
-            Height = 22
-            Caption = 'V'
-            TabOrder = 3
-            OnClick = btnEventFilterLimitVarToggleClick
-          end
-          object edEventFilterSkipVar: TEdit
-            Left = 26
-            Top = 0
-            Width = 62
-            Height = 22
-            ReadOnly = True
-            TabOrder = 4
-            OnClick = edEventFilterSkipVarClick
-          end
-          object edEventFilterLimitVar: TEdit
-            Left = 140
-            Top = 0
-            Width = 62
-            Height = 22
-            ReadOnly = True
-            TabOrder = 5
-            OnClick = edEventFilterLimitVarClick
-          end
-        end
-        object pnEventFilterBody: TPanel
+        object edMessageText: TEdit
           Left = 0
-          Top = 24
-          Width = 288
-          Height = 264
-          BevelOuter = bvNone
-          TabOrder = 2
-        end
-        object edEventFilterIndexVar: TEdit
-          Left = 152
-          Top = 0
-          Width = 97
+          Top = 36
+          Width = 284
           Height = 21
           ReadOnly = True
-          TabOrder = 3
-          Visible = False
-          OnClick = edEventFilterIndexVarClick
+          TabOrder = 1
+        end
+        object btnCustomMsgText: TButton
+          Left = 152
+          Top = 4
+          Width = 81
+          Height = 22
+          Caption = 'Custom text'
+          TabOrder = 2
+          OnClick = btnCustomMsgTextClick
         end
       end
     end
@@ -1053,7 +1067,7 @@ object EventDialog: TEventDialog
       Left = 120
       Top = 0
       Width = 68
-      Height = 22
+      Height = 21
       ReadOnly = True
       TabOrder = 5
       OnClick = edConditionFilterAmountVarClick

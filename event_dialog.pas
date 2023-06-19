@@ -11,7 +11,7 @@ type
   CreateEventType = (ceUnitSpawn, ceHarvRepl, ceAnnihMsg);
 
 type
-  VariableSelectionType = (vsCoord, vsArg, vsVarArg, vsEventFilterSkip, vsEventFilterLimit, vsEventObjectIndex, vsConditionFilterAmount, vsFilter);
+  VariableSelectionType = (vsCoord, vsArg, vsVarArg, vsEventMessageVar, vsEventFilterSkip, vsEventFilterLimit, vsEventObjectIndex, vsConditionFilterAmount, vsFilter);
 
 type
   TCoordControlGroup = record
@@ -228,6 +228,8 @@ type
     edEventFilterLimitVar: TEdit;
     btnConditionFilterAmountVarToggle: TButton;
     edConditionFilterAmountVar: TEdit;
+    lblMessageVarDatatype: TLabel;
+    lblMessageVariable: TLabel;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -283,6 +285,8 @@ type
     // -- Message
     procedure seMessageIdChange(Sender: TObject);
     procedure btnCustomMsgTextClick(Sender: TObject);
+    procedure cbxMessageVarDataTypeChange(Sender: TObject);
+    procedure edMessageVariableClick(Sender: TObject);
     // -- Music
     procedure cbMusicNameChange(Sender: TObject);
     // -- Tile block
@@ -383,6 +387,8 @@ type
     ccgs: array[0..5] of TCoordControlGroup;
     acgs: array[0..13] of TArgControlGroup;
     fcgs: array[0..1] of TFilterControlGroup;
+    event_message_var_datatype: array[0..3] of TComboBox;
+    event_message_variable: array[0..3] of TEdit;
     event_gamestruct_value_arg_def: TArgDefinition;
     condition_gamestruct_value_arg_def: TArgDefinition;
 
@@ -412,6 +418,7 @@ type
     // Event data-related procedures
     procedure draw_tile_block;
     procedure draw_tile_pairs;
+    procedure create_message_var_controls;
     // Condition-related prodcedures
     procedure fill_condition_grid_row(index: integer);
     procedure select_condition(index: integer);
@@ -423,7 +430,7 @@ type
     // Coord control group procedures
     procedure create_coord_control_group(index: integer; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; coord_index, offset_x, offset_y: integer; parent_panel: TPanel);
     procedure fill_coord_control_group(ccg: TCoordControlGroupPtr; coorddef: TCoordDefinitionPtr);
-    // Coord control group procedures
+    // Arg control group procedures
     procedure create_arg_control_group(index: integer; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; struct_member: integer; parent_panel: TPanel);
     procedure fill_arg_control_group(acg: TArgControlGroupPtr; argdef: TArgDefinitionPtr);
     procedure fill_arg_combo_box(acg: TArgControlGroupPtr; value: integer; force_update_list: boolean);
@@ -526,8 +533,8 @@ begin
   // Initialize filter control groups
   create_filter_control_group(0, Addr(tmp_event.data[1]), pnEventFilterBody);
   create_filter_control_group(1, Addr(tmp_condition), pnConditionFilterBody);
-  //select_event(0);
-  //select_condition(0);
+  // Initialize event message controls
+  create_message_var_controls;
 end;
 
 procedure TEventDialog.FormShow(Sender: TObject);
@@ -1050,6 +1057,34 @@ begin
     edMessageText.ReadOnly := true;
     fill_grids;
   end;
+end;
+
+procedure TEventDialog.cbxMessageVarDataTypeChange(Sender: TObject);
+var
+  i: integer;
+begin
+  i := (Sender as TControl).Tag;
+  if (Sender as TComboBox).ItemIndex = 0 then
+  begin
+    tmp_event.data[5 + i] := 0;
+    event_message_variable[i].Text := '';
+    event_message_variable[i].Enabled := False;
+  end else
+  begin
+    if tmp_event.data[5 + i] = 0 then
+      start_variable_selection(vsEventMessageVar, i, tmp_event.data[13 + i]);
+    tmp_event.data[5 + i] := (Sender as TComboBox).ItemIndex;
+    event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], False);
+    event_message_variable[i].Enabled := True;
+  end;
+end;
+
+procedure TEventDialog.edMessageVariableClick(Sender: TObject);
+var
+  i: integer;
+begin
+  i := (Sender as TControl).Tag;
+  start_variable_selection(vsEventMessageVar, i, tmp_event.data[13 + i]);
 end;
 
 procedure TEventDialog.cbMusicNameChange(Sender: TObject);
@@ -2206,6 +2241,19 @@ begin
       seMessageIdChange(nil)
     else
       seMessageId.Value := get_integer_value(Addr(tmp_event.data), 21, 4);
+    for i := 0 to Length(event_message_var_datatype) - 1 do
+    begin
+      event_message_var_datatype[i].ItemIndex := tmp_event.data[5 + i];
+      if tmp_event.data[5 + i] = 0 then
+      begin
+        event_message_variable[i].Text := '';
+        event_message_variable[i].Enabled := False;
+      end else
+      begin
+        event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], False);
+        event_message_variable[i].Enabled := True;
+      end;
+    end;
   end;
   if panel = edpMusic then
   begin
@@ -2388,6 +2436,45 @@ begin
     tile_y := (tile_index div 20) * 32;
     imgTilePairs.Canvas.CopyRect(Rect(32, i * 32, 64, i * 32 + 32), Tileset.tileimage.Canvas, Rect(tile_x, tile_y, tile_x + 32, tile_y + 32));
   end;
+end;
+
+procedure TEventDialog.create_message_var_controls;
+var
+  i: integer;
+  lbl: TLabel;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  tmp_strings.Add('None');
+  tmp_strings.Add('Number');
+  tmp_strings.Add('Time');
+  tmp_strings.Add('String from table');
+  for i := 0 to 3 do
+  begin
+    lbl := TLabel.Create(Self);
+    lbl.Left := 8;
+    lbl.Top := 84 + i * 24;
+    lbl.Caption := IntToStr(i+1);
+    lbl.Parent := edpMessage;
+    event_message_var_datatype[i] := TComboBox.Create(Self);
+    event_message_var_datatype[i].Top := 80 + i * 24;
+    event_message_var_datatype[i].Left := 20;
+    event_message_var_datatype[i].Width := 116;
+    event_message_var_datatype[i].Style := csDropDownList;
+    event_message_var_datatype[i].Tag := i;
+    event_message_var_datatype[i].OnChange := cbxMessageVarDataTypeChange;
+    event_message_var_datatype[i].Parent := edpMessage;
+    event_message_var_datatype[i].Items := tmp_strings;
+    event_message_variable[i] := TEdit.Create(Self);
+    event_message_variable[i].Top := 80 + i * 24;
+    event_message_variable[i].Left := 140;
+    event_message_variable[i].Width := 120;
+    event_message_variable[i].ReadOnly := True;
+    event_message_variable[i].Tag := i;
+    event_message_variable[i].OnClick := edMessageVariableClick;
+    event_message_variable[i].Parent := edpMessage;
+  end;
+  tmp_strings.Destroy;
 end;
 
 procedure TEventDialog.fill_condition_grid_row(index: integer);
@@ -3218,6 +3305,11 @@ begin
         acg := Addr(acgs[variable_selection_index]);
         set_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member, lbSelectVariableList.ItemIndex);
         fill_arg_control_group(acg, acg.argdef);
+      end;
+    vsEventMessageVar:
+      begin
+        tmp_event.data[13 + variable_selection_index] := lbSelectVariableList.ItemIndex;
+        event_message_variable[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, False);
       end;
     vsEventFilterSkip:
       begin
