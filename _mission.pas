@@ -790,6 +790,43 @@ begin
       end;
     end;
   end;
+  if et.event_data = edValueList then
+  begin
+    dummy := false;
+    for i := 0 to event.amount - 1 do
+    begin
+      if dummy then
+        contents := contents + ', ';
+      case event.value of
+        0: contents := contents + inttostr(event.data[i]);
+        1: contents := contents + Structures.get_unit_name_str(event.data[i]);
+        2: contents := contents + Structures.get_building_name_str(event.data[i]);
+      end;
+      dummy := true;
+    end;
+  end;
+  if et.event_data = edCoordList then
+  begin
+    dummy := false;
+    for i := 0 to event.amount - 1 do
+    begin
+      if dummy then
+        contents := contents + '  |  ';
+      contents := contents + Format('%d , %d', [event.data[i * 2 + 1], event.data[i * 2 + 2]]);
+      dummy := true;
+    end;
+  end;
+  if et.event_data = edAreaList then
+  begin
+    dummy := false;
+    for i := 0 to event.amount - 1 do
+    begin
+      if dummy then
+        contents := contents + '  |  ';
+      contents := contents + Format('%d , %d : %d , %d', [event.data[i * 4 + 1], event.data[i * 4 + 2], event.data[i * 4 + 3], event.data[i * 4 + 4]]);
+      dummy := true;
+    end;
+  end;
   if et.event_data = edMessage then
   begin
     message_index := get_integer_value(Addr(event.data), 21, 4);

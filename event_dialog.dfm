@@ -173,7 +173,7 @@ object EventDialog: TEventDialog
         Top = 260
         Width = 232
         Height = 21
-        TabOrder = 2
+        TabOrder = 1
       end
       object cbEventAutoBlock: TCheckBox
         Left = 64
@@ -181,7 +181,7 @@ object EventDialog: TEventDialog
         Width = 97
         Height = 17
         Caption = 'Auto-block'
-        TabOrder = 3
+        TabOrder = 2
         OnClick = EventFlagsClick
       end
       object cbEventBlocked: TCheckBox
@@ -190,18 +190,8 @@ object EventDialog: TEventDialog
         Width = 89
         Height = 17
         Caption = 'Blocked'
-        TabOrder = 4
+        TabOrder = 3
         OnClick = EventFlagsClick
-      end
-      object btnApplyEventChanges: TBitBtn
-        Left = 120
-        Top = 232
-        Width = 115
-        Height = 25
-        Caption = 'Apply changes'
-        TabOrder = 1
-        OnClick = btnApplyEventChangesClick
-        Kind = bkOK
       end
       object cbxEventGameStructMember: TComboBox
         Left = 48
@@ -210,7 +200,7 @@ object EventDialog: TEventDialog
         Height = 21
         Style = csDropDownList
         ItemHeight = 13
-        TabOrder = 5
+        TabOrder = 4
         Visible = False
         OnChange = cbxEventGameStructMemberChange
       end
@@ -363,139 +353,6 @@ object EventDialog: TEventDialog
           OnMouseDown = imgTileBlockMouseDown
         end
       end
-      object edpUnitList: TPanel
-        Left = 0
-        Top = 0
-        Width = 288
-        Height = 288
-        Align = alClient
-        BevelOuter = bvNone
-        TabOrder = 0
-        object EventUnitListLabelPanel: TPanel
-          Left = 0
-          Top = 0
-          Width = 288
-          Height = 16
-          Align = alTop
-          BevelOuter = bvNone
-          TabOrder = 2
-          object lblUnitSelection: TLabel
-            Left = 0
-            Top = 0
-            Width = 64
-            Height = 13
-            Caption = 'Unit selection'
-          end
-          object lblUnitList: TLabel
-            Left = 152
-            Top = 0
-            Width = 65
-            Height = 13
-            Caption = 'Units in event'
-          end
-        end
-        object UnitSelectionList: TListBox
-          Left = 0
-          Top = 16
-          Width = 128
-          Height = 272
-          Align = alLeft
-          ItemHeight = 13
-          TabOrder = 0
-          OnDblClick = btnAddUnitClick
-        end
-        object EventUnitListPaddingPanel: TPanel
-          Left = 280
-          Top = 16
-          Width = 8
-          Height = 272
-          Align = alRight
-          BevelOuter = bvNone
-          TabOrder = 1
-        end
-        object EventUnitList: TListBox
-          Left = 152
-          Top = 16
-          Width = 128
-          Height = 272
-          Align = alRight
-          ItemHeight = 13
-          TabOrder = 3
-          OnDblClick = btnDeleteUnitClick
-        end
-        object btnMoveUnitUp: TButton
-          Left = 128
-          Top = 192
-          Width = 24
-          Height = 25
-          Hint = 'Move unit up'
-          Caption = '^'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 4
-          OnClick = btnMoveUnitUpClick
-        end
-        object btnMoveUnitDown: TButton
-          Left = 128
-          Top = 216
-          Width = 24
-          Height = 25
-          Hint = 'Move unit down'
-          Caption = 'v'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 5
-          OnClick = btnMoveUnitDownClick
-        end
-        object btnDeleteUnit: TButton
-          Left = 128
-          Top = 80
-          Width = 24
-          Height = 25
-          Hint = 'Remove selected unit'
-          Caption = '<--'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 6
-          OnClick = btnDeleteUnitClick
-        end
-        object btnDeleteLastUnit: TButton
-          Left = 128
-          Top = 112
-          Width = 24
-          Height = 25
-          Hint = 'Remove last unit'
-          Caption = 'X'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 7
-          OnClick = btnDeleteLastUnitClick
-        end
-        object btnDeleteAllUnits: TButton
-          Left = 128
-          Top = 144
-          Width = 24
-          Height = 25
-          Hint = 'Remove all units'
-          Caption = 'C'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 8
-          OnClick = btnDeleteAllUnitsClick
-        end
-        object btnAddUnit: TButton
-          Left = 128
-          Top = 24
-          Width = 24
-          Height = 49
-          Hint = 'Add unit'
-          Caption = '-->'
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 9
-          OnClick = btnAddUnitClick
-        end
-      end
       object edpByteValues: TPanel
         Left = 0
         Top = 0
@@ -641,6 +498,210 @@ object EventDialog: TEventDialog
           Caption = 'Custom text'
           TabOrder = 2
           OnClick = btnCustomMsgTextClick
+        end
+      end
+      object edpValueList: TPanel
+        Left = 0
+        Top = 0
+        Width = 288
+        Height = 288
+        Align = alClient
+        BevelOuter = bvNone
+        TabOrder = 0
+        object pnEventValueListHeader: TPanel
+          Left = 0
+          Top = 0
+          Width = 288
+          Height = 16
+          Align = alTop
+          BevelOuter = bvNone
+          TabOrder = 2
+          object lblEventValueSelectionList: TLabel
+            Left = 0
+            Top = 0
+            Width = 64
+            Height = 13
+            Caption = 'Unit selection'
+          end
+          object lblEventValueList: TLabel
+            Left = 152
+            Top = 0
+            Width = 65
+            Height = 13
+            Caption = 'Units in event'
+          end
+        end
+        object EventValueSelectionList: TListBox
+          Left = 0
+          Top = 16
+          Width = 128
+          Height = 272
+          Align = alLeft
+          ItemHeight = 13
+          TabOrder = 0
+          OnDblClick = btnAddValueClick
+        end
+        object pnEventValueListPadding: TPanel
+          Left = 280
+          Top = 16
+          Width = 8
+          Height = 272
+          Align = alRight
+          BevelOuter = bvNone
+          TabOrder = 1
+        end
+        object EventValueList: TListBox
+          Left = 152
+          Top = 16
+          Width = 128
+          Height = 272
+          Align = alRight
+          ItemHeight = 13
+          TabOrder = 3
+          OnDblClick = btnDeleteValueClick
+        end
+        object btnMoveValueUp: TButton
+          Left = 128
+          Top = 192
+          Width = 24
+          Height = 25
+          Hint = 'Move up'
+          Caption = '^'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 4
+          OnClick = btnMoveValueUpClick
+        end
+        object btnMoveValueDown: TButton
+          Left = 128
+          Top = 216
+          Width = 24
+          Height = 25
+          Hint = 'Move down'
+          Caption = 'v'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 5
+          OnClick = btnMoveValueDownClick
+        end
+        object btnDeleteValue: TButton
+          Left = 128
+          Top = 80
+          Width = 24
+          Height = 25
+          Hint = 'Remove selected'
+          Caption = '<--'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 6
+          OnClick = btnDeleteValueClick
+        end
+        object btnDeleteLastValue: TButton
+          Left = 128
+          Top = 112
+          Width = 24
+          Height = 25
+          Hint = 'Remove last'
+          Caption = 'X'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 7
+          OnClick = btnDeleteLastValueClick
+        end
+        object btnDeleteAllValues: TButton
+          Left = 128
+          Top = 144
+          Width = 24
+          Height = 25
+          Hint = 'Remove all'
+          Caption = 'C'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 8
+          OnClick = btnDeleteAllValuesClick
+        end
+        object btnAddValue: TButton
+          Left = 128
+          Top = 24
+          Width = 24
+          Height = 49
+          Hint = 'Add'
+          Caption = '-->'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 9
+          OnClick = btnAddValueClick
+        end
+        object pnEventValueListCoords: TPanel
+          Left = 0
+          Top = 24
+          Width = 128
+          Height = 97
+          BevelOuter = bvNone
+          TabOrder = 10
+          object lblEventValueListXCoord: TLabel
+            Left = 0
+            Top = 32
+            Width = 37
+            Height = 13
+            Caption = 'X coord'
+          end
+          object lblEventValueListYCoord: TLabel
+            Left = 64
+            Top = 32
+            Width = 37
+            Height = 13
+            Caption = 'Y coord'
+          end
+          object seEventValueListXCoord1: TSpinEdit
+            Left = 0
+            Top = 48
+            Width = 57
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 0
+            Value = 0
+          end
+          object seEventValueListYCoord1: TSpinEdit
+            Left = 64
+            Top = 48
+            Width = 57
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 1
+            Value = 0
+          end
+          object seEventValueListXCoord2: TSpinEdit
+            Left = 0
+            Top = 72
+            Width = 57
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 2
+            Value = 0
+          end
+          object seEventValueListYCoord2: TSpinEdit
+            Left = 64
+            Top = 72
+            Width = 57
+            Height = 22
+            MaxValue = 255
+            MinValue = 0
+            TabOrder = 3
+            Value = 0
+          end
+          object btnEventValueListCoordsSelect: TButton
+            Left = 0
+            Top = 0
+            Width = 89
+            Height = 22
+            Caption = 'Select from map'
+            TabOrder = 4
+            OnClick = btnEventValueListCoordsSelectClick
+          end
         end
       end
     end
@@ -863,17 +924,7 @@ object EventDialog: TEventDialog
         Top = 260
         Width = 196
         Height = 21
-        TabOrder = 2
-      end
-      object btnApplyConditionChanges: TBitBtn
-        Left = 85
-        Top = 232
-        Width = 115
-        Height = 25
-        Caption = 'Apply changes'
         TabOrder = 1
-        OnClick = btnApplyConditionChangesClick
-        Kind = bkOK
       end
       object cbxConditionGameStructMember: TComboBox
         Left = 48
@@ -882,7 +933,7 @@ object EventDialog: TEventDialog
         Height = 21
         Style = csDropDownList
         ItemHeight = 13
-        TabOrder = 3
+        TabOrder = 2
         Visible = False
         OnChange = cbxConditionGameStructMemberChange
       end
@@ -1074,7 +1125,7 @@ object EventDialog: TEventDialog
     end
   end
   object SelectVariablePanel: TPanel
-    Left = 200
+    Left = 168
     Top = 0
     Width = 185
     Height = 329

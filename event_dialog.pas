@@ -104,8 +104,6 @@ type
     lblMessage: TLabel;
     seMessageId: TSpinEdit;
     edMessageText: TEdit;
-    btnApplyEventChanges: TBitBtn;
-    btnApplyConditionChanges: TBitBtn;
     EventGridPopupMenu: TPopupMenu;
     Addevent1: TMenuItem;
     Deleteselectedevent1: TMenuItem;
@@ -152,19 +150,19 @@ type
     btnMoveConditionUp: TButton;
     btnMoveConditionDown: TButton;
     N2: TMenuItem;
-    edpUnitList: TPanel;
-    UnitSelectionList: TListBox;
-    EventUnitListPaddingPanel: TPanel;
-    EventUnitListLabelPanel: TPanel;
-    lblUnitSelection: TLabel;
-    lblUnitList: TLabel;
-    EventUnitList: TListBox;
-    btnMoveUnitUp: TButton;
-    btnMoveUnitDown: TButton;
-    btnDeleteUnit: TButton;
-    btnDeleteLastUnit: TButton;
-    btnDeleteAllUnits: TButton;
-    btnAddUnit: TButton;
+    edpValueList: TPanel;
+    EventValueSelectionList: TListBox;
+    pnEventValueListPadding: TPanel;
+    pnEventValueListHeader: TPanel;
+    lblEventValueSelectionList: TLabel;
+    lblEventValueList: TLabel;
+    EventValueList: TListBox;
+    btnMoveValueUp: TButton;
+    btnMoveValueDown: TButton;
+    btnDeleteValue: TButton;
+    btnDeleteLastValue: TButton;
+    btnDeleteAllValues: TButton;
+    btnAddValue: TButton;
     edpByteValues: TPanel;
     sgEventByteValues: TStringGrid;
     lblEventByteValues: TLabel;
@@ -230,6 +228,14 @@ type
     edConditionFilterAmountVar: TEdit;
     lblMessageVarDatatype: TLabel;
     lblMessageVariable: TLabel;
+    pnEventValueListCoords: TPanel;
+    lblEventValueListXCoord: TLabel;
+    lblEventValueListYCoord: TLabel;
+    seEventValueListXCoord1: TSpinEdit;
+    seEventValueListYCoord1: TSpinEdit;
+    seEventValueListXCoord2: TSpinEdit;
+    seEventValueListYCoord2: TSpinEdit;
+    btnEventValueListCoordsSelect: TButton;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -271,15 +277,15 @@ type
     procedure cbxEventTypeChange(Sender: TObject);
     procedure EventFlagsClick(Sender: TObject);
     procedure cbxEventGameStructMemberChange(Sender: TObject);
-    procedure btnApplyEventChangesClick(Sender: TObject);
     // Event data panel actions
-    // -- Unit List
-    procedure btnAddUnitClick(Sender: TObject);
-    procedure btnDeleteUnitClick(Sender: TObject);
-    procedure btnDeleteLastUnitClick(Sender: TObject);
-    procedure btnDeleteAllUnitsClick(Sender: TObject);
-    procedure btnMoveUnitUpClick(Sender: TObject);
-    procedure btnMoveUnitDownClick(Sender: TObject);
+    // -- Value List
+    procedure btnAddValueClick(Sender: TObject);
+    procedure btnDeleteValueClick(Sender: TObject);
+    procedure btnDeleteLastValueClick(Sender: TObject);
+    procedure btnDeleteAllValuesClick(Sender: TObject);
+    procedure btnMoveValueUpClick(Sender: TObject);
+    procedure btnMoveValueDownClick(Sender: TObject);
+    procedure btnEventValueListCoordsSelectClick(Sender: TObject);
     // -- Byte values
     procedure sgEventByteValuesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
     // -- Message
@@ -336,7 +342,6 @@ type
     // Condition properties panel actions
     procedure cbxConditionTypeChange(Sender: TObject);
     procedure cbxConditionGameStructMemberChange(Sender: TObject);
-    procedure btnApplyConditionChangesClick(Sender: TObject);
     // Condition filter panel actions
     procedure seConditionFilterAmountChange(Sender: TObject);
     procedure btnConditionFilterAmountVarToggleClick(Sender: TObject);
@@ -376,6 +381,7 @@ type
     notes_enabled: boolean;
     msg_text_is_custom: boolean;
     copy_conditions_from: integer;
+    event_value_list_type: EventData;
     variable_selection_type: VariableSelectionType;
     variable_selection_index: integer;
     variable_name_changed: boolean;
@@ -416,6 +422,7 @@ type
     procedure change_event_type(new_event_type: integer);
     procedure apply_event_changes;
     // Event data-related procedures
+    function get_event_value_list_item_str(index: integer): String;
     procedure draw_tile_block;
     procedure draw_tile_pairs;
     procedure create_message_var_controls;
@@ -444,6 +451,7 @@ type
     // Procedures called from different forms
     procedure finish_point_selection(x, y: integer);
     procedure finish_area_selection(min_x, max_x, min_y, max_y: integer);
+    procedure finish_point_and_size_selection(x, y, width, height: integer);
     procedure apply_changes;
   end;
 
@@ -510,10 +518,14 @@ begin
   // Initialize cached lists
   for i := Low(cached_lists) to High(cached_lists) do
     cached_lists[i] := TStringList.Create;
+  for i := 0 to 255 do
+    cached_lists[ord(ilNone)].Add(IntToStr(i));
   for i := 0 to High(object_filter_comp_operation) do
     cached_lists[-1].Add(object_filter_comp_operation[i]);
   cached_lists[-2].Add(object_filter_comp_operation[0]);
   cached_lists[-2].Add(object_filter_comp_operation[1]);
+  // Initialize value list
+  event_value_list_type := edNone;
   // Initialize coord control groups
   for i := 0 to High(ccgs) do
   begin
@@ -562,7 +574,6 @@ begin
     pnConditionFilter.Top := Splitter1.Top - pnConditionFilter.Height;
     pnConditionFilter.Left := ClientWidth - pnConditionFilter.Width;
   end;
-  SelectVariablePanel.Left := (ClientWidth div 2) - (SelectVariablePanel.Width div 2);
   SelectVariablePanel.Height := EventGrid.Height;
   lbSelectVariableList.Height := SelectVariablePanel.Height - pnSelectVariableBottomPanel.Height - lbSelectVariableList.Top - 4;
 end;
@@ -575,16 +586,8 @@ begin
       btnCreateEventsOkClick(Sender)
     else if SelectVariablePanel.Visible then
       end_variable_selection(true)
-    else if (ActiveControl = ConditionGrid) then
-    begin
-      btnApplyConditionChangesClick(nil);
-      btnApplyEventChangesClick(nil);
-    end
-    else if (ActiveControl <> nil) and ((ActiveControl.Parent = ConditionPropertiesPanel) or
-     ((ActiveControl.Parent.Parent <> Nil) and (ActiveControl.Parent.Parent = ConditionPropertiesPanel))) then
-      btnApplyConditionChangesClick(nil)
     else
-      btnApplyEventChangesClick(nil);
+      apply_changes;
   end;
   if key = 27 then // Escape
   begin
@@ -715,8 +718,6 @@ procedure TEventDialog.EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; R
 var
   negation: boolean;
 begin
-  if Marknothing1.Checked then
-    exit;
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) then
     exit;
   if Markselcondition1.Checked and Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
@@ -725,15 +726,18 @@ begin
       EventGrid.Canvas.Brush.Color := clYellow
     else
       EventGrid.Canvas.Brush.Color := $00E0E0;
-    EventGrid.Canvas.FillRect(Rect);
-    EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
   end else
   if Markseltype1.Checked and (Mission.event_data[ARow - 1].event_type = EventConfig.event_type_mapping[lbEventTypeList.ItemIndex]) and (ARow - 1 < Mission.num_events) then
   begin
     EventGrid.Canvas.Brush.Color := clYellow;
-    EventGrid.Canvas.FillRect(Rect);
-    EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
-  end;
+  end else
+  if EventConfig.event_types[Mission.event_data[ARow - 1].event_type].is_flow_control then
+  begin
+    EventGrid.Canvas.Brush.Color := $EAFFE1;
+  end else
+    exit;
+  EventGrid.Canvas.FillRect(Rect);
+  EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
 end;
 
 procedure TEventDialog.Addevent1Click(Sender: TObject);
@@ -931,88 +935,177 @@ begin
   fill_event_ui;
 end;
 
-procedure TEventDialog.btnApplyEventChangesClick(Sender: TObject);
+procedure TEventDialog.btnAddValueClick(Sender: TObject);
 begin
-  apply_event_changes;
-  EventGrid.SetFocus;
-end;
-
-procedure TEventDialog.btnAddUnitClick(Sender: TObject);
-begin
-  if UnitSelectionList.ItemIndex = -1 then
-    exit;
   if selected_event >= Mission.num_events then
     exit;
-  if tmp_event.amount = Length(tmp_event.data) then
+  if (event_value_list_type = edUnitList) or (event_value_list_type = edValueList) then
   begin
-    beep;
-    exit;
+    if EventValueSelectionList.ItemIndex = -1 then
+      exit;
+    if tmp_event.amount = Length(tmp_event.data) then
+      exit;
+    tmp_event.data[tmp_event.amount] := EventValueSelectionList.ItemIndex;
   end;
-  tmp_event.data[tmp_event.amount] := UnitSelectionList.ItemIndex;
+  if event_value_list_type = edCoordList then
+  begin
+    if tmp_event.amount = (Length(tmp_event.data) div 2) then
+      exit;
+    tmp_event.data[tmp_event.amount * 2 + 1] := seEventValueListXCoord1.Value;
+    tmp_event.data[tmp_event.amount * 2 + 2] := seEventValueListYCoord1.Value;
+  end;
+  if event_value_list_type = edAreaList then
+  begin
+    if tmp_event.amount = (Length(tmp_event.data) div 4) then
+      exit;
+    tmp_event.data[tmp_event.amount * 4 + 1] := seEventValueListXCoord1.Value;
+    tmp_event.data[tmp_event.amount * 4 + 2] := seEventValueListYCoord1.Value;
+    tmp_event.data[tmp_event.amount * 4 + 3] := seEventValueListXCoord2.Value;
+    tmp_event.data[tmp_event.amount * 4 + 4] := seEventValueListYCoord2.Value;
+  end;
+  EventValueList.Items.Add(get_event_value_list_item_str(tmp_event.amount));
   acgs[1].spin_edit.Value := tmp_event.amount + 1;
-  EventUnitList.Items.Add(Structures.get_unit_name_str(UnitSelectionList.ItemIndex));
 end;
 
-procedure TEventDialog.btnDeleteUnitClick(Sender: TObject);
+procedure TEventDialog.btnDeleteValueClick(Sender: TObject);
 var
   i: integer;
 begin
-  if EventUnitList.ItemIndex = -1 then
+  if EventValueList.ItemIndex = -1 then
     exit;
-  for i := EventUnitList.ItemIndex to tmp_event.amount - 2 do
-    tmp_event.data[i] := tmp_event.data[i+1];
-  tmp_event.data[tmp_event.amount - 1] := 0;
+  if (event_value_list_type = edUnitList) or (event_value_list_type = edValueList) then
+  begin
+    for i := EventValueList.ItemIndex to tmp_event.amount - 2 do
+      tmp_event.data[i] := tmp_event.data[i+1];
+    tmp_event.data[tmp_event.amount - 1] := 0;
+  end;
+  if event_value_list_type = edCoordList then
+  begin
+    for i := EventValueList.ItemIndex to tmp_event.amount - 2 do
+    begin
+      tmp_event.data[i * 2 + 1] := tmp_event.data[i * 2 + 3];
+      tmp_event.data[i * 2 + 2] := tmp_event.data[i * 2 + 4];
+    end;
+    tmp_event.data[(tmp_event.amount - 1) * 2 + 1] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 2 + 2] := 0;
+  end;
+  if event_value_list_type = edAreaList then
+  begin
+    for i := EventValueList.ItemIndex to tmp_event.amount - 2 do
+    begin
+      tmp_event.data[i * 4 + 1] := tmp_event.data[i * 4 + 5];
+      tmp_event.data[i * 4 + 2] := tmp_event.data[i * 4 + 6];
+      tmp_event.data[i * 4 + 3] := tmp_event.data[i * 4 + 7];
+      tmp_event.data[i * 4 + 4] := tmp_event.data[i * 4 + 8];
+    end;
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 1] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 2] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 3] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 4] := 0;
+  end;
   acgs[1].spin_edit.Value := tmp_event.amount - 1;
-  EventUnitList.Items.Delete(EventUnitList.ItemIndex);
+  EventValueList.Items.Delete(EventValueList.ItemIndex);
 end;
 
-procedure TEventDialog.btnDeleteLastUnitClick(Sender: TObject);
+procedure TEventDialog.btnDeleteLastValueClick(Sender: TObject);
 begin
   if tmp_event.amount = 0 then
-  begin
-    beep;
     exit;
+  if (event_value_list_type = edUnitList) or (event_value_list_type = edValueList) then
+  begin
+    tmp_event.data[tmp_event.amount - 1] := 0;
   end;
-  tmp_event.data[tmp_event.amount-1] := 0;
+  if event_value_list_type = edCoordList then
+  begin
+    tmp_event.data[(tmp_event.amount - 1) * 2 + 1] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 2 + 2] := 0;
+  end;
+  if event_value_list_type = edAreaList then
+  begin
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 1] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 2] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 3] := 0;
+    tmp_event.data[(tmp_event.amount - 1) * 4 + 4] := 0;
+  end;
   acgs[1].spin_edit.Value := tmp_event.amount - 1;
-  EventUnitList.Items.Delete(tmp_event.amount);
+  EventValueList.Items.Delete(tmp_event.amount);
 end;
 
-procedure TEventDialog.btnDeleteAllUnitsClick(Sender: TObject);
+procedure TEventDialog.btnDeleteAllValuesClick(Sender: TObject);
 begin
   acgs[1].spin_edit.Value := 0;
   FillChar(tmp_event.data, Length(tmp_event.data), 0);
-  EventUnitList.Items.Clear;
+  EventValueList.Items.Clear;
 end;
 
-procedure TEventDialog.btnMoveUnitUpClick(Sender: TObject);
+procedure TEventDialog.btnMoveValueUpClick(Sender: TObject);
 var
   index: integer;
-  tmp_unit_name: String;
+  tmp_value_str: String;
 begin
-  index := EventUnitList.ItemIndex;
+  index := EventValueList.ItemIndex;
   if (index = -1) or (index = 0) then
     exit;
-  swap_byte(Addr(tmp_event.data[index]), Addr(tmp_event.data[index-1]));
-  tmp_unit_name := EventUnitList.Items[index];
-  EventUnitList.Items[index] := EventUnitList.Items[index-1];
-  EventUnitList.Items[index-1] := tmp_unit_name;
-  EventUnitList.ItemIndex := EventUnitList.ItemIndex - 1;
+  if (event_value_list_type = edUnitList) or (event_value_list_type = edValueList) then
+  begin
+    swap_byte(Addr(tmp_event.data[index]), Addr(tmp_event.data[index-1]));
+  end;
+  if event_value_list_type = edCoordList then
+  begin
+    swap_byte(Addr(tmp_event.data[index * 2 + 1]), Addr(tmp_event.data[(index-1) * 2 + 1]));
+    swap_byte(Addr(tmp_event.data[index * 2 + 2]), Addr(tmp_event.data[(index-1) * 2 + 2]));
+  end;
+  if event_value_list_type = edAreaList then
+  begin
+    swap_byte(Addr(tmp_event.data[index * 4 + 1]), Addr(tmp_event.data[(index-1) * 4 + 1]));
+    swap_byte(Addr(tmp_event.data[index * 4 + 2]), Addr(tmp_event.data[(index-1) * 4 + 2]));
+    swap_byte(Addr(tmp_event.data[index * 4 + 3]), Addr(tmp_event.data[(index-1) * 4 + 3]));
+    swap_byte(Addr(tmp_event.data[index * 4 + 4]), Addr(tmp_event.data[(index-1) * 4 + 4]));
+  end;
+  tmp_value_str := EventValueList.Items[index];
+  EventValueList.Items[index] := EventValueList.Items[index-1];
+  EventValueList.Items[index-1] := tmp_value_str;
+  EventValueList.ItemIndex := EventValueList.ItemIndex - 1;
 end;
 
-procedure TEventDialog.btnMoveUnitDownClick(Sender: TObject);
+procedure TEventDialog.btnMoveValueDownClick(Sender: TObject);
 var
   index: integer;
-  tmp_unit_name: String;
+  tmp_value_str: String;
 begin
-  index := EventUnitList.ItemIndex;
+  index := EventValueList.ItemIndex;
   if (index = -1) or (index = (tmp_event.amount - 1)) then
     exit;
-  swap_byte(Addr(tmp_event.data[index]), Addr(tmp_event.data[index+1]));
-  tmp_unit_name := EventUnitList.Items[index];
-  EventUnitList.Items[index] := EventUnitList.Items[index+1];
-  EventUnitList.Items[index+1] := tmp_unit_name;
-  EventUnitList.ItemIndex := EventUnitList.ItemIndex + 1;
+  if (event_value_list_type = edUnitList) or (event_value_list_type = edValueList) then
+  begin
+    swap_byte(Addr(tmp_event.data[index]), Addr(tmp_event.data[index+1]));
+  end;
+  if event_value_list_type = edCoordList then
+  begin
+    swap_byte(Addr(tmp_event.data[index * 2 + 1]), Addr(tmp_event.data[(index+1) * 2 + 1]));
+    swap_byte(Addr(tmp_event.data[index * 2 + 2]), Addr(tmp_event.data[(index+1) * 2 + 2]));
+  end;
+  if event_value_list_type = edAreaList then
+  begin
+    swap_byte(Addr(tmp_event.data[index * 4 + 1]), Addr(tmp_event.data[(index+1) * 4 + 1]));
+    swap_byte(Addr(tmp_event.data[index * 4 + 2]), Addr(tmp_event.data[(index+1) * 4 + 2]));
+    swap_byte(Addr(tmp_event.data[index * 4 + 3]), Addr(tmp_event.data[(index+1) * 4 + 3]));
+    swap_byte(Addr(tmp_event.data[index * 4 + 4]), Addr(tmp_event.data[(index+1) * 4 + 4]));
+  end;
+  tmp_value_str := EventValueList.Items[index];
+  EventValueList.Items[index] := EventValueList.Items[index+1];
+  EventValueList.Items[index+1] := tmp_value_str;
+  EventValueList.ItemIndex := EventValueList.ItemIndex + 1;
+end;
+
+procedure TEventDialog.btnEventValueListCoordsSelectClick(Sender: TObject);
+begin
+  selected_coord_index := -3;
+  if event_value_list_type = edCoordList then
+    MainWindow.start_position_selection(seEventValueListXCoord1.Value, seEventValueListYCoord1.Value, psmEventPoint);
+  if event_value_list_type = edAreaList then
+    MainWindow.start_position_selection(seEventValueListXCoord1.Value, seEventValueListYCoord1.Value, psmEventArea);
+  close;
 end;
 
 procedure TEventDialog.sgEventByteValuesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
@@ -1493,12 +1586,6 @@ begin
   fill_condition_ui;
 end;
 
-procedure TEventDialog.btnApplyConditionChangesClick(Sender: TObject);
-begin
-  apply_condition_changes;
-  ConditionGrid.SetFocus;
-end;
-
 procedure TEventDialog.seConditionFilterAmountChange(Sender: TObject);
 begin
   if loading then
@@ -1630,6 +1717,9 @@ begin
   // Update amount of tile pairs
   if EventConfig.event_types[tmp_event.event_type].event_data = edTilePairs then
     fill_event_data_panel(edpTilePairs, true, 0);
+  // Update value selection list
+  if (EventConfig.event_types[tmp_event.event_type].event_data = edValueList) and ((Sender as TControl).Tag = 5) then
+    fill_event_data_panel(edpValueList, true, Ord(edValueList));
 end;
 
 procedure TEventDialog.ACGVariableToggle(Sender: TObject);
@@ -1938,7 +2028,6 @@ begin
   cached_lists[Byte(ilUnits)].Clear;
   for i:= 0 to Structures.templates.UnitCount -1 do
     cached_lists[Byte(ilUnits)].Add(inttostr(i) + ' - ' + Structures.get_unit_name_str(i));
-  UnitSelectionList.Items := cached_lists[Byte(ilUnits)];
   // Unit group list
   cached_lists[Byte(ilUnitGroups)].Clear;
   for i:= 0 to Structures.templates.UnitGroupCount -1 do
@@ -2106,7 +2195,6 @@ begin
   rbEventConditionsOr.Checked := event_valid and ((tmp_event.event_flags and 4) = 4);
   rbEventConditionsAnd.Checked := not rbEventConditionsOr.Checked;
   loading := false;
-  btnApplyEventChanges.Enabled := event_valid;
   edEventNote.Enabled := event_valid;
   fill_event_ui;
 end;
@@ -2146,7 +2234,7 @@ begin
       fill_event_gamestruct_member_combo(et, panel_top);
   end;
   // Fill event data UI
-  fill_event_data_panel(edpUnitList,     ed = edUnitList, 0);
+  fill_event_data_panel(edpValueList,    (ed >= edUnitList) and (ed <= edAreaList), ord(ed));
   fill_event_data_panel(edpByteValues,   ed = edByteValues, 0);
   fill_event_data_panel(edpMessage,      ed = edMessage, 0);
   fill_event_data_panel(edpMusic,        ed = edMusic, 0);
@@ -2216,15 +2304,50 @@ procedure TEventDialog.fill_event_data_panel(panel: TPanel; active: boolean; obj
 var
   i, j: integer;
   tmp: string;
+  list_type: ItemListType;
 begin
   panel.Visible := active;
   if not active then
     exit;
-  if panel = edpUnitList then
+  if panel = edpValueList then
   begin
-    EventUnitList.Items.Clear;
+    event_value_list_type := EventData(object_type);
+    EventValueSelectionList.Visible := (event_value_list_type = edUnitList) or (event_value_list_type = edValueList);
+    pnEventValueListCoords.Visible := (event_value_list_type = edCoordList) or (event_value_list_type = edAreaList);
+    seEventValueListXCoord2.Visible := event_value_list_type = edAreaList;
+    seEventValueListYCoord2.Visible := event_value_list_type = edAreaList;
+    case event_value_list_type of
+      edUnitList:
+        begin
+          lblEventValueSelectionList.Caption := 'Unit selection';
+          lblEventValueList.Caption := 'Units in event';
+          EventValueSelectionList.Items := cached_lists[Byte(ilUnits)];
+        end;
+      edValueList:
+        begin
+          lblEventValueSelectionList.Caption := 'Value selection';
+          lblEventValueList.Caption := 'Values in event';
+          list_type := ilNone;
+          case tmp_event.value of
+            1: list_type := ilUnits;
+            2: list_type := ilBuildings;
+          end;
+          EventValueSelectionList.Items := cached_lists[Ord(list_type)];
+        end;
+      edCoordList:
+        begin
+          lblEventValueSelectionList.Caption := 'Coord selection';
+          lblEventValueList.Caption := 'Coords in event';
+        end;
+      edAreaList:
+        begin
+          lblEventValueSelectionList.Caption := 'Area selection';
+          lblEventValueList.Caption := 'Areas in event';
+        end;
+    end;
+    EventValueList.Items.Clear;
     for i := 0 to tmp_event.amount - 1 do
-      EventUnitList.Items.Add(Structures.get_unit_name_str(tmp_event.data[i]));
+      EventValueList.Items.Add(get_event_value_list_item_str(i));
   end;
   if panel = edpByteValues then
   begin
@@ -2391,6 +2514,17 @@ begin
     Dispatcher.register_event(evMisEventPositionChange);
 end;
 
+function TEventDialog.get_event_value_list_item_str(index: integer): String;
+begin
+  result := '';
+  case event_value_list_type of
+    edUnitList: result := Structures.get_unit_name_str(tmp_event.data[index]);
+    edValueList: result := EventValueSelectionList.Items[tmp_event.data[index]];
+    edCoordList: result := Format('%d , %d', [tmp_event.data[index * 2 + 1], tmp_event.data[index * 2 + 2]]);
+    edAreaList: result := Format('%d , %d : %d , %d', [tmp_event.data[index * 4 + 1], tmp_event.data[index * 4 + 2], tmp_event.data[index * 4 + 3], tmp_event.data[index * 4 + 4]]);
+  end;
+end;
+
 procedure TEventDialog.draw_tile_block;
 var
   i, j: integer;
@@ -2526,7 +2660,6 @@ begin
       end;
   cbxConditionType.ItemIndex := item_index;
   cbxConditionType.Enabled := condition_valid;
-  btnApplyConditionChanges.Enabled := condition_valid;
   edConditionNote.Enabled := condition_valid;
   fill_condition_ui;
   if Markselcondition1.Checked then
@@ -3356,7 +3489,13 @@ begin
   Show;
   if (x = -1) and (y = -1) then
     exit;
-  if (selected_coord_index < 0) then
+  if (selected_coord_index = -3) then
+  begin
+    seEventValueListXCoord1.Value := x;
+    seEventValueListYCoord1.Value := y;
+    btnAddValueClick(nil);
+  end
+  else if (selected_coord_index < 0) then
   begin
     fcg := Addr(fcgs[not selected_coord_index]);
     fcg.filter_ptr.pos_and_var_flags := fcg.filter_ptr.pos_and_var_flags and (not 48);
@@ -3377,23 +3516,20 @@ procedure TEventDialog.finish_area_selection(min_x, max_x, min_y, max_y: integer
 var
   ccg: TCoordControlGroupPtr;
   fcg: TFilterControlGroupPtr;
-  width, height, tiles: integer;
-  i, j: integer;
 begin
   Show;
   if (min_x = -1) and (min_y = -1) then
     exit;
-  width := max_x - min_x + 1;
-  height := max_y - min_y + 1;
-  tiles := width * height;
-  // Check for size of tile block
-  if (EventConfig.event_types[tmp_event.event_type].event_data = edTileBlock) and (tiles > 12) then
-  begin
-    Application.MessageBox(PChar(Format('You selected area which consists of %d tiles. Maximum allowed number of tiles is 12.', [tiles])), 'Cannot select area', MB_OK or MB_ICONERROR);
-    exit;
-  end;
   // Set up spin edits
-  if (selected_coord_index < 0) then
+  if (selected_coord_index = -3) then
+  begin
+    seEventValueListXCoord1.Value := min_x;
+    seEventValueListXCoord2.Value := max_x;
+    seEventValueListYCoord1.Value := min_y;
+    seEventValueListYCoord2.Value := max_y;
+    btnAddValueClick(nil);
+  end
+  else if (selected_coord_index < 0) then
   begin
     fcg := Addr(fcgs[not selected_coord_index]);
     fcg.filter_ptr.pos_and_var_flags := fcg.filter_ptr.pos_and_var_flags and (not 240);
@@ -3410,18 +3546,47 @@ begin
     ccg.var_flag_ptr^ := ccg.var_flag_ptr^ and (not (3 shl (ccg.coord_index * 2)));
     fill_coord_control_group(ccg, ccg.coorddef);
     ccg := Addr(ccgs[selected_coord_index + 1]);
-    set_integer_value(ccg.data_ptr, ccg.offset_x, 1, width);
-    set_integer_value(ccg.data_ptr, ccg.offset_y, 1, height);
+    set_integer_value(ccg.data_ptr, ccg.offset_x, 1, max_x);
+    set_integer_value(ccg.data_ptr, ccg.offset_y, 1, max_y);
     ccg.var_flag_ptr^ := ccg.var_flag_ptr^ and (not (3 shl (ccg.coord_index * 2)));
     fill_coord_control_group(ccg, ccg.coorddef);
   end;
+end;
+
+procedure TEventDialog.finish_point_and_size_selection(x, y, width, height: integer);
+var
+  ccg: TCoordControlGroupPtr;
+  tiles: integer;
+  i, j: integer;
+begin
+  Show;
+  if (x = -1) and (y = -1) then
+    exit;
+  tiles := width * height;
+  // Check for size of tile block
+  if (EventConfig.event_types[tmp_event.event_type].event_data = edTileBlock) and (tiles > 12) then
+  begin
+    Application.MessageBox(PChar(Format('You selected area which consists of %d tiles. Maximum allowed number of tiles is 12.', [tiles])), 'Cannot select area', MB_OK or MB_ICONERROR);
+    exit;
+  end;
+  // Set up spin edits
+  ccg := Addr(ccgs[selected_coord_index]);
+  set_integer_value(ccg.data_ptr, ccg.offset_x, 1, x);
+  set_integer_value(ccg.data_ptr, ccg.offset_y, 1, y);
+  ccg.var_flag_ptr^ := ccg.var_flag_ptr^ and (not (3 shl (ccg.coord_index * 2)));
+  fill_coord_control_group(ccg, ccg.coorddef);
+  ccg := Addr(ccgs[selected_coord_index + 1]);
+  set_integer_value(ccg.data_ptr, ccg.offset_x, 1, width);
+  set_integer_value(ccg.data_ptr, ccg.offset_y, 1, height);
+  ccg.var_flag_ptr^ := ccg.var_flag_ptr^ and (not (3 shl (ccg.coord_index * 2)));
+  fill_coord_control_group(ccg, ccg.coorddef);
   // Copy tile block from map
   if EventConfig.event_types[tmp_event.event_type].event_data = edTileBlock then
   begin
     FillChar(tmp_event.data[0], Length(tmp_event.data), 0);
-    for j := 0 to max_y - min_y do
-      for i := 0 to max_x - min_x do
-        set_integer_value(Addr(tmp_event.data[1]), (j * (width) + i) * 2, 2, Map.data[i + min_x, j + min_y].tile and $0FFF);
+    for j := 0 to height - 1 do
+      for i := 0 to width - 1 do
+        set_integer_value(Addr(tmp_event.data[1]), (j * (width) + i) * 2, 2, Map.data[i + x, j + y].tile and $0FFF);
     draw_tile_block;
   end;
 end;

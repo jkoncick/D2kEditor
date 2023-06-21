@@ -16,7 +16,7 @@ type
   SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
 
 type
-  PositionSelectionMode = (psmNone, psmEventPoint, psmEventArea, psmDefenceArea);
+  PositionSelectionMode = (psmNone, psmEventPoint, psmEventArea, psmEventPointAndSize, psmDefenceArea);
 
 type
   TBlockClipboard = record
@@ -1522,7 +1522,7 @@ begin
     max_x := Max(block_select_start_x, block_select_end_x);
     min_y := Min(block_select_start_y, block_select_end_y);
     max_y := Max(block_select_start_y, block_select_end_y);
-    if (position_selection_mode = psmEventArea) or (position_selection_mode = psmDefenceArea) then
+    if (position_selection_mode >= psmEventArea) then
     begin
       finish_position_selection(min_x, max_x, min_y, max_y);
       exit;
@@ -2427,7 +2427,7 @@ begin
     mTerrain:         result := EditorPages.TabIndex = 1;
     mPaintMode:       result := (EditorPages.TabIndex = 1) and RbPaintMode.Checked;
     mBlockMode:       result := (EditorPages.TabIndex = 1) and RbBlockMode.Checked;
-    mSelectMode:      result := ((EditorPages.TabIndex = 1) and RbSelectMode.Checked) or (position_selection_mode = psmEventArea) or (position_selection_mode = psmDefenceArea);
+    mSelectMode:      result := ((EditorPages.TabIndex = 1) and RbSelectMode.Checked) or (position_selection_mode >= psmEventArea);
   end;
 end;
 
@@ -2492,9 +2492,10 @@ begin
   MapCanvas.Cursor := crDefault;
   position_selection_mode := psmNone;
   case mode of
-    psmEventPoint:  EventDialog.finish_point_selection(min_x, min_y);
-    psmEventArea:   EventDialog.finish_area_selection(min_x, max_x, min_y, max_y);
-    psmDefenceArea: MissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y);
+    psmEventPoint:        EventDialog.finish_point_selection(min_x, min_y);
+    psmEventArea:         EventDialog.finish_area_selection(min_x, max_x, min_y, max_y);
+    psmEventPointAndSize: EventDialog.finish_point_and_size_selection(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1);
+    psmDefenceArea:       MissionDialog.finish_defence_area_position_selection(min_x, max_x, min_y, max_y);
   end;
 end;
 
