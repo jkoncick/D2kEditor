@@ -65,7 +65,7 @@ type
     procedure set_custom_text(index: integer; text: String);
     procedure remove_custom_text(index: integer);
     // Variable name related procedures
-    function get_variable_name(index: integer; brackets: boolean): string;
+    function get_variable_name(index: integer; brackets: integer): string;
     function set_variable_name(index: integer; name: string): boolean;
     // Data manipulation procedures
     procedure set_side_id(value: integer);
@@ -359,7 +359,9 @@ begin
      TextValueList.DeleteRow(row);
 end;
 
-function TMissionIni.get_variable_name(index: integer; brackets: boolean): string;
+function TMissionIni.get_variable_name(index: integer; brackets: integer): string;
+var
+  i: integer;
 begin
   if index >= MAX_VARIABLES then
     result := ''
@@ -367,7 +369,7 @@ begin
     result := 'Var' + IntToStr(index)
   else
     result := variable_names[index];
-  if brackets then
+  for i := 1 to brackets do
     result := '[' + result + ']';
 end;
 

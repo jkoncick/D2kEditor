@@ -447,7 +447,7 @@ object EventDialog: TEventDialog
         Left = 0
         Top = 0
         Width = 288
-        Height = 185
+        Height = 273
         BevelOuter = bvNone
         TabOrder = 2
         object lblMessage: TLabel

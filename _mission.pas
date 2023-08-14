@@ -673,7 +673,7 @@ begin
         begin
           contents := contents + 'Am(' + IfThen((cond.arg1 and 1) <> 0, '=', '>=');
           if (cond.arg1 and 2) <> 0 then
-            contents := contents + MissionIni.get_variable_name(cond.arg2, true)
+            contents := contents + MissionIni.get_variable_name(cond.arg2, 1)
           else
             contents := contents + IntToStr(cond.arg2);
           contents := contents + ') ';
@@ -703,11 +703,11 @@ var
   x_str, y_str: string;
 begin
   if x_var then
-    x_str := MissionIni.get_variable_name(x, true)
+    x_str := MissionIni.get_variable_name(x, 1)
   else
     x_str := IntToStr(x);
   if y_var then
-    y_str := MissionIni.get_variable_name(y, true)
+    y_str := MissionIni.get_variable_name(y, 1)
   else
     y_str := IntToStr(y);
   result := Format('%s , %s', [x_str, y_str]);
@@ -718,7 +718,7 @@ begin
   result := '';
   if is_var then
   begin
-    result := MissionIni.get_variable_name(value, true);
+    result := MissionIni.get_variable_name(value, IfThen(argdef.arg_type = atVariable, 2, 1));
     exit;
   end;
   case argdef.arg_type of
@@ -728,7 +728,7 @@ begin
     atList: result := get_list_value_contents(value, argdef.list_type, argdef.values, argdef.game_list_type, argdef.item_list_type);
     atBool: if (value <> 0) then result := '(' + argdef.name + ')';
     atSwitch: result := argdef.values[IfThen(value <> 0, 1, 0)];
-    atVariable: result := MissionIni.get_variable_name(value, false);
+    atVariable: result := MissionIni.get_variable_name(value, 1);
   end;
 end;
 
@@ -841,7 +841,7 @@ begin
             begin
               if found = i then
               begin
-                Insert(message_var_data_type[event.data[5 + i]] + MissionIni.get_variable_name(event.data[13 + i], True), str, j+1);
+                Insert(message_var_data_type[event.data[5 + i]] + MissionIni.get_variable_name(event.data[13 + i], 1), str, j+1);
               end;
               Inc(found);
             end;
@@ -854,7 +854,7 @@ begin
   begin
     if (event.event_flags and 8) <> 0 then
     begin
-      contents := 'Object index: ' + MissionIni.get_variable_name(event.filter_skip, true);
+      contents := 'Object index: ' + MissionIni.get_variable_name(event.filter_skip, 1);
     end else
     begin
       contents := 'Filter: ';
@@ -862,7 +862,7 @@ begin
       begin
         contents := contents + 'Skip(';
         if (event.event_flags and 16) <> 0 then
-          contents := contents +  MissionIni.get_variable_name(event.filter_skip, true)
+          contents := contents +  MissionIni.get_variable_name(event.filter_skip, 1)
         else
           contents := contents + IntToStr(event.filter_skip);
         contents := contents + ') ';
@@ -871,7 +871,7 @@ begin
       begin
         contents := contents + 'Limit(';
         if (event.event_flags and 32) <> 0 then
-          contents := contents +  MissionIni.get_variable_name(event.data[0], true)
+          contents := contents +  MissionIni.get_variable_name(event.data[0], 1)
         else
           contents := contents + IntToStr(event.data[0]);
         contents := contents + ') ';
@@ -893,7 +893,7 @@ begin
   for i := 0 to 3 do
   begin
     if filter.pos_and_var_flags and (1 shl (i + 4)) <> 0 then
-      pos_str[i] := MissionIni.get_variable_name(filter.pos_values[i], true)
+      pos_str[i] := MissionIni.get_variable_name(filter.pos_values[i], 1)
     else
       pos_str[i] := IntToStr(filter.pos_values[i]);
   end;
@@ -925,7 +925,7 @@ begin
     end;
     contents := contents + criteria.name + ' ' + object_filter_comp_operation[filter.criteria_type[i] shr 6] + ' ';
     if filter.pos_and_var_flags and (1 shl (i + 8)) <> 0 then
-      contents := contents + MissionIni.get_variable_name(filter.criteria_value[i], true)
+      contents := contents + MissionIni.get_variable_name(filter.criteria_value[i], 1)
     else
       contents := contents + get_list_value_contents(filter.criteria_value[i], criteria.list_type, criteria.values, criteria.game_list_type, criteria.item_list_type);
     while (and_or_op < and_or_level) do

@@ -19,8 +19,8 @@ const ItemListTypeStr: array[0..11] of String = ('None', 'Players', 'PlayersAny'
 type  ReferenceType =                           (rtNone, rtEvent, rtCondition);
 const ReferenceTypeStr: array[0..2] of String = ('None', 'Event', 'Condition');
 
-type  EventData =                            (edNone, edUnitList, edValueList, edCoordList, edAreaList, edByteValues, edMessage, edMusic, edTileBlock, edTilePairs, edUnitFilter, edBuildingFilter, edCrateFilter, edTileFilter);
-const EventDataStr: array[0..13] of String = ('None', 'UnitList', 'ValueList', 'CoordList', 'AreaList', 'ByteValues', 'Message', 'Music', 'TileBlock', 'TilePairs', 'UnitFilter', 'BuildingFilter', 'CrateFilter', 'TileFilter');
+type  EventData =                            (edNone, edUnitList, edValueList, edCoordList, edAreaList, edByteValues, edMessage, edMusic, edTileBlock, edTilePairs, edUnitFilter, edBuildingFilter, edCrateFilter, edTileFilter, edUnitTypeFilter, edBuildingTypeFilter);
+const EventDataStr: array[0..15] of String = ('None', 'UnitList', 'ValueList', 'CoordList', 'AreaList', 'ByteValues', 'Message', 'Music', 'TileBlock', 'TilePairs', 'UnitFilter', 'BuildingFilter', 'CrateFilter', 'TileFilter', 'UnitTypeFilter', 'BuildingTypeFilter');
 
 type  ConditionData =                           (cdNone, cdUnitFilter, cdBuildingFilter, cdCrateFilter, cdTileFilter);
 const ConditionDataStr: array[0..4] of String = ('None', 'UnitFilter', 'BuildingFilter', 'CrateFilter', 'TileFilter');
@@ -79,6 +79,7 @@ type
     has_map_pos: boolean;
     has_player: boolean;
     is_flow_control: boolean;
+    allow_obj_index: boolean;
   end;
 
   TEventTypeDefinitionPtr = ^TEventTypeDefinition;
@@ -134,7 +135,7 @@ type
     condition_type_mapping: array[0..255] of byte;
     cnt_valid_condition_types: integer;
     // Filter criteria configuration
-    filter_criteria: array[0..3] of TFilterCriteriaDefinitionArr;
+    filter_criteria: array[0..5] of TFilterCriteriaDefinitionArr;
 
   public
     procedure init;
@@ -224,6 +225,7 @@ begin
     event_types[i].has_map_pos := event_types[i].coords[0].marker <> ' ';
     event_types[i].has_player := event_types[i].args[0].name = 'Player';
     event_types[i].is_flow_control := ini.ReadBool(tmp_strings[i], 'is_flow_control', False);
+    event_types[i].allow_obj_index := ini.ReadBool(tmp_strings[i], 'allow_obj_index', False);
   end;
   ini.Destroy;
   tmp_strings.Destroy;
@@ -306,6 +308,8 @@ begin
   load_filter_criteria(ini, 1, 'Building');
   load_filter_criteria(ini, 2, 'Crate');
   load_filter_criteria(ini, 3, 'Tile');
+  load_filter_criteria(ini, 4, 'UnitType');
+  load_filter_criteria(ini, 5, 'BuildingType');
   ini.Destroy;
 end;
 

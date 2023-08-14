@@ -393,8 +393,8 @@ type
     ccgs: array[0..5] of TCoordControlGroup;
     acgs: array[0..13] of TArgControlGroup;
     fcgs: array[0..1] of TFilterControlGroup;
-    event_message_var_datatype: array[0..3] of TComboBox;
-    event_message_variable: array[0..3] of TEdit;
+    event_message_var_datatype: array[0..7] of TComboBox;
+    event_message_variable: array[0..7] of TEdit;
     event_gamestruct_value_arg_def: TArgDefinition;
     condition_gamestruct_value_arg_def: TArgDefinition;
 
@@ -1167,7 +1167,7 @@ begin
     if tmp_event.data[5 + i] = 0 then
       start_variable_selection(vsEventMessageVar, i, tmp_event.data[13 + i]);
     tmp_event.data[5 + i] := (Sender as TComboBox).ItemIndex;
-    event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], False);
+    event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], 1);
     event_message_variable[i].Enabled := True;
   end;
 end;
@@ -1963,7 +1963,7 @@ begin
   index := lbSelectVariableList.ItemIndex;
   if MissionIni.set_variable_name(index, edSelectVariableName.Text) then
     variable_name_changed := true;
-  lbSelectVariableList.Items[index] := inttostr(index) + ': ' + MissionIni.get_variable_name(index, false);
+  lbSelectVariableList.Items[index] := inttostr(index) + ': ' + MissionIni.get_variable_name(index, 0);
 end;
 
 procedure TEventDialog.update_event_type_configuration;
@@ -2144,11 +2144,11 @@ begin
   if et.has_map_pos and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) then
   begin
     if (event.coord_var_flags and 1) <> 0 then
-      x_str := MissionIni.get_variable_name(event.coord_x[0], true)
+      x_str := MissionIni.get_variable_name(event.coord_x[0], 1)
     else
       x_str := inttostr(event.coord_x[0]);
     if (event.coord_var_flags and 2) <> 0 then
-      y_str := MissionIni.get_variable_name(event.coord_y[0], true)
+      y_str := MissionIni.get_variable_name(event.coord_y[0], 1)
     else
       y_str := inttostr(event.coord_y[0]);
     EventGrid.Cells[3,row] := x_str + ' , ' + y_str;
@@ -2157,7 +2157,7 @@ begin
   if et.has_player and evaluate_show_if(Addr(et.args[0].show_if), event, Addr(event_args_struct_members)) then
   begin
     if (event.arg_var_flags and 1) <> 0 then
-      EventGrid.Cells[4,row] := MissionIni.get_variable_name(event.player, true)
+      EventGrid.Cells[4,row] := MissionIni.get_variable_name(event.player, 1)
     else
       EventGrid.Cells[4,row] := IfThen(event.player < 8, Structures.player_names[event.player], 'Any')
   end else
@@ -2373,7 +2373,7 @@ begin
         event_message_variable[i].Enabled := False;
       end else
       begin
-        event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], False);
+        event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], 1);
         event_message_variable[i].Enabled := True;
       end;
     end;
@@ -2398,6 +2398,7 @@ begin
   end;
   if panel = edpFilter then
   begin
+    btnEventFilterIndexToggle.Visible := EventConfig.event_types[tmp_event.event_type].allow_obj_index;
     if (tmp_event.event_flags and 8) <> 0 then
     begin
       btnEventFilterIndexToggle.Caption := 'Filter';
@@ -2405,19 +2406,19 @@ begin
       pnEventFilterLimitSkip.Visible := False;
       edEventFilterIndexVar.Visible := True;
       lblEventFilterIndexVar.Visible := True;
-      edEventFilterIndexVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, false);
+      edEventFilterIndexVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, 1);
     end else
     begin
       btnEventFilterIndexToggle.Caption := 'Index';
       pnEventFilterBody.Visible := True;
-      pnEventFilterLimitSkip.Visible := True;
+      pnEventFilterLimitSkip.Visible := object_type < 4;
       edEventFilterIndexVar.Visible := False;
       lblEventFilterIndexVar.Visible := False;
       if (tmp_event.event_flags and 16) <> 0 then
       begin
         seEventFilterSkip.Visible := False;
         edEventFilterSkipVar.Visible := True;
-        edEventFilterSkipVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, true);
+        edEventFilterSkipVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, 1);
         btnEventFilterSkipVarToggle.Caption := 'C';
       end else
       begin
@@ -2430,7 +2431,7 @@ begin
       begin
         seEventFilterLimit.Visible := False;
         edEventFilterLimitVar.Visible := True;
-        edEventFilterLimitVar.Text := MissionIni.get_variable_name(tmp_event.data[0], true);
+        edEventFilterLimitVar.Text := MissionIni.get_variable_name(tmp_event.data[0], 1);
         btnEventFilterLimitVarToggle.Caption := 'C';
       end else
       begin
@@ -2583,7 +2584,7 @@ begin
   tmp_strings.Add('Number');
   tmp_strings.Add('Time');
   tmp_strings.Add('String from table');
-  for i := 0 to 3 do
+  for i := 0 to 7 do
   begin
     lbl := TLabel.Create(Self);
     lbl.Left := 8;
@@ -2632,7 +2633,7 @@ begin
   if ct.has_player and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
   begin
     if (cond.arg_var_flags and 1) <> 0 then
-      ConditionGrid.Cells[2,row] := MissionIni.get_variable_name(cond.player, true)
+      ConditionGrid.Cells[2,row] := MissionIni.get_variable_name(cond.player, 1)
     else
       ConditionGrid.Cells[2,row] := IfThen(cond.player < 8, Structures.player_names[cond.player], 'Any')
   end else
@@ -2709,7 +2710,7 @@ begin
     begin
       seConditionFilterAmount.Visible := False;
       edConditionFilterAmountVar.Visible := True;
-      edConditionFilterAmountVar.Text := MissionIni.get_variable_name(tmp_condition.arg2, True);
+      edConditionFilterAmountVar.Text := MissionIni.get_variable_name(tmp_condition.arg2, 1);
       btnConditionFilterAmountVarToggle.Caption := 'C';
     end else
     begin
@@ -2945,7 +2946,7 @@ begin
   ccg.edit_var_x.Visible := is_var_x;
   ccg.btn_var_toggle_x.Caption := IfThen(is_var_x, 'C', 'V');
   if is_var_x then
-    ccg.edit_var_x.Text :=MissionIni.get_variable_name(value_x, true)
+    ccg.edit_var_x.Text :=MissionIni.get_variable_name(value_x, 1)
   else
   begin
     ccg.spin_x.Value := value_x;
@@ -2956,7 +2957,7 @@ begin
   ccg.edit_var_y.Visible := is_var_y;
   ccg.btn_var_toggle_y.Caption := IfThen(is_var_y, 'C', 'V');
   if is_var_y then
-    ccg.edit_var_y.Text := MissionIni.get_variable_name(value_y, true)
+    ccg.edit_var_y.Text := MissionIni.get_variable_name(value_y, 1)
   else
   begin
     ccg.spin_y.Value := value_y;
@@ -3077,7 +3078,7 @@ begin
   loading := true;
   if is_var then
   begin
-    acg.text_edit.Text := MissionIni.get_variable_name(value, true);
+    acg.text_edit.Text := MissionIni.get_variable_name(value, IfThen(argdef.arg_type = atVariable, 2, 1));
     loading := false;
     exit;
   end;
@@ -3109,7 +3110,7 @@ begin
         else
           acg.radio_false.Checked := true;
       end;
-    atVariable: acg.text_edit.Text := MissionIni.get_variable_name(value, false);
+    atVariable: acg.text_edit.Text := MissionIni.get_variable_name(value, 1);
   end;
   loading := false;
 end;
@@ -3321,6 +3322,7 @@ begin
   end;
   // Fill data fields
   loading := true;
+  fcg.cb_check_position.Enabled := object_type < 4;
   fcg.cb_check_position.Checked := (fcg.filter_ptr.pos_and_var_flags and 1) <> 0;
   fcg.cb_position_negation.Checked := (fcg.filter_ptr.pos_and_var_flags and 2) <> 0;
   fcg.cbx_position_type.ItemIndex := (fcg.filter_ptr.pos_and_var_flags shr 2) and 3;
@@ -3329,7 +3331,7 @@ begin
     if (fcg.filter_ptr.pos_and_var_flags and (1 shl (i + 4))) <> 0 then
     begin
       fcg.se_position[i].Visible := false;
-      fcg.edit_var_name[i + 4].Text := MissionIni.get_variable_name(fcg.filter_ptr.pos_values[i], true);
+      fcg.edit_var_name[i + 4].Text := MissionIni.get_variable_name(fcg.filter_ptr.pos_values[i], 1);
       fcg.edit_var_name[i + 4].Visible := true;
       fcg.btn_var_toggle[i + 4].Caption := 'C';
     end else
@@ -3354,7 +3356,7 @@ begin
   begin
     fcg.cbx_operation[i].ItemIndex := fcg.filter_ptr.criteria_type[i] shr 6;
     if (fcg.filter_ptr.pos_and_var_flags and (1 shl (i + 8))) <> 0 then
-      fcg.edit_var_name[i + 8].Text := MissionIni.get_variable_name(fcg.filter_ptr.criteria_value[i], true)
+      fcg.edit_var_name[i + 8].Text := MissionIni.get_variable_name(fcg.filter_ptr.criteria_value[i], 1)
     else if EventConfig.filter_criteria[object_type, fcg.cbx_criteria[i].ItemIndex].list_type = ltNone then
       fcg.se_value[i].Value := fcg.filter_ptr.criteria_value[i]
     else
@@ -3376,7 +3378,7 @@ begin
   begin
     tmp_strings := TStringList.Create;
     for i := 0 to MAX_VARIABLES - 1 do
-      tmp_strings.Add(inttostr(i) + ': ' + MissionIni.get_variable_name(i, false));
+      tmp_strings.Add(inttostr(i) + ': ' + MissionIni.get_variable_name(i, 0));
     lbSelectVariableList.Items := tmp_strings;
     tmp_strings.Destroy;
     pending_update_variable_list := false;
@@ -3442,7 +3444,7 @@ begin
     vsEventMessageVar:
       begin
         tmp_event.data[13 + variable_selection_index] := lbSelectVariableList.ItemIndex;
-        event_message_variable[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, False);
+        event_message_variable[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, 1);
       end;
     vsEventFilterSkip:
       begin
