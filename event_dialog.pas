@@ -11,7 +11,7 @@ type
   CreateEventType = (ceUnitSpawn, ceHarvRepl, ceAnnihMsg);
 
 type
-  VariableSelectionType = (vsCoord, vsArg, vsVarArg, vsEventMessageVar, vsEventFilterSkip, vsEventFilterLimit, vsEventObjectIndex, vsConditionFilterAmount, vsFilter);
+  VariableSelectionType = (vsCoord, vsArg, vsVarArg, vsEventMessageVar, vsCondExprVar, vsCondExprValue, vsEventFilterSkip, vsEventFilterLimit, vsEventObjectIndex, vsConditionFilterAmount, vsFilter);
 
 type
   TCoordControlGroup = record
@@ -236,6 +236,12 @@ type
     seEventValueListXCoord2: TSpinEdit;
     seEventValueListYCoord2: TSpinEdit;
     btnEventValueListCoordsSelect: TButton;
+    edpCondExpr: TPanel;
+    lblCondExprAndOr: TLabel;
+    lblCondExprVariable: TLabel;
+    lblCondExprValue: TLabel;
+    btnCondExprPlus: TButton;
+    btnCondExprMinus: TButton;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -299,6 +305,15 @@ type
     procedure imgTileBlockMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     // -- Tile pairs
     procedure sgTilePairsSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+    // -- Conditional expression
+    procedure btnCondExprPlusClick(Sender: TObject);
+    procedure btnCondExprMinusClick(Sender: TObject);
+    procedure cbxCondExprAndOrChange(Sender: TObject);
+    procedure edCondExprVariableClick(Sender: TObject);
+    procedure cbxCondExprOperatorChange(Sender: TObject);
+    procedure edCondExprValueChange(Sender: TObject);
+    procedure edCondExprValueClick(Sender: TObject);
+    procedure btnCondExprVarBtnClick(Sender: TObject);
     // -- Object filter
     procedure seEventFilterSkipChange(Sender: TObject);
     procedure seEventFilterLimitChange(Sender: TObject);
@@ -393,10 +408,15 @@ type
     ccgs: array[0..5] of TCoordControlGroup;
     acgs: array[0..13] of TArgControlGroup;
     fcgs: array[0..1] of TFilterControlGroup;
-    event_message_var_datatype: array[0..7] of TComboBox;
-    event_message_variable: array[0..7] of TEdit;
     event_gamestruct_value_arg_def: TArgDefinition;
     condition_gamestruct_value_arg_def: TArgDefinition;
+    event_message_var_datatype: array[0..7] of TComboBox;
+    event_message_variable: array[0..7] of TEdit;
+    cond_expr_and_or: array[0..6] of TComboBox;
+    cond_expr_variable: array[0..7] of TEdit;
+    cond_expr_operator: array[0..7] of TComboBox;
+    cond_expr_value: array[0..7] of TEdit;
+    cond_expr_var_btn: array[0..7] of TButton;
 
   public
     // Dispatcher events
@@ -426,6 +446,7 @@ type
     procedure draw_tile_block;
     procedure draw_tile_pairs;
     procedure create_message_var_controls;
+    procedure create_cond_expr_controls;
     // Condition-related prodcedures
     procedure fill_condition_grid_row(index: integer);
     procedure select_condition(index: integer);
@@ -547,6 +568,8 @@ begin
   create_filter_control_group(1, Addr(tmp_condition), pnConditionFilterBody);
   // Initialize event message controls
   create_message_var_controls;
+  // Initialize conditional expression controls
+  create_cond_expr_controls;
 end;
 
 procedure TEventDialog.FormShow(Sender: TObject);
@@ -1198,6 +1221,101 @@ procedure TEventDialog.sgTilePairsSetEditText(Sender: TObject; ACol, ARow: Integ
 begin
   set_integer_value(Addr(tmp_event.data[1]), (ARow * 2 + ACol) * 2, 2, StrToIntDef(sgTilePairs.Cells[ACol, ARow], 0));
   draw_tile_pairs;
+end;
+
+procedure TEventDialog.btnCondExprPlusClick(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+begin
+  cond_expr := Addr(tmp_event.data[1]);
+  if cond_expr.num_operations < 8 then
+  begin
+    Inc(cond_expr.num_operations);
+    fill_event_data_panel(edpCondExpr, true, 0);
+  end;
+end;
+
+procedure TEventDialog.btnCondExprMinusClick(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+begin
+  cond_expr := Addr(tmp_event.data[1]);
+  if cond_expr.num_operations > 0 then
+  begin
+    Dec(cond_expr.num_operations);
+    fill_event_data_panel(edpCondExpr, true, 0);
+  end;
+end;
+
+procedure TEventDialog.cbxCondExprAndOrChange(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+  index: integer;
+begin
+  cond_expr := Addr(tmp_event.data[1]);
+  index := (Sender as TControl).Tag;
+  cond_expr.and_or := (cond_expr.and_or and not(3 shl (index * 2))) or ((Sender as TComboBox).ItemIndex shl (index * 2));
+end;
+
+procedure TEventDialog.edCondExprVariableClick(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+  index: integer;
+begin
+  cond_expr := Addr(tmp_event.data[1]);
+  index := (Sender as TControl).Tag;
+  start_variable_selection(vsCondExprVar, index, cond_expr.variable[index]);
+end;
+
+procedure TEventDialog.cbxCondExprOperatorChange(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+  index: integer;
+begin
+  cond_expr := Addr(tmp_event.data[1]);
+  index := (Sender as TControl).Tag;
+  cond_expr.operator := (cond_expr.operator and not(15 shl (index * 4))) or (Cardinal((Sender as TComboBox).ItemIndex) shl (index * 4));
+end;
+
+procedure TEventDialog.edCondExprValueChange(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+  index: integer;
+begin
+  if loading then
+    exit;
+  cond_expr := Addr(tmp_event.data[1]);
+  index := (Sender as TControl).Tag;
+  cond_expr.value[index] := StrToIntDef((Sender as TEdit).Text, 0);
+end;
+
+procedure TEventDialog.edCondExprValueClick(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+  index: integer;
+begin
+  cond_expr := Addr(tmp_event.data[1]);
+  index := (Sender as TControl).Tag;
+  if (cond_expr.value_var_flags and (1 shl index)) <> 0 then
+    start_variable_selection(vsCondExprValue, index, cond_expr.value[index]);
+end;
+
+procedure TEventDialog.btnCondExprVarBtnClick(Sender: TObject);
+var
+  cond_expr: TCondExprPtr;
+  index: integer;
+begin
+  cond_expr := Addr(tmp_event.data[1]);
+  index := (Sender as TControl).Tag;
+  if (cond_expr.value_var_flags and (1 shl index)) = 0 then
+    start_variable_selection(vsCondExprValue, index, 0)
+  else
+  begin
+    cond_expr.value_var_flags := cond_expr.value_var_flags and not (1 shl index);
+    cond_expr.value[index] := 0;
+    cond_expr_value[index].Text := IntToStr(cond_expr.value[index]);
+    cond_expr_var_btn[index].Caption := 'V';
+  end;
 end;
 
 procedure TEventDialog.seEventFilterSkipChange(Sender: TObject);
@@ -2240,6 +2358,7 @@ begin
   fill_event_data_panel(edpMusic,        ed = edMusic, 0);
   fill_event_data_panel(edpTileBlock,    ed = edTileBlock, 0);
   fill_event_data_panel(edpTilePairs,    ed = edTilePairs, 0);
+  fill_event_data_panel(edpCondExpr,     ed = edCondExpr, 0);
   fill_event_data_panel(edpFilter,       ed >= edUnitFilter, ord(ed) - ord(edUnitFilter));
   // Fill event note
   if notes_enabled then
@@ -2305,6 +2424,7 @@ var
   i, j: integer;
   tmp: string;
   list_type: ItemListType;
+  cond_expr: TCondExprPtr;
 begin
   panel.Visible := active;
   if not active then
@@ -2395,6 +2515,35 @@ begin
       sgTilePairs.Cells[1, i] := IntToStr(get_integer_value(Addr(tmp_event.data[1]), i * 4 + 2, 2));
     end;
     draw_tile_pairs;
+  end;
+  if panel = edpCondExpr then
+  begin
+    loading := true;
+    cond_expr := Addr(tmp_event.data[1]);
+    for i := 0 to 6 do
+    begin
+      cond_expr_and_or[i].Visible := cond_expr.num_operations > (i + 1);
+      cond_expr_and_or[i].ItemIndex := (cond_expr.and_or shr (i * 2)) and 3;
+    end;
+    for i := 0 to 7 do
+    begin
+      cond_expr_variable[i].Visible := cond_expr.num_operations > i;
+      cond_expr_variable[i].Text := MissionIni.get_variable_name(cond_expr.variable[i], 1);
+      cond_expr_operator[i].Visible := cond_expr.num_operations > i;
+      cond_expr_operator[i].ItemIndex := (cond_expr.operator shr (i * 4)) and 15;
+      cond_expr_value[i].Visible := cond_expr.num_operations > i;
+      cond_expr_var_btn[i].Visible := cond_expr.num_operations > i;
+      if (cond_expr.value_var_flags shr i) and 1 = 1 then
+      begin
+        cond_expr_value[i].Text := MissionIni.get_variable_name(cond_expr.value[i], 1);
+        cond_expr_var_btn[i].Caption := 'C';
+      end else
+      begin
+        cond_expr_value[i].Text := IntToStr(cond_expr.value[i]);
+        cond_expr_var_btn[i].Caption := 'V';
+      end;
+    end;
+    loading := false;
   end;
   if panel = edpFilter then
   begin
@@ -2608,6 +2757,71 @@ begin
     event_message_variable[i].Tag := i;
     event_message_variable[i].OnClick := edMessageVariableClick;
     event_message_variable[i].Parent := edpMessage;
+  end;
+  tmp_strings.Destroy;
+end;
+
+procedure TEventDialog.create_cond_expr_controls;
+var
+  i: integer;
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  tmp_strings.Add('1&');
+  tmp_strings.Add('2o');
+  tmp_strings.Add('3&');
+  tmp_strings.Add('4o');
+  for i := 0 to Length(cond_expr_and_or) - 1 do
+  begin
+    cond_expr_and_or[i] := TComboBox.Create(Self);
+    cond_expr_and_or[i].Top := 60 + i * 24;
+    cond_expr_and_or[i].Left := 4;
+    cond_expr_and_or[i].Width := 40;
+    cond_expr_and_or[i].Style := csDropDownList;
+    cond_expr_and_or[i].Tag := i;
+    cond_expr_and_or[i].OnChange := cbxCondExprAndOrChange;
+    cond_expr_and_or[i].Parent := edpCondExpr;
+    cond_expr_and_or[i].Items := tmp_strings;
+  end;
+  tmp_strings.Clear;
+  for i := 0 to Length(cond_expr_operator) - 1 do
+    tmp_strings.Add(cond_expr_operator_str[i]);
+  for i := 0 to 7 do
+  begin
+    cond_expr_variable[i] := TEdit.Create(Self);
+    cond_expr_variable[i].Top := 48 + i * 24;
+    cond_expr_variable[i].Left := 48;
+    cond_expr_variable[i].Width := 88;
+    cond_expr_variable[i].ReadOnly := True;
+    cond_expr_variable[i].Tag := i;
+    cond_expr_variable[i].OnClick := edCondExprVariableClick;
+    cond_expr_variable[i].Parent := edpCondExpr;
+    cond_expr_operator[i] := TComboBox.Create(Self);
+    cond_expr_operator[i].Top := 48 + i * 24;
+    cond_expr_operator[i].Left := 136;
+    cond_expr_operator[i].Width := 40;
+    cond_expr_operator[i].Style := csDropDownList;
+    cond_expr_operator[i].Tag := i;
+    cond_expr_operator[i].OnChange := cbxCondExprOperatorChange;
+    cond_expr_operator[i].Parent := edpCondExpr;
+    cond_expr_operator[i].Items := tmp_strings;
+    cond_expr_value[i] := TEdit.Create(Self);
+    cond_expr_value[i].Top := 48 + i * 24;
+    cond_expr_value[i].Left := 176;
+    cond_expr_value[i].Width := 88;
+    cond_expr_value[i].Tag := i;
+    cond_expr_value[i].OnChange := edCondExprValueChange;
+    cond_expr_value[i].OnClick := edCondExprValueClick;
+    cond_expr_value[i].Parent := edpCondExpr;
+    cond_expr_var_btn[i] := TButton.Create(Self);
+    cond_expr_var_btn[i].Top := 48 + i * 24;
+    cond_expr_var_btn[i].Left := 266;
+    cond_expr_var_btn[i].Width := 18;
+    cond_expr_var_btn[i].Tag := i;
+    cond_expr_var_btn[i].Height := 22;
+    cond_expr_var_btn[i].Caption := 'V';
+    cond_expr_var_btn[i].OnClick := btnCondExprVarBtnClick;
+    cond_expr_var_btn[i].Parent := edpCondExpr;
   end;
   tmp_strings.Destroy;
 end;
@@ -3403,6 +3617,7 @@ var
   flag_index: integer;
   acg: TArgControlGroupPtr;
   fcg: TFilterControlGroupPtr;
+  cond_expr: TCondExprPtr;
 begin
   if not SelectVariablePanel.Visible then
     exit;
@@ -3445,6 +3660,22 @@ begin
       begin
         tmp_event.data[13 + variable_selection_index] := lbSelectVariableList.ItemIndex;
         event_message_variable[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, 1);
+      end;
+    vsCondExprVar:
+      begin
+        cond_expr := Addr(tmp_event.data[1]);
+        cond_expr.variable[variable_selection_index] := lbSelectVariableList.ItemIndex;
+        cond_expr_variable[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, 1);
+      end;
+    vsCondExprValue:
+      begin
+        loading := true;
+        cond_expr := Addr(tmp_event.data[1]);
+        cond_expr.value[variable_selection_index] := lbSelectVariableList.ItemIndex;
+        cond_expr.value_var_flags := cond_expr.value_var_flags or (1 shl variable_selection_index);
+        cond_expr_value[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, 1);
+        cond_expr_var_btn[variable_selection_index].Caption := 'C';
+        loading := false;
       end;
     vsEventFilterSkip:
       begin

@@ -704,6 +704,53 @@ object EventDialog: TEventDialog
           end
         end
       end
+      object edpCondExpr: TPanel
+        Left = 0
+        Top = 0
+        Width = 288
+        Height = 241
+        BevelOuter = bvNone
+        TabOrder = 7
+        object lblCondExprAndOr: TLabel
+          Left = 4
+          Top = 44
+          Width = 35
+          Height = 13
+          Caption = 'And/Or'
+        end
+        object lblCondExprVariable: TLabel
+          Left = 48
+          Top = 32
+          Width = 38
+          Height = 13
+          Caption = 'Variable'
+        end
+        object lblCondExprValue: TLabel
+          Left = 176
+          Top = 32
+          Width = 27
+          Height = 13
+          Caption = 'Value'
+        end
+        object btnCondExprPlus: TButton
+          Left = 48
+          Top = 4
+          Width = 41
+          Height = 24
+          Caption = '+'
+          TabOrder = 0
+          OnClick = btnCondExprPlusClick
+        end
+        object btnCondExprMinus: TButton
+          Left = 96
+          Top = 4
+          Width = 41
+          Height = 24
+          Caption = '-'
+          TabOrder = 1
+          OnClick = btnCondExprMinusClick
+        end
+      end
     end
     object EventConditionListPanel: TPanel
       Left = 528

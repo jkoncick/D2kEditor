@@ -97,6 +97,24 @@ type
 const object_filter_comp_operation: array[0..3] of string = ('=', '!=', '>=', '<');
 
 // *****************************************************************************
+// Conditional expression definition
+// *****************************************************************************
+
+type
+  TCondExpr = packed record
+    operator: cardinal;
+    and_or: word;
+    value_var_flags: byte;
+    num_operations: byte;
+    variable: array[0..7] of byte;
+    value: array[0..7] of byte;
+  end;
+
+  TCondExprPtr = ^TCondExpr;
+
+const cond_expr_operator_str: array[0..7] of string = ('=', '!=', '>=', '>', '<=', '<', '&', '!&');
+
+// *****************************************************************************
 // Mis file definitions
 // *****************************************************************************
 
@@ -765,6 +783,8 @@ var
   dummy: boolean;
   tmp_unit_count: array[0..MAX_UNIT_TYPES-1] of byte;
   message_index: integer;
+  and_or_op, and_or_level: integer;
+  cond_expr: TCondExprPtr;
 begin
   event := Addr(event_data[event_id]);
   et := Addr(EventConfig.event_types[event.event_type]);
@@ -850,6 +870,35 @@ begin
   end;
   if et.event_data = edMusic then
     SetString(contents, PChar(Addr(event.data[0])), StrLen(PChar(Addr(event.data[0]))));
+  if et.event_data = edCondExpr then
+  begin
+    and_or_level := 0;
+    cond_expr := Addr(event.data[1]);
+    for i := 0 to cond_expr.num_operations - 1 do
+    begin
+      if i > 0 then
+      begin
+        and_or_op := (cond_expr.and_or shr ((i - 1) * 2)) and 3;
+        contents := contents + ' ' + IfThen((and_or_op and 1) = 0, 'and', 'or') + ' ';
+      end;
+      and_or_op := (cond_expr.and_or shr (i * 2)) and 3;
+      while (and_or_op > and_or_level) do
+      begin
+        contents := contents + '(';
+        inc(and_or_level);
+      end;
+      contents := contents + MissionIni.get_variable_name(cond_expr.variable[i], 1) + ' ' + cond_expr_operator_str[(cond_expr.operator shr (i * 4)) and 15] + ' ';
+      if cond_expr.value_var_flags and (1 shl i) <> 0 then
+        contents := contents + MissionIni.get_variable_name(cond_expr.value[i], 1)
+      else
+        contents := contents + IntToStr(cond_expr.value[i]);
+      while (and_or_op < and_or_level) do
+      begin
+        contents := contents + ')';
+        dec(and_or_level);
+      end;
+    end;
+  end;
   if et.event_data >= edUnitFilter then
   begin
     if (event.event_flags and 8) <> 0 then
