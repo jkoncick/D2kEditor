@@ -46,6 +46,13 @@ const event_args_struct_members: array[0..6] of TStructMemberDefinition =
     (pos: 48; bytes: 4)  // extra value (arg6)
   );
 
+type
+  TEventIndentationData = record
+    indent: integer;
+    invalid: boolean;
+    counterpart_event: integer;
+  end;
+
 // *****************************************************************************
 // Condition definition
 // *****************************************************************************
@@ -168,6 +175,7 @@ type
     time_limit:       integer;
     message_data:     array[0..691] of byte;
     // Other data
+    event_indentation: array[0..MAX_EVENTS-1] of TEventIndentationData;
     event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
 
   public
@@ -210,6 +218,8 @@ type
     procedure export_events(first_event, last_event: integer; filename: string);
     procedure import_events(filename: string);
     // Miscellaneous
+    procedure compute_event_indentation;
+    function compute_event_indentation_step(first_event: integer; indent: integer; inside_block, inside_if, inside_loop: boolean): integer;
     procedure adjust_event_positions(shift_x: integer; shift_y: integer);
     function check_errors: String;
     function get_player_alloc_index(player: integer): integer;
@@ -294,6 +304,8 @@ begin
   MissionIni.load_mission_ini(map_filename);
   // Change tileset according to mission's tileset
   Tileset.change_tileset_by_name(tileset_name, tileatr_name);
+  // Compute event indentation
+  compute_event_indentation;
   // Do needed actions
   Dispatcher.register_event(evMisLoad);
 end;
@@ -1053,6 +1065,9 @@ begin
   end;
   // Increase number of events
   inc(num_events);
+  // Compute event indentation
+  compute_event_indentation;
+  // Finalize
   mis_modified := true;
   result := position;
 end;
@@ -1125,6 +1140,9 @@ begin
   end;
   // Decrease number of events
   dec(num_events);
+  // Compute event indentation
+  compute_event_indentation;
+  // Finalize
   mis_modified := true;
   // Update event markers on map if event had position
   if event_used_position then
@@ -1253,6 +1271,8 @@ begin
       end;
     end;
   end;
+  // Compute event indentation
+  compute_event_indentation;
   // Update event markers on map if event had position
   if (EventConfig.event_types[event_data[e1].event_type].has_map_pos) or (EventConfig.event_types[event_data[e2].event_type].has_map_pos) then
     Dispatcher.register_event(evMisEventPositionChange);
@@ -1625,6 +1645,94 @@ begin
   num_conditions := Min(num_conditions + exp_num_conditions, MAX_CONDITIONS);
   // Register events in dispatcher
   Dispatcher.register_event(evMisEventsImport);
+end;
+
+procedure TMission.compute_event_indentation;
+var
+  i: integer;
+begin
+  compute_event_indentation_step(0, 0, false, false, false);
+  // Mark all start block events which do not have their counterpart as invalid
+  for i := 0 to num_events - 1 do
+  begin
+    if EventConfig.event_types[event_data[i].event_type].is_start_block and (event_indentation[i].counterpart_event = -1) then
+      event_indentation[i].invalid := true;
+  end;
+end;
+
+function TMission.compute_event_indentation_step(first_event: integer; indent: integer; inside_block, inside_if, inside_loop: boolean): integer;
+var
+  i: integer;
+  was_else: boolean;
+  last_else: integer;
+begin
+  i := first_event;
+  was_else := false;
+  last_else := -1;
+  while i < num_events do
+  begin
+    event_indentation[i].indent := indent;
+    event_indentation[i].invalid := false;
+    event_indentation[i].counterpart_event := -1;
+    // Block Start, Callable Block Start, Hook Block Start cannot be only at global level
+    if (event_data[i].event_type >= 232) and (event_data[i].event_type <= 234) and (indent > 0) then
+      event_indentation[i].invalid := true;
+    // Start block - compute block indentation recursively
+    if EventConfig.event_types[event_data[i].event_type].is_start_block then
+    begin
+      i := compute_event_indentation_step(
+        i + 1,
+        indent + 1,
+        inside_block or ((event_data[i].event_type >= 232) and (event_data[i].event_type <= 234)),
+        event_data[i].event_type = 237,
+        inside_loop or ((event_data[i].event_type >= 240) and (event_data[i].event_type <= 252)));
+      continue;
+    end
+    // Exit from block - must be inside block
+    else if (event_data[i].event_type = 236) and (not inside_block) then
+    begin
+      event_indentation[i].invalid := true;
+    end
+    // Else if, Else - must be inside if
+    else if (event_data[i].event_type = 238) or (event_data[i].event_type = 239) then
+    begin
+      if inside_if and (indent > 0) then
+      begin
+        event_indentation[i].indent := indent - 1;
+        if last_else <> -1 then
+          event_indentation[last_else].counterpart_event := i;
+        last_else := i;
+        if was_else then
+          event_indentation[i].invalid := true;
+      end else
+        event_indentation[i].invalid := true;
+      // Else
+      if event_data[i].event_type = 239 then
+        was_else := true;
+    end
+    // Break loop, Continue loop - must be inside loop
+    else if ((event_data[i].event_type = 253) or (event_data[i].event_type = 254)) and (not inside_loop) then
+    begin
+      event_indentation[i].invalid := true;
+    end
+    // End - finish computation
+    else if event_data[i].event_type = 255 then
+    begin
+      if indent > 0 then
+      begin
+        event_indentation[i].indent := indent - 1;
+        event_indentation[i].counterpart_event := first_event - 1;
+        event_indentation[first_event - 1].counterpart_event := i;
+        if last_else <> -1 then
+          event_indentation[last_else].counterpart_event := i;
+        result := i + 1;
+        exit;
+      end else
+        event_indentation[i].invalid := true;
+    end;
+    inc(i);
+  end;
+  result := i;
 end;
 
 procedure TMission.adjust_event_positions(shift_x, shift_y: integer);

@@ -76,10 +76,11 @@ type
     gamestruct_value_arg: integer;
     event_data: EventData;
     contents: String;
+    color: integer;
+    is_start_block: boolean;
+    allow_obj_index: boolean;
     has_map_pos: boolean;
     has_player: boolean;
-    is_flow_control: boolean;
-    allow_obj_index: boolean;
   end;
 
   TEventTypeDefinitionPtr = ^TEventTypeDefinition;
@@ -221,11 +222,13 @@ begin
       end;
     // Load contents
     event_types[i].contents := ini.ReadString(tmp_strings[i], 'contents', '');
+    // Load miscellaneous properties
+    event_types[i].color := ini.ReadInteger(tmp_strings[i], 'color', -1);
+    event_types[i].is_start_block := ini.ReadBool(tmp_strings[i], 'is_start_block', False);
+    event_types[i].allow_obj_index := ini.ReadBool(tmp_strings[i], 'allow_obj_index', False);
     // Fill auxiliary properties
     event_types[i].has_map_pos := event_types[i].coords[0].marker <> ' ';
     event_types[i].has_player := event_types[i].args[0].name = 'Player';
-    event_types[i].is_flow_control := ini.ReadBool(tmp_strings[i], 'is_flow_control', False);
-    event_types[i].allow_obj_index := ini.ReadBool(tmp_strings[i], 'allow_obj_index', False);
   end;
   ini.Destroy;
   tmp_strings.Destroy;

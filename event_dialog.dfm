@@ -1318,9 +1318,9 @@ object EventDialog: TEventDialog
     object N3: TMenuItem
       Caption = '-'
     end
-    object Marknothing1: TMenuItem
+    object Markcounterpart1: TMenuItem
       AutoCheck = True
-      Caption = 'Mark nothing'
+      Caption = 'Mark counterpart'
       Checked = True
       RadioItem = True
       ShortCut = 116

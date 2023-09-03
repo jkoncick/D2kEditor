@@ -194,7 +194,7 @@ type
     rbConditionFilterAmoutGtEq: TRadioButton;
     rbConditionFilterAmoutEq: TRadioButton;
     N3: TMenuItem;
-    Marknothing1: TMenuItem;
+    Markcounterpart1: TMenuItem;
     Markselcondition1: TMenuItem;
     Markseltype1: TMenuItem;
     N4: TMenuItem;
@@ -400,6 +400,7 @@ type
     variable_selection_type: VariableSelectionType;
     variable_selection_index: integer;
     variable_name_changed: boolean;
+    selected_event_had_counterpart: boolean;
 
     pending_update_contents: boolean;
     pending_update_variable_list: boolean;
@@ -502,10 +503,10 @@ begin
   // Initialize event grid
   EventGrid.Cells[0,0] := '#';
   EventGrid.ColWidths[0] := 30;
-  EventGrid.Cells[1,0] := 'Event type';
-  EventGrid.ColWidths[1] := 90;
-  EventGrid.Cells[2,0] := 'Bl.';
-  EventGrid.ColWidths[2] := 20;
+  EventGrid.Cells[1,0] := 'Bl.';
+  EventGrid.ColWidths[1] := 20;
+  EventGrid.Cells[2,0] := 'Event type';
+  EventGrid.ColWidths[2] := 90;
   EventGrid.Cells[3,0] := 'Position';
   EventGrid.ColWidths[3] := 50;
   EventGrid.Cells[4,0] := 'Player';
@@ -670,7 +671,11 @@ begin
     exit;
   apply_changes;
   if selected_event <> ARow-1 then
+  begin
+    if Markcounterpart1.Checked and (selected_event_had_counterpart or ((ARow-1 < Mission.num_events) and (Mission.event_indentation[ARow-1].counterpart_event <> -1))) then
+      EventGrid.Invalidate;
     select_event(ARow-1);
+  end;
 end;
 
 procedure TEventDialog.EventGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -741,7 +746,7 @@ procedure TEventDialog.EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; R
 var
   negation: boolean;
 begin
-  if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) then
+  if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) or (ARow - 1 >= Mission.num_events) then
     exit;
   if Markselcondition1.Checked and Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
   begin
@@ -749,14 +754,22 @@ begin
       EventGrid.Canvas.Brush.Color := clYellow
     else
       EventGrid.Canvas.Brush.Color := $00E0E0;
-  end else
-  if Markseltype1.Checked and (Mission.event_data[ARow - 1].event_type = EventConfig.event_type_mapping[lbEventTypeList.ItemIndex]) and (ARow - 1 < Mission.num_events) then
+  end
+  else if Markseltype1.Checked and (Mission.event_data[ARow - 1].event_type = EventConfig.event_type_mapping[lbEventTypeList.ItemIndex]) and (ARow - 1 < Mission.num_events) then
   begin
     EventGrid.Canvas.Brush.Color := clYellow;
-  end else
-  if EventConfig.event_types[Mission.event_data[ARow - 1].event_type].is_flow_control then
+  end
+  else if Mission.event_indentation[ARow - 1].invalid then
   begin
-    EventGrid.Canvas.Brush.Color := $EAFFE1;
+    EventGrid.Canvas.Brush.Color := clRed;
+  end
+  else if Markcounterpart1.Checked and (Mission.event_indentation[selected_event].counterpart_event = ARow - 1) then
+  begin
+    EventGrid.Canvas.Brush.Color := clYellow;
+  end
+  else if EventConfig.event_types[Mission.event_data[ARow - 1].event_type].color <> -1 then
+  begin
+    EventGrid.Canvas.Brush.Color := EventConfig.event_types[Mission.event_data[ARow - 1].event_type].color;
   end else
     exit;
   EventGrid.Canvas.FillRect(Rect);
@@ -2245,6 +2258,8 @@ var
   event: ^TEvent;
   et: TEventTypeDefinitionPtr;
   x_str, y_str: string;
+  indent: string;
+  i: integer;
 begin
   row := index + 1;
   if index >= Mission.num_events then
@@ -2257,8 +2272,11 @@ begin
   et := Addr(EventConfig.event_types[event.event_type]);
   EventGrid.Cells[0,row] := inttostr(index);
   // Basic information
-  EventGrid.Cells[1,row] := et.name;
-  EventGrid.Cells[2,row] := IfThen((event.event_flags and 1) = 1, 'A', '') + IfThen((event.event_flags and 2) = 2, 'B', '');
+  EventGrid.Cells[1,row] := IfThen((event.event_flags and 1) = 1, 'A', '') + IfThen((event.event_flags and 2) = 2, 'B', '');
+  indent := '';
+  for i := 0 to Mission.event_indentation[index].indent - 1 do
+    indent := indent + '  ';
+  EventGrid.Cells[2,row] := indent + et.name;
   if et.has_map_pos and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) then
   begin
     if (event.coord_var_flags and 1) <> 0 then
@@ -2315,6 +2333,7 @@ begin
   loading := false;
   edEventNote.Enabled := event_valid;
   fill_event_ui;
+  selected_event_had_counterpart := event_valid and (Mission.event_indentation[index].counterpart_event <> -1);
 end;
 
 procedure TEventDialog.fill_event_ui;
@@ -2657,8 +2676,10 @@ begin
   // Save custom message text
   if (et.event_data = edMessage) and msg_text_is_custom then
     MissionIni.set_custom_text(get_integer_value(Addr(tmp_event.data), 21, 4), edMessageText.Text);
+  // Compute event indentation
+  Mission.compute_event_indentation;
   // Update GUI
-  fill_event_grid_row(selected_event);
+  fill_grids;
   // Update event markers on map if old or new event has position
   if old_event_used_position or (et.has_map_pos) then
     Dispatcher.register_event(evMisEventPositionChange);
