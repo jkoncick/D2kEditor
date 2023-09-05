@@ -222,7 +222,7 @@ var
   tile: word;
   tile_x, tile_y: integer;
   tile_attr: Cardinal;
-  player: integer;
+  side: integer;
 begin
   key := ord(block_preset_keys[row, col]);
   preset := @Tileset.block_presets[tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row,col])];
@@ -262,8 +262,8 @@ begin
       tile_attr := Tileset.attributes[tile];
       if (tile_attr and $8800) = $8800 then
       begin
-        player := (tile_attr shr 17) and 7;
-        BlockPresetImage.Canvas.Pen.Color := StructGraphics.player_colors_inv[player];
+        side := (tile_attr shr 17) and 7;
+        BlockPresetImage.Canvas.Pen.Color := StructGraphics.house_colors_inv[side];
         BlockPresetImage.Canvas.Brush.Color := BlockPresetImage.Canvas.Pen.Color;
         BlockPresetImage.Canvas.Brush.Style := bsSolid;
         BlockPresetImage.Canvas.Ellipse(off_x + x*32 + 8, off_y + y*32 + 8, off_x + x*32 + 24, off_y + y*32 + 24);

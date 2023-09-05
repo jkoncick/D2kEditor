@@ -416,7 +416,7 @@ end;
 procedure TMissionIni.set_players_file(value: string);
 begin
   PlayersFile := value;
-  Structures.load_players_ini;
+  Structures.load_sides_ini;
 end;
 
 procedure TMissionIni.set_text_uib(value: string);
@@ -436,7 +436,7 @@ begin
   Structures.load_techpos_bin(false);
   Structures.load_tiledata_bin;
   Structures.load_misc_objects_ini;
-  Structures.load_players_ini;
+  Structures.load_sides_ini;
   Structures.load_limits_ini;
   Structures.load_group_ids_txt;
   StructGraphics.load_colours_bin;

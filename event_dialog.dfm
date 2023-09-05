@@ -111,7 +111,6 @@ object EventDialog: TEventDialog
       TabOrder = 0
       OnDblClick = ConditionGridDblClick
       OnDrawCell = ConditionGridDrawCell
-      OnKeyDown = ConditionGridKeyDown
       OnMouseDown = ConditionGridMouseDown
       OnMouseWheelDown = ConditionGridMouseWheelDown
       OnMouseWheelUp = ConditionGridMouseWheelUp
@@ -964,7 +963,6 @@ object EventDialog: TEventDialog
         ItemHeight = 13
         TabOrder = 0
         OnChange = cbxConditionTypeChange
-        OnKeyDown = ConditionGridKeyDown
       end
       object edConditionNote: TEdit
         Left = 4
@@ -1011,12 +1009,12 @@ object EventDialog: TEventDialog
       Height = 13
       Caption = 'Create Unit spawn event(s)'
     end
-    object lblCreateEventsPlayer: TLabel
+    object lblCreateEventsSide: TLabel
       Left = 24
       Top = 60
-      Width = 32
+      Width = 24
       Height = 13
-      Caption = 'Player:'
+      Caption = 'Side:'
     end
     object lblCreateEventsCount: TLabel
       Left = 24
@@ -1043,7 +1041,7 @@ object EventDialog: TEventDialog
       OnClick = btnCreateEventsOkClick
       Kind = bkOK
     end
-    object cbCreateEventsPlayer: TComboBox
+    object cbCreateEventsSide: TComboBox
       Left = 64
       Top = 56
       Width = 121
@@ -1051,7 +1049,7 @@ object EventDialog: TEventDialog
       Style = csDropDownList
       ItemHeight = 13
       TabOrder = 2
-      OnChange = cbCreateEventsPlayerChange
+      OnChange = cbCreateEventsSideChange
     end
     object seCreateEventsNum: TSpinEdit
       Left = 128
@@ -1063,12 +1061,12 @@ object EventDialog: TEventDialog
       TabOrder = 3
       Value = 1
     end
-    object cbCreateEventsAllocIndex: TCheckBox
+    object cbCreateEventsUseHouseID: TCheckBox
       Left = 24
       Top = 90
       Width = 97
       Height = 17
-      Caption = 'Use alloc. index:'
+      Caption = 'Use house ID:'
       TabOrder = 4
     end
   end

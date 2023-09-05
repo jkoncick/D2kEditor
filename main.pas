@@ -63,8 +63,8 @@ type
     SpecialValue: TEdit;
     lblMiscObject: TLabel;
     lbMiscObject: TListBox;
-    lblStructPlayer: TLabel;
-    cbxStructPlayer: TComboBox;
+    lblStructSide: TLabel;
+    cbxStructSide: TComboBox;
     lblBuildingGroup: TLabel;
     lbBuildingGroup: TListBox;
     RbBlockMode: TRadioButton;
@@ -80,7 +80,7 @@ type
     Mouseactions1: TMenuItem;
     N5: TMenuItem;
     MiniMapFrame: TBevel;
-    Useallocationindexes1: TMenuItem;
+    Usehouseidcolors1: TMenuItem;
     Showeventmarkers1: TMenuItem;
     Savemapimage1: TMenuItem;
     N8: TMenuItem;
@@ -154,8 +154,8 @@ type
     PageStructBuildings: TTabSheet;
     PageStructUnits: TTabSheet;
     PageStructCrates: TTabSheet;
-    cbxBuildingPlayer: TComboBox;
-    cbxUnitPlayer: TComboBox;
+    cbxBuildingSide: TComboBox;
+    cbxUnitSide: TComboBox;
     cbxCrateType: TComboBox;
     cbxCrateImage: TComboBox;
     lblCrateImage: TLabel;
@@ -208,7 +208,7 @@ type
     seCrateBloomRadius: TSpinEdit;
     cbCrateBloomRandomizer: TCheckBox;
     lblCrateExtData: TLabel;
-    cbxConcretePlayer: TComboBox;
+    cbxConcreteSide: TComboBox;
     lblBuildingDirection: TLabel;
     cbxBuildingDirection: TComboBox;
     cbxCrateBloomSpawnerType: TComboBox;
@@ -296,7 +296,7 @@ type
     procedure btnFindSelectedObjectClick(Sender: TObject);
     procedure lbBuildingGroupClick(Sender: TObject);
     procedure lbUnitGroupClick(Sender: TObject);
-    procedure PlayerSelectChange(Sender: TObject);
+    procedure SideSelectChange(Sender: TObject);
     procedure lbMiscObjectClick(Sender: TObject);
     procedure StructControlClick(Sender: TObject);
     procedure lbBuildingTypeClick(Sender: TObject);
@@ -370,7 +370,7 @@ type
     // Dispatcher procedures
     procedure update_game_lists;
     procedure update_structures_list(building_list, unit_list: TStringList);
-    procedure update_player_list(player_list: TStringList);
+    procedure update_side_list(side_list: TStringList);
     procedure update_misc_object_list;
     procedure update_tileset;
     procedure update_structure_controls;
@@ -391,7 +391,7 @@ type
     // Miscellaneous helper procedures
     procedure refresh_recent_files_menu;
     procedure set_special_value;
-    procedure set_player_comboboxes(item_index: integer);
+    procedure set_side_comboboxes(item_index: integer);
     procedure set_building_ui(building_is_turret: boolean);
     procedure set_crate_ui;
     function mode(m: SelectedMode): boolean;
@@ -512,7 +512,7 @@ begin
   end;
   refresh_recent_files_menu;
   // Initialize settings menu items
-  Useallocationindexes1.Checked := Settings.UseAllocationIndexes;
+  Usehouseidcolors1.Checked := Settings.UseHouseIDColors;
   Showeventmarkers1.Checked := Settings.ShowEventMarkers;
   Markdefenceareas1.Checked := Settings.MarkDefenceAreas;
   Showunknownspecials1.Checked := Settings.ShowUnknownSpecials;
@@ -767,10 +767,10 @@ begin
     104: {Num8} begin CursorImage.Top := CursorImage.Top - 32; resize_cursor_image; end;
     101: {Num5} begin MapCanvasMouseDown(nil, mbLeft, [], CursorImage.Top,CursorImage.Left) end;
     end
-  else if mode(mStructures) and (ActiveControl <> SpecialValue) and (key >= 96) and (key < 96 + cnt_players) then
+  else if mode(mStructures) and (ActiveControl <> SpecialValue) and (key >= 96) and (key < 96 + CNT_SIDES) then
   begin
-    // Select player
-    set_player_comboboxes(key - 96);
+    // Select side
+    set_side_comboboxes(key - 96);
     set_special_value;
   end;
   // F1-F4 - Select block preset group
@@ -932,7 +932,7 @@ begin
     tmp_bitmap.Height := Map.height * 32;
     Renderer.render_map_contents(tmp_bitmap.Canvas, 0, 0, Map.width, Map.height, Addr(Map.data), Map.width, Map.height,
       sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
-      Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
+      Usehouseidcolors1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
       false);
     tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
     tmp_bitmap.Destroy;
@@ -1057,7 +1057,7 @@ end;
 procedure TMainWindow.SettingChange(Sender: TObject);
 begin
   case (Sender as TComponent).Tag of
-  1: begin Settings.UseAllocationIndexes := (Sender as TMenuItem).Checked; render_map; render_minimap; render_cursor_image; end;
+  1: begin Settings.UseHouseIDColors := (Sender as TMenuItem).Checked; render_map; render_minimap; render_cursor_image; end;
   2: begin Settings.ShowEventMarkers := (Sender as TMenuItem).Checked; render_map; end;
   3: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
   4: begin Settings.ShowUnknownSpecials := (Sender as TMenuItem).Checked; render_map; render_cursor_image; end;
@@ -1207,7 +1207,7 @@ begin
               'Num 2,4,6,8 = Move block on map'#13+
               'Num 5 = Place block'#13#13+
               'In Structures mode:'#13+
-              'Num 0 - Num 7 = Select player'#13+
+              'Num 0 - Num 7 = Select side'#13+
               'Num +,- = Change unit/building direction');
 end;
 
@@ -1468,7 +1468,7 @@ begin
       else if mode(mPaintMode) then
       begin
         // Paint
-        Map.paint_rect(map_x, map_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], paint_tile_group, cbxConcretePlayer.ItemIndex);
+        Map.paint_rect(map_x, map_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], paint_tile_group, cbxConcreteSide.ItemIndex);
       end;
     end
     else if button = mbMiddle then
@@ -1501,7 +1501,7 @@ begin
   end else
   // Double click for filling area
   if mode(mPaintMode) then
-    Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group, cbxConcretePlayer.ItemIndex);
+    Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group, cbxConcreteSide.ItemIndex);
 end;
 
 procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
@@ -1638,9 +1638,9 @@ begin
   set_special_value;
 end;
 
-procedure TMainWindow.PlayerSelectChange(Sender: TObject);
+procedure TMainWindow.SideSelectChange(Sender: TObject);
 begin
-  set_player_comboboxes((Sender as TComboBox).ItemIndex);
+  set_side_comboboxes((Sender as TComboBox).ItemIndex);
   set_special_value;
 end;
 
@@ -1709,7 +1709,7 @@ begin
   paint_tile_select[paint_tile_group].AllowAllUp := false;
   LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
   RbPaintMode.Checked := true;
-  cbxConcretePlayer.Visible := paint_tile_group = -2;
+  cbxConcreteSide.Visible := paint_tile_group = -2;
 end;
 
 procedure TMainWindow.PaintTileSelectDblClick(Sender: TObject);
@@ -1785,16 +1785,16 @@ begin
     set_crate_ui;
 end;
 
-procedure TMainWindow.update_player_list(player_list: TStringList);
+procedure TMainWindow.update_side_list(side_list: TStringList);
 var
   prev_index: integer;
 begin
-  prev_index := cbxStructPlayer.ItemIndex;
-  cbxStructPlayer.Items := player_list;
-  cbxBuildingPlayer.Items := player_list;
-  cbxUnitPlayer.Items := player_list;
-  cbxConcretePlayer.Items := player_list;
-  set_player_comboboxes(Max(prev_index, 0));
+  prev_index := cbxStructSide.ItemIndex;
+  cbxStructSide.Items := side_list;
+  cbxBuildingSide.Items := side_list;
+  cbxUnitSide.Items := side_list;
+  cbxConcreteSide.Items := side_list;
+  set_side_comboboxes(Max(prev_index, 0));
 end;
 
 procedure TMainWindow.update_misc_object_list;
@@ -1860,7 +1860,7 @@ end;
 procedure TMainWindow.update_structure_controls;
 var
   i: integer;
-  special, player: integer;
+  special, side: integer;
   tiledata_entry: TTileDataEntryPtr;
   building_is_turret: boolean;
   crate_type, crate_image, ext_data: integer;
@@ -1928,7 +1928,7 @@ begin
     StructPages.ActivePageIndex := 1;
     StructAdvancedPages.ActivePageIndex := 1;
     lbUnitType.ItemIndex := IfThen((special and 63) < lbUnitType.Count, special and 63, -1);
-    set_player_comboboxes((special shr 6) and 7);
+    set_side_comboboxes((special shr 6) and 7);
     cbxUnitDirection.ItemIndex := (special shr 9) and 7;
     cbUnitStealth.Checked := (special and 4096) <> 0;
     cbUnitTagged.Checked := (special and 8192) <> 0;
@@ -1939,7 +1939,7 @@ begin
     StructAdvancedPages.ActivePageIndex := 0;
     lbBuildingType.ItemIndex := IfThen((special and 127) < lbBuildingType.Count, special and 127, -1);
     building_is_turret := (lbBuildingType.ItemIndex <> -1) and (Structures.templates.BuildingDefinitions[lbBuildingType.ItemIndex].SpecialBehavior = 16);
-    set_player_comboboxes((special shr 7) and 7);
+    set_side_comboboxes((special shr 7) and 7);
     set_building_ui(building_is_turret);
     if building_is_turret then
       cbxBuildingDirection.ItemIndex := (special shr 10) and 3
@@ -1975,11 +1975,11 @@ begin
             break;
           end;
         lbUnitGroup.ItemIndex := -1;
-        set_player_comboboxes(tiledata_entry.player);
+        set_side_comboboxes(tiledata_entry.side);
       end;
-      player := Mission.get_player_alloc_index(tiledata_entry.player);
-      if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_side_versions[tiledata_entry.index, player] <> -1) then
-        lblStructureName.Caption := Structures.get_building_name_str(Structures.building_side_versions[tiledata_entry.index, player])
+      side := Mission.get_side_house_id(tiledata_entry.side);
+      if (tiledata_entry.index < MAX_BUILDING_TYPES) and (Structures.building_house_versions[tiledata_entry.index, side] <> -1) then
+        lblStructureName.Caption := Structures.get_building_name_str(Structures.building_house_versions[tiledata_entry.index, side])
       else
         lblStructureName.Caption := 'INVALID';
       update_map_stats;
@@ -1991,11 +1991,11 @@ begin
         lbMiscObject.ItemIndex := -1;
         lbBuildingGroup.ItemIndex := -1;
         lbUnitGroup.ItemIndex := tiledata_entry.index;
-        set_player_comboboxes(tiledata_entry.player);
+        set_side_comboboxes(tiledata_entry.side);
       end;
-      player := Mission.get_player_alloc_index(tiledata_entry.player);
-      if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_side_versions[tiledata_entry.index, player] <> -1) then
-        lblStructureName.Caption := Structures.get_unit_name_str(Structures.unit_side_versions[tiledata_entry.index, player])
+      side := Mission.get_side_house_id(tiledata_entry.side);
+      if (tiledata_entry.index < MAX_UNIT_TYPES) and (Structures.unit_house_versions[tiledata_entry.index, side] <> -1) then
+        lblStructureName.Caption := Structures.get_unit_name_str(Structures.unit_house_versions[tiledata_entry.index, side])
       else
         lblStructureName.Caption := 'INVALID';
       update_map_stats;
@@ -2045,9 +2045,9 @@ procedure TMainWindow.update_map_stats;
 var
   i: integer;
 begin
-  i := cbxStructPlayer.ItemIndex;
+  i := cbxStructSide.ItemIndex;
   StatusBar.Panels[5].Text := Format('W: %d  S: %d  B: %d  C: %d', [Map.stats.misc_objects[MOT_WORM_SPAWNER], Map.stats.misc_objects[MOT_PLAYER_START], Map.stats.misc_objects[MOT_SPICE_BLOOM], Map.stats.misc_objects[MOT_CRATE]]);
-  StatusBar.Panels[6].Text := Format('Power: %d%%   (%d/%d)', [Map.stats.players[i].power_percent, Map.stats.players[i].power_output, Map.stats.players[i].power_need]);
+  StatusBar.Panels[6].Text := Format('Power: %d%%   (%d/%d)', [Map.stats.sides[i].power_percent, Map.stats.sides[i].power_output, Map.stats.sides[i].power_need]);
 end;
 
 procedure TMainWindow.resize_map_canvas;
@@ -2092,7 +2092,7 @@ begin
     QueryPerformanceCounter(t1);
   Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
     sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
-    Useallocationindexes1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
+    Usehouseidcolors1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
     true);
   if Settings.Debug_ShowRenderTime then
   begin
@@ -2108,7 +2108,7 @@ procedure TMainWindow.render_minimap;
 begin
   if not Map.loaded then
     exit;
-  Renderer.render_minimap_contents(minimap_buffer, Addr(Map.data), Map.width, Map.height, Useallocationindexes1.Checked);
+  Renderer.render_minimap_contents(minimap_buffer, Addr(Map.data), Map.width, Map.height, Usehouseidcolors1.Checked);
   render_minimap_position_marker;
 end;
 
@@ -2240,7 +2240,7 @@ begin
   // Render cursor image
   Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
     false, false, false, sbMarkOwnerSide.Down,
-    Useallocationindexes1.Checked, false, false, Showunknownspecials1.Checked,
+    Usehouseidcolors1.Checked, false, false, Showunknownspecials1.Checked,
     false);
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;
@@ -2284,7 +2284,7 @@ begin
       for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
       begin
         tiledata_entry := Structures.get_tiledata_entry(i);
-        if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.player = cbxStructPlayer.ItemIndex) and (Integer(tiledata_entry.index) = Structures.building_group_mapping[lbBuildingGroup.ItemIndex]) then
+        if (tiledata_entry.stype = ST_BUILDING) and (tiledata_entry.side = cbxStructSide.ItemIndex) and (Integer(tiledata_entry.index) = Structures.building_group_mapping[lbBuildingGroup.ItemIndex]) then
         begin
           value := i;
           break;
@@ -2296,7 +2296,7 @@ begin
       for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
       begin
         tiledata_entry := Structures.get_tiledata_entry(i);
-        if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.player = cbxStructPlayer.ItemIndex) and (tiledata_entry.index = lbUnitGroup.ItemIndex) then
+        if (tiledata_entry.stype = ST_UNIT) and (tiledata_entry.side = cbxStructSide.ItemIndex) and (tiledata_entry.index = lbUnitGroup.ItemIndex) then
         begin
           value := i;
           break;
@@ -2312,11 +2312,11 @@ begin
       building_is_turret := Structures.templates.BuildingDefinitions[lbBuildingType.ItemIndex].SpecialBehavior = 16;
       value := 8192 + IfThen(cbBuildingTagged.Checked, 4096, 0) +
         IfThen(building_is_turret, 1024 * cbxBuildingDirection.ItemIndex, IfThen(cbBuildingPrimary.Checked, 2048, 0) + IfThen(cbBuildingNoNewHarv.Checked, 1024, 0)) +
-        128 * cbxBuildingPlayer.ItemIndex + lbBuildingType.ItemIndex;
+        128 * cbxBuildingSide.ItemIndex + lbBuildingType.ItemIndex;
     end
     // Units tab
     else if StructAdvancedPages.ActivePageIndex = 1 then
-      value := 16384 + IfThen(cbUnitTagged.Checked, 8192, 0) + IfThen(cbUnitStealth.Checked, 4096, 0) + 512 * cbxUnitDirection.ItemIndex + 64 * cbxUnitPlayer.ItemIndex + lbUnitType.ItemIndex
+      value := 16384 + IfThen(cbUnitTagged.Checked, 8192, 0) + IfThen(cbUnitStealth.Checked, 4096, 0) + 512 * cbxUnitDirection.ItemIndex + 64 * cbxUnitSide.ItemIndex + lbUnitType.ItemIndex
     // Crates tab
     else if StructAdvancedPages.ActivePageIndex = 2 then
     begin
@@ -2344,12 +2344,12 @@ begin
   mouse_already_clicked := false;
 end;
 
-procedure TMainWindow.set_player_comboboxes(item_index: integer);
+procedure TMainWindow.set_side_comboboxes(item_index: integer);
 begin
-  cbxStructPlayer.ItemIndex := item_index;
-  cbxBuildingPlayer.ItemIndex := item_index;
-  cbxUnitPlayer.ItemIndex := item_index;
-  cbxConcretePlayer.ItemIndex := item_index;
+  cbxStructSide.ItemIndex := item_index;
+  cbxBuildingSide.ItemIndex := item_index;
+  cbxUnitSide.ItemIndex := item_index;
+  cbxConcreteSide.ItemIndex := item_index;
   update_map_stats;
 end;
 

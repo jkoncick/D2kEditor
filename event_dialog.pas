@@ -127,11 +127,11 @@ type
     lblCreateEvents: TLabel;
     btnCreateEventsCancel: TBitBtn;
     btnCreateEventsOk: TBitBtn;
-    lblCreateEventsPlayer: TLabel;
-    cbCreateEventsPlayer: TComboBox;
+    lblCreateEventsSide: TLabel;
+    cbCreateEventsSide: TComboBox;
     lblCreateEventsCount: TLabel;
     seCreateEventsNum: TSpinEdit;
-    cbCreateEventsAllocIndex: TCheckBox;
+    cbCreateEventsUseHouseID: TCheckBox;
     btnPlusCondition: TButton;
     edEventNote: TEdit;
     lblEventNote: TLabel;
@@ -277,7 +277,7 @@ type
     procedure MarkEventsClick(Sender: TObject);
     // Create events panel actions
     procedure btnCreateEventsCancelClick(Sender: TObject);
-    procedure cbCreateEventsPlayerChange(Sender: TObject);
+    procedure cbCreateEventsSideChange(Sender: TObject);
     procedure btnCreateEventsOkClick(Sender: TObject);
     // Event properties panel actions
     procedure cbxEventTypeChange(Sender: TObject);
@@ -340,7 +340,6 @@ type
     procedure lbConditionTypeListDblClick(Sender: TObject);
     // Condition grid actions
     procedure ConditionGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
-    procedure ConditionGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure ConditionGridDblClick(Sender: TObject);
     procedure ConditionGridMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure ConditionGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
@@ -423,7 +422,7 @@ type
     // Dispatcher events
     procedure update_event_type_configuration;
     procedure update_contents;
-    procedure update_player_list(player_list: TStringList);
+    procedure update_side_list(side_list: TStringList);
     procedure update_structures_list;
     procedure update_sound_list;
     procedure update_tileset;
@@ -509,7 +508,7 @@ begin
   EventGrid.ColWidths[2] := 90;
   EventGrid.Cells[3,0] := 'Position';
   EventGrid.ColWidths[3] := 50;
-  EventGrid.Cells[4,0] := 'Player';
+  EventGrid.Cells[4,0] := 'Side';
   EventGrid.ColWidths[4] := 72;
   EventGrid.Cells[5,0] := 'Contents';
   EventGrid.ColWidths[5] := 400;
@@ -522,7 +521,7 @@ begin
   ConditionGrid.ColWidths[0] := 24;
   ConditionGrid.Cells[1,0] := 'Condition type';
   ConditionGrid.ColWidths[1] := 84;
-  ConditionGrid.Cells[2,0] := 'Player';
+  ConditionGrid.Cells[2,0] := 'Side';
   ConditionGrid.ColWidths[2] := 72;
   ConditionGrid.Cells[3,0] := 'Contents';
   ConditionGrid.ColWidths[3] := 108;
@@ -686,16 +685,6 @@ begin
     btnEventConditionListCopyClick(nil);
   if (key = ord('P')) then
     btnEventConditionListPasteClick(nil);
-  // Num0 - Num7 = Set Eevent Player
-  //**if eppPlayer.Visible and (key >= 96) and (key <= 103) then
-  //**begin
-  //**  cbEventPlayer.ItemIndex := key - 96;
-  //**end;
-  // Space = Go to map
-  //**if eppMapPos.Visible and (key = 32) then
-  //**begin
-  //**  btnEventMapPosGotoMapClick(nil);
-  //**end;
 end;
 
 procedure TEventDialog.EventGridMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -860,7 +849,7 @@ begin
   lblCreateEvents.Caption := 'Create Unit spawn events';
   seCreateEventsNum.Visible := true;
   lblCreateEventsCount.Visible := true;
-  cbCreateEventsAllocIndex.Visible := false;
+  cbCreateEventsUseHouseID.Visible := false;
   create_event_type := ceUnitSpawn;
 end;
 
@@ -870,7 +859,7 @@ begin
   lblCreateEvents.Caption := 'Create Harvester replacement';
   seCreateEventsNum.Visible := false;
   lblCreateEventsCount.Visible := false;
-  cbCreateEventsAllocIndex.Visible := false;
+  cbCreateEventsUseHouseID.Visible := false;
   create_event_type := ceHarvRepl;
 end;
 
@@ -880,9 +869,9 @@ begin
   lblCreateEvents.Caption := 'Create Side annihilated message';
   seCreateEventsNum.Visible := true;
   lblCreateEventsCount.Visible := false;
-  cbCreateEventsAllocIndex.Visible := true;
+  cbCreateEventsUseHouseID.Visible := true;
   create_event_type := ceAnnihMsg;
-  seCreateEventsNum.Value := cbCreateEventsPlayer.ItemIndex;
+  seCreateEventsNum.Value := cbCreateEventsSide.ItemIndex;
 end;
 
 procedure TEventDialog.Createrunonceflag1Click(Sender: TObject);
@@ -914,19 +903,19 @@ begin
   EventGrid.SetFocus;
 end;
 
-procedure TEventDialog.cbCreateEventsPlayerChange(Sender: TObject);
+procedure TEventDialog.cbCreateEventsSideChange(Sender: TObject);
 begin
   if create_event_type = ceAnnihMsg then
-    seCreateEventsNum.Value := cbCreateEventsPlayer.ItemIndex;
+    seCreateEventsNum.Value := cbCreateEventsSide.ItemIndex;
 end;
 
 procedure TEventDialog.btnCreateEventsOkClick(Sender: TObject);
 begin
   EventGrid.Row := Mission.num_events + 1;
   case create_event_type of
-    ceUnitSpawn: Mission.create_unit_spawn(cbCreateEventsPlayer.ItemIndex, seCreateEventsNum.Value);
-    ceHarvRepl: Mission.create_harvester_replacement(cbCreateEventsPlayer.ItemIndex);
-    ceAnnihMsg: Mission.create_annihilated_message(cbCreateEventsPlayer.ItemIndex, cbCreateEventsAllocIndex.Checked, seCreateEventsNum.Value);
+    ceUnitSpawn: Mission.create_unit_spawn(cbCreateEventsSide.ItemIndex, seCreateEventsNum.Value);
+    ceHarvRepl: Mission.create_harvester_replacement(cbCreateEventsSide.ItemIndex);
+    ceAnnihMsg: Mission.create_annihilated_message(cbCreateEventsSide.ItemIndex, cbCreateEventsUseHouseID.Checked, seCreateEventsNum.Value);
   end;
   CreateEventsPanel.Visible := false;
   EventGrid.SetFocus;
@@ -1556,24 +1545,6 @@ begin
     select_condition(ARow-1);
 end;
 
-procedure TEventDialog.ConditionGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if ConditionGrid.Row > Mission.num_conditions then
-    exit;
-  // Num0 - Num7 = Set Condition Player
-  //**if cppPlayer.Visible and (key >= 96) and (key <= 103) then
-  //**begin
-  //**  cbConditionPlayer.SetFocus;
-  //**  cbConditionPlayer.ItemIndex := key - 96;
-  //**end;
-  // Space = Go to map
-  //**if cppMapPosition.Visible and (key = 32) then
-  //**begin
-    //**btnConditionPositionGotoMap.SetFocus;
-    //**btnConditionPositionGotoMapClick(nil);
-  //**end;
-end;
-
 procedure TEventDialog.ConditionGridDblClick(Sender: TObject);
 begin
   btnAddConditionClick(Sender);
@@ -2134,20 +2105,20 @@ begin
   end_variable_selection(false);
 end;
 
-procedure TEventDialog.update_player_list(player_list: TStringList);
+procedure TEventDialog.update_side_list(side_list: TStringList);
 var
   prev_index: integer;
   i: integer;
 begin
-  prev_index := cbCreateEventsPlayer.ItemIndex;
-  cbCreateEventsPlayer.Items := player_list;
-  cbCreateEventsPlayer.ItemIndex := Max(prev_index, 0);
-  cached_lists[Byte(ilPlayers)].Assign(player_list);
-  cached_lists[Byte(ilPlayersAny)].Assign(player_list);
-  cached_lists[Byte(ilPlayersAny)].Add('Any');
+  prev_index := cbCreateEventsSide.ItemIndex;
+  cbCreateEventsSide.Items := side_list;
+  cbCreateEventsSide.ItemIndex := Max(prev_index, 0);
+  cached_lists[Byte(ilSides)].Assign(side_list);
+  cached_lists[Byte(ilSidesAny)].Assign(side_list);
+  cached_lists[Byte(ilSidesAny)].Add('Any');
   // Update currently visible arg combo boxes
   for i := 0 to High(acgs) do
-    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type = ltItem) and ((acgs[i].argdef.item_list_type = ilPlayers) or (acgs[i].argdef.item_list_type = ilPlayersAny)) then
+    if (acgs[i].argdef <> nil) and (acgs[i].argdef.arg_type = atList) and (acgs[i].argdef.list_type = ltItem) and ((acgs[i].argdef.item_list_type = ilSides) or (acgs[i].argdef.item_list_type = ilSidesAny)) then
       fill_arg_combo_box(Addr(acgs[i]), acgs[i].combo_box.ItemIndex, true);
 end;
 
@@ -2290,12 +2261,12 @@ begin
     EventGrid.Cells[3,row] := x_str + ' , ' + y_str;
   end else
     EventGrid.Cells[3,row] := '';
-  if et.has_player and evaluate_show_if(Addr(et.args[0].show_if), event, Addr(event_args_struct_members)) then
+  if et.has_side and evaluate_show_if(Addr(et.args[0].show_if), event, Addr(event_args_struct_members)) then
   begin
     if (event.arg_var_flags and 1) <> 0 then
-      EventGrid.Cells[4,row] := MissionIni.get_variable_name(event.player, 1)
+      EventGrid.Cells[4,row] := MissionIni.get_variable_name(event.side, 1)
     else
-      EventGrid.Cells[4,row] := IfThen(event.player < 8, Structures.player_names[event.player], 'Any')
+      EventGrid.Cells[4,row] := IfThen(event.side < 8, Structures.side_names[event.side], 'Any')
   end else
     EventGrid.Cells[4,row] := '';
   // Contents
@@ -2865,12 +2836,12 @@ begin
   ConditionGrid.Cells[0,row] := inttostr(index);
   // Basic information
   ConditionGrid.Cells[1,row] := ct.name;
-  if ct.has_player and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
+  if ct.has_side and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
   begin
     if (cond.arg_var_flags and 1) <> 0 then
-      ConditionGrid.Cells[2,row] := MissionIni.get_variable_name(cond.player, 1)
+      ConditionGrid.Cells[2,row] := MissionIni.get_variable_name(cond.side, 1)
     else
-      ConditionGrid.Cells[2,row] := IfThen(cond.player < 8, Structures.player_names[cond.player], 'Any')
+      ConditionGrid.Cells[2,row] := IfThen(cond.side < 8, Structures.side_names[cond.side], 'Any')
   end else
     ConditionGrid.Cells[2,row] := '';
   // Contents

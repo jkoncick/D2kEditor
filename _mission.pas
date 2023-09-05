@@ -5,7 +5,7 @@ interface
 uses Graphics, Classes, IniFiles, _map, _misai, _utils, _gamelists, _eventconfig;
 
 // Mis file constants
-const player_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
+const side_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
 const allegiance_type: array[0..2] of string = ('Ally', 'Enemy', 'Neutral');
 const allegiance_type_color: array[0..2] of TColor = (clGreen, clRed, clOlive);
 const filter_position_type: array[0..3] of string = ('Area', 'Sqr', 'CrcTl', 'CrcPx');
@@ -22,7 +22,7 @@ type
     num_conditions: byte;                  // 12
     event_type: byte;                      // 13
     amount: byte;                          // 14
-    player: byte;                          // 15
+    side: byte;                            // 15
     arg2: byte;                            // 16
     arg3: byte;                            // 17
     arg4: byte;                            // 18
@@ -37,7 +37,7 @@ type
 
 const event_args_struct_members: array[0..6] of TStructMemberDefinition =
   (
-    (pos: 15; bytes: 1), // player (arg0)
+    (pos: 15; bytes: 1), // side   (arg0)
     (pos: 14; bytes: 1), // amount (arg1)
     (pos: 16; bytes: 1), // item   (arg2)
     (pos: 17; bytes: 1), // enum   (arg3)
@@ -69,7 +69,7 @@ type
     unused1: byte;                // 18
     unused2: byte;                // 19
     float_val: single;            // 20
-    player: byte;                 // 24
+    side: byte;                   // 24
     condition_type: byte;         // 25
     arg1: byte;                   // 26
     arg2: byte;                   // 27
@@ -77,7 +77,7 @@ type
 
 const condition_args_struct_members: array[0..6] of TStructMemberDefinition =
   (
-    (pos: 24; bytes: 1), // player
+    (pos: 24; bytes: 1), // side
     (pos: 26; bytes: 1), // arg1
     (pos: 27; bytes: 1), // arg2
     (pos: 4;  bytes: 4), // val1  (arg3)
@@ -160,20 +160,20 @@ type
     mis_assigned: boolean;
     mis_modified: boolean;
     // Mission data
-    tech_level:       array[0..7] of byte;
-    starting_money:   array[0..7] of cardinal;
-    unknown1:         array[0..39] of byte;
-    allocation_index: array[0..7] of byte;
-    ai_segments:      array[0..7] of TMisAISegment;
-    allegiance:       array[0..7, 0..7] of byte;
-    event_data:       array[0..MAX_EVENTS-1] of TEvent;
-    condition_data:   array[0..MAX_CONDITIONS-1] of TCondition;
-    tileset_name:     array[0..199] of char;
-    tileatr_name:     array[0..199] of char;
-    num_events:       word;
-    num_conditions:   word;
-    time_limit:       integer;
-    message_data:     array[0..691] of byte;
+    tech_level:     array[0..7] of byte;
+    starting_money: array[0..7] of cardinal;
+    unknown1:       array[0..39] of byte;
+    house_id:       array[0..7] of byte;
+    ai_segments:    array[0..7] of TMisAISegment;
+    allegiance:     array[0..7, 0..7] of byte;
+    event_data:     array[0..MAX_EVENTS-1] of TEvent;
+    condition_data: array[0..MAX_CONDITIONS-1] of TCondition;
+    tileset_name:   array[0..199] of char;
+    tileatr_name:   array[0..199] of char;
+    num_events:     word;
+    num_conditions: word;
+    time_limit:     integer;
+    message_data:   array[0..691] of byte;
     // Other data
     event_indentation: array[0..MAX_EVENTS-1] of TEventIndentationData;
     event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
@@ -193,7 +193,7 @@ type
     // Getting text descriptions
     function get_event_contents(index: integer): String;
     function get_event_conditions(index: integer): String;
-    function get_condition_contents(index: integer; show_player: boolean): String;
+    function get_condition_contents(index: integer; show_side: boolean): String;
     function get_coords_contents(x, y: integer; x_var, y_var: boolean): String;
     function get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr): String;
     function get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: integer; item_list_type: ItemListType): String;
@@ -209,10 +209,10 @@ type
     procedure swap_events(e1, e2: integer);
     procedure swap_conditions(c1, c2: integer);
     // Auto-creating common events
-    function get_or_create_condition(condition_type: ConditionType; player: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
-    procedure create_unit_spawn(player: integer; num_events: integer);
-    procedure create_harvester_replacement(player: integer);
-    procedure create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
+    function get_or_create_condition(condition_type: ConditionType; side: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
+    procedure create_unit_spawn(side: integer; num_events: integer);
+    procedure create_harvester_replacement(side: integer);
+    procedure create_annihilated_message(side: integer; use_house_id: boolean; used_house_id: integer);
     procedure add_run_once_flag(event_num: integer);
     // Export and import
     procedure export_events(first_event, last_event: integer; filename: string);
@@ -222,7 +222,7 @@ type
     function compute_event_indentation_step(first_event: integer; indent: integer; inside_block, inside_if, inside_loop: boolean): integer;
     procedure adjust_event_positions(shift_x: integer; shift_y: integer);
     function check_errors: String;
-    function get_player_alloc_index(player: integer): integer;
+    function get_side_house_id(side: integer): integer;
     procedure remap_filter_criteria(filename: string);
     procedure remap_filter_criteria_for_object_type(ini: TMemIniFile; obj_name: string; ed: EventData; cd: ConditionData);
   end;
@@ -274,7 +274,7 @@ begin
   BlockRead(f, tech_level[0], sizeof(tech_level));
   BlockRead(f, starting_money[0], sizeof(starting_money));
   BlockRead(f, unknown1[0], sizeof(unknown1));
-  BlockRead(f, allocation_index[0], sizeof(allocation_index));
+  BlockRead(f, house_id[0], sizeof(house_id));
   BlockRead(f, ai_segments[0], sizeof(ai_segments));
   BlockRead(f, allegiance[0], sizeof(allegiance));
   BlockRead(f, event_data[0], sizeof(TEvent) * MAX_ORIG_EVENTS);
@@ -337,7 +337,7 @@ begin
   BlockWrite(f, tech_level[0], sizeof(tech_level));
   BlockWrite(f, starting_money[0], sizeof(starting_money));
   BlockWrite(f, unknown1[0], sizeof(unknown1));
-  BlockWrite(f, allocation_index[0], sizeof(allocation_index));
+  BlockWrite(f, house_id[0], sizeof(house_id));
   BlockWrite(f, ai_segments[0], sizeof(ai_segments));
   BlockWrite(f, allegiance[0], sizeof(allegiance));
   BlockWrite(f, event_data[0], sizeof(TEvent) * MAX_ORIG_EVENTS);
@@ -394,7 +394,7 @@ begin
   FillChar(tech_level[0], sizeof(tech_level), 0);
   FillChar(starting_money[0], sizeof(starting_money), 0);
   FillChar(unknown1[0], sizeof(unknown1), 0);
-  FillChar(allocation_index[0], sizeof(allocation_index), 0);
+  FillChar(house_id[0], sizeof(house_id), 0);
   FillChar(ai_segments[0], sizeof(ai_segments), 0);
   FillChar(allegiance[0], sizeof(allegiance), 0);
   FillChar(event_data[0], sizeof(event_data), 0);
@@ -408,12 +408,12 @@ begin
   // Write tileset name
   Move(Tileset.tileset_name[1], tileset_name, Length(Tileset.tileset_name));
   Move(Tileset.tileatr_name[1], tileatr_name, Length(Tileset.tileatr_name));
-  // Player properties and AI
+  // Side properties and AI
   for i := 0 to 7 do
   begin
     tech_level[i] := Settings.DefaultMisTechLevel;
     starting_money[i] := Settings.DefaultMisStartingMoney;
-    allocation_index[i] := i;
+    house_id[i] := i;
     MisAI.init_misai_segment(ai_segments[i], i);
   end;
   // Allegiance
@@ -472,7 +472,7 @@ begin
         event_markers[x][y].emtype := emEvent;
         event_markers[x][y].index := i;
         event_markers[x][y].coord := j;
-        event_markers[x][y].side := IfThen(et.has_player, event.player, -1);
+        event_markers[x][y].side := IfThen(et.has_side, event.side, -1);
         event_markers[x][y].marker := et.coords[j].marker;
         if (event.event_type = 0) and (event.amount = 1) and (event.data[0] = Byte(Structures.templates.GroupIDs[16])) then
           event_markers[x][y].marker := 'H';
@@ -505,7 +505,7 @@ begin
         event_markers[x][y].emtype := emCondition;
         event_markers[x][y].index := i;
         event_markers[x][y].coord := j;
-        event_markers[x][y].side := IfThen(ct.has_player, condition.player, -1);
+        event_markers[x][y].side := IfThen(ct.has_side, condition.side, -1);
         event_markers[x][y].marker := ct.coords[j].marker;
         event_markers[x][y].moved := moved;
     end;
@@ -621,7 +621,7 @@ begin
   result := conditions;
 end;
 
-function TMission.get_condition_contents(index: integer; show_player: boolean): String;
+function TMission.get_condition_contents(index: integer; show_side: boolean): String;
 var
   cond: ^TCondition;
   ct: TConditionTypeDefinitionPtr;
@@ -636,10 +636,10 @@ var
 begin
   cond := Addr(condition_data[index]);
   ct := Addr(EventConfig.condition_types[cond.condition_type]);
-  if (ct.has_player) and show_player and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
+  if (ct.has_side) and show_side and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
   begin
-    if cond.player < Length(Structures.player_names) then
-      contents := contents + Structures.player_names[cond.player]
+    if cond.side < Length(Structures.side_names) then
+      contents := contents + Structures.side_names[cond.side]
     else
       contents := contents + 'Any';
     if Length(ct.contents) > 0 then
@@ -769,8 +769,8 @@ begin
     ltCustom: result := value_list[value];
     ltGame: result := GameLists.get_list_ref(game_list_type)[value];
     ltItem: case item_list_type of
-      ilPlayers: result := Structures.player_names[value];
-      ilPlayersAny: if value < 8 then result := Structures.player_names[value] else result := 'Any';
+      ilSides: result := Structures.side_names[value];
+      ilSidesAny: if value < 8 then result := Structures.side_names[value] else result := 'Any';
       ilSounds: result := StringTable.get_sample(value);
       ilBuildings: result := Structures.get_building_name_str(value);
       ilBuildingGroups: result := Structures.get_building_group_str(value);
@@ -1334,7 +1334,7 @@ begin
 end;
 
 function TMission.get_or_create_condition(condition_type: ConditionType;
-  player: integer; time_amount: cardinal;
+  side: integer; time_amount: cardinal;
   unit_type_or_comp_func: byte): integer;
 var
   i: integer;
@@ -1345,7 +1345,7 @@ begin
   begin
     cond := Addr(condition_data[i]);
     if  (cond.condition_type = Byte(condition_type)) and
-        (cond.player = player) and
+        (cond.side = side) and
         (cond.val2 = time_amount) and
         (cond.arg2 = unit_type_or_comp_func) and
         (condition_type <> ctFlag) then // Always create new flag
@@ -1362,12 +1362,12 @@ begin
   end;
   result := num_conditions - 1;
   cond := Addr(condition_data[result]);
-  cond.player := player;
+  cond.side := side;
   cond.val2 := time_amount;
   cond.arg2 := unit_type_or_comp_func;
 end;
 
-procedure TMission.create_unit_spawn(player, num_events: integer);
+procedure TMission.create_unit_spawn(side, num_events: integer);
 var
   i: integer;
   cond_index: integer;
@@ -1381,22 +1381,22 @@ begin
     if add_event(num_events, 18) = -1 then
       exit;
     event := Addr(event_data[num_events-1]);
-    event.player := player;
+    event.side := side;
     event.num_conditions := 1;
     event.condition_index[0] := cond_index;
   end;
   Dispatcher.register_event(evMisEventPositionChange);
 end;
 
-procedure TMission.create_harvester_replacement(player: integer);
+procedure TMission.create_harvester_replacement(side: integer);
 var
   event: array[1..3] of ^TEvent;
   cond_index: array[1..4] of integer;
   i: integer;
 begin
   // Create all needed conditions
-  cond_index[1] := get_or_create_condition(ctBaseDestroyed, player, 0, 0);
-  cond_index[2] := get_or_create_condition(ctUnitExists, player, 0, Structures.templates.GroupIDs[16]);
+  cond_index[1] := get_or_create_condition(ctBaseDestroyed, side, 0, 0);
+  cond_index[2] := get_or_create_condition(ctUnitExists, side, 0, Structures.templates.GroupIDs[16]);
   cond_index[3] := get_or_create_condition(ctTimer, 0, 500, 3);
   cond_index[4] := get_or_create_condition(ctFlag, 0, 0, 0);
   for i := 1 to 4 do
@@ -1411,14 +1411,14 @@ begin
   end;
   // Fill all event contents
   event[1].event_type := 0;
-  event[1].player := player;
+  event[1].side := side;
   event[1].amount := 1;
   event[1].data[0] := Structures.templates.GroupIDs[16];
   event[2].event_type := 19;
-  event[2].player := cond_index[4];
+  event[2].side := cond_index[4];
   event[2].value := 0;
   event[3].event_type := 19;
-  event[3].player := cond_index[4];
+  event[3].side := cond_index[4];
   event[3].value := 1;
   // Fill all event conditions
   event[1].num_conditions := 4;
@@ -1439,44 +1439,44 @@ begin
   Dispatcher.register_event(evMisEventPositionChange);
 end;
 
-procedure TMission.create_annihilated_message(player: integer; use_alloc_index: boolean; alloc_index: integer);
+procedure TMission.create_annihilated_message(side: integer; use_house_id: boolean; used_house_id: integer);
 var
-  players: array[0..cnt_players-1] of integer;
-  num_players: integer;
+  sides: array[0..CNT_SIDES-1] of integer;
+  num_sides: integer;
   event: ^TEvent;
   cond1_index, cond2_index: integer;
   i: integer;
 begin
-  num_players := 0;
-  // Get list of players to make base/units destroyed conditions for
-  if use_alloc_index then
+  num_sides := 0;
+  // Get list of sides to make base/units destroyed conditions for
+  if use_house_id then
   begin
-    // All players having given allocation index
-    for i := 0 to cnt_players-1 do
-      if allocation_index[i] = alloc_index then
+    // All sides having given house ID
+    for i := 0 to CNT_SIDES-1 do
+      if house_id[i] = used_house_id then
       begin
-        players[num_players] := i;
-        inc(num_players);
+        sides[num_sides] := i;
+        inc(num_sides);
       end;
   end else
   begin
-    // Just the player itself
-    players[0] := player;
-    num_players := 1;
+    // Just the side itself
+    sides[0] := side;
+    num_sides := 1;
   end;
-  if num_players = 0 then
+  if num_sides = 0 then
     exit;
   // Create message event
   if add_event(num_events, 17) = -1 then
     exit;
   event := Addr(event_data[num_events - 1]);
-  set_integer_value(Addr(event.data), 21, 4, player_annihilated_msgid[player]);
+  set_integer_value(Addr(event.data), 21, 4, side_annihilated_msgid[side]);
   event.value := 300;
   // Create base/units destroyed conditions
-  for i := 0 to num_players - 1 do
+  for i := 0 to num_sides - 1 do
   begin
-    cond1_index := get_or_create_condition(ctBaseDestroyed, players[i], 0, 0);
-    cond2_index := get_or_create_condition(ctUnitsDestroyed, players[i], 0, 0);
+    cond1_index := get_or_create_condition(ctBaseDestroyed, sides[i], 0, 0);
+    cond2_index := get_or_create_condition(ctUnitsDestroyed, sides[i], 0, 0);
     if (cond1_index = -1) or (cond2_index = -1) then
       exit;
     event.condition_index[i*2] := cond1_index;
@@ -1516,7 +1516,7 @@ begin
   event_data[event_num].condition_not[new_condition] := 1;
   // Fill new event
   event_data[event_num+1].event_type := 19;
-  event_data[event_num+1].player := flag_number;
+  event_data[event_num+1].side := flag_number;
   event_data[event_num+1].value := 1;
   event_data[event_num+1].num_conditions := new_condition + 1;
   Move(event_data[event_num].condition_index, event_data[event_num+1].condition_index, Length(event_data[0].condition_index));
@@ -1820,12 +1820,12 @@ function TMission.check_errors: String;
 var
   i: integer;
 begin
-  // Check if players with active AI have non-zero tech and credits
+  // Check if sides with active AI have non-zero tech and credits
   for i := 0 to 7 do
   begin
     if (ai_segments[i, 1] = 1) and ((tech_level[i] = 0) or (starting_money[i] = 0)) then
     begin
-      result := format('Players with active AI must have non-zero tech level and credits. Player ''%s'' does not meet this requirement.', [Structures.player_names[i]]);
+      result := format('Sides with active AI must have non-zero tech level and credits. Side ''%s'' does not meet this requirement.', [Structures.side_names[i]]);
       exit;
     end;
   end;
@@ -1841,12 +1841,12 @@ begin
   result := '';
 end;
 
-function TMission.get_player_alloc_index(player: integer): integer;
+function TMission.get_side_house_id(side: integer): integer;
 begin
-  result := player;
+  result := side;
   if not mis_assigned then
     exit;
-  result := Min(allocation_index[player], CNT_PLAYERS - 1);
+  result := Min(house_id[side], CNT_SIDES - 1);
 end;
 
 procedure TMission.remap_filter_criteria(filename: string);

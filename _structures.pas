@@ -15,7 +15,7 @@ const UF_SELFHEALING  = $00800000;
 
 type
   TUnitTemplate = packed record
-    OwnerSide:             byte;
+    OwnerHouse:            byte;
     UnitGroup:             byte;
     ArmorType:             byte;
     UnitRotationSpeed:     byte;
@@ -38,7 +38,7 @@ type
     HasBarrel:             byte;
     Prereq1UpgradesNeeded: byte;
     Prereq1BuildingGroup:  integer;
-    Prereq1OwnerSide:      byte;
+    Prereq1OwnerHouse:     byte;
     SpecialBehavior:       byte;
     _ProbablyUnused46:     byte;
     DeathExplosion:        shortint;
@@ -78,7 +78,7 @@ const BF_CANNOT_SELL    = $01000000;
 type
   TBuildingTemplate = packed record
     HitPoints:             cardinal;
-    OwnerSide:             byte;
+    OwnerHouse:            byte;
     ArmorType:             byte;
     BarrelRotationSpeed:   byte;
     RateOfFire:            byte;
@@ -103,12 +103,12 @@ type
     BuildSpeedUpgrade3:    cardinal;
     PowerConsumption:      integer;
     Prereq1BuildingGroup:  integer;
-    Prereq1OwnerSide:      byte;
+    Prereq1OwnerHouse:     byte;
     Prereq1UpgradesNeeded: byte;
     _ZeroPadding70:        byte;
     _ZeroPadding71:        byte;
     Prereq2BuildingGroup:  integer;
-    Prereq2OwnerSide:      byte;
+    Prereq2OwnerHouse:     byte;
     Prereq2UpgradesNeeded: byte;
     RequireEnoughPower:    byte;
     DeathExplosion:        shortint;
@@ -311,7 +311,7 @@ const ST_MISC_OBJECT = 1;
 type
   TTileDataEntry = record
     index: word;
-    player: byte;
+    side: byte;
     stype: byte;
   end;
 
@@ -319,7 +319,7 @@ type
 
   TTileDataBinFile = array[0..CNT_TILEDATA_ENTRIES-1] of TTileDataEntry;
 
-const EMPTY_TILEDATA_ENTRY: TTileDataEntry = (index: 0; player: 0; stype: ST_NOTHING);
+const EMPTY_TILEDATA_ENTRY: TTileDataEntry = (index: 0; side: 0; stype: ST_NOTHING);
 
 // *****************************************************************************
 // Misc. objects definitions
@@ -530,7 +530,7 @@ type
     speed_bin_filename: String;
     techpos_bin_filename: String;
     tiledata_bin_filename: String;
-    players_ini_filename: String;
+    sides_ini_filename: String;
     misc_objects_ini_filename: String;
     limits_ini_filename: String;
     group_ids_txt_filename: String;
@@ -547,8 +547,8 @@ type
     buildup_art_image_indexes:        array[0..MAX_BUILDING_TYPES-1] of word;
     building_animation_image_indexes: array[0..MAX_BUILDING_TYPES-1] of word;
 
-    unit_side_versions:               array[0..MAX_UNIT_TYPES-1,     0..CNT_PLAYERS-1] of shortint;
-    building_side_versions:           array[0..MAX_BUILDING_TYPES-1, 0..CNT_PLAYERS-1] of shortint;
+    unit_house_versions:              array[0..MAX_UNIT_TYPES-1,     0..CNT_SIDES-1] of shortint;
+    building_house_versions:          array[0..MAX_BUILDING_TYPES-1, 0..CNT_SIDES-1] of shortint;
 
     building_group_mapping:           array[0..MAX_BUILDING_TYPES-1] of shortint;
     building_group_mapping_count:     integer;
@@ -575,16 +575,16 @@ type
     adv_crate_misc_object_info: TMiscObjectInfo;
     cnt_misc_objects: integer;
 
-    // Player related data
-    player_names: array[0..CNT_PLAYERS-1] of string;
-    player_names_short: array[0..CNT_PLAYERS-1] of string;
+    // Side related data
+    side_names: array[0..CNT_SIDES-1] of string;
+    side_names_short: array[0..CNT_SIDES-1] of string;
 
     // Limits related data
     limit_sandworm_required: boolean;
     limit_spice_blooms_crates: integer;
     limit_structures_total: integer;
-    limit_structures_per_player: integer;
-    limit_refineries_per_player: integer;
+    limit_structures_per_side: integer;
+    limit_refineries_per_side: integer;
 
     // Group IDs related data
     group_ids: TStringList;
@@ -602,7 +602,7 @@ type
     procedure load_templates_bin(force: boolean);
     procedure save_templates_bin;
     procedure compute_image_indexes;
-    procedure compute_building_and_unit_side_versions;
+    procedure compute_building_and_unit_house_versions;
     procedure compute_building_group_mapping;
     function prettify_structure_name(str: String): String;
     function get_unit_name_str(index: integer): String;
@@ -610,12 +610,12 @@ type
     function get_building_name_str(index: integer): String;
     function get_building_group_str(index: integer): String;
     function get_special_value_type(special: word): byte;
-    function get_special_value_player(special: word): integer;
+    function get_special_value_side(special: word): integer;
     function get_unit_template_for_special(special: word): TUnitTemplatePtr;
-    function get_unit_template(index, player: integer; my_version: boolean): TUnitTemplatePtr;
+    function get_unit_template(index, side: integer; my_version: boolean): TUnitTemplatePtr;
     function check_unit_is_stealth_for_special(special: word): boolean;
     function get_building_template_for_special(special: word): TBuildingTemplatePtr;
-    function get_building_template(index, player: integer; my_version: boolean): TBuildingTemplatePtr;
+    function get_building_template(index, side: integer; my_version: boolean): TBuildingTemplatePtr;
     function check_links_with_wall(special: word): boolean;
     procedure get_structure_size(special: word; var size_x, size_y: integer);
     // BUILEXP.BIN related procedures
@@ -637,8 +637,8 @@ type
     procedure load_misc_objects_ini;
     procedure register_misc_objects_in_tiledata;
     function get_misc_object_info_for_special(special: word): TMiscObjectInfoPtr;
-    // Players related procedures
-    procedure load_players_ini;
+    // Sides related procedures
+    procedure load_sides_ini;
     // Limits related procedures
     procedure load_limits_ini;
     // Group IDs related procedures
@@ -728,7 +728,7 @@ begin
   load_techpos_bin(false);
   load_tiledata_bin;
   load_misc_objects_ini;
-  load_players_ini;
+  load_sides_ini;
   load_limits_ini;
   load_group_ids_txt;
   // Initialize item data pointers
@@ -772,7 +772,7 @@ begin
   load_binary_file(tmp_filename, templates, sizeof(templates));
 
   compute_image_indexes;
-  compute_building_and_unit_side_versions;
+  compute_building_and_unit_house_versions;
   compute_building_group_mapping;
 
   // Register event in dispatcher
@@ -838,7 +838,7 @@ begin
   end;
 end;
 
-procedure TStructures.compute_building_and_unit_side_versions;
+procedure TStructures.compute_building_and_unit_house_versions;
 var
   data: ^TTemplatesBinFile;
   i, j: integer;
@@ -847,32 +847,32 @@ begin
   data := Addr(templates);
   // Initialize
   for i := 0 to MAX_UNIT_TYPES - 1 do
-    for j := 0 to CNT_PLAYERS - 1 do
-      unit_side_versions[i,j] := -1;
+    for j := 0 to CNT_SIDES - 1 do
+      unit_house_versions[i,j] := -1;
   for i := 0 to MAX_BUILDING_TYPES - 1 do
-    for j := 0 to CNT_PLAYERS - 1 do
-      building_side_versions[i,j] := -1;
+    for j := 0 to CNT_SIDES - 1 do
+      building_house_versions[i,j] := -1;
   // Compute unit side versions
   for i := 0 to MAX_UNIT_TYPES - 1 do
-    for j := 0 to CNT_PLAYERS - 1 do
+    for j := 0 to CNT_SIDES - 1 do
       for index := 0 to data.UnitCount - 1 do
         if data.UnitDefinitions[index].UnitGroup = i then
         begin
-          if unit_side_versions[i,j] = -1 then
-            unit_side_versions[i,j] := index;
-          if (data.UnitDefinitions[index].OwnerSide and (1 shl j)) <> 0 then
-            unit_side_versions[i,j] := index;
+          if unit_house_versions[i,j] = -1 then
+            unit_house_versions[i,j] := index;
+          if (data.UnitDefinitions[index].OwnerHouse and (1 shl j)) <> 0 then
+            unit_house_versions[i,j] := index;
         end;
   // Compute building side versions
   for i := 0 to MAX_BUILDING_TYPES - 1 do
-    for j := 0 to CNT_PLAYERS - 1 do
+    for j := 0 to CNT_SIDES - 1 do
       for index := 0 to data.BuildingCount - 1 do
         if data.BuildingDefinitions[index].BuildingGroup = i then
         begin
-          if building_side_versions[i,j] = -1 then
-            building_side_versions[i,j] := index;
-          if (data.BuildingDefinitions[index].OwnerSide and (1 shl j)) <> 0 then
-            building_side_versions[i,j] := index;
+          if building_house_versions[i,j] = -1 then
+            building_house_versions[i,j] := index;
+          if (data.BuildingDefinitions[index].OwnerHouse and (1 shl j)) <> 0 then
+            building_house_versions[i,j] := index;
         end;
 end;
 
@@ -984,7 +984,7 @@ begin
     result := (get_tiledata_entry(special)).stype;
 end;
 
-function TStructures.get_special_value_player(special: word): integer;
+function TStructures.get_special_value_side(special: word): integer;
 begin
   if (special and 32768) <> 0 then
     result := -1
@@ -993,7 +993,7 @@ begin
   else if (special and 8192) <> 0 then
     result := (special shr 7) and 7
   else
-    result := (get_tiledata_entry(special)).player;
+    result := (get_tiledata_entry(special)).side;
 end;
 
 function TStructures.get_unit_template_for_special(special: word): TUnitTemplatePtr;
@@ -1007,18 +1007,18 @@ begin
   begin
     tiledata_entry := get_tiledata_entry(special);
     if tiledata_entry.stype = ST_UNIT then
-      result := get_unit_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player), true);
+      result := get_unit_template(tiledata_entry.index, Mission.get_side_house_id(tiledata_entry.side), true);
   end;
 end;
 
-function TStructures.get_unit_template(index, player: integer; my_version: boolean): TUnitTemplatePtr;
+function TStructures.get_unit_template(index, side: integer; my_version: boolean): TUnitTemplatePtr;
 var
   unit_template_index: integer;
 begin
   result := nil;
   if my_version then
   begin
-    unit_template_index := unit_side_versions[index, player];
+    unit_template_index := unit_house_versions[index, side];
     if unit_template_index = -1 then
       exit;
     result := Addr(templates.UnitDefinitions[unit_template_index]);
@@ -1049,7 +1049,7 @@ begin
   begin
     tiledata_entry := get_tiledata_entry(special);
     if tiledata_entry.stype = ST_UNIT then
-      unit_index := unit_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)];
+      unit_index := unit_house_versions[tiledata_entry.index, Mission.get_side_house_id(tiledata_entry.side)];
   end;
   if (unit_index = -1) or (unit_index >= templates.UnitCount) then
     exit;
@@ -1067,18 +1067,18 @@ begin
   begin
     tiledata_entry := get_tiledata_entry(special);
     if tiledata_entry.stype = ST_BUILDING then
-      result := get_building_template(tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player), true);
+      result := get_building_template(tiledata_entry.index, Mission.get_side_house_id(tiledata_entry.side), true);
   end;
 end;
 
-function TStructures.get_building_template(index, player: integer; my_version: boolean): TBuildingTemplatePtr;
+function TStructures.get_building_template(index, side: integer; my_version: boolean): TBuildingTemplatePtr;
 var
   building_template_index: integer;
 begin
   result := nil;
   if my_version then
   begin
-    building_template_index := building_side_versions[index, player];
+    building_template_index := building_house_versions[index, side];
     if building_template_index = -1 then
       exit;
     result := Addr(templates.BuildingDefinitions[building_template_index]);
@@ -1299,7 +1299,7 @@ begin
       if obj_type = MOT_WORM_SPAWNER then
         continue;
       tiledata[value].index := i;
-      tiledata[value].player := 0;
+      tiledata[value].side := 0;
       tiledata[value].stype := ST_MISC_OBJECT;
     end;
   end;
@@ -1330,7 +1330,7 @@ begin
   end;
 end;
 
-procedure TStructures.load_players_ini;
+procedure TStructures.load_sides_ini;
 var
   tmp_filename, tmp_filename2: String;
   ini: TMemIniFile;
@@ -1353,19 +1353,19 @@ begin
     exit;
   end;
   // This file is already loaded - do not load it again
-  if tmp_filename = players_ini_filename then
+  if tmp_filename = sides_ini_filename then
     exit;
-  players_ini_filename := tmp_filename;
-  // Read list of players
+  sides_ini_filename := tmp_filename;
+  // Read list of sides
   ini := TMemIniFile.Create(tmp_filename);
-  for i := 0 to cnt_players-1 do
+  for i := 0 to CNT_SIDES-1 do
   begin
-    player_names[i] := ini.ReadString('Player'+inttostr(i), 'name', 'Unnamed');
-    player_names_short[i] := ini.ReadString('Player'+inttostr(i), 'short', player_names[i]);
+    side_names[i] := ini.ReadString('Player'+inttostr(i), 'name', 'Unnamed');
+    side_names_short[i] := ini.ReadString('Player'+inttostr(i), 'short', side_names[i]);
   end;
   ini.Destroy;
   // Register event in dispatcher
-  Dispatcher.register_event(evFLPlayersIni);
+  Dispatcher.register_event(evFLSidesIni);
 end;
 
 procedure TStructures.load_limits_ini;
@@ -1382,8 +1382,8 @@ begin
   limit_sandworm_required := ini.ReadBool('Limits', 'sandworm_required', true);
   limit_spice_blooms_crates := ini.ReadInteger('Limits', 'spice_blooms_crates', 30);
   limit_structures_total := ini.ReadInteger('Limits', 'structures_total', 1000);
-  limit_structures_per_player := ini.ReadInteger('Limits', 'structures_per_player', 1000);
-  limit_refineries_per_player := ini.ReadInteger('Limits', 'refineries_per_player', 10);
+  limit_structures_per_side := ini.ReadInteger('Limits', 'structures_per_side', 1000);
+  limit_refineries_per_side := ini.ReadInteger('Limits', 'refineries_per_side', 10);
   ini.Destroy;
 end;
 

@@ -97,9 +97,9 @@ type
     graphics_misc_objects_filename: String;
 
     // COLOURS.BIN related data
-    colours: array[0..CNT_PLAYERS-1,0..15] of word;
-    player_colors: array[0..CNT_PLAYERS-1] of Cardinal;
-    player_colors_inv: array[0..CNT_PLAYERS-1] of Cardinal;
+    colours: array[0..CNT_SIDES-1,0..15] of word;
+    house_colors: array[0..CNT_SIDES-1] of Cardinal;
+    house_colors_inv: array[0..CNT_SIDES-1] of Cardinal;
 
     // DATA.R16 related data
     data_r16_file_contents: array of byte;
@@ -216,11 +216,11 @@ begin
   colours_bin_filename := tmp_filename;
   // Load COLOURS.BIN file
   load_binary_file(tmp_filename, colours, sizeof(colours));
-  for i := 0 to CNT_PLAYERS - 1 do
+  for i := 0 to CNT_SIDES - 1 do
   begin
     color := colour_16bto32b(colours[i, 8]);
-    player_colors[i] := color;
-    player_colors_inv[i] := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
+    house_colors[i] := color;
+    house_colors_inv[i] := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
   end;
   // Invalidate all preloaded structure images
   for i := 0 to structure_images_count - 1 do

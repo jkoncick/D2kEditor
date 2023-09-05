@@ -79,7 +79,7 @@ type
     procedure render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
       data: TMapDataPtr; data_width, data_height: word;
       o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
-      o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
+      o_use_house_id_colors, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
       o_rendering_optimization: boolean);
     function get_spice(var tile: TMapTile): integer;
     procedure draw_structure_image(cnv_target: TCanvas; dest_x, dest_y, min_x, min_y, max_x, max_y: integer; structure_image: TStructureImagePtr);
@@ -89,7 +89,7 @@ type
     procedure draw_point(cnv_target: TCanvas; x, y: word; color: TColor);
 
     procedure render_minimap_contents(bmp_target: TBitmap; data: TMapDataPtr; data_width, data_height: word;
-      o_use_alloc_indexes: boolean);
+      o_use_house_id_colors: boolean);
 
     procedure remove_editing_marker(cnv_target: TCanvas);
     procedure draw_editing_marker(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
@@ -137,7 +137,7 @@ end;
 procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
   data: TMapDataPtr; data_width, data_height: word;
   o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
-  o_use_alloc_indexes, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
+  o_use_house_id_colors, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
   o_rendering_optimization: boolean);
 var
   min_x, min_y, max_x, max_y: integer;
@@ -149,7 +149,7 @@ var
   special: word;
   spice_amount: integer;
   structure_type: byte;
-  player, player_color: word;
+  side, side_color: word;
   bottom_offset: integer;
   wall_frame: word;
   spice_tile_value: word;
@@ -319,12 +319,12 @@ begin
         if (((tile_type = ttBuildable) and ((tile_attr and taConcrete) <> 0)) or ((tile <> 65535) and ((tile and $1000) <> 0))) and o_mark_owner_side then
         begin
           if (tile and $1000) <> 0 then
-            player := (tile shr 13) and 7
+            side := (tile shr 13) and 7
           else
-            player := (tile_attr shr 17) and 7;
-          if o_use_alloc_indexes then
-            player := Mission.get_player_alloc_index(player);
-          cnv_target.Pen.Color := StructGraphics.player_colors_inv[player];
+            side := (tile_attr shr 17) and 7;
+          if o_use_house_id_colors then
+            side := Mission.get_side_house_id(side);
+          cnv_target.Pen.Color := StructGraphics.house_colors_inv[side];
           cnv_target.Brush.Color := cnv_target.Pen.Color;
           cnv_target.Brush.Style := bsSolid;
           cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
@@ -351,9 +351,9 @@ begin
       if special <= 2 then
         continue;
       structure_type := Structures.get_special_value_type(special);
-      // Get player number
-      player := Structures.get_special_value_player(special);
-      player_color := IfThen(o_use_alloc_indexes, Mission.get_player_alloc_index(player), player);
+      // Get side number
+      side := Structures.get_special_value_side(special);
+      side_color := IfThen(o_use_house_id_colors, Mission.get_side_house_id(side), side);
       // Draw structure according to structure type
       if structure_type = ST_MISC_OBJECT then
       begin
@@ -462,14 +462,14 @@ begin
               wall_frame := WALL_FRAME_MAPPING[wall_frame];
             end;
             // Draw main building frame
-            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt] + 1 + wall_frame, player_color, false, false, was_already_loaded);
+            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt] + 1 + wall_frame, side_color, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
               draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
               inc(house_color_pixels, structure_image.house_color_pixel_count);
             end;
             // Draw base building frame
-            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt], player_color, false, false, was_already_loaded);
+            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BuildingArt], side_color, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
               draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
@@ -484,7 +484,7 @@ begin
             if (special and 8192) <> 0 then
               direction := building_template.DirectionFrames[((special shr 10) and 3) shl 3];
             // Draw main barrel frame
-            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BarrelArt] + 1 + direction, player_color, false, false, was_already_loaded);
+            structure_image := StructGraphics.get_structure_image(Structures.building_art_image_indexes[building_template.BarrelArt] + 1 + direction, side_color, false, false, was_already_loaded);
             if structure_image <> nil then
             begin
               draw_structure_image(cnv_target, x*32 + structure_image.offset_x + IfThen(building_template.SpecialBehavior = 16, building_template.ExitPoint1X, 0), y*32 + building_template.ArtHeight - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
@@ -494,7 +494,7 @@ begin
           // Draw owner side marker
           if o_mark_owner_side and (house_color_pixels < 10) then
           begin
-            cnv_target.Pen.Color := StructGraphics.player_colors_inv[player_color];
+            cnv_target.Pen.Color := StructGraphics.house_colors_inv[side_color];
             cnv_target.Brush.Color := cnv_target.Pen.Color;
             cnv_target.Brush.Style := bsSolid;
             cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
@@ -545,14 +545,14 @@ begin
             // Draw unit
             if unit_template.UnitArt <> -1 then
             begin
-              structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt] + direction, player_color, true, is_stealth, was_already_loaded);
+              structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt] + direction, side_color, true, is_stealth, was_already_loaded);
               if structure_image <> nil then
                 draw_structure_image(cnv_target, x*32 + structure_image.offset_x, y*32 + structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
             end;
             // Draw barrel
             if unit_template.BarrelArt <> -1 then
             begin
-              structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt] + direction, player_color, true, is_stealth, was_already_loaded);
+              structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt] + direction, side_color, true, is_stealth, was_already_loaded);
               if structure_image <> nil then
                 draw_structure_image(cnv_target, x*32 + structure_image.offset_x, y*32 + structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
             end;
@@ -599,9 +599,9 @@ begin
           continue;
         if event_marker.side <> -1 then
         begin
-          player := Min(event_marker.side, CNT_PLAYERS - 1);
-          cnv_target.Pen.Color := StructGraphics.player_colors_inv[player];
-          cnv_target.Brush.Color := StructGraphics.player_colors_inv[player];
+          side := Min(event_marker.side, CNT_SIDES - 1);
+          cnv_target.Pen.Color := StructGraphics.house_colors_inv[side];
+          cnv_target.Brush.Color := StructGraphics.house_colors_inv[side];
         end else
         begin
           cnv_target.Pen.Color := clGray;
@@ -620,11 +620,11 @@ begin
   begin
     cnv_target.Brush.Style := bsClear;
     cnv_target.pen.Width := 2;
-    for x := 0 to cnt_players - 1 do
+    for x := 0 to CNT_SIDES - 1 do
       for y := 0 to Min(Mission.ai_segments[x, DEFENCE_AREAS_COUNT_BYTE], CNT_DEFENCE_AREAS) - 1 do
       begin
         defence_area := MisAI.get_defence_area(Mission.ai_segments[x], y);
-        cnv_target.Pen.Color := StructGraphics.player_colors_inv[x];
+        cnv_target.Pen.Color := StructGraphics.house_colors_inv[x];
         cnv_target.Rectangle(
           (defence_area.MinX - cnv_left) * 32,
           (defence_area.MinY - cnv_top) * 32,
@@ -832,7 +832,7 @@ begin
   cnv_target.Rectangle(x, y, x+4, y+4);
 end;
 
-procedure TRenderer.render_minimap_contents(bmp_target: TBitmap; data: TMapDataPtr; data_width, data_height: word; o_use_alloc_indexes: boolean);
+procedure TRenderer.render_minimap_contents(bmp_target: TBitmap; data: TMapDataPtr; data_width, data_height: word; o_use_house_id_colors: boolean);
 var
   min_x, min_y, max_x, max_y: integer;
   x, y, xx, yy: integer;
@@ -840,7 +840,7 @@ var
   index: integer;
   special: word;
   structure_type: byte;
-  player, player_color: word;
+  side, side_color: word;
   unit_template: TUnitTemplatePtr;
   building_template: TBuildingTemplatePtr;
   bmp_data: TCardinalArrayPtr;
@@ -885,9 +885,9 @@ begin
       // Get structure parameters
       special := data[x,y].special;
       structure_type := Structures.get_special_value_type(special);
-      // Get player number
-      player := Structures.get_special_value_player(special);
-      player_color := IfThen(o_use_alloc_indexes, Mission.get_player_alloc_index(player), player);
+      // Get side number
+      side := Structures.get_special_value_side(special);
+      side_color := IfThen(o_use_house_id_colors, Mission.get_side_house_id(side), side);
       // Draw according to structure type
       if structure_type = ST_MISC_OBJECT then
       begin
@@ -903,7 +903,7 @@ begin
         if unit_template.SpecialBehavior = 5 then
           bmp_data[index] := Structures.misc_object_info[0].color // Worm spawner color
         else
-          bmp_data[index] := StructGraphics.player_colors[player_color];
+          bmp_data[index] := StructGraphics.house_colors[side_color];
       end else
       if structure_type = ST_BUILDING then
       begin
@@ -919,7 +919,7 @@ begin
             if (building_template.TilesOccupiedAll and (1 shl (yy * MAX_BUILDING_SIZE + xx))) <> 0 then
             begin
               index := (bmp_target.height - (y+border_y+yy) - 1) * bmp_target.width + x+border_x+xx;
-              bmp_data[index] := StructGraphics.player_colors[player_color];
+              bmp_data[index] := StructGraphics.house_colors[side_color];
             end;
           end;
       end;

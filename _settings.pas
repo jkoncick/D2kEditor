@@ -21,7 +21,7 @@ type
     LoadR16Image: boolean;
     LoadR8Image: boolean;
     LoadCustomColoursBin: boolean;
-    UseAllocationIndexes: boolean;
+    UseHouseIDColors: boolean;
     ShowEventMarkers: boolean;
     MarkDefenceAreas: boolean;
     ShowUnknownSpecials: boolean;
@@ -96,7 +96,7 @@ begin
   LoadR16Image := ini.ReadBool('Preferences', 'LoadR16Image', true);
   LoadR8Image := ini.ReadBool('Preferences', 'LoadR8Image', true);
   LoadCustomColoursBin := ini.ReadBool('Preferences', 'LoadCustomColoursBin', true);
-  UseAllocationIndexes := ini.ReadBool('Preferences', 'UseAllocationIndexes', false);
+  UseHouseIDColors := ini.ReadBool('Preferences', 'UseHouseIDColors', false);
   ShowEventMarkers := ini.ReadBool('Preferences', 'ShowEventMarkers', true);
   MarkDefenceAreas := ini.ReadBool('Preferences', 'MarkDefenceAreas', true);
   ShowUnknownSpecials := ini.ReadBool('Preferences', 'ShowUnknownSpecials', false);
@@ -185,7 +185,7 @@ begin
   ini.WriteBool('Preferences', 'LoadR16Image', LoadR16Image);
   ini.WriteBool('Preferences', 'LoadR8Image', LoadR8Image);
   ini.WriteBool('Preferences', 'LoadCustomColoursBin', LoadCustomColoursBin);
-  ini.WriteBool('Preferences', 'UseAllocationIndexes', UseAllocationIndexes);
+  ini.WriteBool('Preferences', 'UseHouseIDColors', UseHouseIDColors);
   ini.WriteBool('Preferences', 'ShowEventMarkers', ShowEventMarkers);
   ini.WriteBool('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);
   ini.WriteBool('Preferences', 'ShowUnknownSpecials', ShowUnknownSpecials);

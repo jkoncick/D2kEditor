@@ -24,11 +24,11 @@ object MissionDialog: TMissionDialog
     Left = 0
     Top = 0
     Width = 696
-    Height = 624
+    Height = 631
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
-    object PlayerSettingsPanel: TPanel
+    object SideSettingsPanel: TPanel
       Left = 0
       Top = 0
       Width = 696
@@ -50,12 +50,12 @@ object MissionDialog: TMissionDialog
         Height = 13
         Caption = 'Credits'
       end
-      object lblAllocIndex: TLabel
+      object lblHouseID: TLabel
         Left = 192
         Top = 8
-        Width = 54
+        Width = 45
         Height = 13
-        Caption = 'Alloc. index'
+        Caption = 'House ID'
       end
       object lblSetToAll: TLabel
         Left = 8
@@ -203,14 +203,14 @@ object MissionDialog: TMissionDialog
         Text = '0'
         OnChange = edStartingMoneyAllChange
       end
-      object btnAllocIndexReset: TButton
+      object btnHouseIDReset: TButton
         Left = 192
         Top = 224
         Width = 65
         Height = 22
         Caption = 'Reset'
         TabOrder = 3
-        OnClick = btnAllocIndexResetClick
+        OnClick = btnHouseIDResetClick
       end
       object btnAllegianceReset: TButton
         Left = 264
@@ -411,7 +411,7 @@ object MissionDialog: TMissionDialog
       Left = 0
       Top = 417
       Width = 696
-      Height = 207
+      Height = 214
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 1
@@ -419,7 +419,7 @@ object MissionDialog: TMissionDialog
         Left = 0
         Top = 0
         Width = 272
-        Height = 207
+        Height = 214
         Align = alLeft
         DefaultColWidth = 180
         Enabled = False
@@ -435,13 +435,13 @@ object MissionDialog: TMissionDialog
         Left = 272
         Top = 0
         Width = 424
-        Height = 207
+        Height = 214
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 1
         object StringsSplitter: TSplitter
           Left = 0
-          Top = 104
+          Top = 111
           Width = 424
           Height = 3
           Cursor = crVSplit
@@ -449,7 +449,7 @@ object MissionDialog: TMissionDialog
         end
         object StringValueList: TValueListEditor
           Left = 0
-          Top = 107
+          Top = 114
           Width = 424
           Height = 100
           Align = alBottom
@@ -469,7 +469,7 @@ object MissionDialog: TMissionDialog
           Left = 0
           Top = 0
           Width = 424
-          Height = 104
+          Height = 111
           Align = alClient
           Enabled = False
           ScrollBars = ssVertical
@@ -484,7 +484,7 @@ object MissionDialog: TMissionDialog
     Left = 696
     Top = 0
     Width = 320
-    Height = 624
+    Height = 631
     Align = alRight
     TabOrder = 1
     TabWidth = 39
@@ -493,7 +493,7 @@ object MissionDialog: TMissionDialog
       Left = 4
       Top = 6
       Width = 312
-      Height = 590
+      Height = 597
       Align = alClient
       DefaultColWidth = 224
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing, goAlwaysShowEditor, goThumbTracking]
@@ -510,7 +510,7 @@ object MissionDialog: TMissionDialog
     end
     object AIOptionsPanel: TPanel
       Left = 4
-      Top = 596
+      Top = 603
       Width = 312
       Height = 24
       Align = alBottom

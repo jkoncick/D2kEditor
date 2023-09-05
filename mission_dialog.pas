@@ -12,14 +12,14 @@ type
     lblTechLevel: TLabel;
     lblStartingMoney: TLabel;
     SettingsPanel: TPanel;
-    lblAllocIndex: TLabel;
-    PlayerSettingsPanel: TPanel;
+    lblHouseID: TLabel;
+    SideSettingsPanel: TPanel;
     RulesAndStringsPanel: TPanel;
     AITabControl: TTabControl;
     lblSetToAll: TLabel;
     seTechLevelAll: TSpinEdit;
     edStartingMoneyAll: TEdit;
-    btnAllocIndexReset: TButton;
+    btnHouseIDReset: TButton;
     btnAllegianceReset: TButton;
     lblTimeLimit: TLabel;
     edTimeLimit: TEdit;
@@ -80,11 +80,11 @@ type
     // Mission data editor events
     procedure seTechLevelAllChange(Sender: TObject);
     procedure edStartingMoneyAllChange(Sender: TObject);
-    procedure btnAllocIndexResetClick(Sender: TObject);
+    procedure btnHouseIDResetClick(Sender: TObject);
     procedure btnAllegianceResetClick(Sender: TObject);
     procedure tech_level_change(Sender: TObject);
     procedure starting_money_change(Sender: TObject);
-    procedure alloc_index_change(Sender: TObject);
+    procedure house_id_change(Sender: TObject);
     procedure allegiance_btn_click(Sender: TObject);
     procedure time_limit_change(Sender: TObject);
     procedure edTilesetNameChange(Sender: TObject);
@@ -116,20 +116,20 @@ type
     procedure MapBriefingExit(Sender: TObject);
   private
     // Dynamic controls
-    player_label: array[0..cnt_players-1] of TLabel;
-    tech_level: array[0..cnt_players-1] of TSpinEdit;
-    starting_money: array[0..cnt_players-1] of TEdit;
-    alloc_index: array[0..cnt_players-1] of TSpinEdit;
-    color_marker: array[0..cnt_players-1] of TPanel;
-    player_label_alleg: array[0..cnt_players-1] of TLabel;
-    allegiance_btn: array[0..cnt_players-1, 0..cnt_players-1] of TBitBtn;
+    side_label: array[0..CNT_SIDES-1] of TLabel;
+    tech_level: array[0..CNT_SIDES-1] of TSpinEdit;
+    starting_money: array[0..CNT_SIDES-1] of TEdit;
+    house_id: array[0..CNT_SIDES-1] of TSpinEdit;
+    color_marker: array[0..CNT_SIDES-1] of TPanel;
+    side_label_alleg: array[0..CNT_SIDES-1] of TLabel;
+    allegiance_btn: array[0..CNT_SIDES-1, 0..CNT_SIDES-1] of TBitBtn;
     // Misc. variables
     defence_area_num: integer;
     loading: boolean;
   public
     // Dispatcher procedures
-    procedure update_player_list(player_list: TStringList);
-    procedure update_player_colors;
+    procedure update_side_list(side_list: TStringList);
+    procedure update_side_colors;
     procedure update_tileset;
     procedure update_mission_data;
     procedure update_mis_ai_values;
@@ -156,13 +156,13 @@ var
   SR: TSearchRec;
 begin
   MissionIni.init_controls(MapBriefing, RuleValueList, StringValueList);
-  for i := 0 to cnt_players-1 do
+  for i := 0 to CNT_SIDES-1 do
   begin
-    // Initialize player labels
-    player_label[i] := TLabel.Create(self);
-    player_label[i].Left := 8;
-    player_label[i].Top := 28 + i * 24;
-    player_label[i].Parent := PlayerSettingsPanel;
+    // Initialize side labels
+    side_label[i] := TLabel.Create(self);
+    side_label[i].Left := 8;
+    side_label[i].Top := 28 + i * 24;
+    side_label[i].Parent := SideSettingsPanel;
     // Initialize tech levels
     tech_level[i] := TSpinEdit.Create(self);
     tech_level[i].Left := 80;
@@ -173,7 +173,7 @@ begin
     tech_level[i].MaxValue := 255;
     tech_level[i].Value := 0;
     tech_level[i].Tag := i;
-    tech_level[i].Parent := PlayerSettingsPanel;
+    tech_level[i].Parent := SideSettingsPanel;
     tech_level[i].OnChange := tech_level_change;
     // Initialize Starting money
     starting_money[i] := TEdit.Create(self);
@@ -183,21 +183,21 @@ begin
     starting_money[i].Height := 22;
     starting_money[i].Text := '0';
     starting_money[i].Tag := i;
-    starting_money[i].Parent := PlayerSettingsPanel;
+    starting_money[i].Parent := SideSettingsPanel;
     starting_money[i].OnChange := starting_money_change;
-    // Initialize allocation indexes
-    alloc_index[i] := TSpinEdit.Create(self);
-    alloc_index[i].Left := 192;
-    alloc_index[i].Top := 24 + i * 24;
-    alloc_index[i].Width := 48;
-    alloc_index[i].Height := 22;
-    alloc_index[i].MinValue := 0;
-    alloc_index[i].MaxValue := 255;
-    alloc_index[i].Value := 0;
-    alloc_index[i].Tag := i;
-    alloc_index[i].Parent := PlayerSettingsPanel;
-    alloc_index[i].OnChange := alloc_index_change;
-    // Initialize player color markers
+    // Initialize house ID
+    house_id[i] := TSpinEdit.Create(self);
+    house_id[i].Left := 192;
+    house_id[i].Top := 24 + i * 24;
+    house_id[i].Width := 48;
+    house_id[i].Height := 22;
+    house_id[i].MinValue := 0;
+    house_id[i].MaxValue := 255;
+    house_id[i].Value := 0;
+    house_id[i].Tag := i;
+    house_id[i].Parent := SideSettingsPanel;
+    house_id[i].OnChange := house_id_change;
+    // Initialize side color markers
     color_marker[i] := TPanel.Create(self);
     color_marker[i].Left := 240;
     color_marker[i].Top := 24 + i * 24;
@@ -205,14 +205,14 @@ begin
     color_marker[i].Height := 22;
     color_marker[i].BevelOuter := bvNone;
     color_marker[i].ParentBackground := False;
-    color_marker[i].Parent := PlayerSettingsPanel;
+    color_marker[i].Parent := SideSettingsPanel;
     // Initialize allegiance labels
-    player_label_alleg[i] := TLabel.Create(self);
-    player_label_alleg[i].Left := 266 + i * 52;
-    player_label_alleg[i].Top := 8;
-    player_label_alleg[i].Parent := PlayerSettingsPanel;
+    side_label_alleg[i] := TLabel.Create(self);
+    side_label_alleg[i].Left := 266 + i * 52;
+    side_label_alleg[i].Top := 8;
+    side_label_alleg[i].Parent := SideSettingsPanel;
     // Initialize allegiance buttons
-    for j := 0 to cnt_players-1 do
+    for j := 0 to CNT_SIDES-1 do
     begin
       allegiance_btn[i,j] := TBitBtn.Create(self);
       allegiance_btn[i,j].Left := 264 + j * 52;
@@ -221,7 +221,7 @@ begin
       allegiance_btn[i,j].Height := 22;
       allegiance_btn[i,j].Font.Style := [fsBold];
       allegiance_btn[i,j].Tag := i * 8 + j;
-      allegiance_btn[i,j].Parent := PlayerSettingsPanel;
+      allegiance_btn[i,j].Parent := SideSettingsPanel;
       allegiance_btn[i,j].OnClick := allegiance_btn_click;
     end;
     // Initialize AI PageControl
@@ -266,7 +266,7 @@ procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
 var
   i: integer;
 begin
-  for i := 0 to cnt_players-1 do
+  for i := 0 to CNT_SIDES-1 do
     tech_level[i].Value := StrToIntDef(seTechLevelAll.Text,0);
 end;
 
@@ -274,24 +274,24 @@ procedure TMissionDialog.edStartingMoneyAllChange(Sender: TObject);
 var
   i: integer;
 begin
-  for i := 0 to cnt_players-1 do
+  for i := 0 to CNT_SIDES-1 do
     starting_money[i].Text := IntToStr(StrToIntDef(edStartingMoneyAll.Text,0));
 end;
 
-procedure TMissionDialog.btnAllocIndexResetClick(Sender: TObject);
+procedure TMissionDialog.btnHouseIDResetClick(Sender: TObject);
 var
   i: integer;
 begin
-  for i := 0 to cnt_players-1 do
-    alloc_index[i].Value := i;
+  for i := 0 to CNT_SIDES-1 do
+    house_id[i].Value := i;
 end;
 
 procedure TMissionDialog.btnAllegianceResetClick(Sender: TObject);
 var
   i, j: integer;
 begin
-  for i := 0 to cnt_players-1 do
-    for j := 0 to cnt_players-1 do
+  for i := 0 to CNT_SIDES-1 do
+    for j := 0 to CNT_SIDES-1 do
     begin
       if i = j then
         Mission.allegiance[i,j] := 0
@@ -312,13 +312,13 @@ begin
   Mission.starting_money[(Sender as TEdit).Tag] := StrToIntDef((Sender as TEdit).Text, 0);
 end;
 
-procedure TMissionDialog.alloc_index_change(Sender: TObject);
+procedure TMissionDialog.house_id_change(Sender: TObject);
 begin
   if loading then
     exit;
-  Mission.allocation_index[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
-  color_marker[(Sender as TSpinEdit).Tag].Color := StructGraphics.player_colors_inv[Mission.allocation_index[(Sender as TSpinEdit).Tag]];
-  Dispatcher.register_event(evMisAllocIndexChange);
+  Mission.house_id[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
+  color_marker[(Sender as TSpinEdit).Tag].Color := StructGraphics.house_colors_inv[Mission.house_id[(Sender as TSpinEdit).Tag]];
+  Dispatcher.register_event(evMisHouseIDChange);
 end;
 
 procedure TMissionDialog.allegiance_btn_click(Sender: TObject);
@@ -326,8 +326,8 @@ var
   i, j: integer;
   new_allegiance: byte;
 begin
-  i := (Sender as TBitBtn).Tag div cnt_players;
-  j := (Sender as TBitBtn).Tag mod cnt_players;
+  i := (Sender as TBitBtn).Tag div CNT_SIDES;
+  j := (Sender as TBitBtn).Tag mod CNT_SIDES;
   new_allegiance := IfThen((Mission.allegiance[i,j] - 1) < 0, Length(allegiance_type)-1, Mission.allegiance[i,j] - 1);
   Mission.allegiance[i,j] := new_allegiance;
   allegiance_btn[i,j].Caption := allegiance_type[new_allegiance];
@@ -596,28 +596,28 @@ begin
   MainWindow.Structureseditor1.ShortCut := 16472;
 end;
 
-procedure TMissionDialog.update_player_list(player_list: TStringList);
+procedure TMissionDialog.update_side_list(side_list: TStringList);
 var
   i: integer;
   prev_index: integer;
 begin
   prev_index := cbMapSideId.ItemIndex;
-  cbMapSideId.Items := player_list;
+  cbMapSideId.Items := side_list;
   cbMapSideId.ItemIndex := prev_index;
-  for i := 0 to cnt_players-1 do
+  for i := 0 to CNT_SIDES-1 do
   begin
-    player_label[i].Caption := Structures.player_names[i];
-    player_label_alleg[i].Caption := IfThen(Length(Structures.player_names[i]) <= 8, Structures.player_names[i], Copy(Structures.player_names[i], 0, 6)+'.');
-    AITabControl.Tabs[i] := Structures.player_names_short[i];
+    side_label[i].Caption := Structures.side_names[i];
+    side_label_alleg[i].Caption := IfThen(Length(Structures.side_names[i]) <= 8, Structures.side_names[i], Copy(Structures.side_names[i], 0, 6)+'.');
+    AITabControl.Tabs[i] := Structures.side_names_short[i];
   end;
 end;
 
-procedure TMissionDialog.update_player_colors;
+procedure TMissionDialog.update_side_colors;
 var
   i: integer;
 begin
-  for i := 0 to cnt_players-1 do
-    color_marker[i].Color := StructGraphics.player_colors_inv[Mission.allocation_index[i]];
+  for i := 0 to CNT_SIDES-1 do
+    color_marker[i].Color := StructGraphics.house_colors_inv[Mission.house_id[i]];
 end;
 
 procedure TMissionDialog.update_tileset;
@@ -631,18 +631,18 @@ var
   i, j: integer;
 begin
   loading := true;
-  for i := 0 to cnt_players-1 do
+  for i := 0 to CNT_SIDES-1 do
   begin
     tech_level[i].Value := Mission.tech_level[i];
     starting_money[i].Text := inttostr(Mission.starting_money[i]);
-    alloc_index[i].Value := Mission.allocation_index[i];
-    for j := 0 to cnt_players-1 do
+    house_id[i].Value := Mission.house_id[i];
+    for j := 0 to CNT_SIDES-1 do
     begin
       allegiance_btn[i,j].Caption := allegiance_type[Mission.allegiance[i,j]];
       allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.allegiance[i,j]];
     end;
   end;
-  update_player_colors;
+  update_side_colors;
   edTimeLimit.Text := inttostr(Mission.time_limit);
   edTilesetName.Text := Mission.tileset_name;
   edTileatrName.Text := Mission.tileatr_name;

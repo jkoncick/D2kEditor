@@ -23,11 +23,11 @@ type
     ShiftMap_NumTiles: TSpinEdit;
     ShiftMap_LbNumTiles: TLabel;
     ChStrOwn_Menu: TPanel;
-    ChStrOwn_PlayerFrom: TComboBox;
-    ChStrOwn_PlayerTo: TComboBox;
+    ChStrOwn_SideFrom: TComboBox;
+    ChStrOwn_SideTo: TComboBox;
     ChStrOwn_Swap: TCheckBox;
-    ChStrOwn_LbPlayerFrom: TLabel;
-    ChStrOwn_LbPlayerTo: TLabel;
+    ChStrOwn_LbSideFrom: TLabel;
+    ChStrOwn_LbSideTo: TLabel;
     Tileset_Menu: TPanel;
     Tileset_List: TListBox;
     pnButtons: TPanel;
@@ -45,7 +45,7 @@ type
     function select_menu(menu: integer): integer;
     // Dispatcher procedures
     procedure update_tileset_list;
-    procedure update_player_list(player_list: TStringList);
+    procedure update_side_list(side_list: TStringList);
     procedure update_tileset;
   private
     function check_map_dimensions: boolean;
@@ -145,7 +145,7 @@ begin
           end;
         end;
     3:  begin
-          Map.change_structure_owner(ChStrOwn_PlayerFrom.ItemIndex,ChStrOwn_PlayerTo.ItemIndex,ChStrOwn_Swap.Checked);
+          Map.change_structure_owner(ChStrOwn_SideFrom.ItemIndex,ChStrOwn_SideTo.ItemIndex,ChStrOwn_Swap.Checked);
           ModalResult := mrOk;
         end;
     4:  begin
@@ -186,17 +186,17 @@ begin
   Tileset_List.ItemIndex := default_tileset;
 end;
 
-procedure TSetDialog.update_player_list(player_list: TStringList);
+procedure TSetDialog.update_side_list(side_list: TStringList);
 var
   prev_index: integer;
 begin
-  prev_index := ChStrOwn_PlayerFrom.ItemIndex;
-  ChStrOwn_PlayerFrom.Items := player_list;
-  ChStrOwn_PlayerFrom.ItemIndex := Max(prev_index, 0);
-  prev_index := ChStrOwn_PlayerTo.ItemIndex;
-  ChStrOwn_PlayerTo.Items := player_list;
-  ChStrOwn_PlayerTo.Items.Add('None (delete)');
-  ChStrOwn_PlayerTo.ItemIndex := Max(prev_index, 0);
+  prev_index := ChStrOwn_SideFrom.ItemIndex;
+  ChStrOwn_SideFrom.Items := side_list;
+  ChStrOwn_SideFrom.ItemIndex := Max(prev_index, 0);
+  prev_index := ChStrOwn_SideTo.ItemIndex;
+  ChStrOwn_SideTo.Items := side_list;
+  ChStrOwn_SideTo.Items.Add('None (delete)');
+  ChStrOwn_SideTo.ItemIndex := Max(prev_index, 0);
 end;
 
 procedure TSetDialog.update_tileset;

@@ -26,7 +26,7 @@ type
   end;
 
 type
-  TPlayerStats = record
+  TSideStats = record
     power_percent: word;
     power_output: word;
     power_need: word;
@@ -36,7 +36,7 @@ type
 
 type
   TMapStats = record
-    players: array[0..cnt_players-1] of TPlayerStats;
+    sides: array[0..CNT_SIDES-1] of TSideStats;
     misc_objects: array[0..3] of integer;
     num_structures_total: integer;
   end;
@@ -89,19 +89,19 @@ type
     // Basic map manipulation procedures
   private
     procedure modify_map_tile(x,y: integer; tile: word; special: word);
-    procedure paint_tile(x,y: integer; paint_tile_group, player: integer);
+    procedure paint_tile(x,y: integer; paint_tile_group, side: integer);
   public
     procedure set_special_value(x,y: integer; special: word);
-    procedure paint_rect(x,y, width, height: integer; paint_tile_group, player: integer);
+    procedure paint_rect(x,y, width, height: integer; paint_tile_group, side: integer);
     procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean; area_type: integer; erase: boolean);
     procedure put_block(x,y, width, height: integer; block: TMapDataPtr);
     function check_structure_can_be_placed(x,y: integer; special: word): boolean;
 
     // Fill area procedures
   public
-    procedure fill_area_start(x,y: integer; paint_tile_group, player: integer);
+    procedure fill_area_start(x,y: integer; paint_tile_group, side: integer);
   private
-    procedure fill_area_step(x,y: integer; paint_tile_group, player, area_type: integer);
+    procedure fill_area_step(x,y: integer; paint_tile_group, side, area_type: integer);
 
     // Undo & Redo procedures
   public
@@ -128,7 +128,7 @@ type
     // Map actions
     procedure set_map_size(new_width, new_height: integer);
     procedure shift_map(direction, num_tiles: integer);
-    procedure change_structure_owner(player_from, player_to: integer; swap: boolean);
+    procedure change_structure_owner(side_from, side_to: integer; swap: boolean);
     function remap_tiles(ini_filename: String): boolean;
     function convert_structures_to_advanced_mode: integer;
 
@@ -324,7 +324,7 @@ begin
 end;
 
 // Apply "paint" operation to a single tile
-procedure TMap.paint_tile(x, y: integer; paint_tile_group, player: integer);
+procedure TMap.paint_tile(x, y: integer; paint_tile_group, side: integer);
 begin
   if (Settings.RestrictPainting) and (not Tileset.check_paint_tile_restriction(map_data[x,y].tile, map_data[x,y].special, paint_tile_group)) then
     exit;
@@ -336,7 +336,7 @@ begin
     modify_map_tile(x, y, (map_data[x,y].tile and $0FFF) or $8000, 0)
   else if paint_tile_group = -2 then
     // Concrete
-    modify_map_tile(x, y, (map_data[x,y].tile and $0FFF) or $1000 or (player shl 13), 0)
+    modify_map_tile(x, y, (map_data[x,y].tile and $0FFF) or $1000 or (side shl 13), 0)
   else
     // Paint sand/rock/dunes etc.
     modify_map_tile(x, y, Tileset.get_random_paint_tile(paint_tile_group, x, y), 0);
@@ -349,7 +349,7 @@ begin
   modify_map_tile(x, y, map_data[x,y].tile, special);
 end;
 
-procedure TMap.paint_rect(x, y, width, height: integer; paint_tile_group, player: integer);
+procedure TMap.paint_rect(x, y, width, height: integer; paint_tile_group, side: integer);
 var
   xx, yy: integer;
 begin
@@ -360,7 +360,7 @@ begin
     begin
       if (xx >= map_width) or (xx < 0) or (yy >= map_height) or (yy < 0) then
         continue;
-      paint_tile(xx, yy, paint_tile_group, player);
+      paint_tile(xx, yy, paint_tile_group, side);
     end;
 end;
 
@@ -428,7 +428,7 @@ begin
 end;
 
 
-procedure TMap.fill_area_start(x, y: integer; paint_tile_group, player: integer);
+procedure TMap.fill_area_start(x, y: integer; paint_tile_group, side: integer);
 var
   tmp_pos: integer;
 begin
@@ -444,10 +444,10 @@ begin
   // Fill area
   undo_block_start := true;
   Renderer.invalidate_init;
-  fill_area_step(x, y, paint_tile_group, player, Tileset.get_fill_area_type(map_data[x, y].tile, map_data[x, y].special));
+  fill_area_step(x, y, paint_tile_group, side, Tileset.get_fill_area_type(map_data[x, y].tile, map_data[x, y].special));
 end;
 
-procedure TMap.fill_area_step(x, y: integer; paint_tile_group, player, area_type: integer);
+procedure TMap.fill_area_step(x, y: integer; paint_tile_group, side, area_type: integer);
 var
   is_spice: boolean;
 begin
@@ -462,16 +462,16 @@ begin
     then
       exit;
   end;
-  paint_tile(x, y, paint_tile_group, player);
+  paint_tile(x, y, paint_tile_group, side);
   tile_dirty[x, y] := true;
   if x > 0 then
-    fill_area_step(x-1, y, paint_tile_group, player, area_type);
+    fill_area_step(x-1, y, paint_tile_group, side, area_type);
   if x < (map_width - 1) then
-    fill_area_step(x+1, y, paint_tile_group, player, area_type);
+    fill_area_step(x+1, y, paint_tile_group, side, area_type);
   if y > 0 then
-    fill_area_step(x, y-1, paint_tile_group, player, area_type);
+    fill_area_step(x, y-1, paint_tile_group, side, area_type);
   if y < (map_height - 1) then
-    fill_area_step(x, y+1, paint_tile_group, player, area_type);
+    fill_area_step(x, y+1, paint_tile_group, side, area_type);
 end;
 
 
@@ -691,11 +691,11 @@ end;
 
 procedure TMap.cache_map_stats;
 var
-  output, need: array[0..cnt_players-1] of integer;
+  output, need: array[0..CNT_SIDES-1] of integer;
   i, x, y: integer;
   special: word;
   structure_type: byte;
-  player: integer;
+  side: integer;
   building_template: TBuildingTemplatePtr;
   unit_template: TUnitTemplatePtr;
   tmp_power: integer;
@@ -706,12 +706,12 @@ begin
   // Reset values
   for i := 0 to Length(map_stats.misc_objects) - 1 do
     map_stats.misc_objects[i] := 0;
-  for x := 0 to cnt_players - 1 do
+  for x := 0 to CNT_SIDES - 1 do
   begin
     output[x] := 0;
     need[x] := 0;
-    map_stats.players[x].num_structures := 0;
-    map_stats.players[x].num_new_harv_deliveries := 0;
+    map_stats.sides[x].num_structures := 0;
+    map_stats.sides[x].num_new_harv_deliveries := 0;
   end;
   map_stats.num_structures_total := 0;
   // Process all map and compute power output/need and number of misc objects
@@ -720,7 +720,7 @@ begin
     begin
       special := map_data[x,y].special;
       structure_type := Structures.get_special_value_type(special);
-      player := Structures.get_special_value_player(special);
+      side := Structures.get_special_value_side(special);
       if structure_type = ST_MISC_OBJECT then
       begin
         misc_object_type := Structures.get_misc_object_info_for_special(special).obj_type;
@@ -734,16 +734,16 @@ begin
           continue;
         if special < CNT_TILEDATA_ENTRIES then
           inc(map_stats.num_structures_total);
-        inc(map_stats.players[player].num_structures);
+        inc(map_stats.sides[side].num_structures);
         // Building is refinery with new harvester delivery
         if (((special and $2400) = $2000) or ((special and $2000) = 0)) and (building_template.SpecialBehavior = 4) then
-          inc(map_stats.players[player].num_new_harv_deliveries);
+          inc(map_stats.sides[side].num_new_harv_deliveries);
         // Sum power consumption
         tmp_power := building_template.PowerConsumption;
         if tmp_power > 0 then
-          Inc(need[player], tmp_power)
+          Inc(need[side], tmp_power)
         else if tmp_power < 0 then
-          Inc(output[player], tmp_power * -1);
+          Inc(output[side], tmp_power * -1);
       end else
       if structure_type = ST_UNIT then
       begin
@@ -752,30 +752,30 @@ begin
           continue;
         if special < CNT_TILEDATA_ENTRIES then
           inc(map_stats.num_structures_total);
-        inc(map_stats.players[player].num_structures);
+        inc(map_stats.sides[side].num_structures);
         // Unit is sandworm
         if unit_template.SpecialBehavior = 5 then
           inc(map_stats.misc_objects[MOT_WORM_SPAWNER]);
       end;
     end;
-  // Calculate power value from output/need for each player
-  for x := 0 to cnt_players - 1 do
+  // Calculate power value from output/need for each side
+  for x := 0 to CNT_SIDES - 1 do
   begin
     if (output[x] > 0) and (need[x] = 0) then
-      map_stats.players[x].power_percent := output[x] div 2 + 100
+      map_stats.sides[x].power_percent := output[x] div 2 + 100
     else if (output[x] = 0) then
-      map_stats.players[x].power_percent := 0
+      map_stats.sides[x].power_percent := 0
     else
-      map_stats.players[x].power_percent := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
-    map_stats.players[x].power_output := output[x];
-    map_stats.players[x].power_need := need[x];
+      map_stats.sides[x].power_percent := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
+    map_stats.sides[x].power_output := output[x];
+    map_stats.sides[x].power_need := need[x];
   end;
 end;
 
 function TMap.check_errors: boolean;
 var
   x, y: integer;
-  player: integer;
+  side: integer;
   special: word;
   structure_type: byte;
   building_index: integer;
@@ -803,21 +803,21 @@ begin
   num_structures_total := map_stats.num_structures_total;
   if num_structures_total > Structures.limit_structures_total then
     errmsg := format('You placed %d structures in Basic mode on map, which is more than game''s limit of %d.'#13'Remove some buildings or units or place them using Advanced mode.', [num_structures_total, Structures.limit_structures_total]);
-  // Check for per-player limits
-  for player := 0 to cnt_players - 1 do
+  // Check for per-side limits
+  for side := 0 to CNT_SIDES - 1 do
   begin
     // Number of structures
-    num_structures := map_stats.players[player].num_structures;
-    if num_structures > Structures.limit_structures_per_player then
+    num_structures := map_stats.sides[side].num_structures;
+    if num_structures > Structures.limit_structures_per_side then
     begin
-      errmsg := format('You placed %d structures for player %s on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures, Structures.player_names[player], Structures.limit_structures_per_player]);
+      errmsg := format('You placed %d structures for side %s on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures, Structures.side_names[side], Structures.limit_structures_per_side]);
       break;
     end;
     // Number of new harvester deliveries
-    num_new_harv_deliveries := map_stats.players[player].num_new_harv_deliveries;
-    if num_new_harv_deliveries > Structures.limit_refineries_per_player then
+    num_new_harv_deliveries := map_stats.sides[side].num_new_harv_deliveries;
+    if num_new_harv_deliveries > Structures.limit_refineries_per_side then
     begin
-      errmsg := format('You placed %d refineries with new harvester delivery for player %s on map, which is more than game''s limit of %d.'#13'Remove some refineries or change them to be without new harvester delivery.', [num_new_harv_deliveries, Structures.player_names[player], Structures.limit_refineries_per_player]);
+      errmsg := format('You placed %d refineries with new harvester delivery for side %s on map, which is more than game''s limit of %d.'#13'Remove some refineries or change them to be without new harvester delivery.', [num_new_harv_deliveries, Structures.side_names[side], Structures.limit_refineries_per_side]);
       break;
     end;
   end;
@@ -834,7 +834,7 @@ begin
       Structures.get_structure_size(special, size_x, size_y);
       if (x + size_x > map_width) or (y + size_y > map_height) then
       begin
-        building_index := IfThen((special and 8192) <> 0, special and 127, Structures.building_side_versions[Structures.get_tiledata_entry(special).index, Mission.get_player_alloc_index(Structures.get_tiledata_entry(special).player)]);
+        building_index := IfThen((special and 8192) <> 0, special and 127, Structures.building_house_versions[Structures.get_tiledata_entry(special).index, Mission.get_side_house_id(Structures.get_tiledata_entry(special).side)]);
         errmsg := format('Building at %d,%d (%s) exceeds the map bounds.', [x, y, Structures.get_building_name_str(building_index)]);
         break;
       end;
@@ -988,11 +988,11 @@ begin
   Dispatcher.register_event(evMapShift);
 end;
 
-procedure TMap.change_structure_owner(player_from, player_to: integer; swap: boolean);
+procedure TMap.change_structure_owner(side_from, side_to: integer; swap: boolean);
 var
   x,y: integer;
   special: word;
-  player: integer;
+  side: integer;
   tiledata_entry: TTileDataEntryPtr;
   i: integer;
   new_special: word;
@@ -1004,7 +1004,7 @@ begin
     begin
       special := map_data[x,y].special;
       // Remove structure if needed
-      if (Structures.get_special_value_player(special) = player_from) and (player_to = CNT_PLAYERS) then
+      if (Structures.get_special_value_side(special) = side_from) and (side_to = CNT_SIDES) then
       begin
         modify_map_tile(x, y, map_data[x,y].tile, 0);
         continue;
@@ -1012,20 +1012,20 @@ begin
       // Advanced mode (unit)
       if ((special and 32768) = 0) and ((special and 16384) <> 0) then
       begin
-        player := (special shr 6) and 7;
-        if player = player_from then
-          modify_map_tile(x, y, map_data[x,y].tile, (special and $7E3F) or (player_to shl 6))
-        else if (player = player_to) and swap then
-          modify_map_tile(x, y, map_data[x,y].tile, (special and $7E3F) or (player_from shl 6));
+        side := (special shr 6) and 7;
+        if side = side_from then
+          modify_map_tile(x, y, map_data[x,y].tile, (special and $7E3F) or (side_to shl 6))
+        else if (side = side_to) and swap then
+          modify_map_tile(x, y, map_data[x,y].tile, (special and $7E3F) or (side_from shl 6));
       end else
       // Advanced mode (building)
       if (special and 8192) <> 0 then
       begin
-        player := (special shr 7) and 7;
-        if player = player_from then
-          modify_map_tile(x, y, map_data[x,y].tile, (special and $3C7F) or (player_to shl 7))
-        else if (player = player_to) and swap then
-          modify_map_tile(x, y, map_data[x,y].tile, (special and $3C7F) or (player_from shl 7));
+        side := (special shr 7) and 7;
+        if side = side_from then
+          modify_map_tile(x, y, map_data[x,y].tile, (special and $3C7F) or (side_to shl 7))
+        else if (side = side_to) and swap then
+          modify_map_tile(x, y, map_data[x,y].tile, (special and $3C7F) or (side_from shl 7));
       end else
       // Basic mode
       begin
@@ -1033,12 +1033,12 @@ begin
         if (tiledata_entry.stype = ST_BUILDING) or (tiledata_entry.stype = ST_UNIT) then
         begin
           // Change from -> to
-          if tiledata_entry.player = player_from then
+          if tiledata_entry.side = side_from then
           begin
             new_special := 0;
-            // Find special value for player_to
+            // Find special value for side_to
             for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
-              if (Structures.tiledata[i].stype = tiledata_entry.stype) and (Structures.tiledata[i].index = tiledata_entry.index) and (Structures.tiledata[i].player = player_to) then
+              if (Structures.tiledata[i].stype = tiledata_entry.stype) and (Structures.tiledata[i].index = tiledata_entry.index) and (Structures.tiledata[i].side = side_to) then
               begin
                 new_special := i;
                 break;
@@ -1046,12 +1046,12 @@ begin
             modify_map_tile(x, y, map_data[x,y].tile, new_special);
           end;
           // Swap is checked (change to -> from)
-          if (tiledata_entry.player = player_to) and swap then
+          if (tiledata_entry.side = side_to) and swap then
           begin
             new_special := 0;
-            // Find special value for player_from
+            // Find special value for side_from
             for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
-              if (Structures.tiledata[i].stype = tiledata_entry.stype) and (Structures.tiledata[i].index = tiledata_entry.index) and (Structures.tiledata[i].player = player_from) then
+              if (Structures.tiledata[i].stype = tiledata_entry.stype) and (Structures.tiledata[i].index = tiledata_entry.index) and (Structures.tiledata[i].side = side_from) then
               begin
                 new_special := i;
                 break;
@@ -1150,19 +1150,19 @@ begin
       tiledata_entry := Structures.get_tiledata_entry(map_data[x, y].special);
       if tiledata_entry.stype = ST_UNIT then
       begin
-        struct_type := Structures.unit_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)];
+        struct_type := Structures.unit_house_versions[tiledata_entry.index, Mission.get_side_house_id(tiledata_entry.side)];
         if struct_type <> -1 then
         begin
-          modify_map_tile(x, y, map_data[x,y].tile, 16384 + tiledata_entry.player * 64 + struct_type);
+          modify_map_tile(x, y, map_data[x,y].tile, 16384 + tiledata_entry.side * 64 + struct_type);
           inc(result);
         end;
       end else
       if tiledata_entry.stype = ST_BUILDING then
       begin
-        struct_type := Structures.building_side_versions[tiledata_entry.index, Mission.get_player_alloc_index(tiledata_entry.player)];
+        struct_type := Structures.building_house_versions[tiledata_entry.index, Mission.get_side_house_id(tiledata_entry.side)];
         if struct_type <> -1 then
         begin
-          modify_map_tile(x, y, map_data[x,y].tile, 8192 + tiledata_entry.player * 128 + struct_type);
+          modify_map_tile(x, y, map_data[x,y].tile, 8192 + tiledata_entry.side * 128 + struct_type);
           inc(result);
         end;
       end

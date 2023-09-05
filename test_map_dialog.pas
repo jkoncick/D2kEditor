@@ -27,7 +27,7 @@ type
     { Private declarations }
   public
     function invoke: TModalResult;
-    procedure update_player_list(player_list: TStringList);
+    procedure update_side_list(side_list: TStringList);
   end;
 
 var
@@ -84,9 +84,9 @@ begin
   result := ShowModal;
 end;
 
-procedure TTestMapDialog.update_player_list(player_list: TStringList);
+procedure TTestMapDialog.update_side_list(side_list: TStringList);
 begin
-  eMySideID.Items := player_list;
+  eMySideID.Items := side_list;
 end;
 
 end.

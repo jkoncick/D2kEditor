@@ -9,7 +9,7 @@ object StructuresEditor: TStructuresEditor
   Color = clBtnFace
   Constraints.MaxHeight = 738
   Constraints.MaxWidth = 1024
-  Constraints.MinHeight = 738
+  Constraints.MinHeight = 730
   Constraints.MinWidth = 1024
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -95,12 +95,12 @@ object StructuresEditor: TStructuresEditor
         Height = 137
         Caption = 'Basic'
         TabOrder = 2
-        object lblBuildingOwnerSide: TLabel
+        object lblBuildingOwnerHouse: TLabel
           Left = 80
           Top = 16
           Width = 34
           Height = 26
-          Caption = 'Owner side:'
+          Caption = 'Owner House:'
           WordWrap = True
         end
         object lblBuildingName: TLabel
@@ -127,7 +127,7 @@ object StructuresEditor: TStructuresEditor
           ShowHint = True
           OnMouseDown = imgBuildingIconMouseDown
         end
-        object clbBuildingOwnerSide: TCheckListBox
+        object clbBuildingOwnerHouse: TCheckListBox
           Left = 120
           Top = 16
           Width = 161
@@ -241,19 +241,19 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Upgrades needed:'
           WordWrap = True
         end
-        object lblBuildingPrereq1OwnerSide: TLabel
+        object lblBuildingPrereq1OwnerHouse: TLabel
           Left = 8
           Top = 136
-          Width = 95
+          Width = 105
           Height = 13
-          Caption = 'Owner side needed:'
+          Caption = 'Owner house needed:'
         end
-        object lblBuildingPrereq2OwnerSide: TLabel
+        object lblBuildingPrereq2OwnerHouse: TLabel
           Left = 8
           Top = 224
-          Width = 95
+          Width = 105
           Height = 13
-          Caption = 'Owner side needed:'
+          Caption = 'Owner house needed:'
         end
         object seBuildingTechLevelBuild: TSpinEdit
           Left = 48
@@ -363,7 +363,7 @@ object StructuresEditor: TStructuresEditor
           MaxLength = 10
           TabOrder = 11
         end
-        object clbBuildingPrereq1OwnerSide: TCheckListBox
+        object clbBuildingPrereq1OwnerHouse: TCheckListBox
           Left = 120
           Top = 136
           Width = 161
@@ -372,7 +372,7 @@ object StructuresEditor: TStructuresEditor
           ItemHeight = 13
           TabOrder = 12
         end
-        object clbBuildingPrereq2OwnerSide: TCheckListBox
+        object clbBuildingPrereq2OwnerHouse: TCheckListBox
           Left = 120
           Top = 224
           Width = 161
@@ -1233,12 +1233,12 @@ object StructuresEditor: TStructuresEditor
         Height = 137
         Caption = 'Basic'
         TabOrder = 2
-        object lblUnitOwnerSide: TLabel
+        object lblUnitOwnerHouse: TLabel
           Left = 80
           Top = 16
           Width = 34
           Height = 26
-          Caption = 'Owner side:'
+          Caption = 'Owner house:'
           WordWrap = True
         end
         object lblUnitName: TLabel
@@ -1265,7 +1265,7 @@ object StructuresEditor: TStructuresEditor
           ShowHint = True
           OnMouseDown = imgUnitIconMouseDown
         end
-        object clbUnitOwnerSide: TCheckListBox
+        object clbUnitOwnerHouse: TCheckListBox
           Left = 120
           Top = 16
           Width = 161
@@ -1345,12 +1345,12 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Upgrades needed:'
           WordWrap = True
         end
-        object lblUnitPrereq1OwnerSide: TLabel
+        object lblUnitPrereq1OwnerHouse: TLabel
           Left = 8
           Top = 80
-          Width = 95
+          Width = 105
           Height = 13
-          Caption = 'Owner side needed:'
+          Caption = 'Owner house needed:'
         end
         object seUnitTechLevel: TSpinEdit
           Left = 40
@@ -1379,7 +1379,7 @@ object StructuresEditor: TStructuresEditor
           MaxLength = 10
           TabOrder = 2
         end
-        object clbUnitPrereq1OwnerSide: TCheckListBox
+        object clbUnitPrereq1OwnerHouse: TCheckListBox
           Left = 120
           Top = 80
           Width = 161
@@ -2474,7 +2474,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 1
         end
         object edWeaponRange: TEdit
@@ -2634,7 +2634,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 0
           OnChange = cbxWeaponProjectileArtChange
         end
@@ -2644,7 +2644,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 1
         end
         object cbxWeaponHitExplosion: TComboBox
@@ -2653,7 +2653,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 2
         end
         object cbxWeaponTrailExplosion: TComboBox
@@ -2662,7 +2662,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
+          ItemHeight = 0
           TabOrder = 3
         end
         object cbWeaponFlagWF_PROJECTILE_ALPHA: TCheckBox
@@ -2870,7 +2870,7 @@ object StructuresEditor: TStructuresEditor
         Width = 129
         Height = 21
         Style = csDropDownList
-        ItemHeight = 13
+        ItemHeight = 0
         TabOrder = 3
       end
       object edExplosionMuzzleFlashPattern: TEdit
@@ -3148,7 +3148,7 @@ object StructuresEditor: TStructuresEditor
         Width = 194
         Height = 21
         Style = csDropDownList
-        ItemHeight = 13
+        ItemHeight = 0
         TabOrder = 1
         Visible = False
         OnChange = cbxGroupIDsSelectChange
@@ -3266,7 +3266,7 @@ object StructuresEditor: TStructuresEditor
         Width = 135
         Height = 21
         Style = csDropDownList
-        ItemHeight = 13
+        ItemHeight = 0
         TabOrder = 2
         Visible = False
         OnChange = cbxTechposUnitGroupChange

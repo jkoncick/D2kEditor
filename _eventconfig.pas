@@ -13,8 +13,8 @@ const ArgTypeStr: array[0..8] of String = ('None', 'Number', 'BigNumber', 'HexNu
 type  ListType =                           (ltNone, ltCustom, ltGame, ltItem);
 const ListTypeStr: array[0..3] of String = ('None', 'Custom', 'Game', 'Item');
 
-type  ItemListType =                            (ilNone, ilPlayers, ilPlayersAny, ilSounds, ilUnits, ilUnitGroups, ilBuildings, ilBuildingGroups, ilWeapons, ilExplosions, ilArmourTypes, ilSpeedTypes);
-const ItemListTypeStr: array[0..11] of String = ('None', 'Players', 'PlayersAny', 'Sounds', 'Units', 'UnitGroups', 'Buildings', 'BuildingGroups', 'Weapons', 'Explosions', 'ArmourTypes', 'SpeedTypes');
+type  ItemListType =                            (ilNone, ilSides, ilSidesAny, ilSounds, ilUnits, ilUnitGroups, ilBuildings, ilBuildingGroups, ilWeapons, ilExplosions, ilArmourTypes, ilSpeedTypes);
+const ItemListTypeStr: array[0..11] of String = ('None', 'Sides', 'SidesAny', 'Sounds', 'Units', 'UnitGroups', 'Buildings', 'BuildingGroups', 'Weapons', 'Explosions', 'ArmourTypes', 'SpeedTypes');
 
 type  ReferenceType =                           (rtNone, rtEvent, rtCondition);
 const ReferenceTypeStr: array[0..2] of String = ('None', 'Event', 'Condition');
@@ -80,7 +80,7 @@ type
     is_start_block: boolean;
     allow_obj_index: boolean;
     has_map_pos: boolean;
-    has_player: boolean;
+    has_side: boolean;
   end;
 
   TEventTypeDefinitionPtr = ^TEventTypeDefinition;
@@ -97,7 +97,7 @@ type
     condition_data: ConditionData;
     contents: String;
     has_map_pos: boolean;
-    has_player: boolean;
+    has_side: boolean;
   end;
 
   TConditionTypeDefinitionPtr = ^TConditionTypeDefinition;
@@ -228,7 +228,7 @@ begin
     event_types[i].allow_obj_index := ini.ReadBool(tmp_strings[i], 'allow_obj_index', False);
     // Fill auxiliary properties
     event_types[i].has_map_pos := event_types[i].coords[0].marker <> ' ';
-    event_types[i].has_player := event_types[i].args[0].name = 'Player';
+    event_types[i].has_side := event_types[i].args[0].name = 'Side';
   end;
   ini.Destroy;
   tmp_strings.Destroy;
@@ -291,7 +291,7 @@ begin
     condition_types[i].contents := ini.ReadString(tmp_strings[i], 'contents', '');
     // Fill auxiliary properties
     condition_types[i].has_map_pos := condition_types[i].coords[0].marker <> ' ';
-    condition_types[i].has_player := condition_types[i].args[0].name = 'Player';
+    condition_types[i].has_side := condition_types[i].args[0].name = 'Side';
   end;
   ini.Destroy;
   tmp_strings.Destroy;

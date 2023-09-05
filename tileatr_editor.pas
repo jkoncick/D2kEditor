@@ -969,7 +969,7 @@ begin
           // Draw building/unit owner side marker
           if (view_mode = vmDrawTilesetAttributes) and cbDrawOwnerSide.Checked and ((tile_value and $3F8) <> 0) then
           begin
-            color := StructGraphics.player_colors_inv[tile_value and 7];
+            color := StructGraphics.house_colors_inv[tile_value and 7];
             TilesetImage.Canvas.Pen.Color := color;
             TilesetImage.Canvas.Brush.Color := color;
             TilesetImage.Canvas.Brush.Style := bsSolid;
@@ -979,7 +979,7 @@ begin
           // Draw concrete owner side marker
           if (view_mode = vmDrawTilesetAttributes) and cbDrawOwnerSide.Checked and ((tile_value and $800) <> 0) then
           begin
-            color := StructGraphics.player_colors_inv[(tile_value shr 17) and 7];
+            color := StructGraphics.house_colors_inv[(tile_value shr 17) and 7];
             TilesetImage.Canvas.Pen.Color := color;
             TilesetImage.Canvas.Brush.Color := color;
             TilesetImage.Canvas.Brush.Style := bsSolid;

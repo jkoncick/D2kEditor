@@ -13,7 +13,7 @@ type
     // Mission events
     evMisLoad,
     evMisEventsImport,
-    evMisAllocIndexChange,
+    evMisHouseIDChange,
     evMisEventPositionChange,
     evMisDefenceAreaChange,
     // Mission ini events
@@ -34,7 +34,7 @@ type
     evFLTechposBin,
     evFLTiledataBin,
     evFLMiscObjectsIni,
-    evFLPlayersIni,
+    evFLSidesIni,
     evStructuresFilenameChange,
     evStructuresImportItem,
     // StructGraphics events
@@ -65,7 +65,7 @@ type
     paUpdateStructuresList,
     paUpdateStructuresListTranslated,
     paUpdateMiscObjectList,
-    paUpdatePlayerList,
+    paUpdateSideList,
     paUpdateGameStructMembers,
     // Update various contents
     paUpdateTileset,
@@ -75,7 +75,7 @@ type
     paUpdateMissionLoadStatus,
     paUpdateMapStats,
     paUpdateEventMarkers,
-    paUpdatePlayerColours,
+    paUpdateSideColours,
     paUpdateSpeedModifiers,
     paUpdateVariableNames,
     paUpdateGameLists,
@@ -109,7 +109,7 @@ type
 
   private
     procedure update_structures_list_translated;
-    procedure update_player_list;
+    procedure update_side_list;
     procedure update_game_struct_members;
     procedure update_tileset;
     procedure update_map_name;
@@ -145,7 +145,7 @@ begin
     // Mission events
     evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateMissionData, paUpdateMisAiValues, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisEventsImport:            pact := pact + [paUpdateEventMarkers, paUpdateEventDialog];
-    evMisAllocIndexChange:        pact := pact + [paUpdateStructureControls, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evMisHouseIDChange:           pact := pact + [paUpdateStructureControls, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisEventPositionChange:     pact := pact + [paUpdateEventMarkers];
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
     // Mission ini events
@@ -166,11 +166,11 @@ begin
     evFLTechposBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
     evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
-    evFLPlayersIni:               pact := pact + [paUpdatePlayerList, paUpdateEventDialog, paUpdateDebugValues];
+    evFLSidesIni:                 pact := pact + [paUpdateSideList, paUpdateEventDialog, paUpdateDebugValues];
     evStructuresFilenameChange:   pact := pact + [paUpdateDebugValues];
     evStructuresImportItem:       pact := pact + [paUpdateStructuresEditor];
     // StructGraphics events
-    evFLColoursBin:               pact := pact + [paUpdatePlayerColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLColoursBin:               pact := pact + [paUpdateSideColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsBmp:           pact := pact + [paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evLoadStructureImage:         pact := pact + [paUpdateDebugValues];
@@ -207,7 +207,7 @@ begin
   if paUpdateStructuresList     in pact then EventDialog.update_structures_list;
   if paUpdateStructuresListTranslated in pact then update_structures_list_translated;
   if paUpdateMiscObjectList     in pact then MainWindow.update_misc_object_list;
-  if paUpdatePlayerList         in pact then update_player_list;
+  if paUpdateSideList           in pact then update_side_list;
   if paUpdateGameStructMembers  in pact then update_game_struct_members;
   if paUpdateTileset            in pact then update_tileset;
   // Update various contents
@@ -217,7 +217,7 @@ begin
   if paUpdateMissionLoadStatus  in pact then update_mission_load_status;
   if paUpdateMapStats           in pact then update_map_stats;
   if paUpdateEventMarkers       in pact then update_event_markers;
-  if paUpdatePlayerColours      in pact then MissionDialog.update_player_colors;
+  if paUpdateSideColours        in pact then MissionDialog.update_side_colors;
   if paUpdateSpeedModifiers     in pact then TileAtrEditor.update_speed_modifiers;
   if paUpdateVariableNames      in pact then EventDialog.update_variable_names;
   if paUpdateGameLists          in pact then update_game_lists;
@@ -257,21 +257,21 @@ begin
   tmp_strings_units.Destroy;
 end;
 
-procedure TDispatcher.update_player_list;
+procedure TDispatcher.update_side_list;
 var
-  player_list: TStringList;
+  side_list: TStringList;
   i: integer;
 begin
-  player_list := TStringList.Create;
-  for i := 0 to CNT_PLAYERS - 1 do
-    player_list.Add(inttostr(i) + ' - ' + Structures.player_names[i]);
-  MainWindow.update_player_list(player_list);
-  SetDialog.update_player_list(player_list);
-  TestMapDialog.update_player_list(player_list);
-  MapStatsDialog.update_player_list;
-  MissionDialog.update_player_list(player_list);
-  EventDialog.update_player_list(player_list);
-  player_list.Destroy;
+  side_list := TStringList.Create;
+  for i := 0 to CNT_SIDES - 1 do
+    side_list.Add(inttostr(i) + ' - ' + Structures.side_names[i]);
+  MainWindow.update_side_list(side_list);
+  SetDialog.update_side_list(side_list);
+  TestMapDialog.update_side_list(side_list);
+  MapStatsDialog.update_side_list;
+  MissionDialog.update_side_list(side_list);
+  EventDialog.update_side_list(side_list);
+  side_list.Destroy;
 end;
 
 procedure TDispatcher.update_game_struct_members;

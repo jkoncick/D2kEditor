@@ -22,13 +22,13 @@ type
     procedure StatsGridMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
   private
-    tmp_stats: Array[0..CNT_FIXED_ROWS + MAX_BUILDING_TYPES + MAX_UNIT_TYPES -1, 0..CNT_PLAYERS-1] of integer;
+    tmp_stats: Array[0..CNT_FIXED_ROWS + MAX_BUILDING_TYPES + MAX_UNIT_TYPES -1, 0..CNT_SIDES-1] of integer;
     pending_update_map_stats: boolean;
   public
     // Dispatcher procedures
     procedure update_map_stats;
     procedure update_structures_list(building_list, unit_list: TStringList);
-    procedure update_player_list;
+    procedure update_side_list;
   end;
 
 var
@@ -88,7 +88,7 @@ var
   index: integer;
   special: word;
   structure_type: byte;
-  player: integer;
+  side: integer;
   unit_template: TUnitTemplatePtr;
   building_template: TBuildingTemplatePtr;
   total_value: integer;
@@ -103,14 +103,14 @@ begin
     exit;
   // Reset statistics
   for i := 0 to Length(tmp_stats) - 1 do
-    for j := 0 to CNT_PLAYERS - 1 do
+    for j := 0 to CNT_SIDES - 1 do
       tmp_stats[i,j] := 0;
   // Copy already computed power statistics
-  for j := 0 to CNT_PLAYERS - 1 do
+  for j := 0 to CNT_SIDES - 1 do
   begin
-    tmp_stats[Byte(osPowerOutput),j] := Map.stats.players[j].power_output;
-    tmp_stats[Byte(osPowerNeed),j] := Map.stats.players[j].power_need;
-    tmp_stats[Byte(osPowerPercent),j] := Map.stats.players[j].power_percent;
+    tmp_stats[Byte(osPowerOutput),j] := Map.stats.sides[j].power_output;
+    tmp_stats[Byte(osPowerNeed),j] := Map.stats.sides[j].power_need;
+    tmp_stats[Byte(osPowerPercent),j] := Map.stats.sides[j].power_percent;
   end;
   // Compute map statistics
   for i := 0 to Map.width-1 do
@@ -118,7 +118,7 @@ begin
     begin
       special := Map.data[i,j].special;
       structure_type := Structures.get_special_value_type(special);
-      player := Structures.get_special_value_player(special);
+      side := Structures.get_special_value_side(special);
       if structure_type = ST_BUILDING then
       begin
         building_template := Structures.get_building_template_for_special(special);
@@ -132,27 +132,27 @@ begin
             break;
           end;
         if index <> -1 then
-          Inc(tmp_stats[CNT_FIXED_ROWS + index, player]);
-        Inc(tmp_stats[Byte(osAllStructures), player]);
-        Inc(tmp_stats[Byte(osBuildings), player]);
+          Inc(tmp_stats[CNT_FIXED_ROWS + index, side]);
+        Inc(tmp_stats[Byte(osAllStructures), side]);
+        Inc(tmp_stats[Byte(osBuildings), side]);
         if building_template.SpecialBehavior <> 14 then
-          Inc(tmp_stats[Byte(osBuildingsNoWalls), player]);
+          Inc(tmp_stats[Byte(osBuildingsNoWalls), side]);
       end else
       if structure_type = ST_UNIT then
       begin
         unit_template := Structures.get_unit_template_for_special(special);
         if unit_template = nil then
           continue;
-        Inc(tmp_stats[CNT_FIXED_ROWS + Structures.building_group_mapping_count + unit_template.UnitGroup, player]);
-        Inc(tmp_stats[Byte(osAllStructures), player]);
-        Inc(tmp_stats[Byte(osUnits), player]);
+        Inc(tmp_stats[CNT_FIXED_ROWS + Structures.building_group_mapping_count + unit_template.UnitGroup, side]);
+        Inc(tmp_stats[Byte(osAllStructures), side]);
+        Inc(tmp_stats[Byte(osUnits), side]);
       end;
     end;
   // Show statistics on grid
   for i := 0 to cnt_fixed_rows + Structures.building_group_mapping_count + Structures.templates.UnitGroupCount - 1 do
   begin
     total_value := 0;
-    for j := 0 to cnt_players - 1 do
+    for j := 0 to CNT_SIDES - 1 do
     begin
       total_value := total_value + tmp_stats[i,j];
       if (i < cnt_fixed_rows) or (tmp_stats[i,j] > 0) then
@@ -178,12 +178,12 @@ begin
     StatsGrid.Cells[0,1+cnt_fixed_rows+Structures.building_group_mapping_count+i] := unit_list[i];
 end;
 
-procedure TMapStatsDialog.update_player_list;
+procedure TMapStatsDialog.update_side_list;
 var
   i: integer;
 begin
-  for i := 0 to cnt_players - 1 do
-    StatsGrid.Cells[i+1,0] := Structures.player_names[i];
+  for i := 0 to CNT_SIDES - 1 do
+    StatsGrid.Cells[i+1,0] := Structures.side_names[i];
 end;
 
 end.

@@ -38,7 +38,7 @@ type
     procedure init;
     procedure load_default_ai;
     // MisAI segment manipulation procedures
-    procedure init_misai_segment(var misai_segment: TMisAISegment; player_number: integer);
+    procedure init_misai_segment(var misai_segment: TMisAISegment; side_number: integer);
     procedure load_misai_segment(filename: String; var misai_segment: TMisAISegment);
     procedure save_misai_segment(filename: String; var misai_segment: TMisAISegment);
     procedure copy_misai_segment_to_clipboard(var misai_segment: TMisAISegment);
@@ -70,9 +70,9 @@ begin
   load_misai_segment(tmp_filename, default_ai);
 end;
 
-procedure TMisAI.init_misai_segment(var misai_segment: TMisAISegment; player_number: integer);
+procedure TMisAI.init_misai_segment(var misai_segment: TMisAISegment; side_number: integer);
 begin
-  misai_segment[0] := player_number;
+  misai_segment[0] := side_number;
   Move(default_ai[1], misai_segment[1], Length(misai_segment)-1);
 end;
 

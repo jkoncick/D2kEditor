@@ -7,7 +7,7 @@ uses
   Dialogs, Menus, ComCtrls, ExtCtrls, StdCtrls, CheckLst, Spin, _structures,
   Grids, ValEdit, _utils, Buttons;
 
-const side_names: array[0..CNT_PLAYERS-1] of string = ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
+const house_names: array[0..CNT_SIDES-1] of string = ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
 const unit_voices: array[0..8] of string = ('A1', 'A2', 'A3', 'H1', 'H2', 'H3', 'O1', 'O2', 'O3');
 const TECHPOS_PREVIEW_SIZE = 7;
 
@@ -132,8 +132,8 @@ type
     // Dynamically created controls
     view_image: TImage;
     btn_view_palette: TButton;
-    lbl_side_color: TLabel;
-    se_side_color: TSpinEdit;
+    lbl_house_color: TLabel;
+    se_house_color: TSpinEdit;
     cb_raw_image: TCheckBox;
     btn_image_export: TButton;
     btn_image_erase: TButton;
@@ -184,8 +184,8 @@ type
     gbBuildingProperties: TGroupBox;
     gbBuildingTurret: TGroupBox;
     gbBuildingVisuals: TGroupBox;
-    clbBuildingOwnerSide: TCheckListBox;
-    lblBuildingOwnerSide: TLabel;
+    clbBuildingOwnerHouse: TCheckListBox;
+    lblBuildingOwnerHouse: TLabel;
     edBuildingName: TEdit;
     lblBuildingName: TLabel;
     cbxBuildingGroup: TComboBox;
@@ -212,16 +212,16 @@ type
     edBuildingBuildSpeedUpgrade3: TEdit;
     lblBuildingPrereq1BuildingGroup: TLabel;
     lblBuildingPrereq2BuildingGroup: TLabel;
-    clbBuildingPrereq1OwnerSide: TCheckListBox;
-    clbBuildingPrereq2OwnerSide: TCheckListBox;
+    clbBuildingPrereq1OwnerHouse: TCheckListBox;
+    clbBuildingPrereq2OwnerHouse: TCheckListBox;
     cbxBuildingPrereq1BuildingGroup: TComboBox;
     cbxBuildingPrereq2BuildingGroup: TComboBox;
     seBuildingPrereq1UpgradesNeeded: TSpinEdit;
     seBuildingPrereq2UpgradesNeeded: TSpinEdit;
     lblBuildingPrereq1UpgradesNeeded: TLabel;
     lblBuildingPrereq2UpgradesNeeded: TLabel;
-    lblBuildingPrereq1OwnerSide: TLabel;
-    lblBuildingPrereq2OwnerSide: TLabel;
+    lblBuildingPrereq1OwnerHouse: TLabel;
+    lblBuildingPrereq2OwnerHouse: TLabel;
     lblBuildingHitPoints: TLabel;
     lblBuildingArmorType: TLabel;
     edBuildingHitPoints: TEdit;
@@ -305,11 +305,11 @@ type
     pnUnitList: TPanel;
     lbUnitList: TListBox;
     gbUnitBasic: TGroupBox;
-    lblUnitOwnerSide: TLabel;
+    lblUnitOwnerHouse: TLabel;
     lblUnitName: TLabel;
     lblUnitGroup: TLabel;
     imgUnitIcon: TImage;
-    clbUnitOwnerSide: TCheckListBox;
+    clbUnitOwnerHouse: TCheckListBox;
     edUnitName: TEdit;
     cbxUnitGroup: TComboBox;
     gbUnitBuildRequirements: TGroupBox;
@@ -319,11 +319,11 @@ type
     lblUnitPrereq1BuildingGroup: TLabel;
     lblUnitPrereq2BuildingGroup: TLabel;
     lblUnitPrereq1UpgradesNeeded: TLabel;
-    lblUnitPrereq1OwnerSide: TLabel;
+    lblUnitPrereq1OwnerHouse: TLabel;
     seUnitTechLevel: TSpinEdit;
     edUnitCost: TEdit;
     edUnitBuildSpeed: TEdit;
-    clbUnitPrereq1OwnerSide: TCheckListBox;
+    clbUnitPrereq1OwnerHouse: TCheckListBox;
     cbxUnitPrereq1BuildingGroup: TComboBox;
     cbxUnitPrereq2BuildingGroup: TComboBox;
     seUnitPrereq1UpgradesNeeded: TSpinEdit;
@@ -739,7 +739,7 @@ type
     procedure fill_builexp_data;
     procedure fill_weapon_data;
     procedure fill_explosion_data;
-    procedure set_owner_side_field_value(control: TCheckListBox; value: byte);
+    procedure set_owner_house_field_value(control: TCheckListBox; value: byte);
     // Store data procedures
     procedure store_data;
     procedure store_building_data;
@@ -747,7 +747,7 @@ type
     procedure store_builexp_data;
     procedure store_weapon_data;
     procedure store_explosion_data;
-    function get_owner_side_field_value(control: TCheckListBox): byte;
+    function get_owner_house_field_value(control: TCheckListBox): byte;
     // Miscellaneous procedures
     function get_group_ids_cell_text(index: integer; value: shortint): string;
     // Item control group procedures
@@ -763,10 +763,10 @@ type
     procedure draw_building_preview(draw_building: boolean);
     procedure draw_building_frame(image_index: integer; alpha, animation: boolean);
     procedure draw_unit_preview;
-    procedure draw_unit_frame(image_index, side: integer; is_stealth: boolean);
+    procedure draw_unit_frame(image_index, house: integer; is_stealth: boolean);
     procedure draw_builexp_preview;
-    procedure draw_building_art_frame(img_target: TImage; image_index, side: integer; raw, draw_background: boolean);
-    procedure draw_unit_art_frame(img_target: TImage; image_index, side: integer; raw: boolean);
+    procedure draw_building_art_frame(img_target: TImage; image_index, house: integer; raw, draw_background: boolean);
+    procedure draw_unit_art_frame(img_target: TImage; image_index, house: integer; raw: boolean);
     procedure draw_techpos_preview;
     // General procedures
     procedure apply_changes;
@@ -790,14 +790,14 @@ var
   i: integer;
 begin
   tmp_strings := TStringList.Create;
-  // Side names
-  for i := 0 to CNT_PLAYERS - 1 do
-    tmp_strings.Add(side_names[i]);
-  clbBuildingOwnerSide.Items := tmp_strings;
-  clbBuildingPrereq1OwnerSide.Items := tmp_strings;
-  clbBuildingPrereq2OwnerSide.Items := tmp_strings;
-  clbUnitOwnerSide.Items := tmp_strings;
-  clbUnitPrereq1OwnerSide.Items := tmp_strings;
+  // House names
+  for i := 0 to CNT_SIDES - 1 do
+    tmp_strings.Add(house_names[i]);
+  clbBuildingOwnerHouse.Items := tmp_strings;
+  clbBuildingPrereq1OwnerHouse.Items := tmp_strings;
+  clbBuildingPrereq2OwnerHouse.Items := tmp_strings;
+  clbUnitOwnerHouse.Items := tmp_strings;
+  clbUnitPrereq1OwnerHouse.Items := tmp_strings;
   // Unit voices combo boxes
   for i := 0 to 17 do
   begin
@@ -1700,18 +1700,18 @@ end;
 
 procedure TStructuresEditor.sgTechposDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
-  side, unitnum, tech: integer;
+  house, unitnum, tech: integer;
 begin
   cbxTechposUnitGroup.Visible := ACol >= 3;
   if ACol < 3 then
     exit;
-  side := ACol - 3;
+  house := ACol - 3;
   unitnum := ARow - 1;
   tech := rgTechposTechLevel.ItemIndex;
-  cbxTechposUnitGroup.Left := 124 + side * 134;
+  cbxTechposUnitGroup.Left := 124 + house * 134;
   cbxTechposUnitGroup.Top := 301 + unitnum * 20;
-  cbxTechposUnitGroup.ItemIndex := Structures.techpos[tech, unitnum].Units[side] + 1;
-  cbxTechposUnitGroup.Tag := side * 10 + unitnum;
+  cbxTechposUnitGroup.ItemIndex := Structures.techpos[tech, unitnum].Units[house] + 1;
+  cbxTechposUnitGroup.Tag := house * 10 + unitnum;
 end;
 
 procedure TStructuresEditor.sgTechposDataSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
@@ -1735,15 +1735,15 @@ end;
 
 procedure TStructuresEditor.cbxTechposUnitGroupChange(Sender: TObject);
 var
-  side, unitnum, tech: integer;
+  house, unitnum, tech: integer;
 begin
-  side := cbxTechposUnitGroup.Tag div 10;
+  house := cbxTechposUnitGroup.Tag div 10;
   unitnum := cbxTechposUnitGroup.Tag mod 10;
   tech := rgTechposTechLevel.ItemIndex;
-  Structures.techpos[tech, unitnum].Units[side] := cbxTechposUnitGroup.ItemIndex - 1;
+  Structures.techpos[tech, unitnum].Units[house] := cbxTechposUnitGroup.ItemIndex - 1;
   Structures.techpos_bin_modified := true;
   fill_status_bar;
-  sgTechposData.Cells[3 + side, 1 + unitnum] := cbxTechposUnitGroup.Items[Structures.techpos[tech, unitnum].Units[side] + 1];
+  sgTechposData.Cells[3 + house, 1 + unitnum] := cbxTechposUnitGroup.Items[Structures.techpos[tech, unitnum].Units[house] + 1];
   draw_techpos_preview;
 end;
 
@@ -1757,16 +1757,16 @@ procedure TStructuresEditor.imgTechposPreviewMouseDown(Sender: TObject; Button: 
 var
   pos_x, pos_y: integer;
   i: integer;
-  side, unitnum, tech: integer;
+  house, unitnum, tech: integer;
 begin
   pos_x := (X div 32) - (TECHPOS_PREVIEW_SIZE div 2);
   pos_y := (Y div 32) - (TECHPOS_PREVIEW_SIZE div 2);
   if sbTechposAtreides.Down then
-    side := 0
+    house := 0
   else if sbTechposHarkonnen.Down then
-    side := 1
+    house := 1
   else
-    side := 2;
+    house := 2;
   tech := rgTechposTechLevel.ItemIndex;
   unitnum := cbxTechposUnitGroup.Tag mod 10;
   for i := 0 to 9 do
@@ -1775,7 +1775,7 @@ begin
       unitnum := i;
       break;
     end;
-  sgTechposData.Col := 3 + side;
+  sgTechposData.Col := 3 + house;
   sgTechposData.Row := 1 + unitnum;
   cbxTechposUnitGroup.SetFocus;
 end;
@@ -2081,9 +2081,9 @@ begin
   if image_not_empty then
   begin
     if acg.is_unit then
-      draw_unit_art_frame(acg.view_image, image_index, acg.se_side_color.Value, acg.cb_raw_image.Checked)
+      draw_unit_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.cb_raw_image.Checked)
     else
-      draw_building_art_frame(acg.view_image, image_index, acg.se_side_color.Value, acg.cb_raw_image.Checked, true);
+      draw_building_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.cb_raw_image.Checked, true);
     acg.edit_frame_width.Text := inttostr(header.FrameWidth);
     acg.edit_frame_height.Text := inttostr(header.FrameHeight);
     acg.edit_image_width.Text := inttostr(header.ImageWidth);
@@ -2762,7 +2762,7 @@ begin
     draw_no_image_sign(imgBuildingIcon);
   if pnImagePalette.Visible then
     draw_palette(Structures.first_building_icon_image_index + index);
-  set_owner_side_field_value(clbBuildingOwnerSide, bld.OwnerSide);
+  set_owner_house_field_value(clbBuildingOwnerHouse, bld.OwnerHouse);
   // Build requirements group box
   seBuildingTechLevelBuild.Value := bld.TechLevelBuild;
   seBuildingTechLevelUpgrade1.Value := bld.TechLevelUpgrade1;
@@ -2777,10 +2777,10 @@ begin
   edBuildingBuildSpeedUpgrade2.Text := inttostr(bld.BuildSpeedUpgrade2);
   edBuildingBuildSpeedUpgrade3.Text := inttostr(bld.BuildSpeedUpgrade3);
   cbxBuildingPrereq1BuildingGroup.ItemIndex := bld.Prereq1BuildingGroup + 1;
-  set_owner_side_field_value(clbBuildingPrereq1OwnerSide, bld.Prereq1OwnerSide);
+  set_owner_house_field_value(clbBuildingPrereq1OwnerHouse, bld.Prereq1OwnerHouse);
   seBuildingPrereq1UpgradesNeeded.Value := bld.Prereq1UpgradesNeeded;
   cbxBuildingPrereq2BuildingGroup.ItemIndex := bld.Prereq2BuildingGroup + 1;
-  set_owner_side_field_value(clbBuildingPrereq2OwnerSide, bld.Prereq2OwnerSide);
+  set_owner_house_field_value(clbBuildingPrereq2OwnerHouse, bld.Prereq2OwnerHouse);
   seBuildingPrereq2UpgradesNeeded.Value := bld.Prereq2UpgradesNeeded;
   // Properties and behavior group box
   edBuildingHitPoints.Text := inttostr(bld.HitPoints);
@@ -2854,13 +2854,13 @@ begin
     draw_no_image_sign(imgUnitIcon);
   if pnImagePalette.Visible then
     draw_palette(Structures.first_unit_icon_image_index + index);
-  set_owner_side_field_value(clbUnitOwnerSide, unt.OwnerSide);
+  set_owner_house_field_value(clbUnitOwnerHouse, unt.OwnerHouse);
   // Build requirements group box
   seUnitTechLevel.Value := unt.TechLevel;
   edUnitCost.Text := inttostr(unt.Cost);
   edUnitBuildSpeed.Text := inttostr(unt.BuildSpeed);
   cbxUnitPrereq1BuildingGroup.ItemIndex := unt.Prereq1BuildingGroup + 1;
-  set_owner_side_field_value(clbUnitPrereq1OwnerSide, unt.Prereq1OwnerSide);
+  set_owner_house_field_value(clbUnitPrereq1OwnerHouse, unt.Prereq1OwnerHouse);
   seUnitPrereq1UpgradesNeeded.Value := unt.Prereq1UpgradesNeeded;
   cbxUnitPrereq2BuildingGroup.ItemIndex := unt.Prereq2BuildingGroup + 1;
   cbUnitAvailableInStarport.Checked := unt.AvailableInStarport <> 0;
@@ -3053,11 +3053,11 @@ begin
   lbAnimationArtListClick(nil);
 end;
 
-procedure TStructuresEditor.set_owner_side_field_value(control: TCheckListBox; value: byte);
+procedure TStructuresEditor.set_owner_house_field_value(control: TCheckListBox; value: byte);
 var
   i: integer;
 begin
-  for i := 0 to CNT_PLAYERS - 1 do
+  for i := 0 to CNT_SIDES - 1 do
     control.Checked[i] := (value and (1 shl i)) <> 0;
 end;
 
@@ -3126,7 +3126,7 @@ begin
   bld := Addr(Structures.templates.BuildingDefinitions[index]);
   // Basic group box
   bld.BuildingGroup := cbxBuildingGroup.ItemIndex;
-  bld.OwnerSide := get_owner_side_field_value(clbBuildingOwnerSide);
+  bld.OwnerHouse := get_owner_house_field_value(clbBuildingOwnerHouse);
   // Build requirements group box
   bld.TechLevelBuild := seBuildingTechLevelBuild.Value;
   bld.TechLevelUpgrade1 := seBuildingTechLevelUpgrade1.Value;
@@ -3141,10 +3141,10 @@ begin
   bld.BuildSpeedUpgrade2 := strtointdef(edBuildingBuildSpeedUpgrade2.Text, 0);
   bld.BuildSpeedUpgrade3 := strtointdef(edBuildingBuildSpeedUpgrade3.Text, 0);
   bld.Prereq1BuildingGroup := cbxBuildingPrereq1BuildingGroup.ItemIndex - 1;
-  bld.Prereq1OwnerSide := get_owner_side_field_value(clbBuildingPrereq1OwnerSide);
+  bld.Prereq1OwnerHouse := get_owner_house_field_value(clbBuildingPrereq1OwnerHouse);
   bld.Prereq1UpgradesNeeded := seBuildingPrereq1UpgradesNeeded.Value;
   bld.Prereq2BuildingGroup := cbxBuildingPrereq2BuildingGroup.ItemIndex - 1;
-  bld.Prereq2OwnerSide := get_owner_side_field_value(clbBuildingPrereq2OwnerSide);
+  bld.Prereq2OwnerHouse := get_owner_house_field_value(clbBuildingPrereq2OwnerHouse);
   bld.Prereq2UpgradesNeeded := seBuildingPrereq2UpgradesNeeded.Value;
   // Properties and behavior group box
   bld.HitPoints := strtointdef(edBuildingHitPoints.Text, 0);
@@ -3207,13 +3207,13 @@ begin
   unt := Addr(Structures.templates.UnitDefinitions[index]);
   // Basic group box
   unt.UnitGroup := cbxUnitGroup.ItemIndex;
-  unt.OwnerSide := get_owner_side_field_value(clbUnitOwnerSide);
+  unt.OwnerHouse := get_owner_house_field_value(clbUnitOwnerHouse);
   // Build requirements group box
   unt.TechLevel := seUnitTechLevel.Value;
   unt.Cost := strtointdef(edUnitCost.Text, 0);
   unt.BuildSpeed := strtointdef(edUnitBuildSpeed.Text, 0);
   unt.Prereq1BuildingGroup := cbxUnitPrereq1BuildingGroup.ItemIndex - 1;
-  unt.Prereq1OwnerSide := get_owner_side_field_value(clbUnitPrereq1OwnerSide);
+  unt.Prereq1OwnerHouse := get_owner_house_field_value(clbUnitPrereq1OwnerHouse);
   unt.Prereq1UpgradesNeeded := seUnitPrereq1UpgradesNeeded.Value;
   unt.Prereq2BuildingGroup := cbxUnitPrereq2BuildingGroup.ItemIndex - 1;
   unt.AvailableInStarport := IfThen(cbUnitAvailableInStarport.Checked, 1, 0);
@@ -3346,12 +3346,12 @@ begin
   end;
 end;
 
-function TStructuresEditor.get_owner_side_field_value(control: TCheckListBox): byte;
+function TStructuresEditor.get_owner_house_field_value(control: TCheckListBox): byte;
 var
   i: integer;
 begin
   result := 0;
-  for i := 0 to CNT_PLAYERS - 1 do
+  for i := 0 to CNT_SIDES - 1 do
     if control.Checked[i] then
       result := result or (1 shl i);
 end;
@@ -3453,20 +3453,20 @@ begin
   acg.btn_view_palette.Tag := group_index;
   acg.btn_view_palette.OnClick := AcgViewPaletteClick;
   acg.btn_view_palette.Parent := container;
-  acg.lbl_side_color := TLabel.Create(self);
-  acg.lbl_side_color.Left := 58;
-  acg.lbl_side_color.Top := 184;
-  acg.lbl_side_color.Caption := 'Side:';
-  acg.lbl_side_color.Parent := container;
-  acg.se_side_color := TSpinEdit.Create(self);
-  acg.se_side_color.Left := 86;
-  acg.se_side_color.Top := 180;
-  acg.se_side_color.MinValue := 0;
-  acg.se_side_color.MaxValue := 7;
-  acg.se_side_color.Width := 37;
-  acg.se_side_color.Tag := group_index;
-  acg.se_side_color.Parent := container;
-  acg.se_side_color.OnChange := AcgFrameListClick;
+  acg.lbl_house_color := TLabel.Create(self);
+  acg.lbl_house_color.Left := 58;
+  acg.lbl_house_color.Top := 184;
+  acg.lbl_house_color.Caption := 'Side:';
+  acg.lbl_house_color.Parent := container;
+  acg.se_house_color := TSpinEdit.Create(self);
+  acg.se_house_color.Left := 86;
+  acg.se_house_color.Top := 180;
+  acg.se_house_color.MinValue := 0;
+  acg.se_house_color.MaxValue := 7;
+  acg.se_house_color.Width := 37;
+  acg.se_house_color.Tag := group_index;
+  acg.se_house_color.Parent := container;
+  acg.se_house_color.OnChange := AcgFrameListClick;
   acg.cb_raw_image := TCheckBox.Create(self);
   acg.cb_raw_image.Left := 130;
   acg.cb_raw_image.Top := 182;
@@ -3837,7 +3837,7 @@ end;
 
 procedure TStructuresEditor.draw_building_frame(image_index: integer; alpha, animation: boolean);
 var
-  side: integer;
+  house: integer;
   i: integer;
   art_height: integer;
   structure_image: TStructureImagePtr;
@@ -3845,14 +3845,14 @@ var
   src_rect, dest_rect: TRect;
   turret_offset_x: integer;
 begin
-  side := 0;
-  for i := 0 to CNT_PLAYERS - 1 do
-    if clbBuildingOwnerSide.Checked[i] then
+  house := 0;
+  for i := 0 to CNT_SIDES - 1 do
+    if clbBuildingOwnerHouse.Checked[i] then
     begin
-      side := i;
+      house := i;
       break;
     end;
-  structure_image := StructGraphics.get_structure_image(image_index, side, false, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, house, false, false, was_already_loaded);
   if structure_image <> nil then
   begin
     art_height := strtointdef(edBuildingArtHeight.Text, 0);
@@ -3876,15 +3876,15 @@ end;
 procedure TStructuresEditor.draw_unit_preview;
 var
   i: integer;
-  side: integer;
+  house: integer;
   is_stealth: boolean;
 begin
-  // Get side
-  side := 0;
-  for i := 0 to CNT_PLAYERS - 1 do
-    if clbUnitOwnerSide.Checked[i] then
+  // Get house
+  house := 0;
+  for i := 0 to CNT_SIDES - 1 do
+    if clbUnitOwnerHouse.Checked[i] then
     begin
-      side := i;
+      house := i;
       break;
     end;
   // Draw background
@@ -3900,21 +3900,21 @@ begin
   is_stealth := cbUnitFlagUF_STEALTH.Checked or (cbxUnitSpecialBehavior.ItemIndex = 12) or (edUnitName.Text = 'STEALTH RAIDER');
   if cbxUnitUnitArt.ItemIndex <> 0 then
   begin
-    draw_unit_frame(Structures.unit_art_image_indexes[cbxUnitUnitArt.ItemIndex-1], side, is_stealth);
+    draw_unit_frame(Structures.unit_art_image_indexes[cbxUnitUnitArt.ItemIndex-1], house, is_stealth);
   end;
   if cbxUnitBarrelArt.ItemIndex <> 0 then
   begin
-    draw_unit_frame(Structures.unit_art_image_indexes[cbxUnitBarrelArt.ItemIndex-1], side, is_stealth);
+    draw_unit_frame(Structures.unit_art_image_indexes[cbxUnitBarrelArt.ItemIndex-1], house, is_stealth);
   end;
 end;
 
-procedure TStructuresEditor.draw_unit_frame(image_index, side: integer; is_stealth: boolean);
+procedure TStructuresEditor.draw_unit_frame(image_index, house: integer; is_stealth: boolean);
 var
   structure_image: TStructureImagePtr;
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, side, true, is_stealth, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, house, true, is_stealth, was_already_loaded);
   if structure_image <> nil then
   begin
     src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
@@ -3985,7 +3985,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index, side: integer; raw, draw_background: boolean);
+procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index, house: integer; raw, draw_background: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
@@ -3993,7 +3993,7 @@ var
   src_rect, dest_rect: TRect;
   raw_image: TBitmap;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, side, false, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, house, false, false, was_already_loaded);
   if structure_image = nil then
     exit;
   header := StructGraphics.get_structure_image_header(image_index);
@@ -4027,7 +4027,7 @@ begin
     StructGraphics.clear_last_structure_image(image_index, false);
 end;
 
-procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index, side: integer; raw: boolean);
+procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index, house: integer; raw: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
@@ -4035,7 +4035,7 @@ var
   src_rect, dest_rect: TRect;
   raw_image: TBitmap;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, side, true, false, was_already_loaded);
+  structure_image := StructGraphics.get_structure_image(image_index, house, true, false, was_already_loaded);
   if structure_image = nil then
     exit;
   header := StructGraphics.get_structure_image_header(image_index);
@@ -4072,7 +4072,7 @@ end;
 procedure TStructuresEditor.draw_techpos_preview;
 var
   i: integer;
-  tech, side: integer;
+  tech, house: integer;
   unit_group: integer;
   unit_template: TUnitTemplatePtr;
   is_stealth: boolean;
@@ -4088,34 +4088,34 @@ begin
   imgTechposPreview.Canvas.Rectangle(0, 0, imgTechposPreview.Width, imgTechposPreview.Height);
   tech := rgTechposTechLevel.ItemIndex;
   if sbTechposAtreides.Down then
-    side := 0
+    house := 0
   else if sbTechposHarkonnen.Down then
-    side := 1
+    house := 1
   else
-    side := 2;
+    house := 2;
   for i := 0 to tbTechposNumUnits.Position - 1 do
   begin
-    unit_group := Structures.techpos[tech, i].Units[side];
+    unit_group := Structures.techpos[tech, i].Units[house];
     pos_x := ((TECHPOS_PREVIEW_SIZE div 2) + Structures.techpos[tech, i].PosX) * 32;
     pos_y := ((TECHPOS_PREVIEW_SIZE div 2) + Structures.techpos[tech, i].PosY) * 32;
     if unit_group = -1 then
       continue;
-    unit_template := Structures.get_unit_template(unit_group, side, true);
+    unit_template := Structures.get_unit_template(unit_group, house, true);
     if (unit_template = nil) or (unit_template.SpecialBehavior = 5) then
       continue;
     // Check if unit is stealth
-    is_stealth := ((unit_template.Flags and $10) <> 0) or (unit_template.SpecialBehavior = 12) or (Structures.templates.UnitNameStrings[Structures.unit_side_versions[unit_group, side]] = 'STEALTH RAIDER');
+    is_stealth := ((unit_template.Flags and $10) <> 0) or (unit_template.SpecialBehavior = 12) or (Structures.templates.UnitNameStrings[Structures.unit_house_versions[unit_group, house]] = 'STEALTH RAIDER');
     // Draw unit
     if unit_template.UnitArt <> -1 then
     begin
-      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], side, true, is_stealth, was_already_loaded);
+      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], house, true, is_stealth, was_already_loaded);
       if structure_image <> nil then
         Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
     end;
     // Draw barrel
     if unit_template.BarrelArt <> -1 then
     begin
-      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], side, true, is_stealth, was_already_loaded);
+      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], house, true, is_stealth, was_already_loaded);
       if structure_image <> nil then
         Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
     end;
@@ -4125,7 +4125,7 @@ end;
 procedure TStructuresEditor.apply_changes;
 begin
   store_data;
-  Structures.compute_building_and_unit_side_versions;
+  Structures.compute_building_and_unit_house_versions;
   Structures.compute_building_group_mapping;
   Dispatcher.register_event(evACStructuresEditor);
 end;

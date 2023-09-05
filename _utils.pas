@@ -5,7 +5,7 @@ interface
 uses
   Controls, Messages, ExtCtrls, SysUtils, _dispatcher;
 
-const CNT_PLAYERS = 8;
+const CNT_SIDES = 8;
 
 type
   TByteArray = array[0..0] of byte;

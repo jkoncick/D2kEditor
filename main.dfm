@@ -73,7 +73,7 @@ object MainWindow: TMainWindow
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 673
+    Top = 681
     Width = 952
     Height = 19
     Panels = <
@@ -246,12 +246,12 @@ object MainWindow: TMainWindow
               Height = 13
               Caption = 'Misc objects'
             end
-            object lblStructPlayer: TLabel
+            object lblStructSide: TLabel
               Left = 0
               Top = 104
-              Width = 29
+              Width = 21
               Height = 13
-              Caption = 'Player'
+              Caption = 'Side'
             end
             object lblStructureName: TLabel
               Left = 0
@@ -271,7 +271,7 @@ object MainWindow: TMainWindow
               Height = 13
               Caption = 'Units'
             end
-            object cbxStructPlayer: TComboBox
+            object cbxStructSide: TComboBox
               Left = 0
               Top = 120
               Width = 148
@@ -279,7 +279,7 @@ object MainWindow: TMainWindow
               Style = csDropDownList
               ItemHeight = 13
               TabOrder = 0
-              OnChange = PlayerSelectChange
+              OnChange = SideSelectChange
             end
             object lbBuildingGroup: TListBox
               Tag = -1
@@ -343,7 +343,7 @@ object MainWindow: TMainWindow
                   TabOrder = 2
                   OnClick = StructControlClick
                 end
-                object cbxBuildingPlayer: TComboBox
+                object cbxBuildingSide: TComboBox
                   Tag = -1
                   Left = 0
                   Top = 40
@@ -352,7 +352,7 @@ object MainWindow: TMainWindow
                   Style = csDropDownList
                   ItemHeight = 13
                   TabOrder = 0
-                  OnChange = PlayerSelectChange
+                  OnChange = SideSelectChange
                 end
                 object lbBuildingType: TListBox
                   Tag = -1
@@ -412,7 +412,7 @@ object MainWindow: TMainWindow
                   Height = 13
                   Caption = 'Direction:'
                 end
-                object cbxUnitPlayer: TComboBox
+                object cbxUnitSide: TComboBox
                   Tag = -1
                   Left = 0
                   Top = 40
@@ -421,7 +421,7 @@ object MainWindow: TMainWindow
                   Style = csDropDownList
                   ItemHeight = 13
                   TabOrder = 0
-                  OnChange = PlayerSelectChange
+                  OnChange = SideSelectChange
                 end
                 object lbUnitType: TListBox
                   Tag = -1
@@ -1086,7 +1086,7 @@ object MainWindow: TMainWindow
           ItemHeight = 13
           TabOrder = 6
         end
-        object cbxConcretePlayer: TComboBox
+        object cbxConcreteSide: TComboBox
           Left = 48
           Top = 26
           Width = 105
@@ -1095,7 +1095,7 @@ object MainWindow: TMainWindow
           ItemHeight = 13
           TabOrder = 7
           Visible = False
-          OnChange = PlayerSelectChange
+          OnChange = SideSelectChange
         end
       end
     end
@@ -1239,10 +1239,10 @@ object MainWindow: TMainWindow
     end
     object Settings1: TMenuItem
       Caption = 'Settings'
-      object Useallocationindexes1: TMenuItem
+      object Usehouseidcolors1: TMenuItem
         Tag = 1
         AutoCheck = True
-        Caption = 'Use alloc. index colors'
+        Caption = 'Use house ID colors'
         ShortCut = 16457
         OnClick = SettingChange
       end

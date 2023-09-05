@@ -138,21 +138,21 @@ object SetDialog: TSetDialog
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 3
-    object ChStrOwn_LbPlayerFrom: TLabel
+    object ChStrOwn_LbSideFrom: TLabel
       Left = 8
       Top = 16
       Width = 23
       Height = 13
       Caption = 'From'
     end
-    object ChStrOwn_LbPlayerTo: TLabel
+    object ChStrOwn_LbSideTo: TLabel
       Left = 8
       Top = 48
       Width = 13
       Height = 13
       Caption = 'To'
     end
-    object ChStrOwn_PlayerFrom: TComboBox
+    object ChStrOwn_SideFrom: TComboBox
       Left = 48
       Top = 16
       Width = 121
@@ -161,7 +161,7 @@ object SetDialog: TSetDialog
       ItemHeight = 13
       TabOrder = 0
     end
-    object ChStrOwn_PlayerTo: TComboBox
+    object ChStrOwn_SideTo: TComboBox
       Left = 48
       Top = 48
       Width = 121
