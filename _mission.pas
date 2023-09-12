@@ -884,32 +884,36 @@ begin
     SetString(contents, PChar(Addr(event.data[0])), StrLen(PChar(Addr(event.data[0]))));
   if et.event_data = edCondExpr then
   begin
-    and_or_level := 0;
-    cond_expr := Addr(event.data[1]);
-    for i := 0 to cond_expr.num_operations - 1 do
+    if event.amount = 0 then
     begin
-      if i > 0 then
+      and_or_level := 0;
+      cond_expr := Addr(event.data[1]);
+      for i := 0 to cond_expr.num_operations - 1 do
       begin
-        and_or_op := (cond_expr.and_or shr ((i - 1) * 2)) and 3;
-        contents := contents + ' ' + IfThen((and_or_op and 1) = 0, 'and', 'or') + ' ';
+        if i > 0 then
+        begin
+          and_or_op := (cond_expr.and_or shr ((i - 1) * 2)) and 3;
+          contents := contents + ' ' + IfThen((and_or_op and 1) = 0, 'and', 'or') + ' ';
+        end;
+        and_or_op := (cond_expr.and_or shr (i * 2)) and 3;
+        while (and_or_op > and_or_level) do
+        begin
+          contents := contents + '(';
+          inc(and_or_level);
+        end;
+        contents := contents + MissionIni.get_variable_name(cond_expr.variable[i], 1) + ' ' + cond_expr_operator_str[(cond_expr.operator shr (i * 4)) and 15] + ' ';
+        if cond_expr.value_var_flags and (1 shl i) <> 0 then
+          contents := contents + MissionIni.get_variable_name(cond_expr.value[i], 1)
+        else
+          contents := contents + IntToStr(cond_expr.value[i]);
+        while (and_or_op < and_or_level) do
+        begin
+          contents := contents + ')';
+          dec(and_or_level);
+        end;
       end;
-      and_or_op := (cond_expr.and_or shr (i * 2)) and 3;
-      while (and_or_op > and_or_level) do
-      begin
-        contents := contents + '(';
-        inc(and_or_level);
-      end;
-      contents := contents + MissionIni.get_variable_name(cond_expr.variable[i], 1) + ' ' + cond_expr_operator_str[(cond_expr.operator shr (i * 4)) and 15] + ' ';
-      if cond_expr.value_var_flags and (1 shl i) <> 0 then
-        contents := contents + MissionIni.get_variable_name(cond_expr.value[i], 1)
-      else
-        contents := contents + IntToStr(cond_expr.value[i]);
-      while (and_or_op < and_or_level) do
-      begin
-        contents := contents + ')';
-        dec(and_or_level);
-      end;
-    end;
+    end else
+      contents := get_object_filter_contents(Addr(event.data[1]), event.amount - 1);
   end;
   if et.event_data >= edUnitFilter then
   begin

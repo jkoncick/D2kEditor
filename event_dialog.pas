@@ -1822,6 +1822,12 @@ begin
   // Update value selection list
   if (EventConfig.event_types[tmp_event.event_type].event_data = edValueList) and ((Sender as TControl).Tag = 5) then
     fill_event_data_panel(edpValueList, true, Ord(edValueList));
+  // Update condition expression
+  if (EventConfig.event_types[tmp_event.event_type].event_data = edCondExpr) and ((Sender as TControl).Tag = 1) then
+  begin
+    FillChar(tmp_event.data[1], 24, 0);
+    fill_event_data_panel(edpCondExpr, true, value);
+  end;
 end;
 
 procedure TEventDialog.ACGVariableToggle(Sender: TObject);
@@ -2348,8 +2354,8 @@ begin
   fill_event_data_panel(edpMusic,        ed = edMusic, 0);
   fill_event_data_panel(edpTileBlock,    ed = edTileBlock, 0);
   fill_event_data_panel(edpTilePairs,    ed = edTilePairs, 0);
-  fill_event_data_panel(edpCondExpr,     ed = edCondExpr, 0);
   fill_event_data_panel(edpFilter,       ed >= edUnitFilter, ord(ed) - ord(edUnitFilter));
+  fill_event_data_panel(edpCondExpr,     ed = edCondExpr, tmp_event.amount);
   // Fill event note
   if notes_enabled then
     edEventNote.Text := MissionIni.event_notes[selected_event];
@@ -2508,32 +2514,43 @@ begin
   end;
   if panel = edpCondExpr then
   begin
-    loading := true;
-    cond_expr := Addr(tmp_event.data[1]);
-    for i := 0 to 6 do
+    if object_type = 0 then
     begin
-      cond_expr_and_or[i].Visible := cond_expr.num_operations > (i + 1);
-      cond_expr_and_or[i].ItemIndex := (cond_expr.and_or shr (i * 2)) and 3;
-    end;
-    for i := 0 to 7 do
-    begin
-      cond_expr_variable[i].Visible := cond_expr.num_operations > i;
-      cond_expr_variable[i].Text := MissionIni.get_variable_name(cond_expr.variable[i], 1);
-      cond_expr_operator[i].Visible := cond_expr.num_operations > i;
-      cond_expr_operator[i].ItemIndex := (cond_expr.operator shr (i * 4)) and 15;
-      cond_expr_value[i].Visible := cond_expr.num_operations > i;
-      cond_expr_var_btn[i].Visible := cond_expr.num_operations > i;
-      if (cond_expr.value_var_flags shr i) and 1 = 1 then
+      edpFilter.Visible := False;
+      loading := true;
+      cond_expr := Addr(tmp_event.data[1]);
+      for i := 0 to 6 do
       begin
-        cond_expr_value[i].Text := MissionIni.get_variable_name(cond_expr.value[i], 1);
-        cond_expr_var_btn[i].Caption := 'C';
-      end else
-      begin
-        cond_expr_value[i].Text := IntToStr(cond_expr.value[i]);
-        cond_expr_var_btn[i].Caption := 'V';
+        cond_expr_and_or[i].Visible := cond_expr.num_operations > (i + 1);
+        cond_expr_and_or[i].ItemIndex := (cond_expr.and_or shr (i * 2)) and 3;
       end;
+      for i := 0 to 7 do
+      begin
+        cond_expr_variable[i].Visible := cond_expr.num_operations > i;
+        cond_expr_variable[i].Text := MissionIni.get_variable_name(cond_expr.variable[i], 1);
+        cond_expr_operator[i].Visible := cond_expr.num_operations > i;
+        cond_expr_operator[i].ItemIndex := (cond_expr.operator shr (i * 4)) and 15;
+        cond_expr_value[i].Visible := cond_expr.num_operations > i;
+        cond_expr_var_btn[i].Visible := cond_expr.num_operations > i;
+        if (cond_expr.value_var_flags shr i) and 1 = 1 then
+        begin
+          cond_expr_value[i].Text := MissionIni.get_variable_name(cond_expr.value[i], 1);
+          cond_expr_var_btn[i].Caption := 'C';
+        end else
+        begin
+          cond_expr_value[i].Text := IntToStr(cond_expr.value[i]);
+          cond_expr_var_btn[i].Caption := 'V';
+        end;
+      end;
+      loading := false;
+    end else
+    begin
+      panel.Visible := False;
+      edpFilter.Visible := True;
+      btnEventFilterIndexToggle.Visible := False;
+      pnEventFilterLimitSkip.Visible := False;
+      fill_filter_control_group(Addr(fcgs[0]), object_type - 1);
     end;
-    loading := false;
   end;
   if panel = edpFilter then
   begin
