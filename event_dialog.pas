@@ -2549,6 +2549,9 @@ begin
       edpFilter.Visible := True;
       btnEventFilterIndexToggle.Visible := False;
       pnEventFilterLimitSkip.Visible := False;
+      pnEventFilterBody.Visible := True;
+      edEventFilterIndexVar.Visible := False;
+      lblEventFilterIndexVar.Visible := False;
       fill_filter_control_group(Addr(fcgs[0]), object_type - 1);
     end;
   end;

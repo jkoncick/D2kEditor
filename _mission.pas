@@ -1647,6 +1647,8 @@ begin
     condition_data[num_conditions + i] := condition_buffer[i];
   end;
   num_conditions := Min(num_conditions + exp_num_conditions, MAX_CONDITIONS);
+  // Compute event indentation
+  compute_event_indentation;
   // Register events in dispatcher
   Dispatcher.register_event(evMisEventsImport);
 end;
