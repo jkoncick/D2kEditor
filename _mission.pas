@@ -1591,6 +1591,8 @@ begin
   BlockWrite(f, event_buffer, exp_num_events * sizeof(TEvent));
   BlockWrite(f, condition_buffer, exp_num_conditions * sizeof(TCondition));
   CloseFile(f);
+  // Process extra data in mission ini file
+  MissionIni.export_events(first_event, last_event, filename);
 end;
 
 procedure TMission.import_events(filename: string);
@@ -1600,6 +1602,7 @@ var
   exp_num_events, exp_num_conditions: integer;
   i, j: integer;
   f: file of byte;
+  first_event: integer;
 begin
   // Load data from file
   AssignFile(f, filename);
@@ -1635,6 +1638,7 @@ begin
     end;
     event_data[num_events + i] := event_buffer[i];
   end;
+  first_event := num_events;
   num_events := Min(num_events + exp_num_events, MAX_EVENTS);
   // Add imported conditions
   for i := 0 to exp_num_conditions - 1 do
@@ -1651,6 +1655,8 @@ begin
   compute_event_indentation;
   // Register events in dispatcher
   Dispatcher.register_event(evMisEventsImport);
+  // Process extra data in mission ini file
+  MissionIni.import_events(first_event, filename);
 end;
 
 procedure TMission.compute_event_indentation;

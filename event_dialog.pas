@@ -737,6 +737,8 @@ var
 begin
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) or (ARow - 1 >= Mission.num_events) then
     exit;
+  if (goRangeSelect in EventGrid.Options) and (ARow >= EventGrid.Selection.Top) and (ARow <= EventGrid.Selection.Bottom) then
+    exit;
   if Markselcondition1.Checked and Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
   begin
     if not negation then
