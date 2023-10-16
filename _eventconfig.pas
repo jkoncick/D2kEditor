@@ -13,17 +13,17 @@ const ArgTypeStr: array[0..8] of String = ('None', 'Number', 'BigNumber', 'HexNu
 type  ListType =                           (ltNone, ltCustom, ltGame, ltItem);
 const ListTypeStr: array[0..3] of String = ('None', 'Custom', 'Game', 'Item');
 
-type  ItemListType =                            (ilNone, ilSides, ilSidesAny, ilSounds, ilUnits, ilUnitGroups, ilBuildings, ilBuildingGroups, ilWeapons, ilExplosions, ilArmourTypes, ilSpeedTypes);
-const ItemListTypeStr: array[0..11] of String = ('None', 'Sides', 'SidesAny', 'Sounds', 'Units', 'UnitGroups', 'Buildings', 'BuildingGroups', 'Weapons', 'Explosions', 'ArmourTypes', 'SpeedTypes');
+type  ItemListType =                            (ilNone, ilSides, ilSidesAny, ilSounds, ilUnits, ilUnitGroups, ilBuildings, ilBuildingGroups, ilWeapons, ilExplosions, ilWarheads, ilArmourTypes, ilSpeedTypes);
+const ItemListTypeStr: array[0..12] of String = ('None', 'Sides', 'SidesAny', 'Sounds', 'Units', 'UnitGroups', 'Buildings', 'BuildingGroups', 'Weapons', 'Explosions', 'Warheads', 'ArmourTypes', 'SpeedTypes');
 
 type  ReferenceType =                           (rtNone, rtEvent, rtCondition);
 const ReferenceTypeStr: array[0..2] of String = ('None', 'Event', 'Condition');
 
-type  EventData =                            (edNone, edUnitList, edValueList, edCoordList, edAreaList, edByteValues, edMessage, edMusic, edTileBlock, edTilePairs, edCondExpr, edUnitFilter, edBuildingFilter, edCrateFilter, edTileFilter, edUnitTypeFilter, edBuildingTypeFilter);
-const EventDataStr: array[0..16] of String = ('None', 'UnitList', 'ValueList', 'CoordList', 'AreaList', 'ByteValues', 'Message', 'Music', 'TileBlock', 'TilePairs', 'CondExpr', 'UnitFilter', 'BuildingFilter', 'CrateFilter', 'TileFilter', 'UnitTypeFilter', 'BuildingTypeFilter');
+type  EventData =                            (edNone, edUnitList, edValueList, edCoordList, edAreaList, edByteValues, edMessage, edMusic, edTileBlock, edTilePairs, edCondExpr, edUnitFilter, edBuildingFilter, edBulletFilter, edExplosionFilter, edCrateFilter, edTileFilter, edSideFilter, edUnitTypeFilter, edBuildingTypeFilter);
+const EventDataStr: array[0..19] of String = ('None', 'UnitList', 'ValueList', 'CoordList', 'AreaList', 'ByteValues', 'Message', 'Music', 'TileBlock', 'TilePairs', 'CondExpr', 'UnitFilter', 'BuildingFilter', 'BulletFilter', 'ExplosionFilter', 'CrateFilter', 'TileFilter', 'SideFilter', 'UnitTypeFilter', 'BuildingTypeFilter');
 
-type  ConditionData =                           (cdNone, cdUnitFilter, cdBuildingFilter, cdCrateFilter, cdTileFilter);
-const ConditionDataStr: array[0..4] of String = ('None', 'UnitFilter', 'BuildingFilter', 'CrateFilter', 'TileFilter');
+type  ConditionData =                           (cdNone, cdUnitFilter, cdBuildingFilter, cdBulletFilter, cdExplosionFilter, cdCrateFilter, cdTileFilter);
+const ConditionDataStr: array[0..6] of String = ('None', 'UnitFilter', 'BuildingFilter', 'BulletFilter', 'ExplosionFilter', 'CrateFilter', 'TileFilter');
 
 type
   TShowIfDefinition = record
@@ -136,7 +136,7 @@ type
     condition_type_mapping: array[0..255] of byte;
     cnt_valid_condition_types: integer;
     // Filter criteria configuration
-    filter_criteria: array[0..5] of TFilterCriteriaDefinitionArr;
+    filter_criteria: array[0..8] of TFilterCriteriaDefinitionArr;
 
   public
     procedure init;
@@ -309,10 +309,13 @@ begin
   ini := TMemIniFile.Create(tmp_filename);
   load_filter_criteria(ini, 0, 'Unit');
   load_filter_criteria(ini, 1, 'Building');
-  load_filter_criteria(ini, 2, 'Crate');
-  load_filter_criteria(ini, 3, 'Tile');
-  load_filter_criteria(ini, 4, 'UnitType');
-  load_filter_criteria(ini, 5, 'BuildingType');
+  load_filter_criteria(ini, 2, 'Bullet');
+  load_filter_criteria(ini, 3, 'Explosion');
+  load_filter_criteria(ini, 4, 'Crate');
+  load_filter_criteria(ini, 5, 'Tile');
+  load_filter_criteria(ini, 6, 'Side');
+  load_filter_criteria(ini, 7, 'UnitType');
+  load_filter_criteria(ini, 8, 'BuildingType');
   ini.Destroy;
 end;
 

@@ -404,7 +404,7 @@ type
     pending_update_contents: boolean;
     pending_update_variable_list: boolean;
 
-    cached_lists: array[-2..11] of TStringList;
+    cached_lists: array[-2..12] of TStringList;
     ccgs: array[0..5] of TCoordControlGroup;
     acgs: array[0..13] of TArgControlGroup;
     fcgs: array[0..1] of TFilterControlGroup;
@@ -2158,6 +2158,10 @@ begin
   cached_lists[Byte(ilExplosions)].Clear;
   for i:= 0 to Structures.templates.ExplosionCount -1 do
     cached_lists[Byte(ilExplosions)].Add(inttostr(i) + ' - ' + Structures.templates.ExplosionStrings[i]);
+  // Warhead list
+  cached_lists[Byte(ilWarheads)].Clear;
+  for i:= 0 to Structures.armour.WarheadCount-1 do
+    cached_lists[Byte(ilWarheads)].Add(inttostr(i) + ' - ' + Structures.armour.WarheadStrings[i]);
   // Armour type list
   cached_lists[Byte(ilArmourTypes)].Clear;
   for i:= 0 to Structures.armour.ArmourTypeCount -1 do
@@ -2572,7 +2576,7 @@ begin
     begin
       btnEventFilterIndexToggle.Caption := 'Index';
       pnEventFilterBody.Visible := True;
-      pnEventFilterLimitSkip.Visible := object_type < 4;
+      pnEventFilterLimitSkip.Visible := object_type < 7;
       edEventFilterIndexVar.Visible := False;
       lblEventFilterIndexVar.Visible := False;
       if (tmp_event.event_flags and 16) <> 0 then
@@ -3550,7 +3554,7 @@ begin
   end;
   // Fill data fields
   loading := true;
-  fcg.cb_check_position.Enabled := object_type < 4;
+  fcg.cb_check_position.Enabled := object_type < 6;
   fcg.cb_check_position.Checked := (fcg.filter_ptr.pos_and_var_flags and 1) <> 0;
   fcg.cb_position_negation.Checked := (fcg.filter_ptr.pos_and_var_flags and 2) <> 0;
   fcg.cbx_position_type.ItemIndex := (fcg.filter_ptr.pos_and_var_flags shr 2) and 3;

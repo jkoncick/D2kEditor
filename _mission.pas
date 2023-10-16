@@ -778,6 +778,7 @@ begin
       ilUnitGroups: result := Structures.get_unit_group_str(value);
       ilWeapons: result := Structures.templates.WeaponStrings[value];
       ilExplosions: result := Structures.templates.ExplosionStrings[value];
+      ilWarheads: result := Structures.armour.WarheadStrings[value];
       ilArmourTypes: result := Structures.armour.ArmourTypeStrings[value];
       ilSpeedTypes: result := Structures.speed.SpeedNameStrings[value];
     end;
@@ -864,7 +865,7 @@ begin
     message_index := get_integer_value(Addr(event.data), 21, 4);
     contents := '(' + inttostr(message_index) + ') ';
     str := StringTable.get_text(message_index, true, dummy);
-    for i := 0 to 3 do
+    for i := 0 to 7 do
       if event.data[5 + i] <> 0 then
         begin
           found := 0;

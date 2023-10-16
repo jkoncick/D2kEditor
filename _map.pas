@@ -1019,7 +1019,7 @@ begin
           modify_map_tile(x, y, map_data[x,y].tile, (special and $7E3F) or (side_from shl 6));
       end else
       // Advanced mode (building)
-      if (special and 8192) <> 0 then
+      if ((special and 32768) = 0) and ((special and 8192) <> 0) then
       begin
         side := (special shr 7) and 7;
         if side = side_from then
