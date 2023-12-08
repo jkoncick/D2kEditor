@@ -441,7 +441,7 @@ begin
           inc(tmp_house_color_pixel_count);
           tmp_bitmap_data[bitmap_pos] := colours[house_index, pixel];
         end else
-          tmp_bitmap_data[bitmap_pos] := palette.colors[pixel];
+          tmp_bitmap_data[bitmap_pos] := IfThen(pixel > 0, palette.colors[pixel], 31775); // If pixel is 0, forcefully use magenta color
       end else
         tmp_bitmap_data[bitmap_pos] := image_data_16bpp[image_pos];
       inc(image_pos);
