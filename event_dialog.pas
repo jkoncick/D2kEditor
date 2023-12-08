@@ -1192,7 +1192,7 @@ begin
   end else
   begin
     if tmp_event.data[5 + i] = 0 then
-      start_variable_selection(vsEventMessageVar, i, tmp_event.data[13 + i]);
+      start_variable_selection(vsEventMessageVar, i, IfThen((i > 0) and (tmp_event.data[13 + i] = 0), tmp_event.data[12 + i] + 1, tmp_event.data[13 + i]));
     tmp_event.data[5 + i] := (Sender as TComboBox).ItemIndex;
     event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], 1);
     event_message_variable[i].Enabled := True;
@@ -2750,7 +2750,22 @@ begin
   tmp_strings.Add('None');
   tmp_strings.Add('Number');
   tmp_strings.Add('Time');
+  tmp_strings.Add('HexNumber');
+  tmp_strings.Add('Float (1 decimal)');
+  tmp_strings.Add('Float (2 decimals)');
+  tmp_strings.Add('Float (3 decimals)');
+  tmp_strings.Add('Float (4 decimals)');
   tmp_strings.Add('String from table');
+  tmp_strings.Add('Unit name');
+  tmp_strings.Add('Building name');
+  tmp_strings.Add('Unit type');
+  tmp_strings.Add('Building type');
+  tmp_strings.Add('Unit group');
+  tmp_strings.Add('Building group');
+  tmp_strings.Add('Weapon name');
+  tmp_strings.Add('Explosion name');
+  tmp_strings.Add('Warhead name');
+  tmp_strings.Add('Armour type');
   for i := 0 to 7 do
   begin
     lbl := TLabel.Create(Self);

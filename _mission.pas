@@ -9,7 +9,7 @@ const side_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605,
 const allegiance_type: array[0..2] of string = ('Ally', 'Enemy', 'Neutral');
 const allegiance_type_color: array[0..2] of TColor = (clGreen, clRed, clOlive);
 const filter_position_type: array[0..3] of string = ('Area', 'Sqr', 'CrcTl', 'CrcPx');
-const message_var_data_type: array[0..3] of string = ('', 'Num', 'Tim', 'Str');
+const message_var_data_type: array[0..18] of string = ('', 'Num', 'Tim', 'Hex', 'Float1', 'Float2', 'Float3', 'Float4', 'Str', 'Unit', 'Bld', 'UnitType', 'BldType', 'UnitGrp', 'BldGrp', 'Wpn', 'Expl', 'Warhd', 'Armour');
 
 // *****************************************************************************
 // Event definition
@@ -572,8 +572,12 @@ begin
         end;
         // Get argument contents
         if arg_def_ptr.arg_type = atFloat then
-          contents := contents + floattostrf(get_float_struct_member(event, Addr(event_args_struct_members), idx), ffFixed, 8, 3)
-        else
+        begin
+          if (event.arg_var_flags and (1 shl idx)) <> 0 then
+            contents := contents + MissionIni.get_variable_name(get_integer_struct_member(event, Addr(event_args_struct_members), idx), 1)
+          else
+            contents := contents + floattostrf(get_float_struct_member(event, Addr(event_args_struct_members), idx), ffFixed, 8, 3);
+        end else
           contents := contents + get_argument_contents(get_integer_struct_member(event, Addr(event_args_struct_members), idx), (event.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr);
       end;
       start := i + 3;
@@ -689,8 +693,12 @@ begin
         end;
         // Get argument contents
         if arg_def_ptr.arg_type = atFloat then
-          contents := contents + floattostrf(get_float_struct_member(cond, Addr(condition_args_struct_members), idx), ffFixed, 8, 3)
-        else
+        begin
+          if (cond.arg_var_flags and (1 shl idx)) <> 0 then
+            contents := contents + MissionIni.get_variable_name(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), 1)
+          else
+            contents := contents + floattostrf(get_float_struct_member(cond, Addr(condition_args_struct_members), idx), ffFixed, 8, 3);
+        end else
           contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), (cond.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr);
       end;
       start := i + 3;
