@@ -92,7 +92,6 @@ begin
   add_debug_value(s, Structures, 'misc_objects.ini file', Structures.misc_objects_ini_filename);
   add_debug_value(s, Structures, 'players.ini file', Structures.sides_ini_filename);
   add_debug_value(s, Structures, 'limits.ini file', Structures.limits_ini_filename);
-  add_debug_value(s, Structures, 'group_ids.txt file', Structures.group_ids_txt_filename);
 
   add_debug_value(s, StructGraphics, 'COLOURS.BIN file', StructGraphics.colours_bin_filename);
   add_debug_value(s, StructGraphics, 'DATA.R16 file', StructGraphics.data_r16_filename);

@@ -533,7 +533,6 @@ type
     sides_ini_filename: String;
     misc_objects_ini_filename: String;
     limits_ini_filename: String;
-    group_ids_txt_filename: String;
 
     // TEMPLATES.BIN related data
     templates: TTemplatesBinFile;
@@ -642,7 +641,7 @@ type
     // Limits related procedures
     procedure load_limits_ini;
     // Group IDs related procedures
-    procedure load_group_ids_txt;
+    procedure load_group_ids;
 
   private
     // Auxiliary procedures
@@ -713,7 +712,7 @@ var
 
 implementation
 
-uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _graphics, _sounds, _stringtable, _dispatcher;
+uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _graphics, _sounds, _stringtable, _dispatcher, _gamelists;
 
 procedure TStructures.init;
 var
@@ -730,7 +729,7 @@ begin
   load_misc_objects_ini;
   load_sides_ini;
   load_limits_ini;
-  load_group_ids_txt;
+  load_group_ids;
   // Initialize item data pointers
   init_item_data_pointers(0, Addr(templates.BuildingDefinitions),  sizeof(TBuildingTemplate));
   init_item_data_pointers(1, Addr(builexp),                        sizeof(TBuilExpEntry));
@@ -1387,17 +1386,12 @@ begin
   ini.Destroy;
 end;
 
-procedure TStructures.load_group_ids_txt;
+procedure TStructures.load_group_ids;
 var
-  tmp_filename: String;
   i: integer;
   prefix: string;
 begin
-  tmp_filename := find_file('config\group_ids.txt', 'configuration');
-  if (tmp_filename = '') or (tmp_filename = group_ids_txt_filename) then
-    exit;
-  group_ids_txt_filename := tmp_filename;
-  group_ids.LoadFromFile(tmp_filename);
+  group_ids.Assign(GameLists.get_list_ref('GroupIDs'));
   for i := 0 to Length(group_ids_byte_types) - 1 do
   begin
     prefix := Copy(group_ids[i], 1, 2);

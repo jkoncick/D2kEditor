@@ -15,6 +15,7 @@ type
     procedure init;
   private
     procedure load_game_lists_ini;
+    procedure load_rules;
   public
     function get_list_index(name: string): integer;
     function get_list_ref(index: integer): TStringList; overload;
@@ -28,7 +29,7 @@ var
 
 implementation
 
-uses SysUtils, _dispatcher, _utils;
+uses SysUtils, _dispatcher, _utils, _missionini;
 
 procedure TGameLists.init;
 begin
@@ -37,6 +38,7 @@ begin
   SetLength(lists, 1);
   lists[0] := TStringList.Create;
   load_game_lists_ini;
+  load_rules;
   Dispatcher.register_event(evLoadGameLists);
 end;
 
@@ -67,6 +69,17 @@ begin
     lists[list_index.Count-1].Add(line);
   end;
   CloseFile(f);
+end;
+
+procedure TGameLists.load_rules;
+var
+  i: integer;
+begin
+  list_index.Add('Rules');
+  SetLength(lists, list_index.Count);
+  lists[list_index.Count-1] := TStringList.Create;
+  for i := 0 to Length(MissionIni.rules) - 1 do
+    lists[list_index.Count-1].Add(MissionIni.rules[i].name);
 end;
 
 function TGameLists.get_list_index(name: string): integer;

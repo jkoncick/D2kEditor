@@ -606,7 +606,7 @@ begin
   Structures.load_misc_objects_ini;
   Structures.load_sides_ini;
   Structures.load_limits_ini;
-  Structures.load_group_ids_txt;
+  Structures.load_group_ids;
   StructGraphics.load_colours_bin;
   StructGraphics.load_data_r16(false);
   StructGraphics.load_graphics_misc_objects;

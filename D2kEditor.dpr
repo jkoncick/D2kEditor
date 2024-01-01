@@ -87,13 +87,13 @@ begin
   Mission.init;
   MissionIni.init;
   Tileset.init;
+  GameLists.init;
+  GameStructs.init;
   Structures.init;
   StructGraphics.init;
   Sounds.init;
   StringTable.init;
   Launcher.init;
-  GameLists.init;
-  GameStructs.init;
   EventConfig.init;
   // Load map given as first parameter
   if ParamCount > 0 then
