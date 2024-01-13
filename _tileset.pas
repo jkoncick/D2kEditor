@@ -65,8 +65,10 @@ type
 
 type
   TMinimapColorRule = record
-    color: cardinal;
     rule: TTileAtrRule;
+    color: cardinal;
+    color_8bit: byte; // Used by Dune2000 game only
+    color_16bit: word; // Used by Dune2000 game only
   end;
 
 type
@@ -223,6 +225,8 @@ type
     // Saving tile attributes
     procedure save_tileatr;
     procedure save_tileatr_to_file(filename: String);
+    // Radar color file for Dune2000 game
+    procedure produce_radar_color_file;
 
     // Functions related to tileset configuration
     function get_paint_tile_group_char(group: integer): char;
@@ -1009,6 +1013,34 @@ begin
   save_tileatr;
   // Register event in dispatcher
   Dispatcher.register_event(evTileatrFilenameChange);
+end;
+
+procedure TTileset.produce_radar_color_file;
+var
+  radar_color_file: file of byte;
+  filename: string;
+  extra_attributes: array[0..cnt_tileset_tiles-1] of cardinal;
+  i: integer;
+begin
+  filename := ChangeFileExt(tileimage_filename, '.rcl');
+  AssignFile(radar_color_file, filename);
+  ReWrite(radar_color_file);
+  BlockWrite(radar_color_file, minimap_color_rules_used, sizeof(minimap_color_rules_used));
+  BlockWrite(radar_color_file, minimap_color_rules, sizeof(minimap_color_rules));
+  for i := 0 to cnt_tileset_tiles - 1 do
+  begin
+    extra_attributes[i] := attributes_editor[i];
+    if tile_paint_group[i] <> -128 then
+    begin
+      if tile_paint_group[i] >= 0 then
+        extra_attributes[i] := extra_attributes[i] or (1 shl (tile_paint_group[i] + 8))
+      else
+        extra_attributes[i] := extra_attributes[i] or (1 shl (tile_paint_group[i] + 20));
+    end;
+  end;
+  BlockWrite(radar_color_file, extra_attributes, sizeof(extra_attributes));
+  CloseFile(radar_color_file);
+  Application.MessageBox(PChar('Radar color rules were saved into ' + filename), 'Produce radar color file', MB_ICONINFORMATION);
 end;
 
 function TTileset.get_paint_tile_group_char(group: integer): char;

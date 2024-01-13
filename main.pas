@@ -216,6 +216,7 @@ type
     cbCrateBloomSpawnerRespawning: TCheckBox;
     lblCrateBloomRadiusPlus: TLabel;
     Converttoadvanced1: TMenuItem;
+    Produceradarcolorfile1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -252,6 +253,7 @@ type
     procedure Loadtileset1Click(Sender: TObject);
     procedure Loadtilesetattributes1Click(Sender: TObject);
     procedure TileAttributeseditor1Click(Sender: TObject);
+    procedure Produceradarcolorfile1Click(Sender: TObject);
     procedure Structureseditor1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure More1Click(Sender: TObject);
@@ -1047,6 +1049,11 @@ end;
 procedure TMainWindow.TileAttributeseditor1Click(Sender: TObject);
 begin
   TileAtrEditor.Show;
+end;
+
+procedure TMainWindow.Produceradarcolorfile1Click(Sender: TObject);
+begin
+  Tileset.produce_radar_color_file;
 end;
 
 procedure TMainWindow.Structureseditor1Click(Sender: TObject);

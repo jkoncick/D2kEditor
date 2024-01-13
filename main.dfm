@@ -1228,6 +1228,10 @@ object MainWindow: TMainWindow
         ShortCut = 16449
         OnClick = TileAttributeseditor1Click
       end
+      object Produceradarcolorfile1: TMenuItem
+        Caption = 'Produce radar color file'
+        OnClick = Produceradarcolorfile1Click
+      end
     end
     object Structures1: TMenuItem
       Caption = 'Structures'
