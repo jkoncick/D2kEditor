@@ -164,6 +164,7 @@ begin
   load_file_dialog_initial_dir(StructuresEditor.ImageImportDialog, '');
   load_file_dialog_initial_dir(StructuresEditor.SoundExportDialog, '');
   load_file_dialog_initial_dir(StructuresEditor.SoundImportDialog, '');
+  load_file_dialog_initial_dir(StructuresEditor.ImageRemapColorsOpenDialog, '');
 
   ini.Destroy;
   ini := nil;
@@ -250,6 +251,7 @@ begin
   save_file_dialog_initial_dir(StructuresEditor.ImageImportDialog);
   save_file_dialog_initial_dir(StructuresEditor.SoundExportDialog);
   save_file_dialog_initial_dir(StructuresEditor.SoundImportDialog);
+  save_file_dialog_initial_dir(StructuresEditor.ImageRemapColorsOpenDialog);
 
   ini.UpdateFile;
   ini.Destroy;

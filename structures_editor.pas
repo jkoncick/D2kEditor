@@ -581,6 +581,10 @@ type
     lblBuildingBuildMaxDistance: TLabel;
     seBuildingBuildMaxDistance: TSpinEdit;
     lblBuildingBuildMaxDistanceHint: TLabel;
+    lblImagePaletteColorIndex: TLabel;
+    btnImagePaletteSetDefaultColors: TButton;
+    btnImagePaletteRemapColors: TButton;
+    ImageRemapColorsOpenDialog: TOpenDialog;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -684,6 +688,7 @@ type
     // Art control group events
     procedure AcgFrameListClick(Sender: TObject);
     procedure AcgViewPaletteClick(Sender: TObject);
+    procedure AcgImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure AcgImagePropertyChange(Sender: TObject);
     procedure AcgExportImageClick(Sender: TObject);
     procedure AcgEraseImageClick(Sender: TObject);
@@ -697,6 +702,9 @@ type
     procedure AcgMoveDownArtClick(Sender: TObject);
     procedure AcgArtListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure imgImagePaletteClick(Sender: TObject);
+    procedure imgImagePaletteMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure btnImagePaletteSetDefaultColorsClick(Sender: TObject);
+    procedure btnImagePaletteRemapColorsClick(Sender: TObject);
   private
     // Dynamic controls
     cbxUnitVoices: array[0..17] of TComboBox;
@@ -716,6 +724,9 @@ type
     tmp_building_tiles_occupied_solid: cardinal;
     // Modified flags
     samples_uib_ui_modified: boolean;
+    // View palette variables
+    viewpal_image_index: integer;
+    viewpal_acg: TArtControlGroupPtr;
     // Loading flag
     loading: boolean;
     // Pending action flags
@@ -758,7 +769,7 @@ type
     procedure update_art_control_group_frame_list(group_index: integer);
     // Drawing procedures
     procedure draw_no_image_sign(img_target: TImage);
-    procedure draw_palette(image_index: integer);
+    procedure draw_palette(image_index: integer; acg: TArtControlGroupPtr);
     procedure draw_building_tile_map(img_target: TImage; value: cardinal);
     procedure draw_building_preview(draw_building: boolean);
     procedure draw_building_frame(image_index: integer; alpha, animation: boolean);
@@ -1036,7 +1047,7 @@ begin
     end;
   end
   else if Button = mbMiddle then
-    draw_palette(image_index)
+    draw_palette(image_index, nil)
   else if Button = mbRight then
   begin
     ImageExportDialog.FileName := Structures.templates.BuildingNameStrings[lbBuildingList.ItemIndex];
@@ -1228,7 +1239,7 @@ begin
     end;
   end
   else if Button = mbMiddle then
-    draw_palette(image_index)
+    draw_palette(image_index, nil)
   else if Button = mbRight then
   begin
     ImageExportDialog.FileName := Structures.templates.UnitNameStrings[lbUnitList.ItemIndex];
@@ -2118,7 +2129,43 @@ begin
   acg := Addr(art_control_groups[group_index]);
   if acg.frame_list.ItemIndex = -1 then
     exit;
-  draw_palette(acg.first_image_index + acg.frame_list.ItemIndex);
+  draw_palette(acg.first_image_index + acg.frame_list.ItemIndex, acg);
+end;
+
+procedure TStructuresEditor.AcgImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+  header: TR16EntryHeaderPtr;
+  image_data_8bpp: TByteArrayPtr;
+  top, left, width, height: integer;
+  pos_x, pos_y: integer;
+begin
+  group_index := (Sender as TControl).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if viewpal_acg <> acg then
+    exit;
+  header := Addr(StructGraphics.data_r16_file_contents[StructGraphics.data_r16_file_entry_positions[viewpal_image_index]]);
+  image_data_8bpp := Addr(StructGraphics.data_r16_file_contents[StructGraphics.data_r16_file_entry_positions[viewpal_image_index] + sizeof(TR16EntryHeader)]);
+  width := header.ImageWidth;
+  height := header.ImageHeight;
+  if acg.is_unit then
+  begin
+    left := ((header.FrameWidth div 2 - header.ImageOffsetX) - (header.FrameWidth - 32) div 2) * 2 + 48;
+    top := ((header.FrameHeight div 2 - header.ImageOffsetY) - (header.FrameHeight - 32) div 2) * 2 + 48;
+    pos_x := X div 2 - left div 2;
+    pos_y := Y div 2 - top div 2;
+  end else
+  begin
+    left := header.ImageOffsetX * -1;
+    top := header.FrameHeight - header.ImageOffsetY;
+    pos_x := X - left;
+    pos_y := Y - top;
+  end;
+  if (pos_x >= 0) and (pos_x < width) and (pos_y >= 0) and (pos_y < height) then
+    lblImagePaletteColorIndex.Caption := 'Index: ' + IntToStr(image_data_8bpp[pos_x + pos_y * width])
+  else
+    lblImagePaletteColorIndex.Caption := 'Index:';
 end;
 
 procedure TStructuresEditor.AcgImagePropertyChange(Sender: TObject);
@@ -2358,6 +2405,45 @@ end;
 procedure TStructuresEditor.imgImagePaletteClick(Sender: TObject);
 begin
   pnImagePalette.Visible := false;
+end;
+
+procedure TStructuresEditor.imgImagePaletteMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+var
+  index: integer;
+begin
+  if ((X = 256) or (Y = 256)) then
+    exit;
+  index := (Y div 16) * 16 + (X div 16);
+  lblImagePaletteColorIndex.Caption := 'Index: ' + IntToStr(index);
+end;
+
+procedure TStructuresEditor.btnImagePaletteSetDefaultColorsClick(Sender: TObject);
+begin
+  StructGraphics.set_default_palette_colors(viewpal_image_index);
+  draw_palette(viewpal_image_index, viewpal_acg);
+  if viewpal_acg.cb_raw_image.Checked then
+  begin
+    if viewpal_acg.is_unit then
+      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, true)
+    else
+      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, true, true);
+  end;
+end;
+
+procedure TStructuresEditor.btnImagePaletteRemapColorsClick(Sender: TObject);
+begin
+  if ImageRemapColorsOpenDialog.Execute then
+  begin
+    if not StructGraphics.remap_image_colors(viewpal_image_index, ImageRemapColorsOpenDialog.FileName) then
+    begin
+      Application.MessageBox('The ini file must contain [Remap_Colors] section'#13'with key-value pairs in the form'#13'from_index=to_index'#13'where key and value is a color index.', 'Invalid remap colors ini file', MB_OK or MB_ICONERROR);
+      exit;
+    end;
+    if viewpal_acg.is_unit then
+      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.cb_raw_image.Checked)
+    else
+      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.cb_raw_image.Checked, true);
+  end;
 end;
 
 procedure TStructuresEditor.update_game_lists;
@@ -2761,7 +2847,7 @@ begin
   end else
     draw_no_image_sign(imgBuildingIcon);
   if pnImagePalette.Visible then
-    draw_palette(Structures.first_building_icon_image_index + index);
+    draw_palette(Structures.first_building_icon_image_index + index, nil);
   set_owner_house_field_value(clbBuildingOwnerHouse, bld.OwnerHouse);
   // Build requirements group box
   seBuildingTechLevelBuild.Value := bld.TechLevelBuild;
@@ -2853,7 +2939,7 @@ begin
   end else
     draw_no_image_sign(imgUnitIcon);
   if pnImagePalette.Visible then
-    draw_palette(Structures.first_unit_icon_image_index + index);
+    draw_palette(Structures.first_unit_icon_image_index + index, nil);
   set_owner_house_field_value(clbUnitOwnerHouse, unt.OwnerHouse);
   // Build requirements group box
   seUnitTechLevel.Value := unt.TechLevel;
@@ -3440,10 +3526,12 @@ begin
   acg.se_frames := se_frames;
   // Create dynamic controls
   acg.view_image := TImage.Create(self);
-  acg.view_image.Parent := container;
   acg.view_image.Width := IfThen(is_unit, 160, 128);
   acg.view_image.Height := 160;
   acg.view_image.Top := 16;
+  acg.view_image.Tag := group_index;
+  acg.view_image.OnMouseMove := AcgImageMouseMove;
+  acg.view_image.Parent := container;
   acg.btn_view_palette := TButton.Create(self);
   acg.btn_view_palette.Left := 0;
   acg.btn_view_palette.Top := 180;
@@ -3695,13 +3783,15 @@ begin
   img_target.Canvas.Font.Color := clBlack;
 end;
 
-procedure TStructuresEditor.draw_palette(image_index: integer);
+procedure TStructuresEditor.draw_palette(image_index: integer; acg: TArtControlGroupPtr);
 var
   palette: TR16PalettePtr;
   color: Cardinal;
   i, j: integer;
 begin
   palette := StructGraphics.get_structure_image_palette(image_index);
+  viewpal_image_index := image_index;
+  viewpal_acg := acg;
   imgImagePalette.Canvas.Pen.Color := clBlack;
   imgImagePalette.Canvas.Brush.Color := clBlack;
   imgImagePalette.Canvas.Brush.Style := bsSolid;
@@ -3719,6 +3809,8 @@ begin
       end;
   pnImagePalette.Left := 368;
   pnImagePalette.Visible := true;
+  btnImagePaletteRemapColors.Visible := acg <> nil;
+  btnImagePaletteSetDefaultColors.Visible := acg <> nil;
 end;
 
 procedure TStructuresEditor.draw_building_tile_map(img_target: TImage; value: cardinal);

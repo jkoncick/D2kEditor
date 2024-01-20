@@ -2474,7 +2474,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object edWeaponRange: TEdit
@@ -2634,7 +2634,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 0
           OnChange = cbxWeaponProjectileArtChange
         end
@@ -2644,7 +2644,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 1
         end
         object cbxWeaponHitExplosion: TComboBox
@@ -2653,7 +2653,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 2
         end
         object cbxWeaponTrailExplosion: TComboBox
@@ -2662,7 +2662,7 @@ object StructuresEditor: TStructuresEditor
           Width = 137
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
           TabOrder = 3
         end
         object cbWeaponFlagWF_PROJECTILE_ALPHA: TCheckBox
@@ -2870,7 +2870,7 @@ object StructuresEditor: TStructuresEditor
         Width = 129
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 3
       end
       object edExplosionMuzzleFlashPattern: TEdit
@@ -3148,7 +3148,7 @@ object StructuresEditor: TStructuresEditor
         Width = 194
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 1
         Visible = False
         OnChange = cbxGroupIDsSelectChange
@@ -3266,7 +3266,7 @@ object StructuresEditor: TStructuresEditor
         Width = 135
         Height = 21
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 13
         TabOrder = 2
         Visible = False
         OnChange = cbxTechposUnitGroupChange
@@ -3423,7 +3423,7 @@ object StructuresEditor: TStructuresEditor
     Left = 1024
     Top = 216
     Width = 265
-    Height = 265
+    Height = 289
     TabOrder = 2
     Visible = False
     object imgImagePalette: TImage
@@ -3432,6 +3432,32 @@ object StructuresEditor: TStructuresEditor
       Width = 257
       Height = 257
       OnClick = imgImagePaletteClick
+      OnMouseMove = imgImagePaletteMouseMove
+    end
+    object lblImagePaletteColorIndex: TLabel
+      Left = 4
+      Top = 268
+      Width = 29
+      Height = 13
+      Caption = 'Index:'
+    end
+    object btnImagePaletteSetDefaultColors: TButton
+      Left = 164
+      Top = 265
+      Width = 97
+      Height = 21
+      Caption = 'Set default colors'
+      TabOrder = 0
+      OnClick = btnImagePaletteSetDefaultColorsClick
+    end
+    object btnImagePaletteRemapColors: TButton
+      Left = 64
+      Top = 265
+      Width = 97
+      Height = 21
+      Caption = 'Remap colors'
+      TabOrder = 1
+      OnClick = btnImagePaletteRemapColorsClick
     end
   end
   object MainMenu: TMainMenu
@@ -3523,6 +3549,14 @@ object StructuresEditor: TStructuresEditor
     Filter = 'BMP image (*.BMP)|*.bmp'
     Title = 'Export Image'
     Left = 828
+    Top = 32
+  end
+  object ImageRemapColorsOpenDialog: TOpenDialog
+    DefaultExt = 'ini'
+    Filter = 'Remap colors ini file (*.ini)|*.ini'
+    Options = [ofEnableSizing]
+    Title = 'Select remap colors ini file'
+    Left = 896
     Top = 32
   end
 end

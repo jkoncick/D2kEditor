@@ -33,6 +33,8 @@ type
 
   TR16PalettePtr = ^TR16Palette;
 
+const default_palette_colors: array[0..17] of integer = (31775, 0, 0, 2114, 4228, 6342, 8456, 10570, 12684, 14798, 17969, 20083, 22197, 24311, 26425, 28539, 30653, 32767);
+
 // *****************************************************************************
 // Internal graphical data structure definitions
 // *****************************************************************************
@@ -139,6 +141,8 @@ type
     function get_structure_image_header(entry_index: integer): TR16EntryHeaderPtr;
     function get_structure_image_palette(entry_index: integer): TR16PalettePtr;
     function get_raw_structure_image(entry_index: integer): TBitmap;
+    procedure set_default_palette_colors(entry_index: integer);
+    function remap_image_colors(entry_index: integer; ini_filename: String): boolean;
     // Misc. objects related procedures
     procedure load_graphics_misc_objects;
 
@@ -163,7 +167,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, _settings, _dispatcher, _missionini, Math;
+uses Forms, SysUtils, IniFiles, Classes, _settings, _dispatcher, _missionini, Math;
 
 procedure TStructGraphics.init;
 begin
@@ -645,6 +649,63 @@ begin
       end;
   end;
   result := tmp_bitmap;
+end;
+
+procedure TStructGraphics.set_default_palette_colors(entry_index: integer);
+var
+  palette: TR16PalettePtr;
+  i: integer;
+begin
+  palette := get_structure_image_palette(entry_index);
+  palette.Colors[0] := default_palette_colors[0];
+  palette.Colors[1] := default_palette_colors[1];
+  for i := 0 to 15 do
+    palette.Colors[240 + i] := default_palette_colors[i + 2];
+end;
+
+function TStructGraphics.remap_image_colors(entry_index: integer; ini_filename: String): boolean;
+var
+  ini: TMemIniFile;
+  strings: TStringList;
+  from_colors, to_colors: array of byte;
+  count: integer;
+  header: TR16EntryHeaderPtr;
+  image_data_8bpp: TByteArrayPtr;
+  i, pixel_idx: integer;
+begin
+  result := false;
+  // Load ini file
+  ini := TMemIniFile.Create(ini_filename);
+  strings := TStringList.Create;
+  // Handle Remap_Colors section
+  ini.ReadSection('Remap_Colors', strings);
+  count := strings.Count;
+  if count <> 0 then
+  begin
+    result := true;
+    SetLength(from_colors, count);
+    SetLength(to_colors, count);
+    for i := 0 to count - 1 do
+    begin
+      from_colors[i] := strtoint(strings[i]);
+      to_colors[i] := ini.ReadInteger('Remap_Colors', strings[i], 0);
+    end;
+    // Remap colors
+    header := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index]]);
+    image_data_8bpp := Addr(data_r16_file_contents[data_r16_file_entry_positions[entry_index] + sizeof(TR16EntryHeader)]);
+    for pixel_idx := 0 to header.ImageWidth * header.ImageHeight - 1 do
+      for i := 0 to count - 1 do
+        if image_data_8bpp[pixel_idx] = from_colors[i] then
+        begin
+          image_data_8bpp[pixel_idx] := to_colors[i];
+          break;
+        end;
+    SetLength(from_colors, 0);
+    SetLength(to_colors, 0);
+  end;
+  // Finalize
+  strings.Destroy;
+  ini.Destroy;
 end;
 
 procedure TStructGraphics.load_graphics_misc_objects;
