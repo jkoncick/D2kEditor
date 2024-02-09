@@ -124,6 +124,11 @@ type
   TFilterCriteriaDefinitionArr = array of TFilterCriteriaDefinition;
 
 type
+  THookVarsDefinition = record
+    var_name: array[0..4] of String;
+  end;
+
+type
   TEventConfig = class
 
   public
@@ -137,6 +142,8 @@ type
     cnt_valid_condition_types: integer;
     // Filter criteria configuration
     filter_criteria: array[0..8] of TFilterCriteriaDefinitionArr;
+    // Hook vars configuration
+    hook_vars: array of THookVarsDefinition;
 
   public
     procedure init;
@@ -144,6 +151,7 @@ type
     procedure load_event_types_ini;
     procedure load_condition_types_ini;
     procedure load_filter_criteria_ini;
+    procedure load_hook_vars_ini;
     procedure load_show_if_definition(show_if: TShowIfDefinitionPtr; string_def: string);
     procedure load_coord_definition(coord: TCoordDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
     procedure load_argument_definition(arg: TArgDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
@@ -164,6 +172,7 @@ begin
   load_event_types_ini;
   load_condition_types_ini;
   load_filter_criteria_ini;
+  load_hook_vars_ini;
   Dispatcher.register_event(evLoadEventTypeConfiguration);
 end;
 
@@ -317,6 +326,30 @@ begin
   load_filter_criteria(ini, 7, 'UnitType');
   load_filter_criteria(ini, 8, 'BuildingType');
   ini.Destroy;
+end;
+
+procedure TEventConfig.load_hook_vars_ini;
+var
+  tmp_filename: String;
+  ini: TMemIniFile;
+  tmp_strings: TStringList;
+  i, j: integer;
+begin
+  tmp_filename := find_file('config\hook_vars.ini', 'configuration');
+  if tmp_filename = '' then
+    exit;
+  // Load hook vars from ini file
+  tmp_strings := TStringList.Create;
+  ini := TMemIniFile.Create(tmp_filename);
+  ini.ReadSections(tmp_strings);
+  SetLength(hook_vars, tmp_strings.Count);
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    for j := 0 to Length(hook_vars[i].var_name) - 1 do
+      hook_vars[i].var_name[j] := ini.ReadString(tmp_strings[i], IntToStr(j), '');
+  end;
+  ini.Destroy;
+  tmp_strings.Destroy;
 end;
 
 procedure TEventConfig.load_show_if_definition(show_if: TShowIfDefinitionPtr; string_def: string);

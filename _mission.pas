@@ -51,6 +51,7 @@ type
     indent: integer;
     invalid: boolean;
     counterpart_event: integer;
+    hook_type: integer;
   end;
 
 // *****************************************************************************
@@ -191,14 +192,15 @@ type
     // Dispatcher procedures
     procedure cache_event_markers;
     // Getting text descriptions
+    function get_variable_name(var_index: integer; brackets: integer; event_index: integer): String;
     function get_event_contents(index: integer): String;
     function get_event_conditions(index: integer): String;
     function get_condition_contents(index: integer; show_side: boolean): String;
-    function get_coords_contents(x, y: integer; x_var, y_var: boolean): String;
-    function get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr): String;
+    function get_coords_contents(x, y: integer; x_var, y_var: boolean; event_index: integer): String;
+    function get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr; event_index: integer): String;
     function get_list_value_contents(value: integer; list_type: ListType; value_list: TStringList; game_list_type: integer; item_list_type: ItemListType): String;
     function get_event_data_contents(event_id: integer): string;
-    function get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer): string;
+    function get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer; event_index: integer): string;
     function check_event_has_condition(index: integer; condition_index: integer; var negation: boolean): boolean;
     // Creating/deleting events/conditions
     function add_event(position, event_type: integer): integer;
@@ -512,6 +514,33 @@ begin
   end;
 end;
 
+function TMission.get_variable_name(var_index: integer; brackets: integer; event_index: integer): String;
+var
+  hook_type: integer;
+  var_name: string;
+  i: integer;
+begin
+  hook_type := -1;
+  if event_index >= 0 then
+    hook_type := event_indentation[event_index].hook_type;
+  if hook_type = -1 then
+    result := MissionIni.get_variable_name(var_index, brackets)
+  else
+  begin
+    var_name := '';
+    if var_index < Length(EventConfig.hook_vars[hook_type].var_name) then
+      var_name := EventConfig.hook_vars[hook_type].var_name[var_index];
+    if var_name = '' then
+      result := MissionIni.get_variable_name(var_index, brackets)
+    else
+    begin
+      result := '#' + var_name;
+      for i := 1 to brackets do
+        result := '[' + result + ']';
+    end;
+  end;
+end;
+
 function TMission.get_event_contents(index: integer): String;
 var
   event: ^TEvent;
@@ -540,7 +569,7 @@ begin
     begin
       idx := (Ord(et.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(et.coords[idx].show_if), event, Addr(event_args_struct_members)) then
-        contents := contents + get_coords_contents(event.coord_x[idx], event.coord_y[idx], (event.coord_var_flags and (1 shl (idx * 2))) <> 0, (event.coord_var_flags and (1 shl (idx * 2 + 1))) <> 0);
+        contents := contents + get_coords_contents(event.coord_x[idx], event.coord_y[idx], (event.coord_var_flags and (1 shl (idx * 2))) <> 0, (event.coord_var_flags and (1 shl (idx * 2 + 1))) <> 0, index);
       start := i + 3;
     end else
     if (et.contents[i+1]) = 'a' then
@@ -574,11 +603,11 @@ begin
         if arg_def_ptr.arg_type = atFloat then
         begin
           if (event.arg_var_flags and (1 shl idx)) <> 0 then
-            contents := contents + MissionIni.get_variable_name(get_integer_struct_member(event, Addr(event_args_struct_members), idx), 1)
+            contents := contents + get_variable_name(get_integer_struct_member(event, Addr(event_args_struct_members), idx), 1, index)
           else
             contents := contents + floattostrf(get_float_struct_member(event, Addr(event_args_struct_members), idx), ffFixed, 8, 3);
         end else
-          contents := contents + get_argument_contents(get_integer_struct_member(event, Addr(event_args_struct_members), idx), (event.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr);
+          contents := contents + get_argument_contents(get_integer_struct_member(event, Addr(event_args_struct_members), idx), (event.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr, index);
       end;
       start := i + 3;
     end else
@@ -661,7 +690,7 @@ begin
     begin
       idx := (Ord(ct.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(ct.coords[idx].show_if), cond, Addr(condition_args_struct_members)) then
-        contents := contents + get_coords_contents(cond.coord_x[idx], cond.coord_y[idx], (cond.coord_var_flags and (1 shl (idx * 2))) <> 0, (cond.coord_var_flags and (1 shl (idx * 2 + 1))) <> 0);
+        contents := contents + get_coords_contents(cond.coord_x[idx], cond.coord_y[idx], (cond.coord_var_flags and (1 shl (idx * 2))) <> 0, (cond.coord_var_flags and (1 shl (idx * 2 + 1))) <> 0, -1);
       start := i + 3;
     end else
     if (ct.contents[i+1]) = 'a' then
@@ -695,11 +724,11 @@ begin
         if arg_def_ptr.arg_type = atFloat then
         begin
           if (cond.arg_var_flags and (1 shl idx)) <> 0 then
-            contents := contents + MissionIni.get_variable_name(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), 1)
+            contents := contents + get_variable_name(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), 1, -1)
           else
             contents := contents + floattostrf(get_float_struct_member(cond, Addr(condition_args_struct_members), idx), ffFixed, 8, 3);
         end else
-          contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), (cond.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr);
+          contents := contents + get_argument_contents(get_integer_struct_member(cond, Addr(condition_args_struct_members), idx), (cond.arg_var_flags and (1 shl idx)) <> 0, arg_def_ptr, -1);
       end;
       start := i + 3;
     end else
@@ -711,12 +740,12 @@ begin
         begin
           contents := contents + 'Am(' + IfThen((cond.arg1 and 1) <> 0, '=', '>=');
           if (cond.arg1 and 2) <> 0 then
-            contents := contents + MissionIni.get_variable_name(cond.arg2, 1)
+            contents := contents + get_variable_name(cond.arg2, 1, -1)
           else
             contents := contents + IntToStr(cond.arg2);
           contents := contents + ') ';
         end;
-        contents := contents + get_object_filter_contents(TObjectFilterPtr(cond), Ord(ct.condition_data) - Ord(cdUnitFilter));
+        contents := contents + get_object_filter_contents(TObjectFilterPtr(cond), Ord(ct.condition_data) - Ord(cdUnitFilter), -1);
       end;
       start := i + 2;
     end else
@@ -736,27 +765,27 @@ begin
   result := contents;
 end;
 
-function TMission.get_coords_contents(x, y: integer; x_var, y_var: boolean): String;
+function TMission.get_coords_contents(x, y: integer; x_var, y_var: boolean; event_index: integer): String;
 var
   x_str, y_str: string;
 begin
   if x_var then
-    x_str := MissionIni.get_variable_name(x, 1)
+    x_str := get_variable_name(x, 1, event_index)
   else
     x_str := IntToStr(x);
   if y_var then
-    y_str := MissionIni.get_variable_name(y, 1)
+    y_str := get_variable_name(y, 1, event_index)
   else
     y_str := IntToStr(y);
   result := Format('%s , %s', [x_str, y_str]);
 end;
 
-function TMission.get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr): String;
+function TMission.get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr; event_index: integer): String;
 begin
   result := '';
   if is_var then
   begin
-    result := MissionIni.get_variable_name(value, IfThen(argdef.arg_type = atVariable, 2, 1));
+    result := get_variable_name(value, IfThen(argdef.arg_type = atVariable, 2, 1), event_index);
     exit;
   end;
   case argdef.arg_type of
@@ -766,7 +795,7 @@ begin
     atList: result := get_list_value_contents(value, argdef.list_type, argdef.values, argdef.game_list_type, argdef.item_list_type);
     atBool: if (value <> 0) then result := '(' + argdef.name + ')';
     atSwitch: result := argdef.values[IfThen(value <> 0, 1, 0)];
-    atVariable: result := MissionIni.get_variable_name(value, 1);
+    atVariable: result := get_variable_name(value, 1, event_index);
   end;
 end;
 
@@ -882,7 +911,7 @@ begin
             begin
               if found = i then
               begin
-                Insert(message_var_data_type[event.data[5 + i]] + MissionIni.get_variable_name(event.data[13 + i], 1), str, j+1);
+                Insert(message_var_data_type[event.data[5 + i]] + get_variable_name(event.data[13 + i], 1, event_id), str, j+1);
               end;
               Inc(found);
             end;
@@ -910,9 +939,9 @@ begin
           contents := contents + '(';
           inc(and_or_level);
         end;
-        contents := contents + MissionIni.get_variable_name(cond_expr.variable[i], 1) + ' ' + cond_expr_operator_str[(cond_expr.operator shr (i * 4)) and 15] + ' ';
+        contents := contents + get_variable_name(cond_expr.variable[i], 1, event_id) + ' ' + cond_expr_operator_str[(cond_expr.operator shr (i * 4)) and 15] + ' ';
         if cond_expr.value_var_flags and (1 shl i) <> 0 then
-          contents := contents + MissionIni.get_variable_name(cond_expr.value[i], 1)
+          contents := contents + get_variable_name(cond_expr.value[i], 1, event_id)
         else
           contents := contents + IntToStr(cond_expr.value[i]);
         while (and_or_op < and_or_level) do
@@ -922,13 +951,13 @@ begin
         end;
       end;
     end else
-      contents := get_object_filter_contents(Addr(event.data[1]), event.amount - 1);
+      contents := get_object_filter_contents(Addr(event.data[1]), event.amount - 1, event_id);
   end;
   if et.event_data >= edUnitFilter then
   begin
     if (event.event_flags and 8) <> 0 then
     begin
-      contents := 'Object index: ' + MissionIni.get_variable_name(event.filter_skip, 1);
+      contents := 'Object index: ' + get_variable_name(event.filter_skip, 1, event_id);
     end else
     begin
       contents := 'Filter: ';
@@ -936,7 +965,7 @@ begin
       begin
         contents := contents + 'Skip(';
         if (event.event_flags and 16) <> 0 then
-          contents := contents +  MissionIni.get_variable_name(event.filter_skip, 1)
+          contents := contents +  get_variable_name(event.filter_skip, 1, event_id)
         else
           contents := contents + IntToStr(event.filter_skip);
         contents := contents + ') ';
@@ -945,18 +974,18 @@ begin
       begin
         contents := contents + 'Limit(';
         if (event.event_flags and 32) <> 0 then
-          contents := contents +  MissionIni.get_variable_name(event.data[0], 1)
+          contents := contents + get_variable_name(event.data[0], 1, event_id)
         else
           contents := contents + IntToStr(event.data[0]);
         contents := contents + ') ';
       end;
-      contents := contents + get_object_filter_contents(Addr(event.data[1]), Ord(et.event_data) - Ord(edUnitFilter));
+      contents := contents + get_object_filter_contents(Addr(event.data[1]), Ord(et.event_data) - Ord(edUnitFilter), event_id);
     end;
   end;
   result := contents;
 end;
 
-function TMission.get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer): string;
+function TMission.get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer; event_index: integer): string;
 var
   contents: string;
   i: integer;
@@ -967,7 +996,7 @@ begin
   for i := 0 to 3 do
   begin
     if filter.pos_and_var_flags and (1 shl (i + 4)) <> 0 then
-      pos_str[i] := MissionIni.get_variable_name(filter.pos_values[i], 1)
+      pos_str[i] := get_variable_name(filter.pos_values[i], 1, event_index)
     else
       pos_str[i] := IntToStr(filter.pos_values[i]);
   end;
@@ -999,7 +1028,7 @@ begin
     end;
     contents := contents + criteria.name + ' ' + object_filter_comp_operation[filter.criteria_type[i] shr 6] + ' ';
     if filter.pos_and_var_flags and (1 shl (i + 8)) <> 0 then
-      contents := contents + MissionIni.get_variable_name(filter.criteria_value[i], 1)
+      contents := contents + get_variable_name(filter.criteria_value[i], 1, event_index)
     else
       contents := contents + get_list_value_contents(filter.criteria_value[i], criteria.list_type, criteria.values, criteria.game_list_type, criteria.item_list_type);
     while (and_or_op < and_or_level) do
@@ -1670,7 +1699,7 @@ end;
 
 procedure TMission.compute_event_indentation;
 var
-  i: integer;
+  i, j: integer;
 begin
   compute_event_indentation_step(0, 0, false, false, false);
   // Mark all start block events which do not have their counterpart as invalid
@@ -1678,6 +1707,13 @@ begin
   begin
     if EventConfig.event_types[event_data[i].event_type].is_start_block and (event_indentation[i].counterpart_event = -1) then
       event_indentation[i].invalid := true;
+  end;
+  // Set hook type for events
+  for i := 0 to num_events - 1 do
+  begin
+    if (event_data[i].event_type = 234) and (event_indentation[i].counterpart_event <> -1) then
+      for j := i to event_indentation[i].counterpart_event do
+        event_indentation[j].hook_type := event_data[i].amount;
   end;
 end;
 
@@ -1695,6 +1731,7 @@ begin
     event_indentation[i].indent := indent;
     event_indentation[i].invalid := false;
     event_indentation[i].counterpart_event := -1;
+    event_indentation[i].hook_type := -1;
     // Block Start, Callable Block Start, Hook Block Start cannot be only at global level
     if (event_data[i].event_type >= 232) and (event_data[i].event_type <= 234) and (indent > 0) then
       event_indentation[i].invalid := true;

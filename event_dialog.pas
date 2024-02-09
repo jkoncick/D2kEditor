@@ -16,6 +16,7 @@ type
 type
   TCoordControlGroup = record
     coorddef: TCoordDefinitionPtr;
+    is_event: boolean;
     data_ptr: Pointer;
     var_flag_ptr: PByte;
     struct_def: TStructDefinitionPtr;
@@ -38,6 +39,7 @@ type
 type
   TArgControlGroup = record
     argdef: TArgDefinitionPtr;
+    is_event: boolean;
     data_ptr: Pointer;
     var_flag_ptr: PByte;
     struct_def: TStructDefinitionPtr;
@@ -58,6 +60,7 @@ type
 type
   TFilterControlGroup = record
     object_type: integer;
+    is_event: boolean;
     filter_ptr: TObjectFilterPtr;
     cb_check_position: TCheckBox;
     cb_position_negation: TCheckBox;
@@ -396,6 +399,7 @@ type
     msg_text_is_custom: boolean;
     copy_conditions_from: integer;
     event_value_list_type: EventData;
+    variable_selection_last_hook_type: integer;
     variable_selection_type: VariableSelectionType;
     variable_selection_index: integer;
     variable_name_changed: boolean;
@@ -456,17 +460,17 @@ type
     procedure change_condition_type(new_condition_type: integer);
     procedure apply_condition_changes;
     // Coord control group procedures
-    procedure create_coord_control_group(index: integer; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; coord_index, offset_x, offset_y: integer; parent_panel: TPanel);
+    procedure create_coord_control_group(index: integer; is_event: boolean; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; coord_index, offset_x, offset_y: integer; parent_panel: TPanel);
     procedure fill_coord_control_group(ccg: TCoordControlGroupPtr; coorddef: TCoordDefinitionPtr);
     // Arg control group procedures
-    procedure create_arg_control_group(index: integer; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; struct_member: integer; parent_panel: TPanel);
+    procedure create_arg_control_group(index: integer; is_event: boolean; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; struct_member: integer; parent_panel: TPanel);
     procedure fill_arg_control_group(acg: TArgControlGroupPtr; argdef: TArgDefinitionPtr);
     procedure fill_arg_combo_box(acg: TArgControlGroupPtr; value: integer; force_update_list: boolean);
     // Filter control group procedures
-    procedure create_filter_control_group(index: integer; filter_ptr: Pointer; parent_panel: TPanel);
+    procedure create_filter_control_group(index: integer; is_event: boolean; filter_ptr: Pointer; parent_panel: TPanel);
     procedure fill_filter_control_group(fcg: TFilterControlGroupPtr; object_type: integer);
     // Select variable procedures
-    procedure start_variable_selection(selecion_type: VariableSelectionType; index: integer; default_var: integer);
+    procedure start_variable_selection(selecion_type: VariableSelectionType; index: integer; default_var: integer; is_event: boolean);
     procedure end_variable_selection(status: boolean);
   public
     // Procedures called from different forms
@@ -551,21 +555,21 @@ begin
   for i := 0 to High(ccgs) do
   begin
     if i < 4 then
-      create_coord_control_group(i, Addr(tmp_event), Addr(tmp_event.coord_var_flags), Addr(event_args_struct_members), i, i, i + 4, EventPropertiesPanel)
+      create_coord_control_group(i, true, Addr(tmp_event), Addr(tmp_event.coord_var_flags), Addr(event_args_struct_members), i, i, i + 4, EventPropertiesPanel)
     else
-      create_coord_control_group(i, Addr(tmp_condition), Addr(tmp_condition.coord_var_flags), Addr(condition_args_struct_members), i - 4, i - 4 + 12, i - 4 + 16, ConditionPropertiesPanel);
+      create_coord_control_group(i, false, Addr(tmp_condition), Addr(tmp_condition.coord_var_flags), Addr(condition_args_struct_members), i - 4, i - 4 + 12, i - 4 + 16, ConditionPropertiesPanel);
   end;
   // Initialize arg control groups
   for i := 0 to High(acgs) do
   begin
     if i < Length(event_args_struct_members) then
-      create_arg_control_group(i, Addr(tmp_event), Addr(tmp_event.arg_var_flags), Addr(event_args_struct_members), i, EventPropertiesPanel)
+      create_arg_control_group(i, true, Addr(tmp_event), Addr(tmp_event.arg_var_flags), Addr(event_args_struct_members), i, EventPropertiesPanel)
     else
-      create_arg_control_group(i, Addr(tmp_condition), Addr(tmp_condition.arg_var_flags), Addr(condition_args_struct_members), i - Length(event_args_struct_members), ConditionPropertiesPanel);
+      create_arg_control_group(i, false, Addr(tmp_condition), Addr(tmp_condition.arg_var_flags), Addr(condition_args_struct_members), i - Length(event_args_struct_members), ConditionPropertiesPanel);
   end;
   // Initialize filter control groups
-  create_filter_control_group(0, Addr(tmp_event.data[1]), pnEventFilterBody);
-  create_filter_control_group(1, Addr(tmp_condition), pnConditionFilterBody);
+  create_filter_control_group(0, true, Addr(tmp_event.data[1]), pnEventFilterBody);
+  create_filter_control_group(1, false, Addr(tmp_condition), pnConditionFilterBody);
   // Initialize event message controls
   create_message_var_controls;
   // Initialize conditional expression controls
@@ -1192,9 +1196,9 @@ begin
   end else
   begin
     if tmp_event.data[5 + i] = 0 then
-      start_variable_selection(vsEventMessageVar, i, IfThen((i > 0) and (tmp_event.data[13 + i] = 0), tmp_event.data[12 + i] + 1, tmp_event.data[13 + i]));
+      start_variable_selection(vsEventMessageVar, i, IfThen((i > 0) and (tmp_event.data[13 + i] = 0), tmp_event.data[12 + i] + 1, tmp_event.data[13 + i]), true);
     tmp_event.data[5 + i] := (Sender as TComboBox).ItemIndex;
-    event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], 1);
+    event_message_variable[i].Text := Mission.get_variable_name(tmp_event.data[13 + i], 1, selected_event);
     event_message_variable[i].Enabled := True;
   end;
 end;
@@ -1204,7 +1208,7 @@ var
   i: integer;
 begin
   i := (Sender as TControl).Tag;
-  start_variable_selection(vsEventMessageVar, i, tmp_event.data[13 + i]);
+  start_variable_selection(vsEventMessageVar, i, tmp_event.data[13 + i], true);
 end;
 
 procedure TEventDialog.cbMusicNameChange(Sender: TObject);
@@ -1268,7 +1272,7 @@ var
 begin
   cond_expr := Addr(tmp_event.data[1]);
   index := (Sender as TControl).Tag;
-  start_variable_selection(vsCondExprVar, index, cond_expr.variable[index]);
+  start_variable_selection(vsCondExprVar, index, cond_expr.variable[index], true);
 end;
 
 procedure TEventDialog.cbxCondExprOperatorChange(Sender: TObject);
@@ -1301,7 +1305,7 @@ begin
   cond_expr := Addr(tmp_event.data[1]);
   index := (Sender as TControl).Tag;
   if (cond_expr.value_var_flags and (1 shl index)) <> 0 then
-    start_variable_selection(vsCondExprValue, index, cond_expr.value[index]);
+    start_variable_selection(vsCondExprValue, index, cond_expr.value[index], true);
 end;
 
 procedure TEventDialog.btnCondExprVarBtnClick(Sender: TObject);
@@ -1312,7 +1316,7 @@ begin
   cond_expr := Addr(tmp_event.data[1]);
   index := (Sender as TControl).Tag;
   if (cond_expr.value_var_flags and (1 shl index)) = 0 then
-    start_variable_selection(vsCondExprValue, index, 0)
+    start_variable_selection(vsCondExprValue, index, 0, true)
   else
   begin
     cond_expr.value_var_flags := cond_expr.value_var_flags and not (1 shl index);
@@ -1335,7 +1339,7 @@ end;
 procedure TEventDialog.btnEventFilterSkipVarToggleClick(Sender: TObject);
 begin
   if (tmp_event.event_flags and 16) = 0 then
-    start_variable_selection(vsEventFilterSkip, 0, 0)
+    start_variable_selection(vsEventFilterSkip, 0, 0, true)
   else
   begin
     tmp_event.event_flags := tmp_event.event_flags and (not 16);
@@ -1347,7 +1351,7 @@ end;
 procedure TEventDialog.btnEventFilterLimitVarToggleClick(Sender: TObject);
 begin
   if (tmp_event.event_flags and 32) = 0 then
-    start_variable_selection(vsEventFilterLimit, 0, 0)
+    start_variable_selection(vsEventFilterLimit, 0, 0, true)
   else
   begin
     tmp_event.event_flags := tmp_event.event_flags and (not 32);
@@ -1358,12 +1362,12 @@ end;
 
 procedure TEventDialog.edEventFilterSkipVarClick(Sender: TObject);
 begin
-  start_variable_selection(vsEventFilterSkip, 0, tmp_event.filter_skip);
+  start_variable_selection(vsEventFilterSkip, 0, tmp_event.filter_skip, true);
 end;
 
 procedure TEventDialog.edEventFilterLimitVarClick(Sender: TObject);
 begin
-  start_variable_selection(vsEventFilterLimit, 0, tmp_event.data[0]);
+  start_variable_selection(vsEventFilterLimit, 0, tmp_event.data[0], true);
 end;
 
 procedure TEventDialog.btnEventFilterIndexToggleClick(Sender: TObject);
@@ -1372,12 +1376,12 @@ begin
   tmp_event.filter_skip := 0;
   fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
   if (tmp_event.event_flags and 8) <> 0 then
-    start_variable_selection(vsEventObjectIndex, 0, 0);
+    start_variable_selection(vsEventObjectIndex, 0, 0, true);
 end;
 
 procedure TEventDialog.edEventFilterIndexVarClick(Sender: TObject);
 begin
-  start_variable_selection(vsEventObjectIndex, 0, tmp_event.filter_skip);
+  start_variable_selection(vsEventObjectIndex, 0, tmp_event.filter_skip, true);
 end;
 
 procedure TEventDialog.EventConditionListClickCheck(Sender: TObject);
@@ -1701,7 +1705,7 @@ end;
 procedure TEventDialog.btnConditionFilterAmountVarToggleClick(Sender: TObject);
 begin
   if (tmp_condition.arg1 and 2) = 0 then
-    start_variable_selection(vsConditionFilterAmount, 0, 0)
+    start_variable_selection(vsConditionFilterAmount, 0, 0, false)
   else
   begin
     tmp_condition.arg1 := tmp_condition.arg1 and (not 2);
@@ -1712,7 +1716,7 @@ end;
 
 procedure TEventDialog.edConditionFilterAmountVarClick(Sender: TObject);
 begin
-  start_variable_selection(vsConditionFilterAmount, 0, tmp_condition.arg2)
+  start_variable_selection(vsConditionFilterAmount, 0, tmp_condition.arg2, false)
 end;
 
 procedure TEventDialog.PopupMenuPopup(Sender: TObject);
@@ -1765,7 +1769,7 @@ begin
     default := 0;
     if (x_or_y = 1) and ((ccg.var_flag_ptr^ and (1 shl (ccg.coord_index * 2))) <> 0) then
       default := get_integer_value(ccg.data_ptr, ccg.offset_x, 1) + 1;
-    start_variable_selection(vsCoord, (Sender as TControl).Tag, default);
+    start_variable_selection(vsCoord, (Sender as TControl).Tag, default, ccg.is_event);
   end;
 end;
 
@@ -1776,7 +1780,7 @@ var
 begin
   ccg := Addr(ccgs[(Sender as TControl).Tag div 2]);
   x_or_y := (Sender as TControl).Tag mod 2;
-  start_variable_selection(vsCoord, (Sender as TControl).Tag, get_integer_value(ccg.data_ptr, IfThen(x_or_y = 0, ccg.offset_x, ccg.offset_y), 1));
+  start_variable_selection(vsCoord, (Sender as TControl).Tag, get_integer_value(ccg.data_ptr, IfThen(x_or_y = 0, ccg.offset_x, ccg.offset_y), 1), ccg.is_event);
 end;
 
 procedure TEventDialog.ACGValueChange(Sender: TObject);
@@ -1845,7 +1849,7 @@ begin
     set_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member, acg.argdef.default);
     fill_arg_control_group(acg, acg.argdef);
   end else
-    start_variable_selection(vsArg, (Sender as TControl).Tag, acg.argdef.default);
+    start_variable_selection(vsArg, (Sender as TControl).Tag, acg.argdef.default, acg.is_event);
 end;
 
 procedure TEventDialog.ACGTextEditClick(Sender: TObject);
@@ -1854,9 +1858,9 @@ var
 begin
   acg := Addr(acgs[(Sender as TControl).Tag]);
   if (acg.var_flag_ptr^ and (1 shl acg.struct_member)) <> 0 then
-    start_variable_selection(vsArg, (Sender as TControl).Tag, get_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member))
+    start_variable_selection(vsArg, (Sender as TControl).Tag, get_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member), acg.is_event)
   else if acg.argdef.arg_type = atVariable then
-    start_variable_selection(vsVarArg, (Sender as TControl).Tag, get_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member));
+    start_variable_selection(vsVarArg, (Sender as TControl).Tag, get_integer_struct_member(acg.data_ptr, acg.struct_def, acg.struct_member), acg.is_event);
 end;
 
 procedure TEventDialog.FCGPositionTypeChange(Sender: TObject);
@@ -2034,7 +2038,7 @@ begin
     default := 0;
     if (flag_index > 4) and (flag_index < 8) and ((fcg.filter_ptr.pos_and_var_flags and (1 shl (flag_index - 1))) <> 0) then
       default := fcg.filter_ptr.pos_values[flag_index - 5] + 1;
-    start_variable_selection(vsFilter, (Sender as TControl).Tag, default);
+    start_variable_selection(vsFilter, (Sender as TControl).Tag, default, fcg.is_event);
   end;
 end;
 
@@ -2046,9 +2050,9 @@ begin
   fcg := Addr(fcgs[(Sender as TControl).Tag div 16]);
   flag_index := (Sender as TControl).Tag mod 16;
   if flag_index < 8 then
-    start_variable_selection(vsFilter, (Sender as TControl).Tag, fcg.filter_ptr.pos_values[flag_index - 4])
+    start_variable_selection(vsFilter, (Sender as TControl).Tag, fcg.filter_ptr.pos_values[flag_index - 4], fcg.is_event)
   else
-    start_variable_selection(vsFilter, (Sender as TControl).Tag, fcg.filter_ptr.criteria_value[flag_index - 8]);
+    start_variable_selection(vsFilter, (Sender as TControl).Tag, fcg.filter_ptr.criteria_value[flag_index - 8], fcg.is_event);
 end;
 
 procedure TEventDialog.btnSelectVariableOkClick(Sender: TObject);
@@ -2062,18 +2066,31 @@ begin
 end;
 
 procedure TEventDialog.lbSelectVariableListClick(Sender: TObject);
+var
+  var_index: integer;
 begin
-  edSelectVariableName.Text := MissionIni.variable_names[lbSelectVariableList.ItemIndex];
+  var_index := lbSelectVariableList.ItemIndex;
+  if (variable_selection_last_hook_type >= 0) and (var_index < Length(EventConfig.hook_vars[variable_selection_last_hook_type].var_name)) and (EventConfig.hook_vars[variable_selection_last_hook_type].var_name[var_index] <> '') then
+  begin
+    edSelectVariableName.Enabled := false;
+    edSelectVariableName.Text := '#' + EventConfig.hook_vars[variable_selection_last_hook_type].var_name[var_index];
+  end else
+  begin
+    edSelectVariableName.Enabled := true;
+    edSelectVariableName.Text := MissionIni.variable_names[lbSelectVariableList.ItemIndex];
+  end;
 end;
 
 procedure TEventDialog.edSelectVariableNameChange(Sender: TObject);
 var
   index: integer;
 begin
+  if not edSelectVariableName.Enabled then
+    exit;
   index := lbSelectVariableList.ItemIndex;
   if MissionIni.set_variable_name(index, edSelectVariableName.Text) then
     variable_name_changed := true;
-  lbSelectVariableList.Items[index] := inttostr(index) + ': ' + MissionIni.get_variable_name(index, 0);
+  lbSelectVariableList.Items[index] := inttostr(index) + ': ' + Mission.get_variable_name(index, 0, -1);
 end;
 
 procedure TEventDialog.update_event_type_configuration;
@@ -2263,11 +2280,11 @@ begin
   if et.has_map_pos and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) then
   begin
     if (event.coord_var_flags and 1) <> 0 then
-      x_str := MissionIni.get_variable_name(event.coord_x[0], 1)
+      x_str := Mission.get_variable_name(event.coord_x[0], 1, index)
     else
       x_str := inttostr(event.coord_x[0]);
     if (event.coord_var_flags and 2) <> 0 then
-      y_str := MissionIni.get_variable_name(event.coord_y[0], 1)
+      y_str := Mission.get_variable_name(event.coord_y[0], 1, index)
     else
       y_str := inttostr(event.coord_y[0]);
     EventGrid.Cells[3,row] := x_str + ' , ' + y_str;
@@ -2276,7 +2293,7 @@ begin
   if et.has_side and evaluate_show_if(Addr(et.args[0].show_if), event, Addr(event_args_struct_members)) then
   begin
     if (event.arg_var_flags and 1) <> 0 then
-      EventGrid.Cells[4,row] := MissionIni.get_variable_name(event.side, 1)
+      EventGrid.Cells[4,row] := Mission.get_variable_name(event.side, 1, index)
     else
       EventGrid.Cells[4,row] := IfThen(event.side < 8, Structures.side_names[event.side], 'Any')
   end else
@@ -2495,7 +2512,7 @@ begin
         event_message_variable[i].Enabled := False;
       end else
       begin
-        event_message_variable[i].Text := MissionIni.get_variable_name(tmp_event.data[13 + i], 1);
+        event_message_variable[i].Text := Mission.get_variable_name(tmp_event.data[13 + i], 1, selected_event);
         event_message_variable[i].Enabled := True;
       end;
     end;
@@ -2533,14 +2550,14 @@ begin
       for i := 0 to 7 do
       begin
         cond_expr_variable[i].Visible := cond_expr.num_operations > i;
-        cond_expr_variable[i].Text := MissionIni.get_variable_name(cond_expr.variable[i], 1);
+        cond_expr_variable[i].Text := Mission.get_variable_name(cond_expr.variable[i], 1, selected_event);
         cond_expr_operator[i].Visible := cond_expr.num_operations > i;
         cond_expr_operator[i].ItemIndex := (cond_expr.operator shr (i * 4)) and 15;
         cond_expr_value[i].Visible := cond_expr.num_operations > i;
         cond_expr_var_btn[i].Visible := cond_expr.num_operations > i;
         if (cond_expr.value_var_flags shr i) and 1 = 1 then
         begin
-          cond_expr_value[i].Text := MissionIni.get_variable_name(cond_expr.value[i], 1);
+          cond_expr_value[i].Text := Mission.get_variable_name(cond_expr.value[i], 1, selected_event);
           cond_expr_var_btn[i].Caption := 'C';
         end else
         begin
@@ -2571,7 +2588,7 @@ begin
       pnEventFilterLimitSkip.Visible := False;
       edEventFilterIndexVar.Visible := True;
       lblEventFilterIndexVar.Visible := True;
-      edEventFilterIndexVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, 1);
+      edEventFilterIndexVar.Text := Mission.get_variable_name(tmp_event.filter_skip, 1, selected_event);
     end else
     begin
       btnEventFilterIndexToggle.Caption := 'Index';
@@ -2583,7 +2600,7 @@ begin
       begin
         seEventFilterSkip.Visible := False;
         edEventFilterSkipVar.Visible := True;
-        edEventFilterSkipVar.Text := MissionIni.get_variable_name(tmp_event.filter_skip, 1);
+        edEventFilterSkipVar.Text := Mission.get_variable_name(tmp_event.filter_skip, 1, selected_event);
         btnEventFilterSkipVarToggle.Caption := 'C';
       end else
       begin
@@ -2596,7 +2613,7 @@ begin
       begin
         seEventFilterLimit.Visible := False;
         edEventFilterLimitVar.Visible := True;
-        edEventFilterLimitVar.Text := MissionIni.get_variable_name(tmp_event.data[0], 1);
+        edEventFilterLimitVar.Text := Mission.get_variable_name(tmp_event.data[0], 1, selected_event);
         btnEventFilterLimitVarToggle.Caption := 'C';
       end else
       begin
@@ -2880,7 +2897,7 @@ begin
   if ct.has_side and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
   begin
     if (cond.arg_var_flags and 1) <> 0 then
-      ConditionGrid.Cells[2,row] := MissionIni.get_variable_name(cond.side, 1)
+      ConditionGrid.Cells[2,row] := Mission.get_variable_name(cond.side, 1, -1)
     else
       ConditionGrid.Cells[2,row] := IfThen(cond.side < 8, Structures.side_names[cond.side], 'Any')
   end else
@@ -2957,7 +2974,7 @@ begin
     begin
       seConditionFilterAmount.Visible := False;
       edConditionFilterAmountVar.Visible := True;
-      edConditionFilterAmountVar.Text := MissionIni.get_variable_name(tmp_condition.arg2, 1);
+      edConditionFilterAmountVar.Text := Mission.get_variable_name(tmp_condition.arg2, 1, -1);
       btnConditionFilterAmountVarToggle.Caption := 'C';
     end else
     begin
@@ -3088,8 +3105,9 @@ begin
     Dispatcher.register_event(evMisEventPositionChange);
 end;
 
-procedure TEventDialog.create_coord_control_group(index: integer; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; coord_index, offset_x, offset_y: integer; parent_panel: TPanel);
+procedure TEventDialog.create_coord_control_group(index: integer; is_event: boolean; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; coord_index, offset_x, offset_y: integer; parent_panel: TPanel);
 begin
+  ccgs[index].is_event := is_event;
   ccgs[index].data_ptr := data_ptr;
   ccgs[index].var_flag_ptr := var_flag_ptr;
   ccgs[index].struct_def := struct_def;
@@ -3193,7 +3211,7 @@ begin
   ccg.edit_var_x.Visible := is_var_x;
   ccg.btn_var_toggle_x.Caption := IfThen(is_var_x, 'C', 'V');
   if is_var_x then
-    ccg.edit_var_x.Text :=MissionIni.get_variable_name(value_x, 1)
+    ccg.edit_var_x.Text :=Mission.get_variable_name(value_x, 1, IfThen(ccg.is_event, selected_event, -1))
   else
   begin
     ccg.spin_x.Value := value_x;
@@ -3204,7 +3222,7 @@ begin
   ccg.edit_var_y.Visible := is_var_y;
   ccg.btn_var_toggle_y.Caption := IfThen(is_var_y, 'C', 'V');
   if is_var_y then
-    ccg.edit_var_y.Text := MissionIni.get_variable_name(value_y, 1)
+    ccg.edit_var_y.Text := Mission.get_variable_name(value_y, 1, IfThen(ccg.is_event, selected_event, -1))
   else
   begin
     ccg.spin_y.Value := value_y;
@@ -3215,8 +3233,9 @@ begin
   loading := false;
 end;
 
-procedure TEventDialog.create_arg_control_group(index: integer; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; struct_member: integer; parent_panel: TPanel);
+procedure TEventDialog.create_arg_control_group(index: integer; is_event: boolean; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; struct_member: integer; parent_panel: TPanel);
 begin
+  acgs[index].is_event := is_event;
   acgs[index].data_ptr := data_ptr;
   acgs[index].var_flag_ptr := var_flag_ptr;
   acgs[index].struct_def := struct_def;
@@ -3325,7 +3344,7 @@ begin
   loading := true;
   if is_var then
   begin
-    acg.text_edit.Text := MissionIni.get_variable_name(value, IfThen(argdef.arg_type = atVariable, 2, 1));
+    acg.text_edit.Text := Mission.get_variable_name(value, IfThen(argdef.arg_type = atVariable, 2, 1), IfThen(acg.is_event, selected_event, -1));
     loading := false;
     exit;
   end;
@@ -3357,7 +3376,7 @@ begin
         else
           acg.radio_false.Checked := true;
       end;
-    atVariable: acg.text_edit.Text := MissionIni.get_variable_name(value, 1);
+    atVariable: acg.text_edit.Text := Mission.get_variable_name(value, 1, IfThen(acg.is_event, selected_event, -1));
   end;
   loading := false;
 end;
@@ -3373,12 +3392,13 @@ begin
   acg.combo_box.ItemIndex := value;
 end;
 
-procedure TEventDialog.create_filter_control_group(index: integer; filter_ptr: Pointer; parent_panel: TPanel);
+procedure TEventDialog.create_filter_control_group(index: integer; is_event: boolean; filter_ptr: Pointer; parent_panel: TPanel);
 var
   lbl: TLabel;
   i: integer;
   tmp_strings: TStringList;
 begin
+  fcgs[index].is_event := is_event;
   fcgs[index].object_type := -1;
   fcgs[index].filter_ptr := filter_ptr;
   tmp_strings := TStringList.Create;
@@ -3578,7 +3598,7 @@ begin
     if (fcg.filter_ptr.pos_and_var_flags and (1 shl (i + 4))) <> 0 then
     begin
       fcg.se_position[i].Visible := false;
-      fcg.edit_var_name[i + 4].Text := MissionIni.get_variable_name(fcg.filter_ptr.pos_values[i], 1);
+      fcg.edit_var_name[i + 4].Text := Mission.get_variable_name(fcg.filter_ptr.pos_values[i], 1, IfThen(fcg.is_event, selected_event, -1));
       fcg.edit_var_name[i + 4].Visible := true;
       fcg.btn_var_toggle[i + 4].Caption := 'C';
     end else
@@ -3603,7 +3623,7 @@ begin
   begin
     fcg.cbx_operation[i].ItemIndex := fcg.filter_ptr.criteria_type[i] shr 6;
     if (fcg.filter_ptr.pos_and_var_flags and (1 shl (i + 8))) <> 0 then
-      fcg.edit_var_name[i + 8].Text := MissionIni.get_variable_name(fcg.filter_ptr.criteria_value[i], 1)
+      fcg.edit_var_name[i + 8].Text := Mission.get_variable_name(fcg.filter_ptr.criteria_value[i], 1, IfThen(fcg.is_event, selected_event, -1))
     else if EventConfig.filter_criteria[object_type, fcg.cbx_criteria[i].ItemIndex].list_type = ltNone then
       fcg.se_value[i].Value := fcg.filter_ptr.criteria_value[i]
     else
@@ -3616,19 +3636,24 @@ begin
   loading := false;
 end;
 
-procedure TEventDialog.start_variable_selection(selecion_type: VariableSelectionType; index, default_var: integer);
+procedure TEventDialog.start_variable_selection(selecion_type: VariableSelectionType; index, default_var: integer; is_event: boolean);
 var
+  hook_type: integer;
   tmp_strings: TStringList;
   i: integer;
 begin
-  if pending_update_variable_list then
+  hook_type := -1;
+  if is_event and (selected_event >= 0) then
+    hook_type := Mission.event_indentation[selected_event].hook_type;
+  if pending_update_variable_list or (variable_selection_last_hook_type <> hook_type) then
   begin
     tmp_strings := TStringList.Create;
     for i := 0 to MAX_VARIABLES - 1 do
-      tmp_strings.Add(inttostr(i) + ': ' + MissionIni.get_variable_name(i, 0));
+      tmp_strings.Add(inttostr(i) + ': ' + Mission.get_variable_name(i, 0, IfThen(is_event, selected_event, -1)));
     lbSelectVariableList.Items := tmp_strings;
     tmp_strings.Destroy;
     pending_update_variable_list := false;
+    variable_selection_last_hook_type := hook_type;
   end;
   SelectVariablePanel.Visible := true;
   variable_selection_type := selecion_type;
@@ -3692,13 +3717,13 @@ begin
     vsEventMessageVar:
       begin
         tmp_event.data[13 + variable_selection_index] := lbSelectVariableList.ItemIndex;
-        event_message_variable[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, 1);
+        event_message_variable[variable_selection_index].Text := Mission.get_variable_name(lbSelectVariableList.ItemIndex, 1, selected_event);
       end;
     vsCondExprVar:
       begin
         cond_expr := Addr(tmp_event.data[1]);
         cond_expr.variable[variable_selection_index] := lbSelectVariableList.ItemIndex;
-        cond_expr_variable[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, 1);
+        cond_expr_variable[variable_selection_index].Text := Mission.get_variable_name(lbSelectVariableList.ItemIndex, 1, selected_event);
       end;
     vsCondExprValue:
       begin
@@ -3706,7 +3731,7 @@ begin
         cond_expr := Addr(tmp_event.data[1]);
         cond_expr.value[variable_selection_index] := lbSelectVariableList.ItemIndex;
         cond_expr.value_var_flags := cond_expr.value_var_flags or (1 shl variable_selection_index);
-        cond_expr_value[variable_selection_index].Text := MissionIni.get_variable_name(lbSelectVariableList.ItemIndex, 1);
+        cond_expr_value[variable_selection_index].Text := Mission.get_variable_name(lbSelectVariableList.ItemIndex, 1, selected_event);
         cond_expr_var_btn[variable_selection_index].Caption := 'C';
         loading := false;
       end;
