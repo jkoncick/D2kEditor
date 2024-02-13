@@ -1,5 +1,15 @@
 D2kEditor changelog
 
+Version 2.2 (released 2024-02-13)
+---------------------------------
+Added: Support for new game features related to events (event variables, indentation of blocks etc.)
+Changed: Allocation Index renamed to House ID, Player renamed to Side
+Added: Mission .ini file data are included in event export (in a separate .ini file) like variable names, messages etc.
+Fixed: Sprites having color index 0 other than magenta not being transparent
+Added: Produce radar color file option (for custom radar colors game feature)
+Added: Remap image colors and Set default palette colors option on palette view, show image color index
+
+
 Version 2.11 (released 2022-06-06)
 ---------------------------------
 Added: Deactivate Ctrl+X shortcut when on Briefing text box
