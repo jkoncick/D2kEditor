@@ -130,6 +130,7 @@ type
     procedure shift_map(direction, num_tiles: integer);
     procedure change_structure_owner(side_from, side_to: integer; swap: boolean);
     function remap_tiles(ini_filename: String): boolean;
+    function remap_structures(ini_filename: String): String;
     function convert_structures_to_advanced_mode: integer;
 
   end;
@@ -140,7 +141,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main, _launcher, _dispatcher;
+uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main, _launcher, _dispatcher, _eventconfig;
 
 procedure TMap.load_map(filename: String);
 var
@@ -1133,6 +1134,62 @@ begin
   reset_undo_history;
   map_modified := true;
   Dispatcher.register_event(evMapTilesModify);
+end;
+
+function TMap.remap_structures(ini_filename: String): String;
+var
+  remap_structures_data: TRemapStructuresData;
+  i, x, y: integer;
+  special, new_special, struct_type: integer;
+  tiledata_entry: TTileDataEntryPtr;
+begin
+  result := Structures.load_remap_structures_ini_file(ini_filename, Addr(remap_structures_data));
+  if result <> '' then
+    exit;
+  // Remap structures on map
+  for y := 0 to height - 1 do
+    for x := 0 to width - 1 do
+    begin
+      special := map_data[x, y].special;
+      // Remap advanced structures
+      if (special and $C000) = $4000 then
+      begin
+        struct_type := remap_structures_data.remap_units[special and $003F];
+        modify_map_tile(x, y, map_data[x,y].tile, (special and $FFC0) or struct_type);
+      end
+      else if (special and $E000) = $2000 then
+      begin
+        struct_type := remap_structures_data.remap_buildings[special and $007F];
+        modify_map_tile(x, y, map_data[x,y].tile, (special and $FF80) or struct_type);
+      end
+      // Remap basic structures
+      else if (special < CNT_TILEDATA_ENTRIES) then
+      begin
+        tiledata_entry := Structures.get_tiledata_entry(special);
+        if (tiledata_entry.stype = ST_UNIT) or (tiledata_entry.stype = ST_BUILDING) then
+        begin
+          if tiledata_entry.stype = ST_UNIT then
+            struct_type := remap_structures_data.remap_unitgroups[tiledata_entry.index]
+          else
+            struct_type := remap_structures_data.remap_buildinggroups[tiledata_entry.index];
+          new_special := 0;
+          for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+            if (Structures.tiledata[i].index = struct_type) and (Structures.tiledata[i].side = tiledata_entry.side) and (Structures.tiledata[i].stype = tiledata_entry.stype) then
+            begin
+              new_special := i;
+              break;
+            end;
+          if special <> new_special then
+            modify_map_tile(x, y, map_data[x,y].tile, new_special);
+        end;
+      end;
+    end;
+  // Finalize
+  reset_undo_history;
+  map_modified := true;
+  Dispatcher.register_event(evMapTilesModify);
+  // Remap structures in missions
+  Mission.remap_structures(Addr(remap_structures_data));
 end;
 
 function TMap.convert_structures_to_advanced_mode: integer;

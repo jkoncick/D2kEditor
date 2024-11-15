@@ -1338,6 +1338,11 @@ object MainWindow: TMainWindow
         ShortCut = 16459
         OnClick = Remaptiles1Click
       end
+      object Remapstructures1: TMenuItem
+        Caption = 'Remap structures'
+        ShortCut = 16458
+        OnClick = Remapstructures1Click
+      end
       object Converttoadvanced1: TMenuItem
         Caption = 'Convert to advanced'
         OnClick = Converttoadvanced1Click
@@ -1461,12 +1466,18 @@ object MainWindow: TMainWindow
     Filter = 'Dune 2000 game executable (DUNE2000.EXE)|dune2000.exe'
     InitialDir = 'C:\'
     Title = 'Find Dune 2000 game location'
-    Left = 288
+    Left = 320
   end
   object RemapTilesOpenDialog: TOpenDialog
     DefaultExt = 'ini'
     Filter = 'Remap tiles ini file (*.ini)|*.ini'
     Title = 'Select remap tiles ini file'
     Left = 256
+  end
+  object RemapStructuresOpenDialog: TOpenDialog
+    DefaultExt = 'ini'
+    Filter = 'Remap structures ini file (*.ini)|*.ini'
+    Title = 'Select remap structures ini file'
+    Left = 288
   end
 end

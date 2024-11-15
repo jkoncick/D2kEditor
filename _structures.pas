@@ -2,7 +2,7 @@ unit _structures;
 
 interface
 
-uses Windows, Classes, SysUtils, Math, Types, _utils;
+uses Windows, Classes, SysUtils, Math, Types, _utils, _eventconfig;
 
 // *****************************************************************************
 // TEMPLATES.BIN file definitions
@@ -418,6 +418,18 @@ type
 
   TArtTypePointersPtr = ^TArtTypePointers;
 
+type
+  TRemapStructuresData = record
+    remap_units: array[0..MAX_UNIT_TYPES-1] of byte;
+    remap_unitgroups: array[0..MAX_UNIT_TYPES-1] of byte;
+    remap_buildings: array[0..MAX_BUILDING_TYPES-1] of byte;
+    remap_buildinggroups: array[0..MAX_BUILDING_TYPES-1] of byte;
+    remap_weapons: array[0..MAX_WEAPONS-1] of byte;
+    remap_explosions: array[0..MAX_EXPLOSIONS-1] of byte;
+  end;
+
+  TRemapStructuresDataPtr = ^TRemapStructuresData;
+
 // *****************************************************************************
 // Data Export / Import structures
 // *****************************************************************************
@@ -705,6 +717,9 @@ type
     procedure copy_item  (item_type, index: integer);
     procedure paste_item (item_type, index: integer);
 
+    // Remap structures functions
+    function load_remap_structures_ini_file(ini_filename: String; remap_structures_data: TRemapStructuresDataPtr): String;
+    function remap_structure(remap_structures_data: TRemapStructuresDataPtr; list_type: ItemListType; struct_type: integer): integer;
   end;
 
 var
@@ -2443,6 +2458,103 @@ begin
   GlobalUnLock(handle);
   CloseClipboard;
   Dispatcher.register_event(evStructuresImportItem);
+end;
+
+function TStructures.load_remap_structures_ini_file(ini_filename: String; remap_structures_data: TRemapStructuresDataPtr): String;
+var
+  ini: TMemIniFile;
+  strings: TStringList;
+  i, j: integer;
+begin
+  result := 'The ini file must contain at least one of following sections:'#13 +
+            '[Remap_Units] [Remap_UnitGroups] [Remap_Buildings] [Remap_BuildingGroups] [Remap_Weapons] [Remap_Explosions]'#13 +
+            'with key-value pairs in the form'#13 +
+            'from_type=to_type'#13 +
+            'where key and value is a number.';
+  // Load ini file
+  ini := TMemIniFile.Create(ini_filename);
+  strings := TStringList.Create;
+  // Check for ini file validity
+  ini.ReadSections(strings);
+  for i := 0 to strings.Count - 1 do
+    for j := Ord(ilUnits) to Ord(ilExplosions) do
+      if strings[i] = 'Remap_' + ItemListTypeStr[j] then
+        result := '';
+  strings.Destroy;
+  if result <> '' then
+  begin
+    ini.Destroy;
+    exit;
+  end;
+  // Read ini file
+  for i := 0 to MAX_UNIT_TYPES-1 do
+  begin
+    remap_structures_data.remap_units[i] := ini.ReadInteger('Remap_Units', IntToStr(i), i);
+    if (remap_structures_data.remap_units[i] >= templates.UnitCount) and (remap_structures_data.remap_units[i] <> i) then
+    begin
+      result := 'Invalid target type ' + IntToStr(remap_structures_data.remap_units[i]) + ' in section [Remap_Units]';
+      ini.Destroy;
+      exit;
+    end;
+    remap_structures_data.remap_unitgroups[i] := ini.ReadInteger('Remap_UnitGroups', IntToStr(i), i);
+    if (remap_structures_data.remap_unitgroups[i] >= templates.UnitGroupCount) and (remap_structures_data.remap_unitgroups[i] <> i) then
+    begin
+      result := 'Invalid target type ' + IntToStr(remap_structures_data.remap_unitgroups[i]) + ' in section [Remap_UnitGroups]';
+      ini.Destroy;
+      exit;
+    end;
+  end;
+  for i := 0 to MAX_BUILDING_TYPES-1 do
+  begin
+    remap_structures_data.remap_buildings[i] := ini.ReadInteger('Remap_Buildings', IntToStr(i), i);
+    if (remap_structures_data.remap_buildings[i] >= templates.BuildingCount) and (remap_structures_data.remap_buildings[i] <> i) then
+    begin
+      result := 'Invalid target type ' + IntToStr(remap_structures_data.remap_buildings[i]) + ' in section [Remap_Buildings]';
+      ini.Destroy;
+      exit;
+    end;
+    remap_structures_data.remap_buildinggroups[i] := ini.ReadInteger('Remap_BuildingGroups', IntToStr(i), i);
+    if (remap_structures_data.remap_buildinggroups[i] >= templates.BuildingGroupCount) and (remap_structures_data.remap_buildinggroups[i] <> i) then
+    begin
+      result := 'Invalid target type ' + IntToStr(remap_structures_data.remap_buildinggroups[i]) + ' in section [Remap_BuildingGroups]';
+      ini.Destroy;
+      exit;
+    end;
+  end;
+  for i := 0 to MAX_WEAPONS-1 do
+  begin
+    remap_structures_data.remap_weapons[i] := ini.ReadInteger('Remap_Weapons', IntToStr(i), i);
+    if (remap_structures_data.remap_weapons[i] >= templates.WeaponCount) and (remap_structures_data.remap_weapons[i] <> i) then
+    begin
+      result := 'Invalid target type ' + IntToStr(remap_structures_data.remap_weapons[i]) + ' in section [Remap_Weapons]';
+      ini.Destroy;
+      exit;
+    end;
+  end;
+  for i := 0 to MAX_EXPLOSIONS-1 do
+  begin
+    remap_structures_data.remap_explosions[i] := ini.ReadInteger('Remap_Explosions', IntToStr(i), i);
+    if (remap_structures_data.remap_explosions[i] >= templates.ExplosionCount) and (remap_structures_data.remap_explosions[i] <> i) then
+    begin
+      result := 'Invalid target type ' + IntToStr(remap_structures_data.remap_explosions[i]) + ' in section [Remap_Explosions]';
+      ini.Destroy;
+      exit;
+    end;
+  end;
+  ini.Destroy;
+end;
+
+function TStructures.remap_structure(remap_structures_data: TRemapStructuresDataPtr; list_type: ItemListType; struct_type: integer): integer;
+begin
+  result := struct_type;
+  case list_type of
+    ilUnits:          result := remap_structures_data.remap_units[struct_type];
+    ilUnitGroups:     result := remap_structures_data.remap_unitgroups[struct_type];
+    ilBuildings:      result := remap_structures_data.remap_buildings[struct_type];
+    ilBuildingGroups: result := remap_structures_data.remap_buildinggroups[struct_type];
+    ilWeapons:        result := remap_structures_data.remap_weapons[struct_type];
+    ilExplosions:     result := remap_structures_data.remap_explosions[struct_type];
+  end;
 end;
 
 end.

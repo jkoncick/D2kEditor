@@ -2,7 +2,7 @@ unit _mission;
 
 interface
 
-uses Graphics, Classes, IniFiles, _map, _misai, _utils, _gamelists, _eventconfig;
+uses Graphics, Classes, IniFiles, _map, _misai, _utils, _structures, _gamelists, _eventconfig;
 
 // Mis file constants
 const side_annihilated_msgid: array[0..7] of integer = (602, 600, 601, 606, 605, 603, 604, 0);
@@ -227,6 +227,7 @@ type
     function get_side_house_id(side: integer): integer;
     procedure remap_filter_criteria(filename: string);
     procedure remap_filter_criteria_for_object_type(ini: TMemIniFile; obj_name: string; ed: EventData; cd: ConditionData);
+    procedure remap_structures(remap_structures_data: TRemapStructuresDataPtr);
   end;
 
 var
@@ -234,7 +235,7 @@ var
 
 implementation
 
-uses SysUtils, Math, Windows, Forms, _missionini, _tileset, _stringtable, _settings, _structures, _dispatcher, event_dialog, _gamestructs,
+uses SysUtils, Math, Windows, Forms, _missionini, _tileset, _stringtable, _settings, _dispatcher, event_dialog, _gamestructs,
   StrUtils;
 
 procedure TMission.init;
@@ -1941,6 +1942,82 @@ begin
       for j := 0 to 7 do
         filter.criteria_type[j] := remap_values[filter.criteria_type[j] and 63] or (filter.criteria_type[j] and 192);
     end;
+end;
+
+procedure TMission.remap_structures(remap_structures_data: TRemapStructuresDataPtr);
+var
+  i, j: integer;
+  event: ^TEvent;
+  condition: ^TCondition;
+  et: TEventTypeDefinitionPtr;
+  ct: TConditionTypeDefinitionPtr;
+  struct_type: integer;
+  filter: TObjectFilterPtr;
+  filter_criteria: TFilterCriteriaDefinitionPtr;
+begin
+  // Remap structures on events
+  for i := 0 to num_events - 1 do
+  begin
+    event := Addr(event_data[i]);
+    et := Addr(EventConfig.event_types[event.event_type]);
+    // Handle event arguments
+    for j := 0 to Length(et.args) - 1 do
+    begin
+      if (et.args[j].arg_type = atList) and (et.args[j].list_type = ltItem) then
+      begin
+        struct_type := get_integer_struct_member(event, Addr(event_args_struct_members), j);
+        struct_type := Structures.remap_structure(remap_structures_data, et.args[j].item_list_type, struct_type);
+        set_integer_struct_member(event, Addr(event_args_struct_members), j, struct_type);
+      end;
+    end;
+    // Handle event filters
+    if ord(et.event_data) >= ord(edUnitFilter) then
+    begin
+      filter := Addr(event.data[1]);
+      for j := 0 to Length(filter.criteria_type) - 1 do
+      begin
+        filter_criteria := Addr(EventConfig.filter_criteria[ord(et.event_data) - ord(edUnitFilter), filter.criteria_type[j]]);
+        if (filter_criteria.list_type = ltItem) then
+          filter.criteria_value[j] := Structures.remap_structure(remap_structures_data, filter_criteria.item_list_type, filter.criteria_value[j]);
+      end;
+    end;
+    // Handle event unit list
+    if et.event_data = edUnitList then
+    begin
+      for j := 0 to event.amount - 1 do
+        event.data[j] := remap_structures_data.remap_units[event.data[j]];
+    end;
+  end;
+  // Remap structures on conditions
+  for i := 0 to num_conditions - 1 do
+  begin
+    condition := Addr(condition_data[i]);
+    ct := Addr(EventConfig.condition_types[condition.condition_type]);
+    // Handle condition arguments
+    for j := 0 to Length(ct.args) - 1 do
+    begin
+      if (ct.args[j].arg_type = atList) and (ct.args[j].list_type = ltItem) then
+      begin
+        struct_type := get_integer_struct_member(condition, Addr(condition_args_struct_members), j);
+        struct_type := Structures.remap_structure(remap_structures_data, ct.args[j].item_list_type, struct_type);
+        set_integer_struct_member(condition, Addr(condition_args_struct_members), j, struct_type);
+      end;
+    end;
+    // Handle condition filters
+    if ord(ct.condition_data) >= ord(cdUnitFilter) then
+    begin
+      filter := Addr(condition_data[i]);
+      for j := 0 to Length(filter.criteria_type) - 1 do
+      begin
+        filter_criteria := Addr(EventConfig.filter_criteria[ord(ct.condition_data) - ord(cdUnitFilter), filter.criteria_type[j]]);
+        if (filter_criteria.list_type = ltItem) then
+          filter.criteria_value[j] := Structures.remap_structure(remap_structures_data, filter_criteria.item_list_type, filter.criteria_value[j]);
+      end;
+    end;
+  end;
+  // Finalize
+  mis_modified := true;
+  Dispatcher.register_event(evMisLoad);
 end;
 
 end.

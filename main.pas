@@ -217,6 +217,8 @@ type
     lblCrateBloomRadiusPlus: TLabel;
     Converttoadvanced1: TMenuItem;
     Produceradarcolorfile1: TMenuItem;
+    Remapstructures1: TMenuItem;
+    RemapStructuresOpenDialog: TOpenDialog;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -261,6 +263,7 @@ type
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
     procedure Remaptiles1Click(Sender: TObject);
+    procedure Remapstructures1Click(Sender: TObject);
     procedure Converttoadvanced1Click(Sender: TObject);
     procedure Showmapstatistics1Click(Sender: TObject);
     procedure EventsandConditions1Click(Sender: TObject);
@@ -1123,6 +1126,20 @@ begin
   if RemapTilesOpenDialog.Execute then
     if not Map.remap_tiles(RemapTilesOpenDialog.FileName) then
       Application.MessageBox('The ini file must contain at least one of [Remap_Tiles] and [Remap_Specials] sections'#13'with key-value pairs in the form'#13'from_index=to_index'#13'where key and value is a tile/special index.', 'Invalid remap tiles ini file', MB_OK or MB_ICONERROR);
+end;
+
+procedure TMainWindow.Remapstructures1Click(Sender: TObject);
+var
+  error_text: String;
+begin
+  if not Map.loaded then
+    exit;
+  if RemapStructuresOpenDialog.Execute then
+  begin
+    error_text := Map.remap_structures(RemapStructuresOpenDialog.FileName);
+    if error_text <> '' then
+      Application.MessageBox(PChar(error_text), 'Invalid remap structures ini file', MB_OK or MB_ICONERROR);
+  end;
 end;
 
 procedure TMainWindow.Converttoadvanced1Click(Sender: TObject);
