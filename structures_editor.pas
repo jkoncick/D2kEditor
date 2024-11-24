@@ -346,15 +346,12 @@ type
     seUnitSightRadius: TSpinEdit;
     gbUnitMovement: TGroupBox;
     gbUnitWeapons: TGroupBox;
-    lblUnitPrimaryWeapon: TLabel;
-    lblUnitSecondaryWeapon: TLabel;
-    lblUnitRateOfFire: TLabel;
     lblUnitBarrelRotationSpeed: TLabel;
     cbUnitHasBarrel: TCheckBox;
     cbUnitFlagUF_FIXED_BARREL: TCheckBox;
     cbxUnitPrimaryWeapon: TComboBox;
     cbxUnitSecondaryWeapon: TComboBox;
-    seUnitRateOfFire: TSpinEdit;
+    seUnitPrimaryWeaponLongDelay: TSpinEdit;
     seUnitBarrelRotationSpeed: TSpinEdit;
     edUnitSpeed: TEdit;
     lblUnitSpeed: TLabel;
@@ -555,8 +552,8 @@ type
     btnExplosionSoundPlay: TButton;
     lblUnitVoicePriority: TLabel;
     seUnitVoicePriority: TSpinEdit;
-    lblUnitProjectileShootOffset: TLabel;
-    seUnitProjectileShootOffset: TSpinEdit;
+    lblUnitPrimaryWeaponOffsetAngle: TLabel;
+    seUnitPrimaryWeaponShootOffset: TSpinEdit;
     cbBuildingScreenShake: TCheckBox;
     Launchgame1: TMenuItem;
     Launchmission1: TMenuItem;
@@ -585,6 +582,25 @@ type
     btnImagePaletteSetDefaultColors: TButton;
     btnImagePaletteRemapColors: TButton;
     ImageRemapColorsOpenDialog: TOpenDialog;
+    seUnitPrimaryWeaponBulkShots: TSpinEdit;
+    seUnitPrimaryWeaponShortDelay: TSpinEdit;
+    seUnitSecondaryWeaponBulkShots: TSpinEdit;
+    seUnitSecondaryWeaponShortDelay: TSpinEdit;
+    seUnitSecondaryWeaponLongDelay: TSpinEdit;
+    lblUnitPrimaryWeaponBulkShots: TLabel;
+    lblUnitPrimaryWeaponShortLongDelay: TLabel;
+    lblUnitSecondaryWeaponShortLongDelay: TLabel;
+    cbUnitPrimaryWeaponDoubleShot: TCheckBox;
+    seUnitPrimaryWeaponShootAngle: TSpinEdit;
+    lblUnitSecondaryWeaponBulkShots: TLabel;
+    lblUnitSecondaryWeaponOffsetAngle: TLabel;
+    seUnitSecondaryWeaponShootOffset: TSpinEdit;
+    seUnitSecondaryWeaponShootAngle: TSpinEdit;
+    cbUnitSecondaryWeaponDoubleShot: TCheckBox;
+    lblWeaponInaccuracy: TLabel;
+    seWeaponInaccuracy: TSpinEdit;
+    cbUnitPrimaryWeaponNoAutoAttack: TCheckBox;
+    cbUnitSecondaryWeaponNoAutoAttack: TCheckBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -2971,10 +2987,22 @@ begin
   // Weapons group box
   cbxUnitPrimaryWeapon.ItemIndex := unt.PrimaryWeapon + 1;
   cbxUnitSecondaryWeapon.ItemIndex := unt.SecondaryWeapon + 1;
+  seUnitPrimaryWeaponBulkShots.Value := unt.PrimaryWeaponBulkShots;
+  seUnitPrimaryWeaponShortDelay.Value := unt.PrimaryWeaponShortDelay;
+  seUnitPrimaryWeaponLongDelay.Value := unt.PrimaryWeaponLongDelay;
+  cbUnitPrimaryWeaponDoubleShot.Checked := unt.PrimaryWeaponDoubleShot <> 0;
+  cbUnitPrimaryWeaponNoAutoAttack.Checked := unt.PrimaryWeaponNoAutoAttack <> 0;
+  seUnitPrimaryWeaponShootOffset.Value := unt.PrimaryWeaponShootOffset;
+  seUnitPrimaryWeaponShootAngle.Value := unt.PrimaryWeaponShootAngle;
+  seUnitSecondaryWeaponBulkShots.Value := unt.SecondaryWeaponBulkShots;
+  seUnitSecondaryWeaponShortDelay.Value := unt.SecondaryWeaponShortDelay;
+  seUnitSecondaryWeaponLongDelay.Value := unt.SecondaryWeaponLongDelay;
+  cbUnitSecondaryWeaponDoubleShot.Checked := unt.SecondaryWeaponDoubleShot <> 0;
+  cbUnitSecondaryWeaponNoAutoAttack.Checked := unt.SecondaryWeaponNoAutoAttack <> 0;
+  seUnitSecondaryWeaponShootOffset.Value := unt.SecondaryWeaponShootOffset;
+  seUnitSecondaryWeaponShootAngle.Value := unt.SecondaryWeaponShootAngle;
   cbUnitHasBarrel.Checked := unt.HasBarrel <> 0;
-  seUnitRateOfFire.Value := unt.RateOfFire;
   seUnitBarrelRotationSpeed.Value := unt.BarrelRotationSpeed;
-  seUnitProjectileShootOffset.Value := unt.ProjectileShootOffset;
   // Visuals and animations group box
   cbxUnitUnitArt.ItemIndex := unt.UnitArt + 1;
   cbxUnitBarrelArt.ItemIndex := unt.BarrelArt + 1;
@@ -3038,6 +3066,7 @@ begin
   edWeaponDamage.Text := IntToStr(wpn.Damage);
   cbxWeaponWarhead.ItemIndex := wpn.Warhead;
   edWeaponRange.Text := IntToStr(wpn.Range);
+  seWeaponInaccuracy.Value := wpn.Inaccuracy;
   cbWeaponAntiAircraft.Checked := wpn.AntiAircraft <> 0;
   // Projectile movement tab
   edWeaponProjectileSpeed.Text := IntToStr(wpn.ProjectileSpeed shr 10);
@@ -3324,10 +3353,22 @@ begin
   // Weapons group box
   unt.PrimaryWeapon := cbxUnitPrimaryWeapon.ItemIndex - 1;
   unt.SecondaryWeapon := cbxUnitSecondaryWeapon.ItemIndex - 1;
+  unt.PrimaryWeaponBulkShots := seUnitPrimaryWeaponBulkShots.Value;
+  unt.PrimaryWeaponShortDelay := seUnitPrimaryWeaponShortDelay.Value;
+  unt.PrimaryWeaponLongDelay := seUnitPrimaryWeaponLongDelay.Value;
+  unt.PrimaryWeaponDoubleShot := IfThen(cbUnitPrimaryWeaponDoubleShot.Checked, 1, 0);
+  unt.PrimaryWeaponNoAutoAttack := IfThen(cbUnitPrimaryWeaponNoAutoAttack.Checked, 1, 0);
+  unt.PrimaryWeaponShootOffset := seUnitPrimaryWeaponShootOffset.Value;
+  unt.PrimaryWeaponShootAngle := seUnitPrimaryWeaponShootAngle.Value;
+  unt.SecondaryWeaponBulkShots := seUnitSecondaryWeaponBulkShots.Value;
+  unt.SecondaryWeaponShortDelay := seUnitSecondaryWeaponShortDelay.Value;
+  unt.SecondaryWeaponLongDelay := seUnitSecondaryWeaponLongDelay.Value;
+  unt.SecondaryWeaponDoubleShot := IfThen(cbUnitSecondaryWeaponDoubleShot.Checked, 1, 0);
+  unt.SecondaryWeaponNoAutoAttack := IfThen(cbUnitSecondaryWeaponNoAutoAttack.Checked, 1, 0);
+  unt.SecondaryWeaponShootOffset := seUnitSecondaryWeaponShootOffset.Value;
+  unt.SecondaryWeaponShootAngle := seUnitSecondaryWeaponShootAngle.Value;
   unt.HasBarrel := IfThen(cbUnitHasBarrel.Checked, 1, 0);
-  unt.RateOfFire := seUnitRateOfFire.Value;
   unt.BarrelRotationSpeed := seUnitBarrelRotationSpeed.Value;
-  unt.ProjectileShootOffset := seUnitProjectileShootOffset.Value;
   // Visuals and animations group box
   unt.UnitArt := cbxUnitUnitArt.ItemIndex - 1;
   unt.BarrelArt := cbxUnitBarrelArt.ItemIndex - 1;
@@ -3389,6 +3430,7 @@ begin
   wpn.Damage := StrToIntDef(edWeaponDamage.Text, 0);
   wpn.Warhead := cbxWeaponWarhead.ItemIndex;
   wpn.Range := StrToIntDef(edWeaponRange.Text, 0);
+  wpn.Inaccuracy := seWeaponInaccuracy.Value;
   wpn.AntiAircraft := IfThen(cbWeaponAntiAircraft.Checked, 1, 0);
   // Projectile movement tab
   wpn.ProjectileSpeed := StrToIntDef(edWeaponProjectileSpeed.Text, 0) shl 10;

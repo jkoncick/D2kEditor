@@ -1589,7 +1589,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbUnitFlagUF_STEALTH: TCheckBox
           Tag = 16
-          Left = 112
+          Left = 128
           Top = 88
           Width = 57
           Height = 17
@@ -1601,7 +1601,7 @@ object StructuresEditor: TStructuresEditor
           Tag = 8388608
           Left = 8
           Top = 88
-          Width = 81
+          Width = 73
           Height = 17
           Caption = 'Self-healing'
           TabOrder = 6
@@ -1620,9 +1620,9 @@ object StructuresEditor: TStructuresEditor
         end
         object cbUnitFlagUF_NO_AI: TCheckBox
           Tag = 2048
-          Left = 200
+          Left = 224
           Top = 88
-          Width = 57
+          Width = 49
           Height = 17
           Caption = 'No AI'
           TabOrder = 8
@@ -1733,81 +1733,95 @@ object StructuresEditor: TStructuresEditor
         Height = 145
         Caption = 'Weapons'
         TabOrder = 7
-        object lblUnitPrimaryWeapon: TLabel
-          Left = 8
-          Top = 16
-          Width = 78
-          Height = 13
-          Caption = 'Primary weapon:'
-        end
-        object lblUnitSecondaryWeapon: TLabel
-          Left = 8
-          Top = 40
-          Width = 95
-          Height = 13
-          Caption = 'Secondary weapon:'
-        end
-        object lblUnitRateOfFire: TLabel
-          Left = 8
-          Top = 88
-          Width = 55
-          Height = 13
-          Caption = 'Rate of fire:'
-        end
         object lblUnitBarrelRotationSpeed: TLabel
-          Left = 144
-          Top = 88
+          Left = 168
+          Top = 117
           Width = 83
           Height = 13
           Caption = 'Barrel turn speed:'
         end
-        object lblUnitProjectileShootOffset: TLabel
-          Left = 8
-          Top = 116
-          Width = 104
+        object lblUnitPrimaryWeaponOffsetAngle: TLabel
+          Left = 66
+          Top = 76
+          Width = 76
           Height = 13
-          Caption = 'Projectile shoot offset:'
+          Caption = 'Offset:     Angle:'
+        end
+        object lblUnitPrimaryWeaponBulkShots: TLabel
+          Left = 8
+          Top = 38
+          Width = 52
+          Height = 13
+          Caption = 'Bulk shots:'
+        end
+        object lblUnitPrimaryWeaponShortLongDelay: TLabel
+          Left = 66
+          Top = 38
+          Width = 85
+          Height = 13
+          Caption = 'Short/Long delay:'
+        end
+        object lblUnitSecondaryWeaponShortLongDelay: TLabel
+          Left = 212
+          Top = 38
+          Width = 85
+          Height = 13
+          Caption = 'Short/Long delay:'
+        end
+        object lblUnitSecondaryWeaponBulkShots: TLabel
+          Left = 154
+          Top = 38
+          Width = 52
+          Height = 13
+          Caption = 'Bulk shots:'
+        end
+        object lblUnitSecondaryWeaponOffsetAngle: TLabel
+          Left = 212
+          Top = 76
+          Width = 76
+          Height = 13
+          Caption = 'Offset:     Angle:'
         end
         object cbUnitHasBarrel: TCheckBox
           Left = 8
-          Top = 64
-          Width = 97
+          Top = 116
+          Width = 73
           Height = 17
           Caption = 'Has barrel'
           TabOrder = 0
         end
         object cbUnitFlagUF_FIXED_BARREL: TCheckBox
           Tag = 32768
-          Left = 144
-          Top = 64
-          Width = 137
+          Left = 84
+          Top = 116
+          Width = 73
           Height = 17
-          Caption = 'Barrel is fixed'
+          Caption = 'Fixed barrel'
           TabOrder = 1
           OnClick = UnitFlagCheckboxChange
         end
         object cbxUnitPrimaryWeapon: TComboBox
-          Left = 112
+          Left = 8
           Top = 16
-          Width = 185
+          Width = 143
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 2
         end
         object cbxUnitSecondaryWeapon: TComboBox
-          Left = 112
-          Top = 40
-          Width = 185
+          Left = 154
+          Top = 16
+          Width = 143
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 3
         end
-        object seUnitRateOfFire: TSpinEdit
-          Left = 72
-          Top = 88
-          Width = 65
+        object seUnitPrimaryWeaponLongDelay: TSpinEdit
+          Left = 110
+          Top = 52
+          Width = 41
           Height = 22
           MaxLength = 3
           MaxValue = 255
@@ -1816,9 +1830,9 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object seUnitBarrelRotationSpeed: TSpinEdit
-          Left = 232
-          Top = 88
-          Width = 65
+          Left = 256
+          Top = 116
+          Width = 41
           Height = 22
           MaxLength = 3
           MaxValue = 255
@@ -1826,16 +1840,148 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 5
           Value = 0
         end
-        object seUnitProjectileShootOffset: TSpinEdit
-          Left = 120
-          Top = 116
-          Width = 65
+        object seUnitPrimaryWeaponShootOffset: TSpinEdit
+          Left = 66
+          Top = 90
+          Width = 41
           Height = 22
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
           TabOrder = 6
           Value = 0
+        end
+        object seUnitPrimaryWeaponBulkShots: TSpinEdit
+          Left = 8
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 7
+          Value = 0
+        end
+        object seUnitPrimaryWeaponShortDelay: TSpinEdit
+          Left = 66
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 8
+          Value = 0
+        end
+        object seUnitSecondaryWeaponBulkShots: TSpinEdit
+          Left = 154
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 9
+          Value = 0
+        end
+        object seUnitSecondaryWeaponShortDelay: TSpinEdit
+          Left = 212
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 10
+          Value = 0
+        end
+        object seUnitSecondaryWeaponLongDelay: TSpinEdit
+          Left = 256
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 11
+          Value = 0
+        end
+        object cbUnitPrimaryWeaponDoubleShot: TCheckBox
+          Left = 8
+          Top = 79
+          Width = 57
+          Height = 17
+          Hint = 'Double shot'
+          Caption = 'Double'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 12
+        end
+        object seUnitPrimaryWeaponShootAngle: TSpinEdit
+          Left = 110
+          Top = 90
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 13
+          Value = 0
+        end
+        object seUnitSecondaryWeaponShootOffset: TSpinEdit
+          Left = 212
+          Top = 90
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 127
+          MinValue = -128
+          TabOrder = 14
+          Value = 0
+        end
+        object seUnitSecondaryWeaponShootAngle: TSpinEdit
+          Left = 256
+          Top = 90
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 15
+          Value = 0
+        end
+        object cbUnitSecondaryWeaponDoubleShot: TCheckBox
+          Left = 154
+          Top = 79
+          Width = 55
+          Height = 17
+          Hint = 'Double shot'
+          Caption = 'Double'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 16
+        end
+        object cbUnitPrimaryWeaponNoAutoAttack: TCheckBox
+          Left = 8
+          Top = 97
+          Width = 57
+          Height = 17
+          Hint = 'No auto-attack'
+          Caption = 'No auto'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 17
+        end
+        object cbUnitSecondaryWeaponNoAutoAttack: TCheckBox
+          Left = 154
+          Top = 97
+          Width = 57
+          Height = 17
+          Hint = 'No auto-attack'
+          Caption = 'No auto'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 18
         end
       end
       object gbUnitVisuals: TGroupBox
@@ -2441,7 +2587,7 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Damage:'
         end
         object lblWeaponWarhead: TLabel
-          Left = 136
+          Left = 128
           Top = 48
           Width = 47
           Height = 13
@@ -2461,10 +2607,17 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Name:'
         end
+        object lblWeaponInaccuracy: TLabel
+          Left = 128
+          Top = 72
+          Width = 56
+          Height = 13
+          Caption = 'Inaccuracy:'
+        end
         object edWeaponDamage: TEdit
           Left = 56
           Top = 48
-          Width = 73
+          Width = 65
           Height = 21
           TabOrder = 0
         end
@@ -2480,22 +2633,22 @@ object StructuresEditor: TStructuresEditor
         object edWeaponRange: TEdit
           Left = 56
           Top = 72
-          Width = 73
+          Width = 65
           Height = 21
           TabOrder = 2
         end
         object cbWeaponAntiAircraft: TCheckBox
-          Left = 136
+          Left = 248
           Top = 72
-          Width = 97
+          Width = 81
           Height = 17
           Caption = 'Anti-aircraft'
           TabOrder = 3
         end
         object cbWeaponFlagWF_BLOCKED_BY_WALL: TCheckBox
           Tag = 4096
-          Left = 224
-          Top = 72
+          Left = 236
+          Top = 96
           Width = 97
           Height = 17
           Caption = 'Blocked by wall'
@@ -2504,7 +2657,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponFlagWF_DEVIATOR: TCheckBox
           Tag = 64
-          Left = 136
+          Left = 120
           Top = 96
           Width = 81
           Height = 17
@@ -2514,9 +2667,9 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponFlagWF_SONIC: TCheckBox
           Tag = 2048
-          Left = 224
+          Left = 184
           Top = 96
-          Width = 65
+          Width = 49
           Height = 17
           Caption = 'Sonic'
           TabOrder = 6
@@ -2534,9 +2687,9 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponFlagWF_DEBRIS: TCheckBox
           Tag = 2
-          Left = 72
+          Left = 64
           Top = 96
-          Width = 57
+          Width = 49
           Height = 17
           Caption = 'Debris'
           TabOrder = 8
@@ -2549,6 +2702,16 @@ object StructuresEditor: TStructuresEditor
           Height = 21
           MaxLength = 499
           TabOrder = 9
+        end
+        object seWeaponInaccuracy: TSpinEdit
+          Left = 192
+          Top = 71
+          Width = 49
+          Height = 22
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 10
+          Value = 0
         end
       end
       object dbWeaponMovement: TGroupBox
