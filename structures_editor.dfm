@@ -763,79 +763,100 @@ object StructuresEditor: TStructuresEditor
           OnClick = BuildingFlagCheckboxChange
         end
       end
-      object gbBuildingTurret: TGroupBox
+      object gbBuildingWeapons: TGroupBox
         Left = 696
         Top = 144
         Width = 305
-        Height = 121
-        Caption = 'Turret properties'
+        Height = 141
+        Caption = 'Turret weapons'
         TabOrder = 6
-        object lblBuildingPrimaryWeapon: TLabel
-          Left = 8
-          Top = 40
-          Width = 78
-          Height = 13
-          Caption = 'Primary weapon:'
-        end
-        object lblBuildingSecondaryWeapon: TLabel
-          Left = 8
-          Top = 64
-          Width = 95
-          Height = 13
-          Caption = 'Secondary weapon:'
-        end
-        object lblBuildingRateOfFire: TLabel
-          Left = 8
-          Top = 88
-          Width = 55
-          Height = 13
-          Caption = 'Rate of fire:'
-        end
         object lblBuildingBarrelRotationSpeed: TLabel
-          Left = 144
-          Top = 88
-          Width = 83
+          Left = 192
+          Top = 117
+          Width = 57
           Height = 13
-          Caption = 'Barrel turn speed:'
+          Caption = 'Turn speed:'
+        end
+        object lblBuildingPrimaryWeaponBulkShots: TLabel
+          Left = 8
+          Top = 38
+          Width = 52
+          Height = 13
+          Caption = 'Bulk shots:'
+        end
+        object lblBuildingPrimaryWeaponShortLongDelay: TLabel
+          Left = 66
+          Top = 38
+          Width = 85
+          Height = 13
+          Caption = 'Short/Long delay:'
+        end
+        object lblBuildingSecondaryWeaponBulkShots: TLabel
+          Left = 154
+          Top = 38
+          Width = 52
+          Height = 13
+          Caption = 'Bulk shots:'
+        end
+        object lblBuildingSecondaryWeaponShortLongDelay: TLabel
+          Left = 212
+          Top = 38
+          Width = 85
+          Height = 13
+          Caption = 'Short/Long delay:'
+        end
+        object lblBuildingPrimaryWeaponOffsetAngle: TLabel
+          Left = 66
+          Top = 76
+          Width = 76
+          Height = 13
+          Caption = 'Offset:     Angle:'
+        end
+        object lblBuildingSecondaryWeaponOffsetAngle: TLabel
+          Left = 212
+          Top = 76
+          Width = 76
+          Height = 13
+          Caption = 'Offset:     Angle:'
         end
         object cbBuildingActLikeTurret: TCheckBox
           Left = 8
-          Top = 16
+          Top = 116
           Width = 97
           Height = 17
-          Caption = 'Act like turret'
+          Caption = 'Is turret'
           TabOrder = 0
         end
         object cbBuildingRequireEnoughPower: TCheckBox
-          Left = 160
-          Top = 16
-          Width = 137
+          Left = 80
+          Top = 116
+          Width = 97
           Height = 17
-          Caption = 'Require enough power'
+          Caption = 'Require power'
           TabOrder = 1
         end
         object cbxBuildingPrimaryWeapon: TComboBox
-          Left = 112
-          Top = 40
-          Width = 185
+          Left = 8
+          Top = 16
+          Width = 143
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 2
         end
         object cbxBuildingSecondaryWeapon: TComboBox
-          Left = 112
-          Top = 64
-          Width = 185
+          Left = 154
+          Top = 16
+          Width = 143
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 3
         end
-        object seBuildingRateOfFire: TSpinEdit
-          Left = 72
-          Top = 88
-          Width = 65
+        object seBuildingBarrelRotationSpeed: TSpinEdit
+          Left = 256
+          Top = 116
+          Width = 41
           Height = 22
           MaxLength = 3
           MaxValue = 255
@@ -843,10 +864,10 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 4
           Value = 0
         end
-        object seBuildingBarrelRotationSpeed: TSpinEdit
-          Left = 232
-          Top = 88
-          Width = 65
+        object seBuildingPrimaryWeaponBulkShots: TSpinEdit
+          Left = 8
+          Top = 52
+          Width = 41
           Height = 22
           MaxLength = 3
           MaxValue = 255
@@ -854,12 +875,133 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 5
           Value = 0
         end
+        object seBuildingPrimaryWeaponShortDelay: TSpinEdit
+          Left = 66
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 6
+          Value = 0
+        end
+        object seBuildingPrimaryWeaponLongDelay: TSpinEdit
+          Left = 110
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 7
+          Value = 0
+        end
+        object seBuildingSecondaryWeaponBulkShots: TSpinEdit
+          Left = 154
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 8
+          Value = 0
+        end
+        object seBuildingSecondaryWeaponShortDelay: TSpinEdit
+          Left = 212
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 9
+          Value = 0
+        end
+        object seBuildingSecondaryWeaponLongDelay: TSpinEdit
+          Left = 256
+          Top = 52
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 10
+          Value = 0
+        end
+        object cbBuildingPrimaryWeaponDoubleShot: TCheckBox
+          Left = 8
+          Top = 79
+          Width = 57
+          Height = 17
+          Hint = 'Double shot'
+          Caption = 'Double'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 11
+        end
+        object seBuildingPrimaryWeaponShootOffset: TSpinEdit
+          Left = 66
+          Top = 90
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 127
+          MinValue = -128
+          TabOrder = 12
+          Value = 0
+        end
+        object seBuildingPrimaryWeaponShootAngle: TSpinEdit
+          Left = 110
+          Top = 90
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 13
+          Value = 0
+        end
+        object cbBuildingSecondaryWeaponDoubleShot: TCheckBox
+          Left = 154
+          Top = 79
+          Width = 55
+          Height = 17
+          Hint = 'Double shot'
+          Caption = 'Double'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 14
+        end
+        object seBuildingSecondaryWeaponShootOffset: TSpinEdit
+          Left = 212
+          Top = 90
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 127
+          MinValue = -128
+          TabOrder = 15
+          Value = 0
+        end
+        object seBuildingSecondaryWeaponShootAngle: TSpinEdit
+          Left = 256
+          Top = 90
+          Width = 41
+          Height = 22
+          MaxLength = 3
+          MaxValue = 255
+          MinValue = 0
+          TabOrder = 16
+          Value = 0
+        end
       end
       object gbBuildingVisuals: TGroupBox
         Left = 696
-        Top = 272
+        Top = 292
         Width = 305
-        Height = 365
+        Height = 345
         Caption = 'Visuals and animations'
         TabOrder = 7
         object imgBuildingImage: TImage
@@ -868,37 +1010,30 @@ object StructuresEditor: TStructuresEditor
           Width = 128
           Height = 160
         end
-        object lblBuildingBuildingArt: TLabel
-          Left = 8
-          Top = 16
-          Width = 55
-          Height = 13
-          Caption = 'Building art:'
-        end
         object lblBuildingBarrelArt: TLabel
           Left = 8
-          Top = 56
+          Top = 40
           Width = 45
           Height = 13
           Caption = 'Barrel art:'
         end
         object lblBuildingArtWidth: TLabel
           Left = 8
-          Top = 96
+          Top = 80
           Width = 31
           Height = 13
           Caption = 'Width:'
         end
         object lblBuildingArtHeight: TLabel
           Left = 84
-          Top = 96
+          Top = 80
           Width = 34
           Height = 13
           Caption = 'Height:'
         end
         object lblBuildingBuildingAnimation: TLabel
           Left = 8
-          Top = 168
+          Top = 152
           Width = 88
           Height = 13
           Caption = 'Building animation:'
@@ -912,43 +1047,43 @@ object StructuresEditor: TStructuresEditor
         end
         object lblBuildingBuildupArt: TLabel
           Left = 8
-          Top = 208
+          Top = 192
           Width = 86
           Height = 13
           Caption = 'Buildup animation:'
         end
         object lblBuildingBuildupFramesToShow: TLabel
           Left = 168
-          Top = 208
+          Top = 204
           Width = 70
-          Height = 39
-          Caption = 'Frames before building is shown:'
+          Height = 26
+          Caption = 'Frames before shown:'
           WordWrap = True
         end
         object lblBuildingDeathExplosion: TLabel
           Left = 8
-          Top = 248
+          Top = 232
           Width = 104
           Height = 13
           Caption = 'Destruction explosion:'
         end
         object lblBuildingMuzzleFlashExplosion: TLabel
           Left = 160
-          Top = 248
+          Top = 232
           Width = 108
           Height = 13
           Caption = 'Muzzle flash explosion:'
         end
         object lblBuildingDirectionFrames: TLabel
           Left = 8
-          Top = 288
+          Top = 272
           Width = 79
           Height = 13
           Caption = 'Direction frames:'
         end
         object cbxBuildingBuildingArt: TComboBox
           Left = 8
-          Top = 32
+          Top = 16
           Width = 153
           Height = 21
           Style = csDropDownList
@@ -958,7 +1093,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxBuildingBarrelArt: TComboBox
           Left = 8
-          Top = 72
+          Top = 56
           Width = 153
           Height = 21
           Style = csDropDownList
@@ -968,7 +1103,7 @@ object StructuresEditor: TStructuresEditor
         end
         object edBuildingArtWidth: TEdit
           Left = 40
-          Top = 96
+          Top = 80
           Width = 41
           Height = 21
           TabOrder = 2
@@ -976,7 +1111,7 @@ object StructuresEditor: TStructuresEditor
         end
         object edBuildingArtHeight: TEdit
           Left = 120
-          Top = 96
+          Top = 80
           Width = 41
           Height = 21
           TabOrder = 3
@@ -984,7 +1119,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxBuildingBuildingAnimation: TComboBox
           Left = 8
-          Top = 184
+          Top = 168
           Width = 113
           Height = 21
           Style = csDropDownList
@@ -994,7 +1129,7 @@ object StructuresEditor: TStructuresEditor
         object cbBuildingFlagHAS_ANIMATION: TCheckBox
           Tag = 64
           Left = 8
-          Top = 120
+          Top = 104
           Width = 137
           Height = 17
           Caption = 'Has building animation'
@@ -1004,7 +1139,7 @@ object StructuresEditor: TStructuresEditor
         object cbBuildingFlagANIM_PERMANENT: TCheckBox
           Tag = 16
           Left = 8
-          Top = 144
+          Top = 128
           Width = 89
           Height = 17
           Caption = 'Is permanent'
@@ -1024,7 +1159,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxBuildingBuildupArt: TComboBox
           Left = 8
-          Top = 224
+          Top = 208
           Width = 113
           Height = 21
           Style = csDropDownList
@@ -1033,7 +1168,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seBuildingBuildupFramesToShow: TSpinEdit
           Left = 232
-          Top = 224
+          Top = 208
           Width = 65
           Height = 22
           MaxLength = 3
@@ -1044,7 +1179,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxBuildingDeathExplosion: TComboBox
           Left = 8
-          Top = 264
+          Top = 248
           Width = 137
           Height = 21
           Style = csDropDownList
@@ -1053,7 +1188,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxBuildingMuzzleFlashExplosion: TComboBox
           Left = 160
-          Top = 264
+          Top = 248
           Width = 137
           Height = 21
           Style = csDropDownList
@@ -1062,7 +1197,7 @@ object StructuresEditor: TStructuresEditor
         end
         object sgBuildingDirectionFrames: TStringGrid
           Left = 94
-          Top = 290
+          Top = 274
           Width = 203
           Height = 67
           ColCount = 8
@@ -1077,7 +1212,7 @@ object StructuresEditor: TStructuresEditor
         object cbBuildingFlagANIM_ALPHA: TCheckBox
           Tag = 8388608
           Left = 104
-          Top = 144
+          Top = 128
           Width = 57
           Height = 17
           Caption = 'Alpha'
@@ -1086,7 +1221,7 @@ object StructuresEditor: TStructuresEditor
         end
         object btnBuildingDirectionFrames0: TButton
           Left = 8
-          Top = 304
+          Top = 288
           Width = 75
           Height = 17
           Caption = 'No directions'
@@ -1096,7 +1231,7 @@ object StructuresEditor: TStructuresEditor
         object btnBuildingDirectionFrames8: TButton
           Tag = 8
           Left = 8
-          Top = 320
+          Top = 304
           Width = 75
           Height = 17
           Caption = '8 directions'
@@ -1106,7 +1241,7 @@ object StructuresEditor: TStructuresEditor
         object btnBuildingDirectionFrames32: TButton
           Tag = 32
           Left = 8
-          Top = 336
+          Top = 320
           Width = 75
           Height = 17
           Caption = '32 directions'
@@ -1115,7 +1250,7 @@ object StructuresEditor: TStructuresEditor
         end
         object btnBuildingBuildingAnimationPlay: TButton
           Left = 122
-          Top = 184
+          Top = 168
           Width = 39
           Height = 21
           Caption = 'Play'
@@ -1124,7 +1259,7 @@ object StructuresEditor: TStructuresEditor
         end
         object btnBuildingBuildupArtPlay: TButton
           Left = 122
-          Top = 224
+          Top = 208
           Width = 39
           Height = 21
           Caption = 'Play'
@@ -1989,7 +2124,7 @@ object StructuresEditor: TStructuresEditor
         Top = 352
         Width = 305
         Height = 217
-        Caption = 'Visuals'
+        Caption = 'Visuals and animations'
         TabOrder = 8
         object imgUnitImage: TImage
           Left = 192

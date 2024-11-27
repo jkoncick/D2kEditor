@@ -182,7 +182,7 @@ type
     gbBuildingBuildRequirements: TGroupBox;
     gbBuildingSpaceRequirements: TGroupBox;
     gbBuildingProperties: TGroupBox;
-    gbBuildingTurret: TGroupBox;
+    gbBuildingWeapons: TGroupBox;
     gbBuildingVisuals: TGroupBox;
     clbBuildingOwnerHouse: TCheckListBox;
     lblBuildingOwnerHouse: TLabel;
@@ -240,16 +240,11 @@ type
     seBuildingSightRadius: TSpinEdit;
     cbBuildingActLikeTurret: TCheckBox;
     cbBuildingRequireEnoughPower: TCheckBox;
-    lblBuildingPrimaryWeapon: TLabel;
-    lblBuildingSecondaryWeapon: TLabel;
     cbxBuildingPrimaryWeapon: TComboBox;
     cbxBuildingSecondaryWeapon: TComboBox;
-    lblBuildingRateOfFire: TLabel;
     lblBuildingBarrelRotationSpeed: TLabel;
-    seBuildingRateOfFire: TSpinEdit;
     seBuildingBarrelRotationSpeed: TSpinEdit;
     imgBuildingImage: TImage;
-    lblBuildingBuildingArt: TLabel;
     cbxBuildingBuildingArt: TComboBox;
     lblBuildingBarrelArt: TLabel;
     cbxBuildingBarrelArt: TComboBox;
@@ -601,6 +596,24 @@ type
     seWeaponInaccuracy: TSpinEdit;
     cbUnitPrimaryWeaponNoAutoAttack: TCheckBox;
     cbUnitSecondaryWeaponNoAutoAttack: TCheckBox;
+    lblBuildingPrimaryWeaponBulkShots: TLabel;
+    seBuildingPrimaryWeaponBulkShots: TSpinEdit;
+    seBuildingPrimaryWeaponShortDelay: TSpinEdit;
+    lblBuildingPrimaryWeaponShortLongDelay: TLabel;
+    seBuildingPrimaryWeaponLongDelay: TSpinEdit;
+    seBuildingSecondaryWeaponBulkShots: TSpinEdit;
+    lblBuildingSecondaryWeaponBulkShots: TLabel;
+    seBuildingSecondaryWeaponShortDelay: TSpinEdit;
+    lblBuildingSecondaryWeaponShortLongDelay: TLabel;
+    seBuildingSecondaryWeaponLongDelay: TSpinEdit;
+    cbBuildingPrimaryWeaponDoubleShot: TCheckBox;
+    lblBuildingPrimaryWeaponOffsetAngle: TLabel;
+    seBuildingPrimaryWeaponShootOffset: TSpinEdit;
+    seBuildingPrimaryWeaponShootAngle: TSpinEdit;
+    cbBuildingSecondaryWeaponDoubleShot: TCheckBox;
+    lblBuildingSecondaryWeaponOffsetAngle: TLabel;
+    seBuildingSecondaryWeaponShootOffset: TSpinEdit;
+    seBuildingSecondaryWeaponShootAngle: TSpinEdit;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -2892,11 +2905,22 @@ begin
   seBuildingSightRadius.Value := bld.SightRadius;
   cbxBuildingSpecialBehavior.ItemIndex := bld.SpecialBehavior;
   // Turret properties group box
-  cbBuildingActLikeTurret.Checked := bld.ActLikeTurret <> 0;
-  cbBuildingRequireEnoughPower.Checked := bld.RequireEnoughPower <> 0;
   cbxBuildingPrimaryWeapon.ItemIndex := bld.PrimaryWeapon + 1;
   cbxBuildingSecondaryWeapon.ItemIndex := bld.SecondaryWeapon + 1;
-  seBuildingRateOfFire.Value := bld.RateOfFire;
+  seBuildingPrimaryWeaponBulkShots.Value := bld.PrimaryWeaponBulkShots;
+  seBuildingPrimaryWeaponShortDelay.Value := bld.PrimaryWeaponShortDelay;
+  seBuildingPrimaryWeaponLongDelay.Value := bld.PrimaryWeaponLongDelay;
+  cbBuildingPrimaryWeaponDoubleShot.Checked := bld.PrimaryWeaponDoubleShot <> 0;
+  seBuildingPrimaryWeaponShootOffset.Value := bld.PrimaryWeaponShootOffset;
+  seBuildingPrimaryWeaponShootAngle.Value := bld.PrimaryWeaponShootAngle;
+  seBuildingSecondaryWeaponBulkShots.Value := bld.SecondaryWeaponBulkShots;
+  seBuildingSecondaryWeaponShortDelay.Value := bld.SecondaryWeaponShortDelay;
+  seBuildingSecondaryWeaponLongDelay.Value := bld.SecondaryWeaponLongDelay;
+  cbBuildingSecondaryWeaponDoubleShot.Checked := bld.SecondaryWeaponDoubleShot <> 0;
+  seBuildingSecondaryWeaponShootOffset.Value := bld.SecondaryWeaponShootOffset;
+  seBuildingSecondaryWeaponShootAngle.Value := bld.SecondaryWeaponShootAngle;
+  cbBuildingActLikeTurret.Checked := bld.ActLikeTurret <> 0;
+  cbBuildingRequireEnoughPower.Checked := bld.RequireEnoughPower <> 0;
   seBuildingBarrelRotationSpeed.Value := bld.BarrelRotationSpeed;
   // Visuals and animations group box
   cbxBuildingBuildingArt.ItemIndex := bld.BuildingArt + 1;
@@ -3269,11 +3293,22 @@ begin
   bld.SightRadius := seBuildingSightRadius.Value;
   bld.SpecialBehavior := cbxBuildingSpecialBehavior.ItemIndex;
   // Turret properties group box
-  bld.ActLikeTurret := IfThen(cbBuildingActLikeTurret.Checked, 1, 0);
-  bld.RequireEnoughPower := IfThen(cbBuildingRequireEnoughPower.Checked, 1, 0);
   bld.PrimaryWeapon := cbxBuildingPrimaryWeapon.ItemIndex - 1;
   bld.SecondaryWeapon := cbxBuildingSecondaryWeapon.ItemIndex - 1;
-  bld.RateOfFire := seBuildingRateOfFire.Value;
+  bld.PrimaryWeaponBulkShots := seBuildingPrimaryWeaponBulkShots.Value;
+  bld.PrimaryWeaponShortDelay := seBuildingPrimaryWeaponShortDelay.Value;
+  bld.PrimaryWeaponLongDelay := seBuildingPrimaryWeaponLongDelay.Value;
+  bld.PrimaryWeaponDoubleShot := IfThen(cbBuildingPrimaryWeaponDoubleShot.Checked, 1, 0);
+  bld.PrimaryWeaponShootOffset := seBuildingPrimaryWeaponShootOffset.Value;
+  bld.PrimaryWeaponShootAngle := seBuildingPrimaryWeaponShootAngle.Value;
+  bld.SecondaryWeaponBulkShots := seBuildingSecondaryWeaponBulkShots.Value;
+  bld.SecondaryWeaponShortDelay := seBuildingSecondaryWeaponShortDelay.Value;
+  bld.SecondaryWeaponLongDelay := seBuildingSecondaryWeaponLongDelay.Value;
+  bld.SecondaryWeaponDoubleShot := IfThen(cbBuildingSecondaryWeaponDoubleShot.Checked, 1, 0);
+  bld.SecondaryWeaponShootOffset := seBuildingSecondaryWeaponShootOffset.Value;
+  bld.SecondaryWeaponShootAngle := seBuildingSecondaryWeaponShootAngle.Value;
+  bld.ActLikeTurret := IfThen(cbBuildingActLikeTurret.Checked, 1, 0);
+  bld.RequireEnoughPower := IfThen(cbBuildingRequireEnoughPower.Checked, 1, 0);
   bld.BarrelRotationSpeed := seBuildingBarrelRotationSpeed.Value;
   // Visuals and animations group box
   bld.BuildingArt := cbxBuildingBuildingArt.ItemIndex - 1;
