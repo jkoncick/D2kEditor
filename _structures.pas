@@ -188,7 +188,7 @@ type
     AntiAircraft:          byte;
     Warhead:               byte;
     Inaccuracy:            byte;
-    _ZeroPadding23:        byte;
+    Behavior:              byte;
     Range:                 cardinal;
   end;
 

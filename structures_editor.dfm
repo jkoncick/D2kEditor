@@ -2630,7 +2630,7 @@ object StructuresEditor: TStructuresEditor
       ImageIndex = 2
       object lblWeaponUsedBy: TLabel
         Left = 168
-        Top = 408
+        Top = 432
         Width = 337
         Height = 97
         AutoSize = False
@@ -2711,7 +2711,7 @@ object StructuresEditor: TStructuresEditor
         Left = 168
         Top = 16
         Width = 337
-        Height = 121
+        Height = 145
         Caption = 'Properties and behavior'
         TabOrder = 3
         object lblWeaponDamage: TLabel
@@ -2749,6 +2749,13 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Inaccuracy:'
         end
+        object lblWeaponBehavior: TLabel
+          Left = 8
+          Top = 96
+          Width = 45
+          Height = 13
+          Caption = 'Behavior:'
+        end
         object edWeaponDamage: TEdit
           Left = 56
           Top = 48
@@ -2783,7 +2790,7 @@ object StructuresEditor: TStructuresEditor
         object cbWeaponFlagWF_BLOCKED_BY_WALL: TCheckBox
           Tag = 4096
           Left = 236
-          Top = 96
+          Top = 120
           Width = 97
           Height = 17
           Caption = 'Blocked by wall'
@@ -2793,7 +2800,7 @@ object StructuresEditor: TStructuresEditor
         object cbWeaponFlagWF_DEVIATOR: TCheckBox
           Tag = 64
           Left = 120
-          Top = 96
+          Top = 120
           Width = 81
           Height = 17
           Caption = 'Deviator'
@@ -2803,7 +2810,7 @@ object StructuresEditor: TStructuresEditor
         object cbWeaponFlagWF_SONIC: TCheckBox
           Tag = 2048
           Left = 184
-          Top = 96
+          Top = 120
           Width = 49
           Height = 17
           Caption = 'Sonic'
@@ -2813,7 +2820,7 @@ object StructuresEditor: TStructuresEditor
         object cbWeaponFlagWF_FALLING: TCheckBox
           Tag = 256
           Left = 8
-          Top = 96
+          Top = 120
           Width = 57
           Height = 17
           Caption = 'Falling'
@@ -2823,7 +2830,7 @@ object StructuresEditor: TStructuresEditor
         object cbWeaponFlagWF_DEBRIS: TCheckBox
           Tag = 2
           Left = 64
-          Top = 96
+          Top = 120
           Width = 49
           Height = 17
           Caption = 'Debris'
@@ -2848,10 +2855,19 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 10
           Value = 0
         end
+        object cbxWeaponBehavior: TComboBox
+          Left = 56
+          Top = 96
+          Width = 137
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 11
+        end
       end
       object dbWeaponMovement: TGroupBox
         Left = 168
-        Top = 144
+        Top = 168
         Width = 337
         Height = 57
         Caption = 'Projectile movement'
@@ -2893,7 +2909,7 @@ object StructuresEditor: TStructuresEditor
       end
       object gbWeaponVisuals: TGroupBox
         Left = 168
-        Top = 208
+        Top = 232
         Width = 337
         Height = 129
         Caption = 'Visuals and sounds'
@@ -3006,7 +3022,7 @@ object StructuresEditor: TStructuresEditor
       end
       object gbWeaponOtherUnknown: TGroupBox
         Left = 168
-        Top = 344
+        Top = 368
         Width = 337
         Height = 57
         Caption = 'Others and unknown'

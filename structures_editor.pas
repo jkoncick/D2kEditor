@@ -614,6 +614,8 @@ type
     lblBuildingSecondaryWeaponOffsetAngle: TLabel;
     seBuildingSecondaryWeaponShootOffset: TSpinEdit;
     seBuildingSecondaryWeaponShootAngle: TSpinEdit;
+    lblWeaponBehavior: TLabel;
+    cbxWeaponBehavior: TComboBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -2485,6 +2487,9 @@ begin
   list := GameLists.get_numbered_list('UnitBehavior');
   cbxUnitSpecialBehavior.Items := list;
   list.Destroy;
+  list := GameLists.get_numbered_list('BulletBehavior');
+  cbxWeaponBehavior.Items := list;
+  list.Destroy;
 end;
 
 procedure TStructuresEditor.update_sound_list;
@@ -3092,6 +3097,7 @@ begin
   edWeaponRange.Text := IntToStr(wpn.Range);
   seWeaponInaccuracy.Value := wpn.Inaccuracy;
   cbWeaponAntiAircraft.Checked := wpn.AntiAircraft <> 0;
+  cbxWeaponBehavior.ItemIndex := wpn.Behavior;
   // Projectile movement tab
   edWeaponProjectileSpeed.Text := IntToStr(wpn.ProjectileSpeed shr 10);
   // Visuals and sounds tab
@@ -3467,6 +3473,7 @@ begin
   wpn.Range := StrToIntDef(edWeaponRange.Text, 0);
   wpn.Inaccuracy := seWeaponInaccuracy.Value;
   wpn.AntiAircraft := IfThen(cbWeaponAntiAircraft.Checked, 1, 0);
+  wpn.Behavior := cbxWeaponBehavior.ItemIndex;
   // Projectile movement tab
   wpn.ProjectileSpeed := StrToIntDef(edWeaponProjectileSpeed.Text, 0) shl 10;
   // Visuals and sounds tab
