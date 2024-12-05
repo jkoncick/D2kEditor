@@ -3854,6 +3854,7 @@ object StructuresEditor: TStructuresEditor
   object ImageImportDialog: TOpenDialog
     DefaultExt = 'bmp'
     Filter = 'BMP image (*.BMP)|*.bmp'
+    Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Title = 'Import Image'
     Left = 860
     Top = 32

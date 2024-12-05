@@ -2228,27 +2228,49 @@ var
   group_index: integer;
   acg: TArtControlGroupPtr;
   image_index: integer;
+  i: integer;
+  prefix: string;
 begin
   group_index := (Sender as TControl).Tag;
   acg := Addr(art_control_groups[group_index]);
   if acg.frame_list.ItemIndex = -1 then
     exit;
-  image_index := acg.first_image_index + acg.frame_list.ItemIndex;
-  ImageExportDialog.FileName := 'Image_' + inttostr(image_index);
-  if ImageExportDialog.Execute then
-    StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+  if GetKeyState(VK_SHIFT) >= 0 then
+  begin
+    ImageExportDialog.Title := 'Export Single Image';
+    image_index := acg.first_image_index + acg.frame_list.ItemIndex;
+    ImageExportDialog.FileName := 'Image_' + inttostr(image_index);
+    if ImageExportDialog.Execute then
+      StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+  end else
+  begin
+    ImageExportDialog.Title := 'Export All Images';
+    ImageExportDialog.FileName := 'Image';
+    if ImageExportDialog.Execute then
+      for i := 0 to acg.frame_list.Items.Count - 1 do
+      begin
+        prefix := ChangeFileExt(ImageExportDialog.FileName, '');
+        StructGraphics.export_single_image(prefix + '_' + IntToStr(i) + '.bmp', acg.first_image_index + i);
+      end;
+  end;
+  acg.frame_list.SetFocus;
 end;
 
 procedure TStructuresEditor.AcgEraseImageClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
+  i: integer;
 begin
   group_index := (Sender as TControl).Tag;
   acg := Addr(art_control_groups[group_index]);
   if acg.frame_list.ItemIndex = -1 then
     exit;
-  StructGraphics.erase_single_image(acg.first_image_index + acg.frame_list.ItemIndex);
+  if GetKeyState(VK_SHIFT) >= 0 then
+    StructGraphics.erase_single_image(acg.first_image_index + acg.frame_list.ItemIndex)
+  else
+    for i := 0 to acg.frame_list.Items.Count - 1 do
+      StructGraphics.erase_single_image(acg.first_image_index + i);
   update_art_control_group_frame_list(group_index);
   fill_status_bar;
 end;
@@ -2257,6 +2279,8 @@ procedure TStructuresEditor.AcgImportImageClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
+  i: integer;
+  anything_imported: boolean;
 begin
   group_index := (Sender as TControl).Tag;
   acg := Addr(art_control_groups[group_index]);
@@ -2264,7 +2288,11 @@ begin
     exit;
   if ImageImportDialog.Execute then
   begin
-    if StructGraphics.import_single_image(ImageImportDialog.FileName, acg.first_image_index + acg.frame_list.ItemIndex, false) then
+    anything_imported := false;
+    for i := 0 to ImageImportDialog.Files.Count - 1 do
+      if (acg.frame_list.ItemIndex + i) < acg.frame_list.Items.Count then
+        anything_imported := StructGraphics.import_single_image(ImageImportDialog.Files[i], acg.first_image_index + acg.frame_list.ItemIndex + i, false) or anything_imported;
+    if anything_imported then
     begin
       update_art_control_group_frame_list(group_index);
       fill_status_bar;
@@ -3651,6 +3679,8 @@ begin
   acg.btn_image_export.Width := 55;
   acg.btn_image_export.Height := 21;
   acg.btn_image_export.Caption := 'Export';
+  acg.btn_image_export.ShowHint := true;
+  acg.btn_image_export.Hint := 'Hold Shift to export all images';
   acg.btn_image_export.Tag := group_index;
   acg.btn_image_export.OnClick := AcgExportImageClick;
   acg.btn_image_export.Parent := container;
@@ -3660,6 +3690,8 @@ begin
   acg.btn_image_erase.Width := 55;
   acg.btn_image_erase.Height := 21;
   acg.btn_image_erase.Caption := 'Erase';
+  acg.btn_image_erase.ShowHint := true;
+  acg.btn_image_erase.Hint := 'Hold Shift to ease all images';
   acg.btn_image_erase.Tag := group_index;
   acg.btn_image_erase.OnClick := AcgEraseImageClick;
   acg.btn_image_erase.Parent := container;
@@ -3816,6 +3848,7 @@ var
   tmp_strings: TStringList;
   frame_name: string;
   frame_size: string;
+  top_index: integer;
 begin
   acg := Addr(art_control_groups[group_index]);
   acg.first_image_index := first_image_index;
@@ -3833,10 +3866,15 @@ begin
       frame_size := Format('%d x %d', [header.ImageWidth, header.ImageHeight]);
     tmp_strings.Add(Format('%s (%s)', [frame_name, frame_size]));
   end;
+  top_index := acg.frame_list.TopIndex;
   acg.frame_list.Items := tmp_strings;
   tmp_strings.Destroy;
   acg.lbl_art_size.Caption := Format('Art size: %d bytes', [StructGraphics.get_image_entries_size(first_image_index, num_frames)]);
   acg.frame_list.ItemIndex := selected_frame;
+  if selected_frame <> 0 then
+    acg.frame_list.TopIndex := top_index;
+  if acg.btn_image_erase.Focused or acg.btn_image_import.Focused then
+    acg.frame_list.SetFocus;
   AcgFrameListClick(acg.frame_list);
 end;
 
