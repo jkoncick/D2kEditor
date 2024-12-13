@@ -616,6 +616,7 @@ type
     seBuildingSecondaryWeaponShootAngle: TSpinEdit;
     lblWeaponBehavior: TLabel;
     cbxWeaponBehavior: TComboBox;
+    lblUnitCanCrushInfantry: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);

@@ -1799,6 +1799,13 @@ object StructuresEditor: TStructuresEditor
           Height = 26
           Caption = 'Movement'#13'Restriction:'
         end
+        object lblUnitCanCrushInfantry: TLabel
+          Left = 146
+          Top = 55
+          Width = 60
+          Height = 13
+          Caption = 'Uncrushable'
+        end
         object edUnitSpeed: TEdit
           Left = 48
           Top = 16
@@ -1831,7 +1838,7 @@ object StructuresEditor: TStructuresEditor
           Top = 40
           Width = 81
           Height = 17
-          Caption = 'Can crush'
+          Caption = 'Can crush /'
           TabOrder = 3
         end
         object cbxUnitMovementRestriction: TComboBox
