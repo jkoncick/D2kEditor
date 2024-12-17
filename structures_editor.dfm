@@ -260,9 +260,14 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 53
           Height = 22
+          Hint = 
+            'Minimum tech level needed for the building to become available. ' +
+            '-1 = cannot be built.'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           Value = 0
         end
@@ -271,9 +276,12 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 53
           Height = 22
+          Hint = 'Minimum tech level needed for 1st upgrade to become available.'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
           Value = 0
         end
@@ -282,9 +290,12 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 53
           Height = 22
+          Hint = 'Minimum tech level needed for 2nd upgrade to become available.'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           Value = 0
         end
@@ -293,9 +304,12 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 53
           Height = 22
+          Hint = 'Minimum tech level needed for 3rd upgrade to become available.'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
           Value = 0
         end
@@ -336,7 +350,12 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 53
           Height = 21
+          Hint = 
+            'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
+            'seconds it takes to build.'
           MaxLength = 10
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 8
         end
         object edBuildingBuildSpeedUpgrade1: TEdit
@@ -344,7 +363,12 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 53
           Height = 21
+          Hint = 
+            'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
+            'seconds it takes to build.'
           MaxLength = 10
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 9
         end
         object edBuildingBuildSpeedUpgrade2: TEdit
@@ -352,7 +376,12 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 53
           Height = 21
+          Hint = 
+            'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
+            'seconds it takes to build.'
           MaxLength = 10
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 10
         end
         object edBuildingBuildSpeedUpgrade3: TEdit
@@ -360,7 +389,12 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 53
           Height = 21
+          Hint = 
+            'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
+            'seconds it takes to build.'
           MaxLength = 10
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 11
         end
         object clbBuildingPrereq1OwnerHouse: TCheckListBox
@@ -497,9 +531,12 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 49
           Height = 22
+          Hint = 'Relative offset of tile the produced unit is spawned at'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           Value = 0
           OnChange = RedrawBuildingPreview
@@ -509,9 +546,12 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 49
           Height = 22
+          Hint = 'Relative offset of tile the produced unit is spawned at'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
           Value = 0
         end
@@ -520,9 +560,14 @@ object StructuresEditor: TStructuresEditor
           Top = 72
           Width = 49
           Height = 22
+          Hint = 
+            'Relative offset of tile the produced unit will move to after it'#39 +
+            's spawned'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           Value = 0
         end
@@ -531,9 +576,14 @@ object StructuresEditor: TStructuresEditor
           Top = 72
           Width = 49
           Height = 22
+          Hint = 
+            'Relative offset of tile the produced unit will move to after it'#39 +
+            's spawned'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
           Value = 0
         end
@@ -543,7 +593,12 @@ object StructuresEditor: TStructuresEditor
           Top = 100
           Width = 73
           Height = 17
+          Hint = 
+            'Building has skirt on tiles below it - only for 2 or 3 tiles wid' +
+            'e buildings'
           Caption = 'Has skirt'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 4
           OnClick = BuildingFlagCheckboxChange
         end
@@ -553,7 +608,10 @@ object StructuresEditor: TStructuresEditor
           Top = 120
           Width = 81
           Height = 17
+          Hint = 'Building is spawned without concrete and never decays'
           Caption = 'No concrete'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 5
           OnClick = BuildingFlagCheckboxChange
         end
@@ -562,8 +620,13 @@ object StructuresEditor: TStructuresEditor
           Top = 116
           Width = 77
           Height = 21
+          Hint = 
+            'Type of terrain the building can be built on (buildings on diffe' +
+            'rent terrain than "buildable" won'#39't provide build radius)'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 6
           Items.Strings = (
             'Buildable'
@@ -588,9 +651,14 @@ object StructuresEditor: TStructuresEditor
           Top = 116
           Width = 41
           Height = 22
+          Hint = 
+            'Maximum distance (in tiles) of other buildings this building is ' +
+            'allowed to build (when set to 0 default distance of 2 applies)'
           MaxLength = 1
           MaxValue = 7
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 7
           Value = 0
         end
@@ -665,6 +733,11 @@ object StructuresEditor: TStructuresEditor
           Top = 40
           Width = 65
           Height = 21
+          Hint = 
+            'Positive value = power consumption, Negative value = power produ' +
+            'ction'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
         end
         object cbxBuildingHealthBarSize: TComboBox
@@ -699,7 +772,10 @@ object StructuresEditor: TStructuresEditor
           Top = 88
           Width = 97
           Height = 17
+          Hint = 'Building can be selected, repaired and sabotaged'
           Caption = 'Select && Repair'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 5
           OnClick = BuildingFlagCheckboxChange
         end
@@ -709,7 +785,10 @@ object StructuresEditor: TStructuresEditor
           Top = 88
           Width = 81
           Height = 17
+          Hint = 'Building can be captured'
           Caption = 'Can capture'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 6
           OnClick = BuildingFlagCheckboxChange
         end
@@ -719,7 +798,10 @@ object StructuresEditor: TStructuresEditor
           Top = 112
           Width = 97
           Height = 17
+          Hint = 'Building decays even if it'#39's on concrete'
           Caption = 'Always decay'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 7
           OnClick = BuildingFlagCheckboxChange
         end
@@ -729,7 +811,10 @@ object StructuresEditor: TStructuresEditor
           Top = 112
           Width = 81
           Height = 17
+          Hint = 'Building cannot be sold and captured or sabotaged'
           Caption = 'Cannot sell'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 8
           OnClick = BuildingFlagCheckboxChange
         end
@@ -738,9 +823,12 @@ object StructuresEditor: TStructuresEditor
           Top = 64
           Width = 41
           Height = 22
+          Hint = 'Radius of area the building reveals'
           MaxLength = 1
           MaxValue = 7
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 9
           Value = 0
         end
@@ -749,7 +837,10 @@ object StructuresEditor: TStructuresEditor
           Top = 88
           Width = 97
           Height = 17
+          Hint = 'Screen shakes when building is destroyed'
           Caption = 'Screen shake'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 10
         end
         object cbBuildingFlagREPAIRING: TCheckBox
@@ -758,7 +849,10 @@ object StructuresEditor: TStructuresEditor
           Top = 112
           Width = 81
           Height = 17
+          Hint = 'Building repairs when it'#39's built or spawned'
           Caption = 'Repairing'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 11
           OnClick = BuildingFlagCheckboxChange
         end
@@ -822,9 +916,14 @@ object StructuresEditor: TStructuresEditor
         object cbBuildingActLikeTurret: TCheckBox
           Left = 8
           Top = 116
-          Width = 97
+          Width = 65
           Height = 17
+          Hint = 
+            'Building acts like turret and is automatically targeted by nearb' +
+            'y enemy units or turrets'
           Caption = 'Is turret'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object cbBuildingRequireEnoughPower: TCheckBox
@@ -832,7 +931,10 @@ object StructuresEditor: TStructuresEditor
           Top = 116
           Width = 97
           Height = 17
+          Hint = 'Turret requires enough power (100% or more) to operate'
           Caption = 'Require power'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
         end
         object cbxBuildingPrimaryWeapon: TComboBox
@@ -840,8 +942,11 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 143
           Height = 21
+          Hint = 'Primary weapon type'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
         end
         object cbxBuildingSecondaryWeapon: TComboBox
@@ -849,8 +954,11 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 143
           Height = 21
+          Hint = 'Secondary weapon type'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
         end
         object seBuildingBarrelRotationSpeed: TSpinEdit
@@ -858,9 +966,12 @@ object StructuresEditor: TStructuresEditor
           Top = 116
           Width = 41
           Height = 22
+          Hint = 'Turret turning speed (the higher value the slower)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 4
           Value = 0
         end
@@ -869,9 +980,14 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 
+            'Number of additional shots in a bulk (0 = single shot, 1 = two s' +
+            'hots etc.)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 5
           Value = 0
         end
@@ -880,9 +996,12 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 'Delay between shots within a bulk'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 6
           Value = 0
         end
@@ -891,9 +1010,12 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 'Delay between bulks'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 7
           Value = 0
         end
@@ -902,9 +1024,14 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 
+            'Number of additional shots in a bulk (0 = single shot, 1 = two s' +
+            'hots etc.)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 8
           Value = 0
         end
@@ -913,9 +1040,12 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 'Delay between shots within a bulk'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 9
           Value = 0
         end
@@ -924,9 +1054,14 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 
+            'Delay between bulks. If set to 0, the primary weapon'#39's value is ' +
+            'used.'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 10
           Value = 0
         end
@@ -935,7 +1070,7 @@ object StructuresEditor: TStructuresEditor
           Top = 79
           Width = 57
           Height = 17
-          Hint = 'Double shot'
+          Hint = 'Turret fires two shots at once'
           Caption = 'Double'
           ParentShowHint = False
           ShowHint = True
@@ -946,9 +1081,12 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 'Distance of the bullet'#39's origin from center of unit'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 12
           Value = 0
         end
@@ -957,9 +1095,14 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 
+            'Angle of splitting one shot from the other (usable for double sh' +
+            'ot)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 13
           Value = 0
         end
@@ -968,7 +1111,7 @@ object StructuresEditor: TStructuresEditor
           Top = 79
           Width = 55
           Height = 17
-          Hint = 'Double shot'
+          Hint = 'Turret fires two shots at once'
           Caption = 'Double'
           ParentShowHint = False
           ShowHint = True
@@ -979,9 +1122,12 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 'Distance of the bullet'#39's origin from center of unit'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 15
           Value = 0
         end
@@ -990,9 +1136,14 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 
+            'Angle of splitting one shot from the other (usable for double sh' +
+            'ot)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 16
           Value = 0
         end
@@ -1086,8 +1237,11 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 153
           Height = 21
+          Hint = 'Building art'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           OnChange = RedrawBuildingPreview
         end
@@ -1096,8 +1250,11 @@ object StructuresEditor: TStructuresEditor
           Top = 56
           Width = 153
           Height = 21
+          Hint = 'Barrel art'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
           OnChange = RedrawBuildingPreview
         end
@@ -1106,6 +1263,9 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 41
           Height = 21
+          Hint = 'Building width in pixels'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           OnChange = RedrawBuildingPreview
         end
@@ -1114,6 +1274,9 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 41
           Height = 21
+          Hint = 'Building height in pixels'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
           OnChange = RedrawBuildingPreview
         end
@@ -1132,7 +1295,10 @@ object StructuresEditor: TStructuresEditor
           Top = 104
           Width = 137
           Height = 17
+          Hint = 'Building has animation'
           Caption = 'Has building animation'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 5
           OnClick = BuildingFlagCheckboxChange
         end
@@ -1142,7 +1308,10 @@ object StructuresEditor: TStructuresEditor
           Top = 128
           Width = 89
           Height = 17
+          Hint = 'Animation plays permanently'
           Caption = 'Is permanent'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 6
           OnClick = BuildingFlagCheckboxChange
         end
@@ -1151,9 +1320,12 @@ object StructuresEditor: TStructuresEditor
           Top = 184
           Width = 65
           Height = 22
+          Hint = 'Animation speed - number of ticks between frames'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 7
           Value = 0
         end
@@ -1171,9 +1343,14 @@ object StructuresEditor: TStructuresEditor
           Top = 208
           Width = 65
           Height = 22
+          Hint = 
+            'When building is built and buildup animation is played, this is ' +
+            #13'number of frames after which the building itself is rendered'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 9
           Value = 0
         end
@@ -1215,7 +1392,10 @@ object StructuresEditor: TStructuresEditor
           Top = 128
           Width = 57
           Height = 17
+          Hint = 'Animation is rendered transparently'
           Caption = 'Alpha'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 13
           OnClick = BuildingFlagCheckboxChange
         end
@@ -1293,9 +1473,14 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 49
           Height = 22
+          Hint = 
+            'The priority at which AI decides to sell this building when it'#39's' +
+            #13'on low power. The building with highest value is sold first.'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           Value = 0
         end
@@ -1492,9 +1677,14 @@ object StructuresEditor: TStructuresEditor
           Top = 24
           Width = 53
           Height = 22
+          Hint = 
+            'Minimum tech level needed for the unit to become available. -1 =' +
+            ' cannot be built.'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           Value = 0
         end
@@ -1511,7 +1701,12 @@ object StructuresEditor: TStructuresEditor
           Top = 24
           Width = 53
           Height = 21
+          Hint = 
+            'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
+            'seconds it takes to build.'
           MaxLength = 10
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
         end
         object clbUnitPrereq1OwnerHouse: TCheckListBox
@@ -1602,9 +1797,14 @@ object StructuresEditor: TStructuresEditor
           Top = 256
           Width = 61
           Height = 22
+          Hint = 
+            'Determines which voice is played if different unit types are sel' +
+            'ected'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           Value = 0
         end
@@ -1614,7 +1814,10 @@ object StructuresEditor: TStructuresEditor
           Top = 256
           Width = 64
           Height = 21
+          Hint = 'Export Voices section into file'
           Caption = 'Export'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
           OnClick = IcgExportClick
         end
@@ -1624,7 +1827,10 @@ object StructuresEditor: TStructuresEditor
           Top = 256
           Width = 64
           Height = 21
+          Hint = 'Import Voices section from file'
           Caption = 'Import'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           OnClick = IcgImportClick
         end
@@ -1747,9 +1953,12 @@ object StructuresEditor: TStructuresEditor
           Top = 40
           Width = 41
           Height = 22
+          Hint = 'Radius of area the unit reveals'
           MaxLength = 1
           MaxValue = 7
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 7
           Value = 0
         end
@@ -1759,7 +1968,12 @@ object StructuresEditor: TStructuresEditor
           Top = 88
           Width = 49
           Height = 17
+          Hint = 
+            'The unit won'#39't be assigned any group by AI and will not be given' +
+            ' any commands'
           Caption = 'No AI'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 8
           OnClick = UnitFlagCheckboxChange
         end
@@ -1811,6 +2025,9 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 41
           Height = 21
+          Hint = 'Speed in km/h'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object cbxUnitSpeedType: TComboBox
@@ -1818,8 +2035,11 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 85
           Height = 21
+          Hint = 'This can affect unit'#39's speed on different terrain types'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
         end
         object seUnitUnitRotationSpeed: TSpinEdit
@@ -1827,9 +2047,12 @@ object StructuresEditor: TStructuresEditor
           Top = 40
           Width = 49
           Height = 22
+          Hint = 'Delay in ticks the unit turns by one frame'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           Value = 0
         end
@@ -1838,7 +2061,10 @@ object StructuresEditor: TStructuresEditor
           Top = 40
           Width = 81
           Height = 17
+          Hint = 'Vehicles can crush infantry / Infantry is uncrushable'
           Caption = 'Can crush /'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
         end
         object cbxUnitMovementRestriction: TComboBox
@@ -1846,8 +2072,13 @@ object StructuresEditor: TStructuresEditor
           Top = 40
           Width = 77
           Height = 21
+          Hint = 
+            'Units with different than Normal movement won'#39't be carried by ca' +
+            'rryalls'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 4
           Items.Strings = (
             'Normal'
@@ -1929,7 +2160,10 @@ object StructuresEditor: TStructuresEditor
           Top = 116
           Width = 73
           Height = 17
+          Hint = 'Unit has barrel'
           Caption = 'Has barrel'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object cbUnitFlagUF_FIXED_BARREL: TCheckBox
@@ -1938,7 +2172,12 @@ object StructuresEditor: TStructuresEditor
           Top = 116
           Width = 73
           Height = 17
+          Hint = 
+            'Barrel is fixed - always is turned in the same direction as the ' +
+            'unit itself'
           Caption = 'Fixed barrel'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
           OnClick = UnitFlagCheckboxChange
         end
@@ -1947,8 +2186,11 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 143
           Height = 21
+          Hint = 'Primary weapon type'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
         end
         object cbxUnitSecondaryWeapon: TComboBox
@@ -1956,8 +2198,11 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 143
           Height = 21
+          Hint = 'Secondary weapon type'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
         end
         object seUnitPrimaryWeaponLongDelay: TSpinEdit
@@ -1965,9 +2210,12 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 'Delay between bulks'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 4
           Value = 0
         end
@@ -1976,9 +2224,12 @@ object StructuresEditor: TStructuresEditor
           Top = 116
           Width = 41
           Height = 22
+          Hint = 'Delay in ticks the barrel turns by one frame'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 5
           Value = 0
         end
@@ -1987,9 +2238,12 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 'Distance of the bullet'#39's origin from center of unit'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 6
           Value = 0
         end
@@ -1998,9 +2252,14 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 
+            'Number of additional shots in a bulk (0 = single shot, 1 = two s' +
+            'hots etc.)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 7
           Value = 0
         end
@@ -2009,9 +2268,12 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 'Delay between shots within a bulk'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 8
           Value = 0
         end
@@ -2020,9 +2282,14 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 
+            'Number of additional shots in a bulk (0 = single shot, 1 = two s' +
+            'hots etc.)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 9
           Value = 0
         end
@@ -2031,9 +2298,12 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 'Delay between shots within a bulk'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 10
           Value = 0
         end
@@ -2042,9 +2312,14 @@ object StructuresEditor: TStructuresEditor
           Top = 52
           Width = 41
           Height = 22
+          Hint = 
+            'Delay between bulks. If set to 0, the primary weapon'#39's value is ' +
+            'used.'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 11
           Value = 0
         end
@@ -2053,7 +2328,7 @@ object StructuresEditor: TStructuresEditor
           Top = 79
           Width = 57
           Height = 17
-          Hint = 'Double shot'
+          Hint = 'Unit fires two shots at once'
           Caption = 'Double'
           ParentShowHint = False
           ShowHint = True
@@ -2064,9 +2339,14 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 
+            'Angle of splitting one shot from the other (usable for double sh' +
+            'ot)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 13
           Value = 0
         end
@@ -2075,9 +2355,12 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 'Distance of the bullet'#39's origin from center of unit'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 14
           Value = 0
         end
@@ -2086,9 +2369,14 @@ object StructuresEditor: TStructuresEditor
           Top = 90
           Width = 41
           Height = 22
+          Hint = 
+            'Angle of splitting one shot from the other (usable for double sh' +
+            'ot)'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 15
           Value = 0
         end
@@ -2097,7 +2385,7 @@ object StructuresEditor: TStructuresEditor
           Top = 79
           Width = 55
           Height = 17
-          Hint = 'Double shot'
+          Hint = 'Unit fires two shots at once'
           Caption = 'Double'
           ParentShowHint = False
           ShowHint = True
@@ -2108,7 +2396,9 @@ object StructuresEditor: TStructuresEditor
           Top = 97
           Width = 57
           Height = 17
-          Hint = 'No auto-attack'
+          Hint = 
+            'Don'#39't automatically attack nearby enemy units/buildings with thi' +
+            's weapon'
           Caption = 'No auto'
           ParentShowHint = False
           ShowHint = True
@@ -2119,7 +2409,9 @@ object StructuresEditor: TStructuresEditor
           Top = 97
           Width = 57
           Height = 17
-          Hint = 'No auto-attack'
+          Hint = 
+            'Don'#39't automatically attack nearby enemy units/buildings with thi' +
+            's weapon'
           Caption = 'No auto'
           ParentShowHint = False
           ShowHint = True
@@ -2318,8 +2610,13 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 129
           Height = 21
+          Hint = 
+            'The type unit can be changed to by picking up a "Change type" po' +
+            'werup crate'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
         end
         object cbUnitUpgradeAllowed: TCheckBox
@@ -2327,7 +2624,12 @@ object StructuresEditor: TStructuresEditor
           Top = 14
           Width = 105
           Height = 17
+          Hint = 
+            'If checked, unit'#39's type can be changed to the selected type by p' +
+            'icking up a "Change type" powerup crate'
           Caption = 'Unit upgrade type:'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 4
         end
       end
@@ -2784,6 +3086,9 @@ object StructuresEditor: TStructuresEditor
           Top = 72
           Width = 65
           Height = 21
+          Hint = 'Range in pixels, 32 = 1 tile'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
         end
         object cbWeaponAntiAircraft: TCheckBox
@@ -2796,8 +3101,8 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponFlagWF_BLOCKED_BY_WALL: TCheckBox
           Tag = 4096
-          Left = 236
-          Top = 120
+          Left = 204
+          Top = 96
           Width = 97
           Height = 17
           Caption = 'Blocked by wall'
@@ -2806,7 +3111,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponFlagWF_DEVIATOR: TCheckBox
           Tag = 64
-          Left = 120
+          Left = 176
           Top = 120
           Width = 81
           Height = 17
@@ -2816,7 +3121,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponFlagWF_SONIC: TCheckBox
           Tag = 2048
-          Left = 184
+          Left = 256
           Top = 120
           Width = 49
           Height = 17
@@ -2830,17 +3135,25 @@ object StructuresEditor: TStructuresEditor
           Top = 120
           Width = 57
           Height = 17
+          Hint = 'Usable for flying units and debris made by destructed buildings.'
           Caption = 'Falling'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 7
           OnClick = WeaponFlagCheckboxChange
         end
         object cbWeaponFlagWF_DEBRIS: TCheckBox
           Tag = 2
-          Left = 64
+          Left = 80
           Top = 120
-          Width = 49
+          Width = 81
           Height = 17
-          Caption = 'Debris'
+          Hint = 
+            'Shadow is drawn below projectile. For some weapon behaviors it i' +
+            's set forcefully in game.'
+          Caption = 'Has shadow'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 8
           OnClick = WeaponFlagCheckboxChange
         end
@@ -2857,8 +3170,14 @@ object StructuresEditor: TStructuresEditor
           Top = 71
           Width = 49
           Height = 22
+          Hint = 
+            'Weapon'#39's inaccuracy increases with distance. Value of 0 is vanil' +
+            'la behavior and same as 16. 1 is almost accurate, the higher val' +
+            'ue the less accurate.'
           MaxValue = 255
           MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 10
           Value = 0
         end
@@ -2992,7 +3311,10 @@ object StructuresEditor: TStructuresEditor
           Top = 24
           Width = 105
           Height = 17
+          Hint = 'Projectile is drawn transparently'
           Caption = 'Projectile art alpha'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 4
           OnClick = WeaponFlagCheckboxChange
         end
@@ -3002,7 +3324,12 @@ object StructuresEditor: TStructuresEditor
           Top = 72
           Width = 109
           Height = 25
+          Hint = 
+            'Projectile is not drawn by its direction, but is animated instea' +
+            'd'
           Caption = 'Animated (rotating) projectile'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 5
           WordWrap = True
           OnClick = WeaponFlagCheckboxChange
@@ -3199,7 +3526,12 @@ object StructuresEditor: TStructuresEditor
         Top = 128
         Width = 65
         Height = 21
+        Hint = 
+          'Binary number, muzzle flash lasts for max 7 ticks, 1 = drawn, 0 ' +
+          '= not drawn'
         MaxLength = 7
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 4
       end
       object edExplosionMyIndex: TEdit
