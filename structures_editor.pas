@@ -377,8 +377,6 @@ type
     edUnitFlags: TEdit;
     seUnitUnknown46: TSpinEdit;
     cbUnitCanCrushInfantry: TCheckBox;
-    lblUnitReportingSounds: TLabel;
-    lblUnitConfirmedSounds: TLabel;
     cbUnitFlagUF_NO_AI: TCheckBox;
     PageWeapons: TTabSheet;
     PageExplosions: TTabSheet;
@@ -617,6 +615,12 @@ type
     lblWeaponBehavior: TLabel;
     cbxWeaponBehavior: TComboBox;
     lblUnitCanCrushInfantry: TLabel;
+    sgUnitVoices: TStringGrid;
+    cbxUnitVoice: TComboBox;
+    cbxUnitCustomDeathSound: TComboBox;
+    lblUnitCustomDeathSound: TLabel;
+    seUnitCustomDeathSoundNumber: TSpinEdit;
+    lblUnitCustomDeathSoundNumber: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -649,6 +653,8 @@ type
     procedure lbUnitGroupListClick(Sender: TObject);
     procedure lbUnitListClick(Sender: TObject);
     procedure imgUnitIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure sgUnitVoicesSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure cbxUnitVoiceChange(Sender: TObject);
     procedure edUnitFlagsChange(Sender: TObject);
     procedure UnitFlagCheckboxChange(Sender: TObject);
     procedure btnUnitDirectionFramesClick(Sender: TObject);
@@ -739,8 +745,6 @@ type
     procedure btnImagePaletteRemapColorsClick(Sender: TObject);
   private
     // Dynamic controls
-    cbxUnitVoices: array[0..17] of TComboBox;
-    lblUnitVoices: array[0..17] of TLabel;
     lblBuilExpAnimIndex: array[0..MAX_BUILEXP_ANIMATIONS-1] of TLabel;
     seBuilExpAnimOffsetX: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
     seBuilExpAnimOffsetY: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
@@ -842,20 +846,20 @@ begin
   clbUnitOwnerHouse.Items := tmp_strings;
   clbUnitPrereq1OwnerHouse.Items := tmp_strings;
   // Unit voices combo boxes
-  for i := 0 to 17 do
-  begin
-    cbxUnitVoices[i] := TComboBox.Create(self);
-    cbxUnitVoices[i].Style := csDropDownList;
-    cbxUnitVoices[i].Width := 109;
-    cbxUnitVoices[i].Left := 32 + 140 * (i div 9);
-    cbxUnitVoices[i].Top := 36 + 24 * (i mod 9);
-    cbxUnitVoices[i].Parent := gbUnitVoices;
-    lblUnitVoices[i] := TLabel.Create(self);
-    lblUnitVoices[i].Left := 8 + 140 * (i div 9);
-    lblUnitVoices[i].Top := 36 + 24 * (i mod 9);
-    lblUnitVoices[i].Caption := unit_voices[i mod 9] + ':';
-    lblUnitVoices[i].Parent := gbUnitVoices;
-  end;
+  sgUnitVoices.ColWidths[0] := 27;
+  sgUnitVoices.ColWidths[1] := 120;
+  sgUnitVoices.ColWidths[2] := 120;
+  sgUnitVoices.Cells[1,0] := 'Reporting sounds';
+  sgUnitVoices.Cells[2,0] := 'Confirmed sounds';
+  sgUnitVoices.Cells[0,1] := 'A1';
+  sgUnitVoices.Cells[0,2] := 'A2';
+  sgUnitVoices.Cells[0,3] := 'A3';
+  sgUnitVoices.Cells[0,4] := 'H1';
+  sgUnitVoices.Cells[0,5] := 'H2';
+  sgUnitVoices.Cells[0,6] := 'H3';
+  sgUnitVoices.Cells[0,7] := 'O1';
+  sgUnitVoices.Cells[0,8] := 'O2';
+  sgUnitVoices.Cells[0,9] := 'O3';
   // BuilExp controls
   for i := 0 to MAX_BUILEXP_ANIMATIONS - 1 do
   begin
@@ -1277,6 +1281,32 @@ begin
     ImageExportDialog.FileName := Structures.templates.UnitNameStrings[lbUnitList.ItemIndex];
     if ImageExportDialog.Execute then
       StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+  end;
+end;
+
+procedure TStructuresEditor.sgUnitVoicesSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var
+  unt: TUnitTemplatePtr;
+begin
+  cbxUnitVoice.Tag := (ACol - 1) * 9 + (ARow - 1);
+  cbxUnitVoice.Left := 37 + (ACol - 1) * 121;
+  cbxUnitVoice.Top := 37 + (ARow - 1) * 20;
+  if lbUnitList.ItemIndex >= 0 then
+  begin
+    unt := Addr(Structures.templates.UnitDefinitions[lbUnitList.ItemIndex]);
+    cbxUnitVoice.ItemIndex := unt.Voices[cbxUnitVoice.Tag];
+  end;
+end;
+
+procedure TStructuresEditor.cbxUnitVoiceChange(Sender: TObject);
+var
+  unt: TUnitTemplatePtr;
+begin
+  if lbUnitList.ItemIndex >= 0 then
+  begin
+    unt := Addr(Structures.templates.UnitDefinitions[lbUnitList.ItemIndex]);
+    unt.Voices[cbxUnitVoice.Tag] := cbxUnitVoice.ItemIndex;
+    sgUnitVoices.Cells[cbxUnitVoice.Tag div 9 + 1, cbxUnitVoice.Tag mod 9 + 1] := cbxUnitVoice.Items[unt.Voices[cbxUnitVoice.Tag]];
   end;
 end;
 
@@ -2526,6 +2556,7 @@ var
   tmp_strings: TStringList;
   i: integer;
   last_index: integer;
+  unt: TUnitTemplatePtr;
 begin
   if not Visible then
   begin
@@ -2545,15 +2576,28 @@ begin
   end;
   samples_uib_ui_modified := false;
   // Unit voices combo boxes
-  for i := 0 to 17 do
+  last_index := cbxUnitVoice.ItemIndex;
+  cbxUnitVoice.Items := tmp_strings;
+  cbxUnitVoice.ItemIndex := last_index;
+  if lbUnitList.ItemIndex >= 0 then
   begin
-    last_index := cbxUnitVoices[i].ItemIndex;
-    cbxUnitVoices[i].Items := tmp_strings;
-    cbxUnitVoices[i].ItemIndex := last_index;
+    unt := Addr(Structures.templates.UnitDefinitions[lbUnitList.ItemIndex]);
+    for i := 0 to 8 do
+    begin
+      sgUnitVoices.Cells[1, 1+i] := cbxUnitVoice.Items[unt.Voices[i]];
+      sgUnitVoices.Cells[2, 1+i] := cbxUnitVoice.Items[unt.Voices[i+9]];
+    end;
   end;
+  last_index := cbxUnitCustomDeathSound.ItemIndex;
+  cbxUnitCustomDeathSound.Items := tmp_strings;
+  cbxUnitCustomDeathSound.ItemIndex := last_index;
   tmp_strings.Insert(0, '(none)');
+  last_index := cbxWeaponFiringSound.ItemIndex;
   cbxWeaponFiringSound.Items := tmp_strings;
+  cbxWeaponFiringSound.ItemIndex := last_index;
+  last_index := cbxExplosionSound.ItemIndex;
   cbxExplosionSound.Items := tmp_strings;
+  cbxExplosionSound.ItemIndex := last_index;
   tmp_strings.Destroy;
 end;
 
@@ -3026,8 +3070,14 @@ begin
   cbUnitAvailableInStarport.Checked := unt.AvailableInStarport <> 0;
   cbUnitMultiplayerOnly.Checked := unt.MultiplayerOnly <> 0;
   // Voices group box
-  for i := 0 to Length(unt.Voices) - 1 do
-    cbxUnitVoices[i].ItemIndex := unt.Voices[i];
+  for i := 0 to 8 do
+  begin
+    sgUnitVoices.Cells[1, 1+i] := cbxUnitVoice.Items[unt.Voices[i]];
+    sgUnitVoices.Cells[2, 1+i] := cbxUnitVoice.Items[unt.Voices[i+9]];
+  end;
+  cbxUnitVoice.ItemIndex := unt.Voices[cbxUnitVoice.Tag];
+  cbxUnitCustomDeathSound.ItemIndex := unt.CustomDeathSound;
+  seUnitCustomDeathSoundNumber.Value := unt.CustomDeathSoundNumber;
   seUnitVoicePriority.Value := unt.VoicePriority;
   // Properties and behavior group box
   edUnitHitPoints.Text := inttostr(unt.HitPoints);
@@ -3404,8 +3454,8 @@ begin
   unt.AvailableInStarport := IfThen(cbUnitAvailableInStarport.Checked, 1, 0);
   unt.MultiplayerOnly := IfThen(cbUnitMultiplayerOnly.Checked, 1, 0);
   // Voices group box
-  for i := 0 to Length(unt.Voices) - 1 do
-    unt.Voices[i] := cbxUnitVoices[i].ItemIndex;
+  unt.CustomDeathSound := cbxUnitCustomDeathSound.ItemIndex;
+  unt.CustomDeathSoundNumber := seUnitCustomDeathSoundNumber.Value;
   unt.VoicePriority := seUnitVoicePriority.Value;
   // Properties and behavior group box
   unt.HitPoints := strtointdef(edUnitHitPoints.Text, 0);

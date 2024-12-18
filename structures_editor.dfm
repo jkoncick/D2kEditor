@@ -1771,30 +1771,30 @@ object StructuresEditor: TStructuresEditor
         Height = 285
         Caption = 'Voices'
         TabOrder = 4
-        object lblUnitReportingSounds: TLabel
-          Left = 8
-          Top = 16
-          Width = 86
-          Height = 13
-          Caption = 'Reporting sounds:'
-        end
-        object lblUnitConfirmedSounds: TLabel
-          Left = 148
-          Top = 16
-          Width = 87
-          Height = 13
-          Caption = 'Confirmed sounds:'
-        end
         object lblUnitVoicePriority: TLabel
           Left = 8
-          Top = 256
+          Top = 224
           Width = 63
           Height = 13
           Caption = 'Voice priority:'
         end
+        object lblUnitCustomDeathSound: TLabel
+          Left = 8
+          Top = 252
+          Width = 65
+          Height = 26
+          Caption = 'Custom death'#13'sounds:'
+        end
+        object lblUnitCustomDeathSoundNumber: TLabel
+          Left = 204
+          Top = 256
+          Width = 25
+          Height = 13
+          Caption = 'Num:'
+        end
         object seUnitVoicePriority: TSpinEdit
           Left = 80
-          Top = 256
+          Top = 224
           Width = 61
           Height = 22
           Hint = 
@@ -1811,7 +1811,7 @@ object StructuresEditor: TStructuresEditor
         object btnUnitVoicesExport: TButton
           Tag = 8
           Left = 152
-          Top = 256
+          Top = 224
           Width = 64
           Height = 21
           Hint = 'Export Voices section into file'
@@ -1824,7 +1824,7 @@ object StructuresEditor: TStructuresEditor
         object btnUnitVoicesImport: TButton
           Tag = 8
           Left = 216
-          Top = 256
+          Top = 224
           Width = 64
           Height = 21
           Hint = 'Import Voices section from file'
@@ -1833,6 +1833,58 @@ object StructuresEditor: TStructuresEditor
           ShowHint = True
           TabOrder = 2
           OnClick = IcgImportClick
+        end
+        object sgUnitVoices: TStringGrid
+          Left = 8
+          Top = 16
+          Width = 273
+          Height = 203
+          ColCount = 3
+          DefaultColWidth = 88
+          DefaultRowHeight = 19
+          RowCount = 10
+          Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine]
+          TabOrder = 3
+          OnSelectCell = sgUnitVoicesSelectCell
+        end
+        object cbxUnitVoice: TComboBox
+          Left = 37
+          Top = 37
+          Width = 121
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 4
+          OnChange = cbxUnitVoiceChange
+        end
+        object cbxUnitCustomDeathSound: TComboBox
+          Left = 80
+          Top = 256
+          Width = 121
+          Height = 21
+          Hint = 
+            'Customized infantry death sound. This is the first sound.'#13'If num' +
+            'ber is 0, this is ignored and vanilla sounds are used.'
+          Style = csDropDownList
+          ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 5
+        end
+        object seUnitCustomDeathSoundNumber: TSpinEdit
+          Left = 232
+          Top = 256
+          Width = 49
+          Height = 22
+          Hint = 
+            'Number of custom death sounds. If value is 0, vanilla sounds are' +
+            ' used.'
+          MaxValue = 255
+          MinValue = 0
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 6
+          Value = 0
         end
       end
       object gbUnitProperties: TGroupBox

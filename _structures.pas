@@ -70,7 +70,10 @@ type
     SecondaryWeaponNoAutoAttack:byte;
     SecondaryWeaponShootOffset: byte;
     SecondaryWeaponShootAngle:  byte;
-    _ZeroBytes:                 array[0..69] of byte;
+    _ZeroPadding:               byte;
+    CustomDeathSoundNumber:     byte;
+    CustomDeathSound:           cardinal;
+    _ZeroBytes:                 array[0..63] of byte;
   end;
 
   TUnitTemplatePtr = ^TUnitTemplate;
