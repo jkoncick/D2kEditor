@@ -132,9 +132,14 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 161
           Height = 57
+          Hint = 
+            'Determines which house gets which version of building, if there ' +
+            'are more building types in same group.'
           OnClickCheck = RedrawBuildingPreview
           Columns = 2
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object edBuildingName: TEdit
@@ -352,7 +357,7 @@ object StructuresEditor: TStructuresEditor
           Height = 21
           Hint = 
             'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
-            'seconds it takes to build.'
+            'seconds it takes to build on basic speed.'
           MaxLength = 10
           ParentShowHint = False
           ShowHint = True
@@ -365,7 +370,7 @@ object StructuresEditor: TStructuresEditor
           Height = 21
           Hint = 
             'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
-            'seconds it takes to build.'
+            'seconds it takes to build on basic speed.'
           MaxLength = 10
           ParentShowHint = False
           ShowHint = True
@@ -378,7 +383,7 @@ object StructuresEditor: TStructuresEditor
           Height = 21
           Hint = 
             'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
-            'seconds it takes to build.'
+            'seconds it takes to build on basic speed.'
           MaxLength = 10
           ParentShowHint = False
           ShowHint = True
@@ -391,7 +396,7 @@ object StructuresEditor: TStructuresEditor
           Height = 21
           Hint = 
             'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
-            'seconds it takes to build.'
+            'seconds it takes to build on basic speed.'
           MaxLength = 10
           ParentShowHint = False
           ShowHint = True
@@ -402,8 +407,13 @@ object StructuresEditor: TStructuresEditor
           Top = 136
           Width = 161
           Height = 57
+          Hint = 
+            'The prerequisite building'#39's owner house must be any of selected ' +
+            'houses for this building to become available.'
           Columns = 2
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 12
         end
         object clbBuildingPrereq2OwnerHouse: TCheckListBox
@@ -411,8 +421,13 @@ object StructuresEditor: TStructuresEditor
           Top = 224
           Width = 161
           Height = 57
+          Hint = 
+            'The prerequisite building'#39's owner house must be any of selected ' +
+            'houses for this building to become available.'
           Columns = 2
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 13
         end
         object cbxBuildingPrereq1BuildingGroup: TComboBox
@@ -487,9 +502,9 @@ object StructuresEditor: TStructuresEditor
         object lblBuildingTilesOccupiedSolid: TLabel
           Left = 88
           Top = 16
-          Width = 58
+          Width = 44
           Height = 13
-          Caption = 'Building tiles'
+          Caption = 'Solid tiles'
         end
         object lblBuildingExitPoint1: TLabel
           Left = 160
@@ -531,7 +546,9 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 49
           Height = 22
-          Hint = 'Relative offset of tile the produced unit is spawned at'
+          Hint = 
+            'Relative offset of tile the produced unit is spawned at'#13'(can als' +
+            'o serve different purpose on different building types)'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
@@ -562,7 +579,8 @@ object StructuresEditor: TStructuresEditor
           Height = 22
           Hint = 
             'Relative offset of tile the produced unit will move to after it'#39 +
-            's spawned'
+            's spawned'#13'(can also serve different purpose on different buildin' +
+            'g types)'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
@@ -578,7 +596,8 @@ object StructuresEditor: TStructuresEditor
           Height = 22
           Hint = 
             'Relative offset of tile the produced unit will move to after it'#39 +
-            's spawned'
+            's spawned'#13'(can also serve different purpose on different buildin' +
+            'g types)'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
@@ -622,7 +641,7 @@ object StructuresEditor: TStructuresEditor
           Height = 21
           Hint = 
             'Type of terrain the building can be built on (buildings on diffe' +
-            'rent terrain than "buildable" won'#39't provide build radius)'
+            'rent terrain than Buildable won'#39't provide build radius)'
           Style = csDropDownList
           ItemHeight = 13
           ParentShowHint = False
@@ -652,8 +671,9 @@ object StructuresEditor: TStructuresEditor
           Width = 41
           Height = 22
           Hint = 
-            'Maximum distance (in tiles) of other buildings this building is ' +
-            'allowed to build (when set to 0 default distance of 2 applies)'
+            'Maximum distance (in tiles) away from other buildings this build' +
+            'ing is allowed to build'#13'(when set to 0 default distance of 2 app' +
+            'lies)'
           MaxLength = 1
           MaxValue = 7
           MinValue = 0
@@ -1250,7 +1270,7 @@ object StructuresEditor: TStructuresEditor
           Top = 56
           Width = 153
           Height = 21
-          Hint = 'Barrel art'
+          Hint = 'Barrel art. If present, building can be given attack orders.'
           Style = csDropDownList
           ItemHeight = 13
           ParentShowHint = False
@@ -1263,7 +1283,9 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 41
           Height = 21
-          Hint = 'Building width in pixels'
+          Hint = 
+            'Building width in pixels. This determines kind of skirt (only wi' +
+            'dths 64 or 96 can have skirt).'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 2
@@ -1590,9 +1612,14 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 161
           Height = 57
+          Hint = 
+            'Determines which house gets which version of unit, if there are ' +
+            'more unit types in same group.'
           OnClickCheck = RedrawUnitPreview
           Columns = 2
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object edUnitName: TEdit
@@ -1703,7 +1730,7 @@ object StructuresEditor: TStructuresEditor
           Height = 21
           Hint = 
             'Build speed, the higher value the faster.'#13'922 / value = in-game ' +
-            'seconds it takes to build.'
+            'seconds it takes to build on basic speed.'
           MaxLength = 10
           ParentShowHint = False
           ShowHint = True
@@ -1714,8 +1741,13 @@ object StructuresEditor: TStructuresEditor
           Top = 80
           Width = 161
           Height = 57
+          Hint = 
+            'The prerequisite building'#39's owner house must be any of selected ' +
+            'houses for this unit to become available.'
           Columns = 2
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
         end
         object cbxUnitPrereq1BuildingGroup: TComboBox
@@ -2087,7 +2119,9 @@ object StructuresEditor: TStructuresEditor
           Top = 16
           Width = 85
           Height = 21
-          Hint = 'This can affect unit'#39's speed on different terrain types'
+          Hint = 
+            'Type of drive. This affects unit'#39's speed on different terrain ty' +
+            'pes.'
           Style = csDropDownList
           ItemHeight = 13
           ParentShowHint = False
@@ -3223,9 +3257,10 @@ object StructuresEditor: TStructuresEditor
           Width = 49
           Height = 22
           Hint = 
-            'Weapon'#39's inaccuracy increases with distance. Value of 0 is vanil' +
-            'la behavior and same as 16. 1 is almost accurate, the higher val' +
-            'ue the less accurate.'
+            'Weapon'#39's inaccuracy increases with distance.'#13'Value of 0 is vanil' +
+            'la behavior and is same as 16 (4 pixels deviation per tile of di' +
+            'stance).'#13'1 is almost perfectly accurate, the higher value the le' +
+            'ss accurate.'
           MaxValue = 255
           MinValue = 0
           ParentShowHint = False

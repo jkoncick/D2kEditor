@@ -3742,7 +3742,7 @@ begin
   acg.btn_image_erase.Height := 21;
   acg.btn_image_erase.Caption := 'Erase';
   acg.btn_image_erase.ShowHint := true;
-  acg.btn_image_erase.Hint := 'Hold Shift to ease all images';
+  acg.btn_image_erase.Hint := 'Hold Shift to erase all images';
   acg.btn_image_erase.Tag := group_index;
   acg.btn_image_erase.OnClick := AcgEraseImageClick;
   acg.btn_image_erase.Parent := container;
