@@ -4,7 +4,7 @@ object TestMapDialog: TTestMapDialog
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Test Map Settings'
-  ClientHeight = 193
+  ClientHeight = 249
   ClientWidth = 233
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -20,98 +20,82 @@ object TestMapDialog: TTestMapDialog
   TextHeight = 13
   object lblMySideID: TLabel
     Left = 16
-    Top = 16
-    Width = 34
+    Top = 8
+    Width = 37
     Height = 13
-    Caption = 'Play as'
-  end
-  object lblMissionNumber: TLabel
-    Left = 16
-    Top = 48
-    Width = 35
-    Height = 13
-    Caption = 'Mission'
+    Caption = 'Play as:'
   end
   object lblDifficultyLevel: TLabel
     Left = 16
-    Top = 80
-    Width = 40
+    Top = 32
+    Width = 43
     Height = 13
-    Caption = 'Difficulty'
+    Caption = 'Difficulty:'
   end
-  object lblSeed: TLabel
+  object lblDebugFeatures: TLabel
     Left = 16
-    Top = 112
-    Width = 25
+    Top = 56
+    Width = 115
     Height = 13
-    Caption = 'Seed'
+    Caption = 'Enable Debug Features:'
   end
   object eMySideID: TComboBox
     Left = 80
-    Top = 16
+    Top = 8
     Width = 137
     Height = 21
     ItemHeight = 13
     TabOrder = 0
   end
-  object eMissionNumber: TSpinEdit
-    Left = 80
-    Top = 48
-    Width = 137
-    Height = 22
-    MaxLength = 1
-    MaxValue = 9
-    MinValue = 0
-    TabOrder = 1
-    Value = 0
-  end
   object eDifficultyLevel: TComboBox
     Left = 80
-    Top = 80
+    Top = 32
     Width = 137
     Height = 21
     ItemHeight = 13
     ItemIndex = 1
-    TabOrder = 2
+    TabOrder = 1
     Text = 'Normal'
     Items.Strings = (
       'Easy'
       'Normal'
       'Hard')
   end
-  object eSeed: TEdit
-    Left = 80
-    Top = 112
-    Width = 80
-    Height = 21
-    TabOrder = 3
-    Text = '0'
-  end
   object btnCancel: TButton
     Left = 16
-    Top = 152
+    Top = 216
     Width = 89
     Height = 25
     Caption = 'Cancel'
-    TabOrder = 4
+    TabOrder = 2
     OnClick = btnCancelClick
   end
   object btnLaunch: TButton
     Left = 128
-    Top = 152
+    Top = 216
     Width = 89
     Height = 25
     Caption = 'Launch'
-    TabOrder = 5
+    TabOrder = 3
     OnClick = btnLaunchClick
   end
-  object btnRandomSeed: TButton
-    Left = 160
-    Top = 112
-    Width = 57
-    Height = 21
-    Caption = 'Random'
-    TabOrder = 6
-    OnClick = btnRandomSeedClick
+  object eDebugFeatures: TCheckListBox
+    Left = 16
+    Top = 72
+    Width = 201
+    Height = 137
+    ItemHeight = 13
+    Items.Strings = (
+      'Reveal map'
+      'Always show radar'
+      'Instand build'
+      'Unlimited power'
+      'Quick switch side (numpad keys)'
+      'Debug text on screen'
+      'Debug tiles'
+      'Debug unit path'
+      'Show selected unit data'
+      'Show selected building data')
+    TabOrder = 4
   end
 end

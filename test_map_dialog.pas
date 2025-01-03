@@ -4,23 +4,19 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Spin, ShellApi, IniFiles;
+  Dialogs, StdCtrls, Spin, ShellApi, IniFiles, CheckLst;
 
 type
   TTestMapDialog = class(TForm)
     eMySideID: TComboBox;
     lblMySideID: TLabel;
-    lblMissionNumber: TLabel;
-    eMissionNumber: TSpinEdit;
     lblDifficultyLevel: TLabel;
     eDifficultyLevel: TComboBox;
-    lblSeed: TLabel;
-    eSeed: TEdit;
     btnCancel: TButton;
     btnLaunch: TButton;
-    btnRandomSeed: TButton;
+    eDebugFeatures: TCheckListBox;
+    lblDebugFeatures: TLabel;
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure btnRandomSeedClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnLaunchClick(Sender: TObject);
   private
@@ -50,37 +46,33 @@ begin
   end;
 end;
 
-procedure TTestMapDialog.btnRandomSeedClick(Sender: TObject);
-begin
-  eSeed.Text := inttostr(random(2000000000));
-end;
-
 procedure TTestMapDialog.btnCancelClick(Sender: TObject);
 begin
   ModalResult := mrCancel;
 end;
 
 procedure TTestMapDialog.btnLaunchClick(Sender: TObject);
+var
+  i, value: integer;
 begin
-  with Launcher do
-  begin
-    MySideId := eMySideID.ItemIndex;
-    MissionNumber := eMissionNumber.Value;
-    DifficultyLevel := eDifficultyLevel.ItemIndex;
-    Seed := strtoint(eSeed.Text);
-  end;
+  Launcher.MySideId := eMySideID.ItemIndex;
+  Launcher.DifficultyLevel := eDifficultyLevel.ItemIndex;
+  value := 0;
+  for i := 0 to eDebugFeatures.Items.Count - 1 do
+    if eDebugFeatures.Checked[i] then
+      value := value or (1 shl i);
+  Launcher.DebugFeatures := value;
   ModalResult := mrOk;
 end;
 
 function TTestMapDialog.invoke: TModalResult;
+var
+  i: integer;
 begin
-  with Launcher do
-  begin
-    eMySideID.ItemIndex := MySideID;
-    eMissionNumber.Value := MissionNumber;
-    eDifficultyLevel.ItemIndex := DifficultyLevel;
-    eSeed.Text := inttostr(Seed);
-  end;
+  eMySideID.ItemIndex := Launcher.MySideID;
+  eDifficultyLevel.ItemIndex := Launcher.DifficultyLevel;
+  for i := 0 to eDebugFeatures.Items.Count - 1 do
+    eDebugFeatures.Checked[i] := ((1 shl i) and Launcher.DebugFeatures) <> 0;
   result := ShowModal;
 end;
 

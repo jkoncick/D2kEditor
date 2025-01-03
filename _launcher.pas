@@ -42,7 +42,7 @@ type
     MySideID: integer;
     MissionNumber: integer;
     DifficultyLevel: integer;
-    Seed: integer;
+    DebugFeatures: integer;
 
     // File paths
     spawn_ini_path: string;
@@ -88,7 +88,7 @@ begin
   MySideID := ini.ReadInteger('Settings', 'MySideID', 0);
   MissionNumber := ini.ReadInteger('Settings', 'MissionNumber', 0);
   DifficultyLevel := ini.ReadInteger('Settings', 'DifficultyLevel', 1);
-  Seed := ini.ReadInteger('Settings', 'Seed', random(2000000000));
+  DebugFeatures := ini.ReadInteger('Settings', 'DebugFeatures', 0);
   ini.Destroy;
   // Restore backup files from last run if needed
   if FileExists(journal_ini_path) then
@@ -179,7 +179,7 @@ begin
   ini.WriteInteger('Settings', 'MySideID', minfo.side_id);
   ini.WriteInteger('Settings', 'MissionNumber', minfo.mission_number);
   ini.WriteInteger('Settings', 'DifficultyLevel', difficulty_level);
-  ini.WriteInteger('Settings', 'Seed', Seed);
+  ini.WriteInteger('Settings', 'DebugFeatures', 0);
   if minfo.text_uib <> '' then
     ini.WriteString('Settings', 'TextUib', minfo.text_uib)
   else
@@ -216,7 +216,7 @@ begin
   ini.WriteInteger('Settings', 'MySideID', MySideID);
   ini.WriteInteger('Settings', 'MissionNumber', MissionNumber);
   ini.WriteInteger('Settings', 'DifficultyLevel', DifficultyLevel);
-  ini.WriteInteger('Settings', 'Seed', Seed);
+  ini.WriteInteger('Settings', 'DebugFeatures', DebugFeatures);
   if text_uib <> '' then
     ini.WriteString('Settings', 'TextUib', text_uib)
   else
