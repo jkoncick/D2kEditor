@@ -20,7 +20,7 @@ type
     procedure btnCancelClick(Sender: TObject);
     procedure btnLaunchClick(Sender: TObject);
   private
-    { Private declarations }
+    procedure store_data;
   public
     function invoke: TModalResult;
     procedure update_side_list(side_list: TStringList);
@@ -36,22 +36,33 @@ uses
 
 {$R *.dfm}
 
-procedure TTestMapDialog.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TTestMapDialog.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
+  if key = 13 then
+  begin
+    key := 0;
+    btnLaunchClick(Sender);
+  end;
   if key = 27 then
   begin
     key := 0;
-    close;
+    btnCancelClick(Sender);
   end;
 end;
 
 procedure TTestMapDialog.btnCancelClick(Sender: TObject);
 begin
+  store_data;
   ModalResult := mrCancel;
 end;
 
 procedure TTestMapDialog.btnLaunchClick(Sender: TObject);
+begin
+  store_data;
+  ModalResult := mrOk;
+end;
+
+procedure TTestMapDialog.store_data;
 var
   i, value: integer;
 begin
@@ -62,7 +73,6 @@ begin
     if eDebugFeatures.Checked[i] then
       value := value or (1 shl i);
   Launcher.DebugFeatures := value;
-  ModalResult := mrOk;
 end;
 
 function TTestMapDialog.invoke: TModalResult;
