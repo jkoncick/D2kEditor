@@ -2277,7 +2277,7 @@ begin
   for i := 0 to Mission.event_indentation[index].indent - 1 do
     indent := indent + '  ';
   EventGrid.Cells[2,row] := indent + et.name;
-  if et.has_map_pos and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) then
+  if (et.coords[0].coord_type = ctPoint) and (et.coords[0].marker <> ' ') and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) then
   begin
     if (event.coord_var_flags and 1) <> 0 then
       x_str := Mission.get_variable_name(event.coord_x[0], 1, index)
@@ -2672,12 +2672,13 @@ end;
 procedure TEventDialog.apply_event_changes;
 var
   et: TEventTypeDefinitionPtr;
-  old_event_used_position: boolean;
+  old_event_used_position, old_event_used_area: boolean;
 begin
   if selected_event >= Mission.num_events then
     exit;
   et := Addr(EventConfig.event_types[tmp_event.event_type]);
   old_event_used_position := EventConfig.event_types[Mission.event_data[selected_event].event_type].has_map_pos;
+  old_event_used_area := EventConfig.event_types[Mission.event_data[selected_event].event_type].has_map_area;
   // Check if existing and new data differ
   if CompareMem(Addr(Mission.event_data[selected_event]), Addr(tmp_event), sizeof(TEvent)) and (MissionIni.event_notes[selected_event] = edeventNote.Text) and not ((et.event_data = edMessage) and msg_text_is_custom) then
     exit;
@@ -2697,6 +2698,8 @@ begin
   // Update event markers on map if old or new event has position
   if old_event_used_position or (et.has_map_pos) then
     Dispatcher.register_event(evMisEventPositionChange);
+  if old_event_used_area or (et.has_map_area) then
+    Dispatcher.register_event(evMisEventAreaChange);
 end;
 
 function TEventDialog.get_event_value_list_item_str(index: integer): String;
@@ -3076,7 +3079,7 @@ end;
 procedure TEventDialog.apply_condition_changes;
 var
   ct: TConditionTypeDefinitionPtr;
-  old_condition_used_position: boolean;
+  old_condition_used_position, old_condition_used_area: boolean;
   i: integer;
   negation: boolean;
 begin
@@ -3084,6 +3087,7 @@ begin
     exit;
   ct := Addr(EventConfig.condition_types[tmp_condition.condition_type]);
   old_condition_used_position := EventConfig.condition_types[Mission.condition_data[selected_condition].condition_type].has_map_pos;
+  old_condition_used_area := EventConfig.condition_types[Mission.condition_data[selected_condition].condition_type].has_map_area;
   // Check if existing and new data differ
   if CompareMem(Addr(Mission.condition_data[selected_condition]), Addr(tmp_condition), sizeof(TCondition)) and (MissionIni.condition_notes[selected_condition] = edConditionNote.Text) then
     exit;
@@ -3103,6 +3107,8 @@ begin
   // Update event markers on map if condition has position
   if old_condition_used_position or (ct.has_map_pos) then
     Dispatcher.register_event(evMisEventPositionChange);
+  if old_condition_used_area or (ct.has_map_area) then
+    Dispatcher.register_event(evMisEventAreaChange);
 end;
 
 procedure TEventDialog.create_coord_control_group(index: integer; is_event: boolean; data_ptr: Pointer; var_flag_ptr: PByte; struct_def: TStructDefinitionPtr; coord_index, offset_x, offset_y: integer; parent_panel: TPanel);

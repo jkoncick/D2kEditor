@@ -79,7 +79,7 @@ type
     procedure render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
       data: TMapDataPtr; data_width, data_height: word;
       o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
-      o_use_house_id_colors, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
+      o_use_house_id_colors, o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_unknown_specials,
       o_rendering_optimization: boolean);
     function get_spice(var tile: TMapTile): integer;
     procedure draw_structure_image(cnv_target: TCanvas; dest_x, dest_y, min_x, min_y, max_x, max_y: integer; structure_image: TStructureImagePtr);
@@ -102,7 +102,7 @@ var
 
 implementation
 
-uses SysUtils, Math, _mission, _tileset, _settings, _misai, _randomgen;
+uses SysUtils, Math, _mission, _tileset, _settings, _misai, _randomgen, _eventconfig;
 
 procedure TRenderer.init;
 begin
@@ -137,7 +137,7 @@ end;
 procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
   data: TMapDataPtr; data_width, data_height: word;
   o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
-  o_use_house_id_colors, o_show_event_markers, o_mark_defence_areas, o_show_unknown_specials,
+  o_use_house_id_colors, o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_unknown_specials,
   o_rendering_optimization: boolean);
 var
   min_x, min_y, max_x, max_y: integer;
@@ -145,6 +145,7 @@ var
   x, y: integer;
   xx, yy: integer;
   actual_x, actual_y: integer;
+  i, j: integer;
   tile: word;
   special: word;
   spice_amount: integer;
@@ -170,6 +171,13 @@ var
   direction: integer;
   defence_area: TDefenceAreaPtr;
   misc_obj_info: TMiscObjectInfoPtr;
+  event: ^TEvent;
+  et: TEventTypeDefinitionPtr;
+  condition: ^TCondition;
+  ct: TConditionTypeDefinitionPtr;
+  event_area: ^TEventArea;
+  filter: TObjectFilterPtr;
+  amount: integer;
 begin
   if not Map.loaded then
     exit;
@@ -614,6 +622,94 @@ begin
         if event_marker.moved then
           cnv_target.TextOut(x * 32 + 2, y * 32 + 10, '<');
       end;
+  end;
+  // Draw event areas
+  if o_show_event_areas then
+  begin
+    cnv_target.Pen.Color := Settings.GridColor;
+    cnv_target.Font.Color := Settings.GridColor;
+    cnv_target.Brush.Style := bsClear;
+    for i := 0 to Mission.num_events - 1 do
+    begin
+      event := Addr(Mission.event_data[i]);
+      et := Addr(EventConfig.event_types[event.event_type]);
+      filter := Addr(event.data[1]);
+      amount := IfThen(et.event_data = edAreaList, event.amount, 1);
+      for j := 0 to amount - 1 do
+      begin
+        if ((et.coords[0].coord_type = ctArea) or (et.coords[0].coord_type = ctPointAndSize)) and (event.coord_var_flags and 15 = 0) and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) and evaluate_show_if(Addr(et.coords[1].show_if), event, Addr(event_args_struct_members)) then
+        begin
+          cnv_target.Pen.Style := psSolid;
+          cnv_target.Rectangle(
+            (event.coord_x[0] - cnv_left) * 32,
+            (event.coord_y[0] - cnv_top) * 32,
+            (IfThen(et.coords[0].coord_type = ctPointAndSize, event.coord_x[0], 1) + event.coord_x[1] - cnv_left) * 32,
+            (IfThen(et.coords[0].coord_type = ctPointAndSize, event.coord_y[0], 1) + event.coord_y[1] - cnv_top) * 32);
+        end
+        else if (et.event_data >= edUnitFilter) and (et.event_data <= edTileFilter) and ((event.event_flags and 8) = 0) and ((filter.pos_and_var_flags and 241) = 1) then
+        begin
+          if filter.pos_and_var_flags and 2 <> 0 then
+            cnv_target.Pen.Style := psDot
+          else
+            cnv_target.Pen.Style := psSolid;
+          case (filter.pos_and_var_flags shr 2) and 3 of
+            0: cnv_target.Rectangle((filter.pos_values[0] - cnv_left) * 32, (filter.pos_values[1] - cnv_top) * 32, (filter.pos_values[2] - cnv_left + 1) * 32, (filter.pos_values[3] - cnv_top + 1) * 32);
+            1: cnv_target.Rectangle((filter.pos_values[0] - filter.pos_values[2] - cnv_left) * 32, (filter.pos_values[1] - filter.pos_values[2] - cnv_top) * 32, (filter.pos_values[0] + filter.pos_values[2] - cnv_left + 1) * 32, (filter.pos_values[1] + filter.pos_values[2] - cnv_top + 1) * 32);
+            2: cnv_target.Ellipse((filter.pos_values[0] - filter.pos_values[2] - cnv_left) * 32, (filter.pos_values[1] - filter.pos_values[2] - cnv_top) * 32, (filter.pos_values[0] + filter.pos_values[2] - cnv_left + 1) * 32, (filter.pos_values[1] + filter.pos_values[2] - cnv_top + 1) * 32);
+            3: cnv_target.Ellipse((filter.pos_values[0] - cnv_left) * 32 + 16 - filter.pos_values[2], (filter.pos_values[1] - cnv_top) * 32 + 16 - filter.pos_values[2], (filter.pos_values[0] - cnv_left) * 32 + 16 + filter.pos_values[2], (filter.pos_values[1] - cnv_top) * 32 + 16 + filter.pos_values[2]);
+          end;
+        end
+        else if (et.event_data = edAreaList) then
+        begin
+          cnv_target.Pen.Style := psSolid;
+          cnv_target.Rectangle(
+            (event.data[j * 4 + 1] - cnv_left) * 32,
+            (event.data[j * 4 + 2] - cnv_top) * 32,
+            (event.data[j * 4 + 3] - cnv_left + 1) * 32,
+            (event.data[j * 4 + 4] - cnv_top + 1) * 32);
+        end;
+      end;
+    end;
+    for i := 0 to Mission.num_conditions - 1 do
+    begin
+      condition := Addr(Mission.condition_data[i]);
+      ct := Addr(EventConfig.condition_types[condition.condition_type]);
+      filter := Addr(Mission.condition_data[i]);
+      if ((ct.coords[0].coord_type = ctArea) or (ct.coords[0].coord_type = ctPointAndSize)) and (condition.coord_var_flags and 15 = 0) and evaluate_show_if(Addr(ct.coords[0].show_if), condition, Addr(condition_args_struct_members)) and evaluate_show_if(Addr(ct.coords[1].show_if), condition, Addr(condition_args_struct_members)) then
+      begin
+        cnv_target.Pen.Style := psSolid;
+        cnv_target.Rectangle(
+          (condition.coord_x[0] - cnv_left) * 32,
+          (condition.coord_y[0] - cnv_top) * 32,
+          (IfThen(ct.coords[0].coord_type = ctPointAndSize, condition.coord_x[0], 1) + condition.coord_x[1] - cnv_left) * 32,
+          (IfThen(ct.coords[0].coord_type = ctPointAndSize, condition.coord_y[0], 1) + condition.coord_y[1] - cnv_top) * 32);
+      end
+      else if (ct.condition_data >= cdUnitFilter) and (ct.condition_data <= cdTileFilter) and ((filter.pos_and_var_flags and 241) = 1) then
+      begin
+        if filter.pos_and_var_flags and 2 <> 0 then
+          cnv_target.Pen.Style := psDot
+        else
+          cnv_target.Pen.Style := psSolid;
+        case (filter.pos_and_var_flags shr 2) and 3 of
+          0: cnv_target.Rectangle((filter.pos_values[0] - cnv_left) * 32, (filter.pos_values[1] - cnv_top) * 32, (filter.pos_values[2] - cnv_left + 1) * 32, (filter.pos_values[3] - cnv_top + 1) * 32);
+          1: cnv_target.Rectangle((filter.pos_values[0] - filter.pos_values[2] - cnv_left) * 32, (filter.pos_values[1] - filter.pos_values[2] - cnv_top) * 32, (filter.pos_values[0] + filter.pos_values[2] - cnv_left + 1) * 32, (filter.pos_values[1] + filter.pos_values[2] - cnv_top + 1) * 32);
+          2: cnv_target.Ellipse((filter.pos_values[0] - filter.pos_values[2] - cnv_left) * 32, (filter.pos_values[1] - filter.pos_values[2] - cnv_top) * 32, (filter.pos_values[0] + filter.pos_values[2] - cnv_left + 1) * 32, (filter.pos_values[1] + filter.pos_values[2] - cnv_top + 1) * 32);
+          3: cnv_target.Ellipse((filter.pos_values[0] - cnv_left) * 32 + 16 - filter.pos_values[2], (filter.pos_values[1] - cnv_top) * 32 + 16 - filter.pos_values[2], (filter.pos_values[0] - cnv_left) * 32 + 16 + filter.pos_values[2], (filter.pos_values[1] - cnv_top) * 32 + 16 + filter.pos_values[2]);
+        end;
+      end;
+    end;
+    cnv_target.Pen.Style := psSolid;
+    for y:= min_y to max_y do
+      for x:= min_x to max_x do
+      begin
+        event_area := addr(Mission.event_areas[x + cnv_left, y + cnv_top]);
+        if event_area.event_index <> -1 then
+          cnv_target.TextOut(x * 32 + 3, y * 32 + 3, event_area.event_marker + inttostr(event_area.event_index));
+        if event_area.condition_index <> -1 then
+          cnv_target.TextOut(x * 32 + 3, y * 32 + 17, event_area.condition_marker + inttostr(event_area.condition_index));
+      end;
+    cnv_target.Pen.Color := clBlack;
+    cnv_target.Font.Color := clBlack;
   end;
   // Draw defence area markers
   if o_mark_defence_areas then

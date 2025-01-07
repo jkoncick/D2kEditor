@@ -1258,8 +1258,15 @@ object MainWindow: TMainWindow
         ShortCut = 16453
         OnClick = SettingChange
       end
-      object Markdefenceareas1: TMenuItem
+      object Showeventareas1: TMenuItem
         Tag = 3
+        AutoCheck = True
+        Caption = 'Show event areas'
+        ShortCut = 16456
+        OnClick = SettingChange
+      end
+      object Markdefenceareas1: TMenuItem
+        Tag = 4
         AutoCheck = True
         Caption = 'Mark defence areas'
         Checked = True
@@ -1267,7 +1274,7 @@ object MainWindow: TMainWindow
         OnClick = SettingChange
       end
       object Showunknownspecials1: TMenuItem
-        Tag = 4
+        Tag = 5
         AutoCheck = True
         Caption = 'Show unknown specials'
         ShortCut = 16469
@@ -1275,7 +1282,7 @@ object MainWindow: TMainWindow
       end
       object Gridcolor1: TMenuItem
         Tag = 20
-        Caption = 'Grid color...'
+        Caption = 'Grid / Event areas color...'
         OnClick = SettingChange
       end
       object N7: TMenuItem

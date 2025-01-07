@@ -23,6 +23,7 @@ type
     LoadCustomColoursBin: boolean;
     UseHouseIDColors: boolean;
     ShowEventMarkers: boolean;
+    ShowEventAreas: boolean;
     MarkDefenceAreas: boolean;
     ShowUnknownSpecials: boolean;
     UseRandomPaintMap: boolean;
@@ -98,6 +99,7 @@ begin
   LoadCustomColoursBin := ini.ReadBool('Preferences', 'LoadCustomColoursBin', true);
   UseHouseIDColors := ini.ReadBool('Preferences', 'UseHouseIDColors', false);
   ShowEventMarkers := ini.ReadBool('Preferences', 'ShowEventMarkers', true);
+  ShowEventAreas := ini.ReadBool('Preferences', 'ShowEventAreas', false);
   MarkDefenceAreas := ini.ReadBool('Preferences', 'MarkDefenceAreas', true);
   ShowUnknownSpecials := ini.ReadBool('Preferences', 'ShowUnknownSpecials', false);
   UseRandomPaintMap := ini.ReadBool('Preferences', 'UseRandomPaintMap', false);
@@ -189,6 +191,7 @@ begin
   ini.WriteBool('Preferences', 'LoadCustomColoursBin', LoadCustomColoursBin);
   ini.WriteBool('Preferences', 'UseHouseIDColors', UseHouseIDColors);
   ini.WriteBool('Preferences', 'ShowEventMarkers', ShowEventMarkers);
+  ini.WriteBool('Preferences', 'ShowEventAreas', ShowEventAreas);
   ini.WriteBool('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);
   ini.WriteBool('Preferences', 'ShowUnknownSpecials', ShowUnknownSpecials);
   ini.WriteBool('Preferences', 'UseRandomPaintMap', UseRandomPaintMap);

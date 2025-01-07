@@ -219,6 +219,7 @@ type
     Produceradarcolorfile1: TMenuItem;
     Remapstructures1: TMenuItem;
     RemapStructuresOpenDialog: TOpenDialog;
+    Showeventareas1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -519,6 +520,7 @@ begin
   // Initialize settings menu items
   Usehouseidcolors1.Checked := Settings.UseHouseIDColors;
   Showeventmarkers1.Checked := Settings.ShowEventMarkers;
+  Showeventareas1.Checked := Settings.ShowEventAreas;
   Markdefenceareas1.Checked := Settings.MarkDefenceAreas;
   Showunknownspecials1.Checked := Settings.ShowUnknownSpecials;
   GridColorDialog.Color := Settings.GridColor;
@@ -937,7 +939,7 @@ begin
     tmp_bitmap.Height := Map.height * 32;
     Renderer.render_map_contents(tmp_bitmap.Canvas, 0, 0, Map.width, Map.height, Addr(Map.data), Map.width, Map.height,
       sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
-      Usehouseidcolors1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
+      Usehouseidcolors1.Checked, Showeventmarkers1.Checked, Showeventareas1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
       false);
     tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
     tmp_bitmap.Destroy;
@@ -1069,8 +1071,9 @@ begin
   case (Sender as TComponent).Tag of
   1: begin Settings.UseHouseIDColors := (Sender as TMenuItem).Checked; render_map; render_minimap; render_cursor_image; end;
   2: begin Settings.ShowEventMarkers := (Sender as TMenuItem).Checked; render_map; end;
-  3: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
-  4: begin Settings.ShowUnknownSpecials := (Sender as TMenuItem).Checked; render_map; render_cursor_image; end;
+  3: begin Settings.ShowEventAreas := (Sender as TMenuItem).Checked; render_map; end;
+  4: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
+  5: begin Settings.ShowUnknownSpecials := (Sender as TMenuItem).Checked; render_map; render_cursor_image; end;
   11: begin Settings.AlwaysAskOnQuit := (Sender as TMenuItem).Checked end;
   12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
   13: begin Settings.RestrictPainting := (Sender as TMenuItem).Checked end;
@@ -1081,7 +1084,7 @@ begin
       if GridColorDialog.Execute then
       begin
         Settings.GridColor := GridColorDialog.Color;
-        if sbShowGrid.Down then
+        if sbShowGrid.Down or Showeventareas1.Checked then
           render_map;
         TileAtrEditor.update_grid_color;
         TilesetDialog.update_grid_color;
@@ -1299,12 +1302,14 @@ end;
 procedure TMainWindow.MapCanvasMouseMove(Sender: TObject;
   Shift: TShiftState; X, Y: Integer);
 var
-canvas_x, canvas_y: integer;
-map_x, map_y: integer;
-eventnum: integer;
-numunits: integer;
-i: integer;
-tmp_hint: string;
+  canvas_x, canvas_y: integer;
+  map_x, map_y: integer;
+  numunits: integer;
+  i: integer;
+  tmp_hint: string;
+  event_index, condition_index: integer;
+  event: ^TEvent;
+  condition: ^TCondition;
 begin
   // Get tile coordinates
   canvas_x := X div 32;
@@ -1325,16 +1330,62 @@ begin
   mouse_already_clicked := false;
   // Write coordinates on status bar
   StatusBar.Panels[0].Text := 'x: '+inttostr(map_x)+' y: '+inttostr(map_y);
-  // If mouse moved over Reinforcement or Spawn event marker, show "hint" with list of units
-  if mode(mStructures) and Showeventmarkers1.Checked and (Mission.event_markers[map_x,map_y].emtype = emEvent) and (EventConfig.event_types[Mission.event_data[Mission.event_markers[map_x,map_y].index].event_type].event_data = edUnitList) then
+  // If mouse moved over event area marker, show "hint" with event contents
+  if mode(mStructures) and Showeventareas1.Checked and ((Mission.event_areas[map_x,map_y].event_index <> -1) or  (Mission.event_areas[map_x,map_y].condition_index <> -1)) then
   begin
     Application.CancelHint;
-    eventnum := Mission.event_markers[map_x,map_y].index;
-    numunits := Mission.event_data[eventnum].amount;
-    tmp_hint := inttostr(numunits) + ' units:';
-    for i := 0 to (numunits -1) do
-      tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name_str(Mission.event_data[eventnum].data[i]);
-    MapCanvas.Hint := tmp_hint;
+    tmp_hint := '';
+    event_index := Mission.event_areas[map_x,map_y].event_index;
+    condition_index := Mission.event_areas[map_x,map_y].condition_index;
+    if event_index <> -1 then
+    begin
+      event := Addr(Mission.event_data[event_index]);
+      tmp_hint := EventConfig.event_types[event.event_type].name + ': ';
+      if EventConfig.event_types[event.event_type].has_side then
+      begin
+        if (event.arg_var_flags and 1) <> 0 then
+          tmp_hint := tmp_hint + Mission.get_variable_name(event.side, 1, event_index) + ' '
+        else
+          tmp_hint := tmp_hint + IfThen(event.side < 8, Structures.side_names[event.side], 'Any') + ' ';
+      end;
+      tmp_hint := tmp_hint + Mission.get_event_contents(event_index);
+    end;
+    if condition_index <> -1 then
+    begin
+      condition := Addr(Mission.condition_data[condition_index]);
+      tmp_hint := tmp_hint + #13 + EventConfig.condition_types[condition.condition_type].name + ': ' + Mission.get_condition_contents(condition_index, true);
+    end;
+    MapCanvas.Hint := StringReplace(tmp_hint, '|', '\', [rfReplaceAll]);
+    MapCanvas.ShowHint := true;
+  end
+  // If mouse moved over event marker, show "hint" with event contents
+  else if mode(mStructures) and Showeventmarkers1.Checked and (Mission.event_markers[map_x,map_y].emtype <> emNone) then
+  begin
+    Application.CancelHint;
+    if Mission.event_markers[map_x,map_y].emtype = emEvent then
+    begin
+      // Event contents
+      event_index := Mission.event_markers[map_x,map_y].index;
+      if EventConfig.event_types[Mission.event_data[Mission.event_markers[map_x,map_y].index].event_type].event_data = edUnitList then
+      begin
+        // Show list of units for events with Unit List
+        numunits := Mission.event_data[event_index].amount;
+        tmp_hint := inttostr(numunits) + ' units:';
+        for i := 0 to (numunits -1) do
+          tmp_hint := tmp_hint + chr(13) + Structures.get_unit_name_str(Mission.event_data[event_index].data[i]);
+      end else
+      begin
+        // Show actual event contents
+        tmp_hint := EventConfig.event_types[Mission.event_data[event_index].event_type].name + ': ' + Mission.get_event_contents(event_index);
+      end;
+    end
+    else if Mission.event_markers[map_x,map_y].emtype = emCondition then
+    begin
+      // Condition contents
+      condition_index := Mission.event_markers[map_x,map_y].index;
+      tmp_hint := EventConfig.condition_types[Mission.condition_data[condition_index].condition_type].name + ': ' + Mission.get_condition_contents(condition_index, true);
+    end;
+    MapCanvas.Hint := StringReplace(tmp_hint, '|', '\', [rfReplaceAll]);
     MapCanvas.ShowHint := true
   end else
     MapCanvas.ShowHint := false;
@@ -1353,12 +1404,23 @@ begin
   begin
     if moving_marker_type = emEvent then
     begin
+      // Move event
       Renderer.invalidate_map_tile(0, Mission.event_data[moving_marker_index].coord_y[moving_marker_coord]);
       Renderer.invalidate_map_tile(Map.width-1, map_y);
-      Mission.event_data[moving_marker_index].coord_x[moving_marker_coord] := map_x;
-      Mission.event_data[moving_marker_index].coord_y[moving_marker_coord] := map_y;
+      if EventConfig.event_types[Mission.event_data[moving_marker_index].event_type].event_data = edCoordList then
+      begin
+        // Move coords within coord list
+        Mission.event_data[moving_marker_index].data[moving_marker_coord * 2 + 1] := map_x;
+        Mission.event_data[moving_marker_index].data[moving_marker_coord * 2 + 2] := map_y;
+      end else
+      begin
+        // Move actual coords
+        Mission.event_data[moving_marker_index].coord_x[moving_marker_coord] := map_x;
+        Mission.event_data[moving_marker_index].coord_y[moving_marker_coord] := map_y;
+      end;
     end else
     begin
+      // Move condition
       Renderer.invalidate_map_tile(0, Mission.condition_data[moving_marker_index].coord_y[moving_marker_coord]);
       Renderer.invalidate_map_tile(Map.width-1, map_y);
       Mission.condition_data[moving_marker_index].coord_x[moving_marker_coord] := map_x;
@@ -1414,15 +1476,23 @@ begin
     finish_position_selection(map_x, map_x, map_y, map_y);
     exit;
   end;
+  // Moving event areas
+  if (Button = mbLeft) and mode(mStructures) and not moving_disable and Showeventareas1.Checked and ((Mission.event_areas[map_x,map_y].event_index <> -1) or (Mission.event_areas[map_x,map_y].condition_index <> -1)) then
+  begin
+    // Not implemented
+    exit;
+  end;
   // Moving event markers
-  if (Mission.event_markers[map_x, map_y].emtype <> emNone) and Showeventmarkers1.Checked and not moving_disable and
-    mode(mStructures) and (Button = mbLeft) then
+  if (Button = mbLeft) and mode(mStructures) and not moving_disable and Showeventmarkers1.Checked and (Mission.event_markers[map_x, map_y].emtype <> emNone) then
   begin
     moving_marker_type := Mission.event_markers[map_x, map_y].emtype;
     moving_marker_index := Mission.event_markers[map_x, map_y].index;
     moving_marker_coord := Mission.event_markers[map_x, map_y].coord;
     exit;
   end;
+  // Clicked on event area
+  if ((Mission.event_areas[map_x, map_y].event_index <> -1) or (Mission.event_areas[map_x, map_y].condition_index <> -1)) and Showeventareas1.Checked and not moving_disable and mode(mStructures) and (Button = mbLeft) then
+    exit;
   moving_disable := true;
   // Switch to Select mode if Ctrl is held
   if (Button = mbLeft) and (ssCtrl in Shift) then
@@ -1507,11 +1577,13 @@ end;
 procedure TMainWindow.MapCanvasDblClick(Sender: TObject);
 var
   event_marker: ^TEventMarker;
+  event_area: ^TEventArea;
 begin
   // Double-click on event marker
-  if mode(mStructures) and Showeventmarkers1.Checked and (Mission.event_markers[mouse_old_x, mouse_old_y].emtype <> emNone) then
+  event_marker := Addr(Mission.event_markers[mouse_old_x, mouse_old_y]);
+  if mode(mStructures) and Showeventmarkers1.Checked and (event_marker.emtype <> emNone) then
   begin
-    event_marker := Addr(Mission.event_markers[mouse_old_x, mouse_old_y]);
+
     EventDialog.Show;
     if event_marker.emtype = emCondition then
     begin
@@ -1522,7 +1594,24 @@ begin
       EventDialog.EventGrid.Row := event_marker.index + 1;
       EventDialog.EventGrid.SetFocus;
     end;
-  end else
+  end;
+  // Double click on event area
+  event_area := Addr(Mission.event_areas[mouse_old_x, mouse_old_y]);
+  if mode(mStructures) and Showeventareas1.Checked then
+  begin
+    if event_area.event_index <> -1 then
+    begin
+      EventDialog.Show;
+      EventDialog.EventGrid.Row := event_area.event_index + 1;
+      EventDialog.EventGrid.SetFocus;
+    end;
+    if event_area.condition_index <> -1 then
+    begin
+      EventDialog.Show;
+      EventDialog.ConditionGrid.Row := event_area.condition_index + 1;
+      EventDialog.ConditionGrid.SetFocus;
+    end;
+  end;
   // Double click for filling area
   if mode(mPaintMode) then
     Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group, cbxConcreteSide.ItemIndex);
@@ -2116,7 +2205,7 @@ begin
     QueryPerformanceCounter(t1);
   Renderer.render_map_contents(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height, Addr(Map.data), Map.width, Map.height,
     sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
-    Usehouseidcolors1.Checked, Showeventmarkers1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
+    Usehouseidcolors1.Checked, Showeventmarkers1.Checked, Showeventareas1.Checked, Markdefenceareas1.Checked, Showunknownspecials1.Checked,
     true);
   if Settings.Debug_ShowRenderTime then
   begin
@@ -2264,7 +2353,7 @@ begin
   // Render cursor image
   Renderer.render_map_contents(CursorImage.Canvas, 0, 0, block_width, block_height, Addr(block_data), block_width, block_height,
     false, false, false, sbMarkOwnerSide.Down,
-    Usehouseidcolors1.Checked, false, false, Showunknownspecials1.Checked,
+    Usehouseidcolors1.Checked, false, false, false, Showunknownspecials1.Checked,
     false);
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;

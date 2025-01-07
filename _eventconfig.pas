@@ -75,11 +75,13 @@ type
     gamestruct_offset_arg: integer;
     gamestruct_value_arg: integer;
     event_data: EventData;
+    event_data_area_marker: char;
     contents: String;
     color: integer;
     is_start_block: boolean;
     allow_obj_index: boolean;
     has_map_pos: boolean;
+    has_map_area: boolean;
     has_side: boolean;
   end;
 
@@ -95,8 +97,10 @@ type
     gamestruct_offset_arg: integer;
     gamestruct_value_arg: integer;
     condition_data: ConditionData;
+    condition_data_area_marker: char;
     contents: String;
     has_map_pos: boolean;
+    has_map_area: boolean;
     has_side: boolean;
   end;
 
@@ -229,6 +233,8 @@ begin
         event_types[i].event_data := EventData(j);
         break;
       end;
+    s := ini.ReadString(tmp_strings[i], 'data_area_marker', ' ');
+    event_types[i].event_data_area_marker := s[1];
     // Load contents
     event_types[i].contents := ini.ReadString(tmp_strings[i], 'contents', '');
     // Load miscellaneous properties
@@ -236,7 +242,8 @@ begin
     event_types[i].is_start_block := ini.ReadBool(tmp_strings[i], 'is_start_block', False);
     event_types[i].allow_obj_index := ini.ReadBool(tmp_strings[i], 'allow_obj_index', False);
     // Fill auxiliary properties
-    event_types[i].has_map_pos := event_types[i].coords[0].marker <> ' ';
+    event_types[i].has_map_pos := ((event_types[i].coords[0].coord_type = ctPoint) and (event_types[i].coords[0].marker <> ' ')) or (event_types[i].event_data = edCoordList);
+    event_types[i].has_map_area := (event_types[i].coords[0].coord_type = ctArea) or (event_types[i].coords[0].coord_type = ctPointAndSize) or ((event_types[i].event_data >= edUnitFilter) and (event_types[i].event_data <= edTileFilter)) or (event_types[i].event_data = edAreaList);
     event_types[i].has_side := event_types[i].args[0].name = 'Side';
   end;
   ini.Destroy;
@@ -296,10 +303,13 @@ begin
         condition_types[i].condition_data := ConditionData(j);
         break;
       end;
+    s := ini.ReadString(tmp_strings[i], 'data_area_marker', ' ');
+    condition_types[i].condition_data_area_marker := s[1];
     // Load contents
     condition_types[i].contents := ini.ReadString(tmp_strings[i], 'contents', '');
     // Fill auxiliary properties
-    condition_types[i].has_map_pos := condition_types[i].coords[0].marker <> ' ';
+    condition_types[i].has_map_pos := (condition_types[i].coords[0].coord_type = ctPoint) and (condition_types[i].coords[0].marker <> ' ');
+    condition_types[i].has_map_area := (condition_types[i].coords[0].coord_type = ctArea) or (condition_types[i].coords[0].coord_type = ctPointAndSize) or ((condition_types[i].condition_data >= cdUnitFilter) and (condition_types[i].condition_data <= cdTileFilter));
     condition_types[i].has_side := condition_types[i].args[0].name = 'Side';
   end;
   ini.Destroy;

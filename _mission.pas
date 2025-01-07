@@ -149,6 +149,14 @@ type
     moved: boolean;
   end;
 
+type
+  TEventArea = record
+    event_index: integer;
+    condition_index: integer;
+    event_marker: char;
+    condition_marker: char;
+  end;
+
 // *****************************************************************************
 // Mission class
 // *****************************************************************************
@@ -178,6 +186,7 @@ type
     // Other data
     event_indentation: array[0..MAX_EVENTS-1] of TEventIndentationData;
     event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
+    event_areas: array[0..max_map_width-1, 0..max_map_height-1] of TEventArea;
 
   public
     procedure init;
@@ -191,6 +200,7 @@ type
     procedure reset_mission_data;
     // Dispatcher procedures
     procedure cache_event_markers;
+    procedure cache_event_areas;
     // Getting text descriptions
     function get_variable_name(var_index: integer; brackets: integer; event_index: integer): String;
     function get_event_contents(index: integer): String;
@@ -455,7 +465,7 @@ begin
     event := Addr(event_data[i]);
     et := Addr(EventConfig.event_types[event.event_type]);
     for j := 0 to Length(et.coords) - 1 do
-      if (et.coords[j].marker <> ' ') and (event.coord_var_flags and (3 shl (j * 2)) = 0) and evaluate_show_if(Addr(et.coords[j].show_if), event, Addr(event_args_struct_members)) then
+      if (et.coords[j].coord_type = ctPoint) and (et.coords[j].marker <> ' ') and (event.coord_var_flags and (3 shl (j * 2)) = 0) and evaluate_show_if(Addr(et.coords[j].show_if), event, Addr(event_args_struct_members)) then
       begin
         x := event.coord_x[j];
         y := event.coord_y[j];
@@ -481,6 +491,31 @@ begin
           event_markers[x][y].marker := 'H';
         event_markers[x][y].moved := moved;
     end;
+    if et.event_data = edCoordList then
+      for j := 0 to event.amount - 1 do
+      begin
+        x := event.data[j * 2 + 1];
+        y := event.data[j * 2 + 2];
+        // Move event marker one tile to right if this tile has already an event
+        moved := false;
+        attempts := 0;
+        while (event_markers[x][y].emtype <> emNone) and (attempts < Map.width) do
+        begin
+          x := (x + 1) mod (Map.width);
+          moved := true;
+          // Prevent infinite loop
+          Inc(attempts);
+        end;
+        if attempts = Map.width then
+          continue;
+        // Fill event marker data
+        event_markers[x][y].emtype := emEvent;
+        event_markers[x][y].index := i;
+        event_markers[x][y].coord := j;
+        event_markers[x][y].side := -1;
+        event_markers[x][y].marker := et.event_data_area_marker;
+        event_markers[x][y].moved := moved;
+      end;
   end;
   // Process conditions
   for i:= 0 to num_conditions - 1 do
@@ -488,7 +523,7 @@ begin
     condition := Addr(condition_data[i]);
     ct := Addr(EventConfig.condition_types[condition.condition_type]);
     for j := 0 to Length(ct.coords) - 1 do
-      if (ct.coords[j].marker <> ' ') and (condition.coord_var_flags and (3 shl (j * 2)) = 0) and evaluate_show_if(Addr(ct.coords[j].show_if), condition, Addr(condition_args_struct_members)) then
+      if (ct.coords[j].coord_type = ctPoint) and (ct.coords[j].marker <> ' ') and (condition.coord_var_flags and (3 shl (j * 2)) = 0) and evaluate_show_if(Addr(ct.coords[j].show_if), condition, Addr(condition_args_struct_members)) then
       begin
         x := condition.coord_x[j];
         y := condition.coord_y[j];
@@ -512,6 +547,111 @@ begin
         event_markers[x][y].marker := ct.coords[j].marker;
         event_markers[x][y].moved := moved;
     end;
+  end;
+end;
+
+procedure TMission.cache_event_areas;
+var
+  event: ^TEvent;
+  condition: ^TCondition;
+  et: TEventTypeDefinitionPtr;
+  ct: TConditionTypeDefinitionPtr;
+  x, y: integer;
+  i, j: integer;
+  attempts: integer;
+  filter: TObjectFilterPtr;
+  marker: char;
+  amount: integer;
+begin
+  // Clear event areas
+  for x := 0 to max_map_width - 1 do
+    for y := 0 to max_map_height - 1 do
+    begin
+      event_areas[x,y].event_index := -1;
+      event_areas[x,y].condition_index := -1;
+    end;
+  x := 0;
+  y := 0;
+  marker := ' ';
+  // Process events
+  for i:= 0 to num_events - 1 do
+  begin
+    event := Addr(event_data[i]);
+    et := Addr(EventConfig.event_types[event.event_type]);
+    if not et.has_map_area then
+      continue;
+    filter := Addr(event.data[1]);
+    amount := IfThen(et.event_data = edAreaList, event.amount, 1);
+    for j := 0 to amount - 1 do
+    begin
+      if ((et.coords[0].coord_type = ctArea) or (et.coords[0].coord_type = ctPointAndSize)) and ((event.coord_var_flags and 15) = 0) and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) and evaluate_show_if(Addr(et.coords[1].show_if), event, Addr(event_args_struct_members)) then
+      begin
+        x := event.coord_x[0];
+        y := event.coord_y[0];
+        marker := et.coords[0].marker;
+      end
+      else if (et.event_data >= edUnitFilter) and (et.event_data <= edTileFilter) and ((event.event_flags and 8) = 0) and ((filter.pos_and_var_flags and 241) = 1) then
+      begin
+        x := filter.pos_values[0];
+        y := filter.pos_values[1];
+        marker := et.event_data_area_marker;
+      end
+      else if (et.event_data = edAreaList) then
+      begin
+        x := event.data[j * 4 + 1];
+        y := event.data[j * 4 + 2];
+        marker := et.event_data_area_marker;
+      end else
+        continue;
+      // Move event area one tile to right if this tile has already an event
+      attempts := 0;
+      while (event_areas[x][y].event_index <> -1) and (attempts < Map.width) do
+      begin
+        x := (x + 1) mod (Map.width);
+        // Prevent infinite loop
+        Inc(attempts);
+      end;
+      if attempts = Map.width then
+        continue;
+      // Fill event area data
+      event_areas[x][y].event_index := i;
+      event_areas[x][y].event_marker := marker;
+    end;
+  end;
+  // Process conditions
+  for i:= 0 to num_conditions - 1 do
+  begin
+    condition := Addr(condition_data[i]);
+    ct := Addr(EventConfig.condition_types[condition.condition_type]);
+    if not ct.has_map_area then
+      continue;
+    filter := Addr(condition_data[i]);
+    if ((ct.coords[0].coord_type = ctArea) or (ct.coords[0].coord_type = ctPointAndSize)) and ((condition.coord_var_flags and 15) = 0) and evaluate_show_if(Addr(ct.coords[0].show_if), condition, Addr(condition_args_struct_members)) and evaluate_show_if(Addr(ct.coords[1].show_if), condition, Addr(condition_args_struct_members)) then
+    begin
+      x := condition.coord_x[0];
+      y := condition.coord_y[0];
+      marker := ct.coords[0].marker;
+    end
+    else if (ct.condition_data >= cdUnitFilter) and (ct.condition_data <= cdTileFilter) and ((filter.pos_and_var_flags and 241) = 1) then
+    begin
+      x := filter.pos_values[0];
+      y := filter.pos_values[1];
+      marker := ct.condition_data_area_marker;
+    end else
+      continue;
+    // Move event area one tile to right if this tile has already an event
+    attempts := 0;
+    while (event_areas[x][y].condition_index <> -1) and (attempts < Map.width) do
+    begin
+      x := (x + 1) mod (Map.width);
+      // Prevent infinite loop
+      Inc(attempts);
+    end;
+    if attempts = Map.width then
+      continue;
+    // Fill event area data
+    event_areas[x][y].condition_index := i;
+    event_areas[x][y].condition_marker := marker;
   end;
 end;
 
@@ -1145,7 +1285,7 @@ end;
 
 procedure TMission.delete_event(deleted_index: integer);
 var
-  event_used_position: boolean;
+  event_used_position, event_used_area: boolean;
   i, j: integer;
   event: ^TEvent;
   et: TEventTypeDefinitionPtr;
@@ -1154,6 +1294,7 @@ begin
   if deleted_index >= num_events then
     exit;
   event_used_position := EventConfig.event_types[event_data[deleted_index].event_type].has_map_pos;
+  event_used_area := EventConfig.event_types[event_data[deleted_index].event_type].has_map_area;
   // Delete event and shift all events up
   for i := deleted_index to num_events - 2 do
   begin
@@ -1190,11 +1331,13 @@ begin
   // Update event markers on map if event had position
   if event_used_position then
     Dispatcher.register_event(evMisEventPositionChange);
+  if event_used_area then
+    Dispatcher.register_event(evMisEventAreaChange);
 end;
 
 procedure TMission.delete_condition(deleted_index: integer);
 var
-  condition_used_position: boolean;
+  condition_used_position, condition_used_area: boolean;
   i, j, k, m: integer;
   event: ^TEvent;
   et: TEventTypeDefinitionPtr;
@@ -1203,6 +1346,7 @@ begin
   if deleted_index >= num_conditions then
     exit;
   condition_used_position := EventConfig.condition_types[condition_data[deleted_index].condition_type].has_map_pos;
+  condition_used_area := EventConfig.condition_types[condition_data[deleted_index].condition_type].has_map_area;
   // Delete condition and shift all conditions up
   for i := deleted_index to num_conditions - 2 do
   begin
@@ -1257,6 +1401,8 @@ begin
   // Update event markers on map if condition had position
   if condition_used_position then
     Dispatcher.register_event(evMisEventPositionChange);
+  if condition_used_area then
+    Dispatcher.register_event(evMisEventAreaChange);
 end;
 
 function TMission.condition_is_used(index: integer): boolean;
@@ -1319,11 +1465,13 @@ begin
   // Update event markers on map if event had position
   if (EventConfig.event_types[event_data[e1].event_type].has_map_pos) or (EventConfig.event_types[event_data[e2].event_type].has_map_pos) then
     Dispatcher.register_event(evMisEventPositionChange);
+  if (EventConfig.event_types[event_data[e1].event_type].has_map_area) or (EventConfig.event_types[event_data[e2].event_type].has_map_area) then
+    Dispatcher.register_event(evMisEventAreaChange);
 end;
 
 procedure TMission.swap_conditions(c1, c2: integer);
 var
-  condition_used_position: boolean;
+  condition_used_position, condition_used_area: boolean;
   i, j: integer;
   tmp_condition: TCondition;
   tmp_note: String;
@@ -1334,6 +1482,7 @@ begin
   if (c1 >= num_conditions) or (c2 >= num_conditions) then
     exit;
   condition_used_position := (EventConfig.condition_types[condition_data[c1].condition_type].has_map_pos) or (EventConfig.condition_types[condition_data[c2].condition_type].has_map_pos);
+  condition_used_area := (EventConfig.condition_types[condition_data[c1].condition_type].has_map_area) or (EventConfig.condition_types[condition_data[c2].condition_type].has_map_area);
   // Swap conditions
   tmp_condition := condition_data[c1];
   condition_data[c1] := condition_data[c2];
@@ -1374,6 +1523,8 @@ begin
   // Update event markers on map if condition had position
   if condition_used_position then
     Dispatcher.register_event(evMisEventPositionChange);
+  if condition_used_area then
+    Dispatcher.register_event(evMisEventAreaChange);
 end;
 
 function TMission.get_or_create_condition(condition_type: ConditionType;

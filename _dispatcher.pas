@@ -15,6 +15,7 @@ type
     evMisEventsImport,
     evMisHouseIDChange,
     evMisEventPositionChange,
+    evMisEventAreaChange,
     evMisDefenceAreaChange,
     // Mission ini events
     evMissionIniLoad,
@@ -75,6 +76,7 @@ type
     paUpdateMissionLoadStatus,
     paUpdateMapStats,
     paUpdateEventMarkers,
+    paUpdateEventAreas,
     paUpdateSideColours,
     paUpdateSpeedModifiers,
     paUpdateVariableNames,
@@ -116,6 +118,7 @@ type
     procedure update_mission_load_status;
     procedure update_map_stats;
     procedure update_event_markers;
+    procedure update_event_areas;
     procedure update_game_lists;
 
   end;
@@ -138,15 +141,16 @@ begin
   case event of
     // Map events
     evMapLoad:                    pact := pact + [paUpdateMapDimensions, paUpdateMapName, paUpdateMapStats, paUpdateVariableNames, paRenderMap, paRenderMinimap];
-    evMapResize:                  pact := pact + [paUpdateMapDimensions, paUpdateMapStats, paUpdateEventMarkers, paUpdateEventDialog, paRenderMap, paRenderMinimap];
-    evMapShift:                   pact := pact + [paUpdateMapStats, paUpdateEventMarkers, paUpdateEventDialog, paRenderMap, paRenderMinimap];
+    evMapResize:                  pact := pact + [paUpdateMapDimensions, paUpdateMapStats, paUpdateEventMarkers, paUpdateEventAreas, paUpdateEventDialog, paRenderMap, paRenderMinimap];
+    evMapShift:                   pact := pact + [paUpdateMapStats, paUpdateEventMarkers, paUpdateEventAreas, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapTilesModify:             pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap];
     evMapFilenameChange:          pact := pact + [paUpdateMapName];
     // Mission events
-    evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateMissionData, paUpdateMisAiValues, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evMisEventsImport:            pact := pact + [paUpdateEventMarkers, paUpdateEventDialog];
+    evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateEventAreas, paUpdateMissionData, paUpdateMisAiValues, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evMisEventsImport:            pact := pact + [paUpdateEventMarkers, paUpdateEventAreas, paUpdateEventDialog];
     evMisHouseIDChange:           pact := pact + [paUpdateStructureControls, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisEventPositionChange:     pact := pact + [paUpdateEventMarkers];
+    evMisEventAreaChange:         pact := pact + [paUpdateEventAreas];
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
     // Mission ini events
     evMissionIniLoad:             pact := pact + [paUpdateMissionIniData, paUpdateEventDialog, paUpdateVariableNames];
@@ -217,6 +221,7 @@ begin
   if paUpdateMissionLoadStatus  in pact then update_mission_load_status;
   if paUpdateMapStats           in pact then update_map_stats;
   if paUpdateEventMarkers       in pact then update_event_markers;
+  if paUpdateEventAreas         in pact then update_event_areas;
   if paUpdateSideColours        in pact then MissionDialog.update_side_colors;
   if paUpdateSpeedModifiers     in pact then TileAtrEditor.update_speed_modifiers;
   if paUpdateVariableNames      in pact then EventDialog.update_variable_names;
@@ -328,6 +333,13 @@ procedure TDispatcher.update_event_markers;
 begin
   Mission.cache_event_markers;
   if Settings.ShowEventMarkers then
+    pact := pact + [paRenderMap];
+end;
+
+procedure TDispatcher.update_event_areas;
+begin
+  Mission.cache_event_areas;
+  if Settings.ShowEventAreas then
     pact := pact + [paRenderMap];
 end;
 
