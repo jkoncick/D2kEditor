@@ -76,16 +76,49 @@ object EventDialog: TEventDialog
         18
         18)
     end
-    object lbEventTypeList: TListBox
+    object pnEventTypeList: TPanel
       Left = 0
       Top = 0
       Width = 168
       Height = 401
       Align = alLeft
-      ItemHeight = 13
+      BevelOuter = bvNone
       TabOrder = 1
-      OnClick = lbEventTypeListClick
-      OnDblClick = lbEventTypeListDblClick
+      object lbEventTypeList: TListBox
+        Left = 0
+        Top = 21
+        Width = 168
+        Height = 380
+        Align = alClient
+        ItemHeight = 13
+        TabOrder = 0
+        OnClick = lbEventTypeListClick
+        OnDblClick = lbEventTypeListDblClick
+      end
+      object pnEventTypeFilter: TPanel
+        Left = 0
+        Top = 0
+        Width = 168
+        Height = 21
+        Align = alTop
+        BevelOuter = bvNone
+        TabOrder = 1
+        object lblEventTypeFilter: TLabel
+          Left = 4
+          Top = 4
+          Width = 25
+          Height = 13
+          Caption = 'Filter:'
+        end
+        object edEventTypeFilter: TEdit
+          Left = 32
+          Top = 0
+          Width = 136
+          Height = 21
+          TabOrder = 0
+          OnChange = edEventTypeFilterChange
+        end
+      end
     end
   end
   object LowerPanel: TPanel
@@ -983,16 +1016,49 @@ object EventDialog: TEventDialog
         OnChange = cbxConditionGameStructMemberChange
       end
     end
-    object lbConditionTypeList: TListBox
+    object pnConditionTypeList: TPanel
       Left = 1280
       Top = 0
       Width = 140
       Height = 288
       Align = alLeft
-      ItemHeight = 13
+      BevelOuter = bvNone
       TabOrder = 5
-      OnClick = lbConditionTypeListClick
-      OnDblClick = lbConditionTypeListDblClick
+      object pnConditionTypeFilter: TPanel
+        Left = 0
+        Top = 0
+        Width = 140
+        Height = 21
+        Align = alTop
+        BevelOuter = bvNone
+        TabOrder = 0
+        object lblConditionTypeFilter: TLabel
+          Left = 4
+          Top = 4
+          Width = 25
+          Height = 13
+          Caption = 'Filter:'
+        end
+        object edConditionTypeFilter: TEdit
+          Left = 32
+          Top = 0
+          Width = 108
+          Height = 21
+          TabOrder = 0
+          OnChange = edConditionTypeFilterChange
+        end
+      end
+      object lbConditionTypeList: TListBox
+        Left = 0
+        Top = 21
+        Width = 140
+        Height = 267
+        Align = alClient
+        ItemHeight = 13
+        TabOrder = 1
+        OnClick = lbConditionTypeListClick
+        OnDblClick = lbConditionTypeListDblClick
+      end
     end
   end
   object CreateEventsPanel: TPanel
@@ -1071,7 +1137,7 @@ object EventDialog: TEventDialog
     end
   end
   object pnEventExportMarker: TPanel
-    Left = 144
+    Left = 168
     Top = 3
     Width = 465
     Height = 16

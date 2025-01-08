@@ -245,6 +245,14 @@ type
     lblCondExprValue: TLabel;
     btnCondExprPlus: TButton;
     btnCondExprMinus: TButton;
+    pnEventTypeList: TPanel;
+    edEventTypeFilter: TEdit;
+    pnEventTypeFilter: TPanel;
+    lblEventTypeFilter: TLabel;
+    pnConditionTypeList: TPanel;
+    pnConditionTypeFilter: TPanel;
+    lblConditionTypeFilter: TLabel;
+    edConditionTypeFilter: TEdit;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -255,6 +263,7 @@ type
     // Event type list actions
     procedure lbEventTypeListClick(Sender: TObject);
     procedure lbEventTypeListDblClick(Sender: TObject);
+    procedure edEventTypeFilterChange(Sender: TObject);
     // Event grid actions
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure EventGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -341,6 +350,7 @@ type
     // Condition type list actions
     procedure lbConditionTypeListClick(Sender: TObject);
     procedure lbConditionTypeListDblClick(Sender: TObject);
+    procedure edConditionTypeFilterChange(Sender: TObject);
     // Condition grid actions
     procedure ConditionGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure ConditionGridDblClick(Sender: TObject);
@@ -387,6 +397,12 @@ type
     procedure lbSelectVariableListClick(Sender: TObject);
     procedure edSelectVariableNameChange(Sender: TObject);
   private
+    event_type_list_mapping: array[0..255] of integer;
+    event_category_first_type: integer;
+    event_category_last_type: integer;
+    condition_type_list_mapping: array[0..255] of integer;
+    condition_category_first_type: integer;
+    condition_category_last_type: integer;
     tmp_event: TEvent;
     tmp_condition: TCondition;
     selected_event: integer;
@@ -436,6 +452,7 @@ type
     // Fill data procedures
     procedure fill_grids;
     // Event-related procedures
+    procedure fill_event_type_list;
     procedure fill_event_grid_row(index: integer);
     procedure select_event(index: integer);
     procedure fill_event_ui;
@@ -452,6 +469,7 @@ type
     procedure create_message_var_controls;
     procedure create_cond_expr_controls;
     // Condition-related prodcedures
+    procedure fill_condition_type_list;
     procedure fill_condition_grid_row(index: integer);
     procedure select_condition(index: integer);
     procedure fill_condition_ui;
@@ -590,11 +608,11 @@ end;
 
 procedure TEventDialog.FormResize(Sender: TObject);
 begin
-  if ClientWidth >= (lbConditionTypeList.Left + lbConditionTypeList.Width + pnConditionFilter.Width) then
+  if ClientWidth >= (pnConditionTypeList.Left + pnConditionTypeList.Width + pnConditionFilter.Width) then
   begin
     pnConditionFilter.Parent := LowerPanel;
     pnConditionFilter.Top := 0;
-    pnConditionFilter.Left := lbConditionTypeList.Left + lbConditionTypeList.Width;
+    pnConditionFilter.Left := pnConditionTypeList.Left + pnConditionTypeList.Width;
   end else
   begin
     pnConditionFilter.Parent := EventDialog;
@@ -648,7 +666,22 @@ begin
 end;
 
 procedure TEventDialog.lbEventTypeListClick(Sender: TObject);
+var
+  category_num: integer;
 begin
+  if event_type_list_mapping[lbEventTypeList.ItemIndex] < 0 then
+  begin
+    category_num := event_type_list_mapping[lbEventTypeList.ItemIndex] * -1 - 1;
+    event_category_first_type := EventConfig.event_type_categories[category_num].first;
+    if (category_num + 1) < EventConfig.cnt_valid_event_type_categories then
+      event_category_last_type := EventConfig.event_type_categories[category_num + 1].first - 1
+    else
+      event_category_last_type := 255;
+  end else
+  begin
+    event_category_first_type := -1;
+    event_category_last_type := -1;
+  end;
   if Markseltype1.Checked then
     EventGrid.Invalidate;
 end;
@@ -657,7 +690,9 @@ procedure TEventDialog.lbEventTypeListDblClick(Sender: TObject);
 var
   newpos: integer;
 begin
-  newpos := Mission.add_event(selected_event + 1, EventConfig.event_type_mapping[lbEventTypeList.ItemIndex]);
+  if event_type_list_mapping[lbEventTypeList.ItemIndex] < 0 then
+    exit;
+  newpos := Mission.add_event(selected_event + 1, event_type_list_mapping[lbEventTypeList.ItemIndex]);
   if newpos <> -1 then
   begin
     fill_grids;
@@ -666,6 +701,11 @@ begin
     else
       EventGrid.Row := newpos + 1;
   end;
+end;
+
+procedure TEventDialog.edEventTypeFilterChange(Sender: TObject);
+begin
+  fill_event_type_list;
 end;
 
 procedure TEventDialog.EventGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -750,7 +790,7 @@ begin
     else
       EventGrid.Canvas.Brush.Color := $00E0E0;
   end
-  else if Markseltype1.Checked and (Mission.event_data[ARow - 1].event_type = EventConfig.event_type_mapping[lbEventTypeList.ItemIndex]) and (ARow - 1 < Mission.num_events) then
+  else if Markseltype1.Checked and ((Mission.event_data[ARow - 1].event_type = event_type_list_mapping[lbEventTypeList.ItemIndex]) or ((Mission.event_data[ARow - 1].event_type >= event_category_first_type) and (Mission.event_data[ARow - 1].event_type <= event_category_last_type))) and (ARow - 1 < Mission.num_events) then
   begin
     EventGrid.Canvas.Brush.Color := clYellow;
   end
@@ -1525,14 +1565,31 @@ begin
 end;
 
 procedure TEventDialog.lbConditionTypeListClick(Sender: TObject);
+var
+  category_num: integer;
 begin
+  if condition_type_list_mapping[lbConditionTypeList.ItemIndex] < 0 then
+  begin
+    category_num := condition_type_list_mapping[lbConditionTypeList.ItemIndex] * -1 - 1;
+    condition_category_first_type := EventConfig.condition_type_categories[category_num].first;
+    if (category_num + 1) < EventConfig.cnt_valid_condition_type_categories then
+      condition_category_last_type := EventConfig.condition_type_categories[category_num + 1].first - 1
+    else
+      condition_category_last_type := 255;
+  end else
+  begin
+    condition_category_first_type := -1;
+    condition_category_last_type := -1;
+  end;
   if Markseltype2.Checked then
     ConditionGrid.Invalidate;
 end;
 
 procedure TEventDialog.lbConditionTypeListDblClick(Sender: TObject);
 begin
-  if Mission.add_condition(EventConfig.condition_type_mapping[lbConditionTypeList.ItemIndex]) then
+  if condition_type_list_mapping[lbConditionTypeList.ItemIndex] < 0 then
+    exit;
+  if Mission.add_condition(condition_type_list_mapping[lbConditionTypeList.ItemIndex]) then
   begin
     fill_grids;
     if ConditionGrid.Row = Mission.num_conditions then
@@ -1540,6 +1597,11 @@ begin
     else
       ConditionGrid.Row := Mission.num_conditions;
   end;
+end;
+
+procedure TEventDialog.edConditionTypeFilterChange(Sender: TObject);
+begin
+  fill_condition_type_list;
 end;
 
 procedure TEventDialog.ConditionGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -1591,7 +1653,7 @@ begin
     exit;
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_condition) then
     exit;
-  if Markseltype2.Checked and (Mission.condition_data[ARow - 1].condition_type = EventConfig.condition_type_mapping[lbConditionTypeList.ItemIndex]) and (ARow - 1 < Mission.num_conditions) then
+  if Markseltype2.Checked and ((Mission.condition_data[ARow - 1].condition_type = condition_type_list_mapping[lbConditionTypeList.ItemIndex]) or ((Mission.condition_data[ARow - 1].condition_type >= condition_category_first_type) and (Mission.condition_data[ARow - 1].condition_type <= condition_category_last_type))) and (ARow - 1 < Mission.num_conditions) then
   begin
     ConditionGrid.Canvas.Brush.Color := clYellow;
     ConditionGrid.Canvas.FillRect(Rect);
@@ -2103,13 +2165,13 @@ begin
   for i := 0 to EventConfig.cnt_valid_event_types - 1 do
     tmp_strings.Add(inttostr(EventConfig.event_type_mapping[i]) + ' - ' + EventConfig.event_types[EventConfig.event_type_mapping[i]].name);
   cbxEventType.Items := tmp_strings;
-  lbEventTypeList.Items := tmp_strings;
+  fill_event_type_list;
   tmp_strings.Clear;
   // Initialize condition type list
   for i := 0 to EventConfig.cnt_valid_condition_types - 1 do
     tmp_strings.Add(inttostr(EventConfig.condition_type_mapping[i]) + ' - ' + EventConfig.condition_types[EventConfig.condition_type_mapping[i]].name);
   cbxConditionType.Items := tmp_strings;
-  lbConditionTypeList.Items := tmp_strings;
+  fill_condition_type_list;
   tmp_strings.Destroy;
 end;
 
@@ -2250,6 +2312,38 @@ begin
   if Markseltype2.Checked then
     ConditionGrid.Invalidate;
   loading := false;
+end;
+
+procedure TEventDialog.fill_event_type_list;
+var
+  i: integer;
+  tmp_strings: TStringList;
+  cnt_event_types, cnt_event_type_categories: integer;
+begin
+  tmp_strings := TStringList.Create;
+  cnt_event_types := 0;
+  cnt_event_type_categories := 0;
+  for i := 0 to EventConfig.cnt_valid_event_types - 1 do
+  begin
+    if (edEventTypeFilter.Text = '') and (cnt_event_type_categories < EventConfig.cnt_valid_event_type_categories) and (EventConfig.event_type_categories[cnt_event_type_categories].first = EventConfig.event_type_mapping[i]) then
+    begin
+      event_type_list_mapping[cnt_event_types] := (cnt_event_type_categories + 1) * -1;
+      Inc(cnt_event_types);
+      Inc(cnt_event_type_categories);
+    end;
+    if (edEventTypeFilter.Text = '') or AnsiContainsText(EventConfig.event_types[EventConfig.event_type_mapping[i]].name, edEventTypeFilter.Text) then
+    begin
+      event_type_list_mapping[cnt_event_types] := EventConfig.event_type_mapping[i];
+      Inc(cnt_event_types);
+    end;
+  end;
+  for i := 0 to cnt_event_types - 1 do
+    if event_type_list_mapping[i] >= 0 then
+      tmp_strings.Add(inttostr(event_type_list_mapping[i]) + ' - ' + EventConfig.event_types[event_type_list_mapping[i]].name)
+    else
+      tmp_strings.Add('=== ' + EventConfig.event_type_categories[event_type_list_mapping[i] * -1 - 1].name + ' ===');
+  lbEventTypeList.Items := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 procedure TEventDialog.fill_event_grid_row(index: integer);
@@ -2876,6 +2970,38 @@ begin
     cond_expr_var_btn[i].OnClick := btnCondExprVarBtnClick;
     cond_expr_var_btn[i].Parent := edpCondExpr;
   end;
+  tmp_strings.Destroy;
+end;
+
+procedure TEventDialog.fill_condition_type_list;
+var
+  i: integer;
+  tmp_strings: TStringList;
+  cnt_condition_types, cnt_condition_type_categories: integer;
+begin
+  tmp_strings := TStringList.Create;
+  cnt_condition_types := 0;
+  cnt_condition_type_categories := 0;
+  for i := 0 to EventConfig.cnt_valid_condition_types - 1 do
+  begin
+    if (edConditionTypeFilter.Text = '') and (cnt_condition_type_categories < EventConfig.cnt_valid_condition_type_categories) and (EventConfig.condition_type_categories[cnt_condition_type_categories].first = EventConfig.condition_type_mapping[i]) then
+    begin
+      condition_type_list_mapping[cnt_condition_types] := (cnt_condition_type_categories + 1) * -1;
+      Inc(cnt_condition_types);
+      Inc(cnt_condition_type_categories);
+    end;
+    if (edConditionTypeFilter.Text = '') or AnsiContainsText(EventConfig.condition_types[EventConfig.condition_type_mapping[i]].name, edConditionTypeFilter.Text) then
+    begin
+      condition_type_list_mapping[cnt_condition_types] := EventConfig.condition_type_mapping[i];
+      Inc(cnt_condition_types);
+    end;
+  end;
+  for i := 0 to cnt_condition_types - 1 do
+    if condition_type_list_mapping[i] >= 0 then
+      tmp_strings.Add(inttostr(condition_type_list_mapping[i]) + ' - ' + EventConfig.condition_types[condition_type_list_mapping[i]].name)
+    else
+      tmp_strings.Add('=== ' + EventConfig.condition_type_categories[condition_type_list_mapping[i] * -1 - 1].name + ' ===');
+  lbConditionTypeList.Items := tmp_strings;
   tmp_strings.Destroy;
 end;
 

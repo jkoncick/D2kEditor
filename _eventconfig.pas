@@ -112,6 +112,12 @@ type
     ctSpiceHarvested, ctFlag);
 
 type
+  TTypeCategory = record
+    name: String;
+    first: integer;
+  end;
+
+type
   TFilterCriteriaDefinition = record
     name: String;
     list_type: ListType;
@@ -140,10 +146,14 @@ type
     event_types: array[-1..255] of TEventTypeDefinition;
     event_type_mapping: array[0..255] of byte;
     cnt_valid_event_types: integer;
+    event_type_categories: array[0..31] of TTypeCategory;
+    cnt_valid_event_type_categories: integer;
     // Condition configuration
     condition_types: array[-1..255] of TConditionTypeDefinition;
     condition_type_mapping: array[0..255] of byte;
     cnt_valid_condition_types: integer;
+    condition_type_categories: array[0..31] of TTypeCategory;
+    cnt_valid_condition_type_categories: integer;
     // Filter criteria configuration
     filter_criteria: array[0..8] of TFilterCriteriaDefinitionArr;
     // Hook vars configuration
@@ -199,7 +209,7 @@ begin
   cnt_valid_event_types := 0;
   for i := 0 to tmp_strings.Count - 1 do
   begin
-    if i = Length(event_types) then
+    if (i = Length(event_types)) or (tmp_strings[i] = 'Categories') then
       break;
     // Skipped event type
     if tmp_strings[i][1] = '#' then
@@ -246,6 +256,16 @@ begin
     event_types[i].has_map_area := (event_types[i].coords[0].coord_type = ctArea) or (event_types[i].coords[0].coord_type = ctPointAndSize) or ((event_types[i].event_data >= edUnitFilter) and (event_types[i].event_data <= edTileFilter)) or (event_types[i].event_data = edAreaList);
     event_types[i].has_side := event_types[i].args[0].name = 'Side';
   end;
+  ini.ReadSection('Categories', tmp_strings);
+  cnt_valid_event_type_categories := 0;
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    if i = Length(event_type_categories) then
+      break;
+    inc(cnt_valid_event_type_categories);
+    event_type_categories[i].name := tmp_strings[i];
+    event_type_categories[i].first := ini.ReadInteger('Categories', tmp_strings[i], -1);
+  end;
   ini.Destroy;
   tmp_strings.Destroy;
 end;
@@ -269,7 +289,7 @@ begin
   cnt_valid_condition_types := 0;
   for i := 0 to tmp_strings.Count - 1 do
   begin
-    if i = Length(condition_types) then
+    if (i = Length(condition_types)) or (tmp_strings[i] = 'Categories') then
       break;
     // Skipped condition type
     if tmp_strings[i][1] = '#' then
@@ -311,6 +331,16 @@ begin
     condition_types[i].has_map_pos := (condition_types[i].coords[0].coord_type = ctPoint) and (condition_types[i].coords[0].marker <> ' ');
     condition_types[i].has_map_area := (condition_types[i].coords[0].coord_type = ctArea) or (condition_types[i].coords[0].coord_type = ctPointAndSize) or ((condition_types[i].condition_data >= cdUnitFilter) and (condition_types[i].condition_data <= cdTileFilter));
     condition_types[i].has_side := condition_types[i].args[0].name = 'Side';
+  end;
+  ini.ReadSection('Categories', tmp_strings);
+  cnt_valid_condition_type_categories := 0;
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    if i = Length(condition_type_categories) then
+      break;
+    inc(cnt_valid_condition_type_categories);
+    condition_type_categories[i].name := tmp_strings[i];
+    condition_type_categories[i].first := ini.ReadInteger('Categories', tmp_strings[i], -1);
   end;
   ini.Destroy;
   tmp_strings.Destroy;
