@@ -777,13 +777,37 @@ end;
 
 procedure TEventDialog.EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 var
+  i: integer;
+  is_separator: boolean;
+  event_note: string;
+  separator_color: integer;
   negation: boolean;
 begin
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) or (ARow - 1 >= Mission.num_events) then
     exit;
   if (goRangeSelect in EventGrid.Options) and (ARow >= EventGrid.Selection.Top) and (ARow <= EventGrid.Selection.Bottom) then
     exit;
-  if Markselcondition1.Checked and Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
+  event_note := IfThen(MissionIni.mission_ini_assigned, MissionIni.event_notes[ARow - 1], '');
+  is_separator := Length(event_note) > 0;
+  separator_color := 0;
+  for i := 1 to Length(event_note) do
+    if event_note[i] <> '=' then
+    begin
+      if (i > 1) and (event_note[i] = '#') then
+      begin
+        event_note := Copy(event_note, i+1, Length(event_note) - i);
+        separator_color := StrToIntDef('$' + event_note, 0);
+        break;
+      end else
+        is_separator := false;
+    end;
+  if ((Mission.event_data[ARow - 1].event_flags and 2) <> 0) and is_separator then
+  begin
+    EventGrid.Canvas.Brush.Color := ((separator_color and $ff) shl 16) or (separator_color and $ff00) or ((separator_color and $ff0000) shr 16);
+    EventGrid.Canvas.FillRect(Rect);
+    exit;
+  end
+  else if Markselcondition1.Checked and Mission.check_event_has_condition(ARow - 1, selected_condition, negation) then
   begin
     if not negation then
       EventGrid.Canvas.Brush.Color := clYellow
