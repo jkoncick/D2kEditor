@@ -124,11 +124,8 @@ type
     GridColorDialog: TColorDialog;
     N7: TMenuItem;
     Gridcolor1: TMenuItem;
-    Alwaysaskonquit1: TMenuItem;
-    Hidepresetwindow1: TMenuItem;
-    More1: TMenuItem;
+    Preferences1: TMenuItem;
     TileAttributeseditor1: TMenuItem;
-    Restrictpainting1: TMenuItem;
     Saveminimapimage1: TMenuItem;
     Reloadtileset1: TMenuItem;
     cbSelectAreaType: TComboBox;
@@ -139,11 +136,9 @@ type
     N13: TMenuItem;
     RemapTilesOpenDialog: TOpenDialog;
     Remaptiles1: TMenuItem;
-    Userandompaintmap1: TMenuItem;
     lblStructureName: TLabel;
     Structures1: TMenuItem;
     Structureseditor1: TMenuItem;
-    Translatestructurenames1: TMenuItem;
     N15: TMenuItem;
     Debugwindow1: TMenuItem;
     N12: TMenuItem;
@@ -259,7 +254,7 @@ type
     procedure Produceradarcolorfile1Click(Sender: TObject);
     procedure Structureseditor1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
-    procedure More1Click(Sender: TObject);
+    procedure Preferences1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
     procedure Shiftmap1Click(Sender: TObject);
     procedure Changestructureowner1Click(Sender: TObject);
@@ -419,7 +414,7 @@ implementation
 
 uses
   // Dialogs
-  set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window;
+  settings_dialog, set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window;
 
 {$R *.dfm}
 
@@ -524,11 +519,6 @@ begin
   Markdefenceareas1.Checked := Settings.MarkDefenceAreas;
   Showunknownspecials1.Checked := Settings.ShowUnknownSpecials;
   GridColorDialog.Color := Settings.GridColor;
-  Alwaysaskonquit1.Checked := Settings.AlwaysAskOnQuit;
-  Hidepresetwindow1.Checked := Settings.HidePresetWindow;
-  Restrictpainting1.Checked := Settings.RestrictPainting;
-  Userandompaintmap1.Checked := Settings.UseRandomPaintMap;
-  Translatestructurenames1.Checked := Settings.TranslateStructureNames;
   // Initialize documents in help menu
   help_doc_filenames := TStringList.Create;
   if FindFirst(current_dir + 'doc\*', 0, SR) = 0 then
@@ -1074,11 +1064,6 @@ begin
   3: begin Settings.ShowEventAreas := (Sender as TMenuItem).Checked; render_map; end;
   4: begin Settings.MarkDefenceAreas := (Sender as TMenuItem).Checked; render_map; end;
   5: begin Settings.ShowUnknownSpecials := (Sender as TMenuItem).Checked; render_map; render_cursor_image; end;
-  11: begin Settings.AlwaysAskOnQuit := (Sender as TMenuItem).Checked end;
-  12: begin Settings.HidePresetWindow := (Sender as TMenuItem).Checked end;
-  13: begin Settings.RestrictPainting := (Sender as TMenuItem).Checked end;
-  14: begin Settings.UseRandomPaintMap := (Sender as TMenuItem).Checked end;
-  15: begin Settings.TranslateStructureNames := (Sender as TMenuItem).Checked; Dispatcher.register_event(evSCTranslateStructureNames); end;
   20:
     begin
       if GridColorDialog.Execute then
@@ -1099,10 +1084,9 @@ begin
   end;
 end;
 
-procedure TMainWindow.More1Click(Sender: TObject);
+procedure TMainWindow.Preferences1Click(Sender: TObject);
 begin
-  ShowMessage('To change more advanced settings and preferences,'#13'edit the file D2kEditor.ini directly in a text editor.'#13#13+
-              'The file is saved each time you close the program.'#13'Close the program before you do any changes.');
+  SettingsDialog.Show;
 end;
 
 procedure TMainWindow.Setmapsize1Click(Sender: TObject);

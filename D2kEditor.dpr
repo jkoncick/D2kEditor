@@ -5,6 +5,7 @@ uses
   Forms,
   SysUtils,
   main in 'main.pas' {MainWindow},
+  settings_dialog in 'settings_dialog.pas' {SettingsDialog},
   set_dialog in 'set_dialog.pas' {SetDialog},
   tileset_dialog in 'tileset_dialog.pas' {TilesetDialog},
   block_preset_dialog in 'block_preset_dialog.pas' {BlockPresetDialog},
@@ -68,6 +69,7 @@ begin
   EventConfig := TEventConfig.Create;
   // Create forms
   Application.CreateForm(TMainWindow, MainWindow);
+  Application.CreateForm(TSettingsDialog, SettingsDialog);
   Application.CreateForm(TSetDialog, SetDialog);
   Application.CreateForm(TTilesetDialog, TilesetDialog);
   Application.CreateForm(TBlockPresetDialog, BlockPresetDialog);

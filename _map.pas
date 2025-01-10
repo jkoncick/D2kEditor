@@ -286,8 +286,6 @@ begin
   for x := 0 to map_width - 1 do
     for y := 0 to map_height - 1 do
       map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
-  if Settings.PreplaceWormSpawner then
-    map_data[0,0].special := Structures.misc_object_info[1].value;
   map_filename := '';
   map_loaded := true;
   map_modified := false;

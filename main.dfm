@@ -1288,39 +1288,9 @@ object MainWindow: TMainWindow
       object N7: TMenuItem
         Caption = '-'
       end
-      object Alwaysaskonquit1: TMenuItem
-        Tag = 11
-        AutoCheck = True
-        Caption = 'Always ask on quit'
-        OnClick = SettingChange
-      end
-      object Hidepresetwindow1: TMenuItem
-        Tag = 12
-        AutoCheck = True
-        Caption = 'Hide preset window'
-        OnClick = SettingChange
-      end
-      object Restrictpainting1: TMenuItem
-        Tag = 13
-        AutoCheck = True
-        Caption = 'Restrict painting'
-        OnClick = SettingChange
-      end
-      object Userandompaintmap1: TMenuItem
-        Tag = 14
-        AutoCheck = True
-        Caption = 'Use random paint map'
-        OnClick = SettingChange
-      end
-      object Translatestructurenames1: TMenuItem
-        Tag = 15
-        AutoCheck = True
-        Caption = 'Translate structure names'
-        OnClick = SettingChange
-      end
-      object More1: TMenuItem
-        Caption = 'More...'
-        OnClick = More1Click
+      object Preferences1: TMenuItem
+        Caption = 'Preferences...'
+        OnClick = Preferences1Click
       end
     end
     object Map1: TMenuItem

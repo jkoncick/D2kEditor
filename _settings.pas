@@ -39,7 +39,6 @@ type
     DefaultMisStartingMoney: integer;
     DefaultTilesetName: String;
     AssignMisFileToNewMap: boolean;
-    PreplaceWormSpawner: boolean;
 
     // File paths
     GameExecutable: String;
@@ -78,7 +77,7 @@ var
 implementation
 
 uses
-  SysUtils, StdCtrls, main, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
+  SysUtils, StdCtrls, main, settings_dialog, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
   mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window, _utils,
   Grids;
 
@@ -114,7 +113,6 @@ begin
   DefaultMisStartingMoney := ini.ReadInteger('Defaults', 'DefaultMisStartingMoney', 3000);
   DefaultTilesetName := ini.ReadString('Defaults', 'DefaultTilesetName', 'BLOXBGBS');
   AssignMisFileToNewMap := ini.ReadBool('Defaults', 'AssignMisFileToNewMap', true);
-  PreplaceWormSpawner := ini.ReadBool('Defaults', 'PreplaceWormSpawner', false);
   // Load file paths
   GamePath := ini.ReadString('Paths','GamePath','');
   GameExecutable := ini.ReadString('Paths','GameExecutable','');
@@ -130,6 +128,7 @@ var
   i: integer;
 begin
   // Load GUI settings for all other dialogs
+  load_window_position(SettingsDialog);
   load_window_position(TilesetDialog);
   load_window_position(BlockPresetDialog);
   load_window_position(SetDialog);
@@ -206,7 +205,6 @@ begin
   ini.WriteInteger('Defaults', 'DefaultMisStartingMoney', DefaultMisStartingMoney);
   ini.WriteString('Defaults', 'DefaultTilesetName', DefaultTilesetName);
   ini.WriteBool('Defaults', 'AssignMisFileToNewMap', AssignMisFileToNewMap);
-  ini.WriteBool('Defaults', 'PreplaceWormSpawner', PreplaceWormSpawner);
   // Save file paths
   ini.WriteString('Paths','GamePath',GamePath);
   ini.WriteString('Paths','GameExecutable',GameExecutable);
@@ -218,6 +216,7 @@ begin
   // Save GUI settings
   save_window_position(MainWindow);
   save_control_property_int(MainWindow.CbSelectStructures, 'State', Ord(MainWindow.CbSelectStructures.State));
+  save_window_position(SettingsDialog);
   save_window_position(TilesetDialog);
   save_window_position(BlockPresetDialog);
   save_window_position(SetDialog);
