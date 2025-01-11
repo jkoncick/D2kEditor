@@ -91,6 +91,7 @@ type
     paUpdateTileAtrEditor,
     paUpdateStructuresEditor,
     // Rendering
+    paResetMapBlocksDrawn,
     paRenderMap,
     paRenderMinimap,
     paRenderCursorImage,
@@ -129,7 +130,7 @@ var
 implementation
 
 uses
-  Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, main, set_dialog,
+  Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, _renderer, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
   tileatr_editor, structures_editor, debug_window;
@@ -140,7 +141,7 @@ procedure TDispatcher.register_event(event: TDispatcherRegisteredEvent);
 begin
   case event of
     // Map events
-    evMapLoad:                    pact := pact + [paUpdateMapDimensions, paUpdateMapName, paUpdateMapStats, paUpdateVariableNames, paRenderMap, paRenderMinimap];
+    evMapLoad:                    pact := pact + [paUpdateMapDimensions, paUpdateMapName, paUpdateMapStats, paUpdateVariableNames, paRenderMap, paRenderMinimap, paResetMapBlocksDrawn];
     evMapResize:                  pact := pact + [paUpdateMapDimensions, paUpdateMapStats, paUpdateEventMarkers, paUpdateEventAreas, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapShift:                   pact := pact + [paUpdateMapStats, paUpdateEventMarkers, paUpdateEventAreas, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapTilesModify:             pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap];
@@ -236,6 +237,7 @@ begin
   if paUpdateTileAtrEditor      in pact then TileAtrEditor.update_contents;
   if paUpdateStructuresEditor   in pact then StructuresEditor.update_contents;
   // Rendering
+  if paResetMapBlocksDrawn      in pact then Renderer.reset_map_blocks;
   if paRenderMap                in pact then MainWindow.render_map;
   if paRenderMinimap            in pact then MainWindow.render_minimap;
   if paRenderCursorImage        in pact then MainWindow.render_cursor_image;

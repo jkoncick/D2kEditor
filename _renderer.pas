@@ -2,7 +2,7 @@ unit _renderer;
 
 interface
 
-uses Graphics, Types, _map, _structures, _graphics, _utils;
+uses Graphics, Types, _map, _mission, _structures, _graphics, _utils;
 
 const constraint_type_color: array[0..8] of TColor = (clTeal, clOlive, clGray, clPurple, clTeal+$404040, clOlive+$404040, clGray+$404040, clPurple+$404040, clRed);
 const constraint_side_rect: array[0..3, 0..3] of integer = (
@@ -70,11 +70,17 @@ type
     bkup_rect: TRect;
     bkup_valid: boolean;
 
+    // Map block rendering variables
+    map_block_drawn: array[0..MAX_EVENTS-1] of boolean;
+
   public
     procedure init;
 
     procedure invalidate_init;
     procedure invalidate_map_tile(x, y: word);
+
+    procedure reset_map_blocks;
+    procedure toggle_map_block(index: integer);
 
     procedure render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
       data: TMapDataPtr; data_width, data_height: word;
@@ -102,7 +108,7 @@ var
 
 implementation
 
-uses SysUtils, Math, _mission, _tileset, _settings, _misai, _randomgen, _eventconfig;
+uses SysUtils, Math, _tileset, _settings, _misai, _randomgen, _eventconfig;
 
 procedure TRenderer.init;
 begin
@@ -132,6 +138,19 @@ begin
     inv_rect.Bottom := Max(inv_rect.Bottom, y);
   end;
   inv_nothing := false;
+end;
+
+procedure TRenderer.reset_map_blocks;
+var
+  i: integer;
+begin
+  for i := 0 to Length(map_block_drawn) - 1 do
+    map_block_drawn[i] := false;
+end;
+
+procedure TRenderer.toggle_map_block(index: integer);
+begin
+  map_block_drawn[index] := not map_block_drawn[index];
 end;
 
 procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
@@ -708,6 +727,38 @@ begin
         if event_area.condition_index <> -1 then
           cnv_target.TextOut(x * 32 + 3, y * 32 + 17, event_area.condition_marker + inttostr(event_area.condition_index));
       end;
+    cnv_target.Pen.Color := clBlack;
+    cnv_target.Font.Color := clBlack;
+  end;
+  // Draw map blocks
+  if Mission.mis_assigned then
+  begin
+    cnv_target.Pen.Style := psSolid;
+    cnv_target.Brush.Style := bsClear;
+    cnv_target.Pen.Color := clRed;
+    cnv_target.Font.Color := clRed;
+    for i := 0 to Mission.num_events - 1 do
+    begin
+      if not map_block_drawn[i] then
+        continue;
+      event := Addr(Mission.event_data[i]);
+      et := Addr(EventConfig.event_types[event.event_type]);
+      if et.event_data <> edTileBlock then
+      begin
+        map_block_drawn[i] := false;
+        continue;
+      end;
+      if ((event.coord_x[0] + event.coord_x[1] - 1) < cnv_left) or ((event.coord_y[0] + event.coord_y[1] - 1) < cnv_top) or (event.coord_x[0] >= (cnv_left + cnv_width)) or (event.coord_y[0] >= (cnv_top + cnv_height)) then
+        continue;
+      for y := 0 to event.coord_y[1] - 1 do
+        for x := 0 to event.coord_x[1] - 1 do
+        begin
+          tile := event.data[(y * event.coord_x[1] + x) * 2 + 1] + (event.data[(y * event.coord_x[1] + x) * 2 + 2] shl 8);
+          cnv_target.CopyRect(rect((event.coord_x[0] + x - cnv_left)*32,(event.coord_y[0] + y - cnv_top)*32,(event.coord_x[0] + x - cnv_left + 1)*32,(event.coord_y[0] + y - cnv_top + 1)*32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
+        end;
+      cnv_target.Rectangle((event.coord_x[0] - cnv_left)*32,(event.coord_y[0] - cnv_top)*32,(event.coord_x[0] + event.coord_x[1] - cnv_left)*32,(event.coord_y[0] + event.coord_y[1] - cnv_top)*32);
+      cnv_target.TextOut((event.coord_x[0] - cnv_left)*32 + 3, (event.coord_y[0] - cnv_top)*32 + 3, et.coords[0].marker + inttostr(i));
+    end;
     cnv_target.Pen.Color := clBlack;
     cnv_target.Font.Color := clBlack;
   end;

@@ -155,6 +155,7 @@ type
     condition_index: integer;
     event_marker: char;
     condition_marker: char;
+    is_map_block: boolean;
   end;
 
 // *****************************************************************************
@@ -616,6 +617,7 @@ begin
       // Fill event area data
       event_areas[x][y].event_index := i;
       event_areas[x][y].event_marker := marker;
+      event_areas[x][y].is_map_block := et.event_data = edTileBlock;
     end;
   end;
   // Process conditions

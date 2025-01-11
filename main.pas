@@ -1460,6 +1460,14 @@ begin
     finish_position_selection(map_x, map_x, map_y, map_y);
     exit;
   end;
+  // Toggling drawing of map blocks
+  if (Button = mbRight) and mode(mStructures) and not moving_disable and Showeventareas1.Checked and Mission.event_areas[map_x,map_y].is_map_block then
+  begin
+    Renderer.toggle_map_block(Mission.event_areas[map_x,map_y].event_index);
+    render_map;
+    mouse_already_clicked := false;
+    exit;
+  end;
   // Moving event areas
   if (Button = mbLeft) and mode(mStructures) and not moving_disable and Showeventareas1.Checked and ((Mission.event_areas[map_x,map_y].event_index <> -1) or (Mission.event_areas[map_x,map_y].condition_index <> -1)) then
   begin
