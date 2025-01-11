@@ -11,25 +11,34 @@ type
   TSettings = class
 
   public
-    // Preferences
+    // Preferences - UI Settings
     PreserveGUISettings: boolean;
-    RestrictPainting: boolean;
     HidePresetWindow: boolean;
+    AlwaysAskOnQuit: boolean;
+    TranslateStructureNames: boolean;
+    EventGridShowEmptyLines: boolean;
+    // Preferences - Editing Settings
+    RestrictPainting: boolean;
+    UseRandomPaintMap: boolean;
+    LoadCustomColoursBin: boolean;
     CheckMapErrorsOnSave: boolean;
     CheckMapErrorsOnTest: boolean;
-    AlwaysAskOnQuit: boolean;
+    // Preferences - Other settings
     LoadR16Image: boolean;
     LoadR8Image: boolean;
-    LoadCustomColoursBin: boolean;
-    UseHouseIDColors: boolean;
+    CleanUpExtraModFilesAfterLaunch: boolean;
+    // Preferences - Buttons below minimap
+    ShowGrid: boolean;
+    MarkImpassableTiles: boolean;
+    MarkBuildableTiles: boolean;
+    MarkOwnerSide: boolean;
     ShowEventMarkers: boolean;
     ShowEventAreas: boolean;
     MarkDefenceAreas: boolean;
+    ShowCrateMarkers: boolean;
+    // Preferences - Settings menu
+    UseHouseIDColors: boolean;
     ShowUnknownSpecials: boolean;
-    UseRandomPaintMap: boolean;
-    TranslateStructureNames: boolean;
-    CleanUpExtraModFilesAfterLaunch: boolean;
-    EventGridShowEmptyLines: boolean;
     GridColor: Cardinal;
 
     // Default values
@@ -87,40 +96,50 @@ var
 begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   // Load preferences
-  PreserveGUISettings := ini.ReadBool('Preferences', 'PreserveGUISettings', true);
-  RestrictPainting := ini.ReadBool('Preferences', 'RestrictPainting', true);
-  HidePresetWindow := ini.ReadBool('Preferences', 'HidePresetWindow', true);
-  CheckMapErrorsOnSave := ini.ReadBool('Preferences', 'CheckMapErrorsOnSave', true);
-  CheckMapErrorsOnTest := ini.ReadBool('Preferences', 'CheckMapErrorsOnTest', true);
-  AlwaysAskOnQuit := ini.ReadBool('Preferences', 'AlwaysAskOnQuit', true);
-  LoadR16Image := ini.ReadBool('Preferences', 'LoadR16Image', true);
-  LoadR8Image := ini.ReadBool('Preferences', 'LoadR8Image', true);
-  LoadCustomColoursBin := ini.ReadBool('Preferences', 'LoadCustomColoursBin', true);
-  UseHouseIDColors := ini.ReadBool('Preferences', 'UseHouseIDColors', false);
-  ShowEventMarkers := ini.ReadBool('Preferences', 'ShowEventMarkers', true);
-  ShowEventAreas := ini.ReadBool('Preferences', 'ShowEventAreas', false);
-  MarkDefenceAreas := ini.ReadBool('Preferences', 'MarkDefenceAreas', true);
-  ShowUnknownSpecials := ini.ReadBool('Preferences', 'ShowUnknownSpecials', false);
-  UseRandomPaintMap := ini.ReadBool('Preferences', 'UseRandomPaintMap', false);
-  TranslateStructureNames := ini.ReadBool('Preferences', 'TranslateStructureNames', false);
+  // Preferences - UI Settings
+  PreserveGUISettings     := ini.ReadBool   ('Preferences', 'PreserveGUISettings',      true);
+  HidePresetWindow        := ini.ReadBool   ('Preferences', 'HidePresetWindow',         true);
+  AlwaysAskOnQuit         := ini.ReadBool   ('Preferences', 'AlwaysAskOnQuit',          true);
+  TranslateStructureNames := ini.ReadBool   ('Preferences', 'TranslateStructureNames',  false);
+  EventGridShowEmptyLines := ini.ReadBool   ('Preferences', 'EventGridShowEmptyLines',  false);
+  // Preferences - Editing Settings
+  RestrictPainting        := ini.ReadBool   ('Preferences', 'RestrictPainting',         true);
+  UseRandomPaintMap       := ini.ReadBool   ('Preferences', 'UseRandomPaintMap',        false);
+  LoadCustomColoursBin    := ini.ReadBool   ('Preferences', 'LoadCustomColoursBin',     true);
+  CheckMapErrorsOnSave    := ini.ReadBool   ('Preferences', 'CheckMapErrorsOnSave',     true);
+  CheckMapErrorsOnTest    := ini.ReadBool   ('Preferences', 'CheckMapErrorsOnTest',     true);
+  // Preferences - Other settings
+  LoadR16Image            := ini.ReadBool   ('Preferences', 'LoadR16Image',             true);
+  LoadR8Image             := ini.ReadBool   ('Preferences', 'LoadR8Image',              true);
   CleanUpExtraModFilesAfterLaunch := ini.ReadBool('Preferences', 'CleanUpExtraModFilesAfterLaunch', false);
-  EventGridShowEmptyLines := ini.ReadBool('Preferences', 'EventGridShowEmptyLines', false);
-  GridColor := ini.ReadInteger('Preferences', 'GridColor', $000000);
+  // Preferences - Buttons below minimap
+  ShowGrid                := ini.ReadBool   ('Preferences', 'ShowGrid',                 false);
+  MarkImpassableTiles     := ini.ReadBool   ('Preferences', 'MarkImpassableTiles',      false);
+  MarkBuildableTiles      := ini.ReadBool   ('Preferences', 'MarkBuildableTiles',       false);
+  MarkOwnerSide           := ini.ReadBool   ('Preferences', 'MarkOwnerSide',            false);
+  ShowEventMarkers        := ini.ReadBool   ('Preferences', 'ShowEventMarkers',         false);
+  ShowEventAreas          := ini.ReadBool   ('Preferences', 'ShowEventAreas',           false);
+  MarkDefenceAreas        := ini.ReadBool   ('Preferences', 'MarkDefenceAreas',         false);
+  ShowCrateMarkers        := ini.ReadBool   ('Preferences', 'ShowCrateMarkers',         false);
+  // Preferences - Settings menu
+  UseHouseIDColors        := ini.ReadBool   ('Preferences', 'UseHouseIDColors',         false);
+  ShowUnknownSpecials     := ini.ReadBool   ('Preferences', 'ShowUnknownSpecials',      false);
+  GridColor               := ini.ReadInteger('Preferences', 'GridColor',                $000000);
   // Load default values
-  DefaultMapWidth := ini.ReadInteger('Defaults', 'DefaultMapWidth', 64);
-  DefaultMapHeight := ini.ReadInteger('Defaults', 'DefaultMapHeight', 64);
-  DefaultMisTechLevel := ini.ReadInteger('Defaults', 'DefaultMisTechLevel', 1);
-  DefaultMisStartingMoney := ini.ReadInteger('Defaults', 'DefaultMisStartingMoney', 3000);
-  DefaultTilesetName := ini.ReadString('Defaults', 'DefaultTilesetName', 'BLOXBGBS');
-  AssignMisFileToNewMap := ini.ReadBool('Defaults', 'AssignMisFileToNewMap', true);
+  DefaultMapWidth         := ini.ReadInteger('Defaults',    'DefaultMapWidth',          64);
+  DefaultMapHeight        := ini.ReadInteger('Defaults',    'DefaultMapHeight',         64);
+  DefaultMisTechLevel     := ini.ReadInteger('Defaults',    'DefaultMisTechLevel',      1);
+  DefaultMisStartingMoney := ini.ReadInteger('Defaults',    'DefaultMisStartingMoney',  3000);
+  DefaultTilesetName      := ini.ReadString ('Defaults',    'DefaultTilesetName',       'BLOXBGBS');
+  AssignMisFileToNewMap   := ini.ReadBool   ('Defaults',    'AssignMisFileToNewMap',    true);
   // Load file paths
-  GamePath := ini.ReadString('Paths','GamePath','');
-  GameExecutable := ini.ReadString('Paths','GameExecutable','');
-  MissionsPath := ini.ReadString('Paths','MissionsPath','');
+  GamePath                := ini.ReadString ('Paths',       'GamePath',                 '');
+  GameExecutable          := ini.ReadString ('Paths',       'GameExecutable',           '');
+  MissionsPath            := ini.ReadString ('Paths',       'MissionsPath',             '');
   determine_game_paths_from_path(current_dir);
   // Load recent files
   for i := 1 to cnt_recent_files do
-    RecentFiles[i] := ini.ReadString('RecentFiles', 'file' + inttostr(i), '');
+    RecentFiles[i]        := ini.ReadString ('RecentFiles', 'file' + inttostr(i),       '');
 end;
 
 procedure TSettings.load_postcreate_editor_settings;
@@ -179,36 +198,46 @@ var
 begin
   ini := TMemIniFile.Create(current_dir + 'D2kEditor.ini');
   // Save preferences
-  ini.WriteBool('Preferences', 'PreserveGUISettings', PreserveGUISettings);
-  ini.WriteBool('Preferences', 'RestrictPainting', RestrictPainting);
-  ini.WriteBool('Preferences', 'HidePresetWindow', HidePresetWindow);
-  ini.WriteBool('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);
-  ini.WriteBool('Preferences', 'CheckMapErrorsOnTest', CheckMapErrorsOnTest);
-  ini.WriteBool('Preferences', 'AlwaysAskOnQuit', AlwaysAskOnQuit);
-  ini.WriteBool('Preferences', 'LoadR16Image', LoadR16Image);
-  ini.WriteBool('Preferences', 'LoadR8Image', LoadR8Image);
-  ini.WriteBool('Preferences', 'LoadCustomColoursBin', LoadCustomColoursBin);
-  ini.WriteBool('Preferences', 'UseHouseIDColors', UseHouseIDColors);
-  ini.WriteBool('Preferences', 'ShowEventMarkers', ShowEventMarkers);
-  ini.WriteBool('Preferences', 'ShowEventAreas', ShowEventAreas);
-  ini.WriteBool('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);
-  ini.WriteBool('Preferences', 'ShowUnknownSpecials', ShowUnknownSpecials);
-  ini.WriteBool('Preferences', 'UseRandomPaintMap', UseRandomPaintMap);
-  ini.WriteBool('Preferences', 'TranslateStructureNames', TranslateStructureNames);
-  ini.WriteBool('Preferences', 'CleanUpExtraModFilesAfterLaunch', CleanUpExtraModFilesAfterLaunch);
-  ini.WriteBool('Preferences', 'EventGridShowEmptyLines', EventGridShowEmptyLines);
+  // Preferences - UI Settings
+  ini.WriteBool   ('Preferences', 'PreserveGUISettings', PreserveGUISettings);
+  ini.WriteBool   ('Preferences', 'HidePresetWindow', HidePresetWindow);
+  ini.WriteBool   ('Preferences', 'AlwaysAskOnQuit', AlwaysAskOnQuit);
+  ini.WriteBool   ('Preferences', 'TranslateStructureNames', TranslateStructureNames);
+  ini.WriteBool   ('Preferences', 'EventGridShowEmptyLines', EventGridShowEmptyLines);
+  // Preferences - Editing Settings
+  ini.WriteBool   ('Preferences', 'RestrictPainting', RestrictPainting);
+  ini.WriteBool   ('Preferences', 'UseRandomPaintMap', UseRandomPaintMap);
+  ini.WriteBool   ('Preferences', 'LoadCustomColoursBin', LoadCustomColoursBin);
+  ini.WriteBool   ('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);
+  ini.WriteBool   ('Preferences', 'CheckMapErrorsOnTest', CheckMapErrorsOnTest);
+  // Preferences - Other settings
+  ini.WriteBool   ('Preferences', 'LoadR16Image', LoadR16Image);
+  ini.WriteBool   ('Preferences', 'LoadR8Image', LoadR8Image);
+  ini.WriteBool   ('Preferences', 'CleanUpExtraModFilesAfterLaunch', CleanUpExtraModFilesAfterLaunch);
+  // Preferences - Buttons below minimap
+  ini.WriteBool   ('Preferences', 'ShowGrid', ShowGrid);
+  ini.WriteBool   ('Preferences', 'MarkImpassableTiles', MarkImpassableTiles);
+  ini.WriteBool   ('Preferences', 'MarkBuildableTiles', MarkBuildableTiles);
+  ini.WriteBool   ('Preferences', 'MarkOwnerSide', MarkOwnerSide);
+  ini.WriteBool   ('Preferences', 'ShowEventMarkers', ShowEventMarkers);
+  ini.WriteBool   ('Preferences', 'ShowEventAreas', ShowEventAreas);
+  ini.WriteBool   ('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);
+  ini.WriteBool   ('Preferences', 'ShowCrateMarkers', ShowCrateMarkers);
+  // Preferences - Settings menu
+  ini.WriteBool   ('Preferences', 'UseHouseIDColors', UseHouseIDColors);
+  ini.WriteBool   ('Preferences', 'ShowUnknownSpecials', ShowUnknownSpecials);
   ini.WriteInteger('Preferences', 'Gridcolor', GridColor);
   // Save default values
-  ini.WriteInteger('Defaults', 'DefaultMapWidth', DefaultMapWidth);
-  ini.WriteInteger('Defaults', 'DefaultMapHeight', DefaultMapHeight);
-  ini.WriteInteger('Defaults', 'DefaultMisTechLevel', DefaultMisTechLevel);
-  ini.WriteInteger('Defaults', 'DefaultMisStartingMoney', DefaultMisStartingMoney);
-  ini.WriteString('Defaults', 'DefaultTilesetName', DefaultTilesetName);
-  ini.WriteBool('Defaults', 'AssignMisFileToNewMap', AssignMisFileToNewMap);
+  ini.WriteInteger('Defaults',    'DefaultMapWidth', DefaultMapWidth);
+  ini.WriteInteger('Defaults',    'DefaultMapHeight', DefaultMapHeight);
+  ini.WriteInteger('Defaults',    'DefaultMisTechLevel', DefaultMisTechLevel);
+  ini.WriteInteger('Defaults',    'DefaultMisStartingMoney', DefaultMisStartingMoney);
+  ini.WriteString ('Defaults',    'DefaultTilesetName', DefaultTilesetName);
+  ini.WriteBool   ('Defaults',    'AssignMisFileToNewMap', AssignMisFileToNewMap);
   // Save file paths
-  ini.WriteString('Paths','GamePath',GamePath);
-  ini.WriteString('Paths','GameExecutable',GameExecutable);
-  ini.WriteString('Paths','MissionsPath',MissionsPath);
+  ini.WriteString ('Paths',       'GamePath',GamePath);
+  ini.WriteString ('Paths',       'GameExecutable',GameExecutable);
+  ini.WriteString ('Paths',       'MissionsPath',MissionsPath);
   // Save recent files
   for i := 1 to cnt_recent_files do
     if RecentFiles[i] <> '' then

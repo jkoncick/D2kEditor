@@ -85,7 +85,8 @@ type
     procedure render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
       data: TMapDataPtr; data_width, data_height: word;
       o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
-      o_use_house_id_colors, o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_unknown_specials,
+      o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_crate_markers,
+      o_use_house_id_colors, o_show_unknown_specials,
       o_rendering_optimization: boolean);
     function get_spice(var tile: TMapTile): integer;
     procedure draw_structure_image(cnv_target: TCanvas; dest_x, dest_y, min_x, min_y, max_x, max_y: integer; structure_image: TStructureImagePtr);
@@ -156,7 +157,8 @@ end;
 procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, cnv_width, cnv_height: word;
   data: TMapDataPtr; data_width, data_height: word;
   o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
-  o_use_house_id_colors, o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_unknown_specials,
+  o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_crate_markers,
+  o_use_house_id_colors, o_show_unknown_specials,
   o_rendering_optimization: boolean);
 var
   min_x, min_y, max_x, max_y: integer;
@@ -408,7 +410,7 @@ begin
         cnv_target.CopyRect(dest_rect, src_bitmap.Canvas, src_rect);
         cnv_target.CopyMode := cmSrcCopy;
         cnv_target.Brush.Style := bsClear;
-        if misc_obj_info.mark <> '' then
+        if (misc_obj_info.mark <> '') and o_show_crate_markers then
           cnv_target.TextOut(x*32 + 15 - cnv_target.TextWidth(misc_obj_info.mark) div 2, y * 32 + 2, misc_obj_info.mark);
       end else
       if structure_type = ST_BUILDING then

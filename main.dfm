@@ -142,6 +142,7 @@ object MainWindow: TMainWindow
       OnClick = SettingChange
     end
     object sbMarkImpassableTiles: TSpeedButton
+      Tag = 1
       Left = 46
       Top = 140
       Width = 38
@@ -155,6 +156,7 @@ object MainWindow: TMainWindow
       OnClick = SettingChange
     end
     object sbMarkBuildableTiles: TSpeedButton
+      Tag = 2
       Left = 84
       Top = 140
       Width = 38
@@ -168,7 +170,7 @@ object MainWindow: TMainWindow
       OnClick = SettingChange
     end
     object sbMarkOwnerSide: TSpeedButton
-      Tag = 24
+      Tag = 3
       Left = 122
       Top = 140
       Width = 38
@@ -181,11 +183,67 @@ object MainWindow: TMainWindow
       ShowHint = True
       OnClick = SettingChange
     end
+    object sbShowEventMarkers: TSpeedButton
+      Tag = 4
+      Left = 8
+      Top = 162
+      Width = 38
+      Height = 22
+      Hint = 'Show event markers (Ctrl+E)'
+      AllowAllUp = True
+      GroupIndex = 5
+      Caption = 'Event'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbShowEventAreas: TSpeedButton
+      Tag = 5
+      Left = 46
+      Top = 162
+      Width = 38
+      Height = 22
+      Hint = 'Show event areas (Ctrl+H)'
+      AllowAllUp = True
+      GroupIndex = 6
+      Caption = 'Area'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbMarkDefenceAreas: TSpeedButton
+      Tag = 6
+      Left = 84
+      Top = 162
+      Width = 38
+      Height = 22
+      Hint = 'Show defence areas (Ctrl+D)'
+      AllowAllUp = True
+      GroupIndex = 7
+      Caption = 'Def'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbShowCrateMarkers: TSpeedButton
+      Tag = 7
+      Left = 122
+      Top = 162
+      Width = 38
+      Height = 22
+      Hint = 'Show crate markers'
+      AllowAllUp = True
+      GroupIndex = 8
+      Caption = 'Crate'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
     object EditorPages: TPageControl
       Left = 1
-      Top = 164
+      Top = 188
       Width = 166
-      Height = 410
+      Height = 386
       ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
@@ -223,7 +281,7 @@ object MainWindow: TMainWindow
         end
         object StructPages: TPageControl
           Left = 0
-          Top = 24
+          Top = 0
           Width = 158
           Height = 358
           ActivePage = PageStructBasic
@@ -1244,44 +1302,21 @@ object MainWindow: TMainWindow
     object Settings1: TMenuItem
       Caption = 'Settings'
       object Usehouseidcolors1: TMenuItem
-        Tag = 1
+        Tag = 8
         AutoCheck = True
         Caption = 'Use house ID colors'
         ShortCut = 16457
         OnClick = SettingChange
       end
-      object Showeventmarkers1: TMenuItem
-        Tag = 2
-        AutoCheck = True
-        Caption = 'Show event markers'
-        Checked = True
-        ShortCut = 16453
-        OnClick = SettingChange
-      end
-      object Showeventareas1: TMenuItem
-        Tag = 3
-        AutoCheck = True
-        Caption = 'Show event areas'
-        ShortCut = 16456
-        OnClick = SettingChange
-      end
-      object Markdefenceareas1: TMenuItem
-        Tag = 4
-        AutoCheck = True
-        Caption = 'Mark defence areas'
-        Checked = True
-        ShortCut = 16452
-        OnClick = SettingChange
-      end
       object Showunknownspecials1: TMenuItem
-        Tag = 5
+        Tag = 9
         AutoCheck = True
         Caption = 'Show unknown specials'
         ShortCut = 16469
         OnClick = SettingChange
       end
       object Gridcolor1: TMenuItem
-        Tag = 20
+        Tag = 10
         Caption = 'Grid / Event areas color...'
         OnClick = SettingChange
       end
