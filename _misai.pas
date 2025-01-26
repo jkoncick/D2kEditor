@@ -20,6 +20,13 @@ type
 
   TDefenceAreaPtr = ^TDefenceArea;
 
+type
+  TAIHintEntry = record
+    min_offset: integer;
+    max_offset: integer;
+    hint: String;
+  end;
+
 const CNT_DEFENCE_AREAS = 5;
 const DEFENCE_AREA_SIZE = SizeOf(TDefenceArea);
 const DEFENCE_AREAS_COUNT_BYTE = 7505;
@@ -31,12 +38,14 @@ type
 
   public
     default_ai: TMisAISegment;
+    ai_hint_entries: array of TAIHintEntry;
   private
     misai_clipboard_format: cardinal;
   public
     // MisAI configuration related procedures
     procedure init;
     procedure load_default_ai;
+    procedure load_ai_help_ini;
     // MisAI segment manipulation procedures
     procedure init_misai_segment(var misai_segment: TMisAISegment; side_number: integer);
     procedure load_misai_segment(filename: String; var misai_segment: TMisAISegment);
@@ -56,6 +65,7 @@ uses Windows, Forms, SysUtils, Classes, IniFiles, Clipbrd, _utils, _structures;
 procedure TMisAI.init;
 begin
   load_default_ai;
+  load_ai_help_ini;
   // Register AI clipboard format
   misai_clipboard_format := RegisterClipboardFormat('D2kEditorMisAISegment');
 end;
@@ -68,6 +78,38 @@ begin
   if tmp_filename = '' then
     exit;
   load_misai_segment(tmp_filename, default_ai);
+end;
+
+procedure TMisAI.load_ai_help_ini;
+var
+  tmp_filename: String;
+  ini: TMemIniFile;
+  tmp_strings: TStringList;
+  decoder: TStringList;
+  i: integer;
+begin
+  tmp_filename := find_file('config\ai_help.ini', 'configuration');
+  if tmp_filename = '' then
+    exit;
+  tmp_strings := TStringList.Create;
+  decoder := TStringList.Create;
+  decoder.Delimiter := ',';
+  ini := TMemIniFile.Create(tmp_filename);
+  ini.ReadSection('AI_Help', tmp_strings);
+  SetLength(ai_hint_entries, tmp_strings.Count);
+  for i := 0 to tmp_strings.Count - 1 do
+  begin
+    decoder.DelimitedText := tmp_strings[i];
+    ai_hint_entries[i].min_offset := StrToInt(decoder[0]);
+    if decoder.Count > 1 then
+      ai_hint_entries[i].max_offset := StrToInt(decoder[1])
+    else
+      ai_hint_entries[i].max_offset := ai_hint_entries[i].min_offset;
+    ai_hint_entries[i].hint := StringReplace(ini.ReadString('AI_Help', tmp_strings[i], ''), '_', #13, [rfReplaceAll]);
+  end;
+  ini.Destroy;
+  decoder.Destroy;
+  tmp_strings.Destroy;
 end;
 
 procedure TMisAI.init_misai_segment(var misai_segment: TMisAISegment; side_number: integer);

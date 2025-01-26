@@ -1,5 +1,5 @@
 object MissionDialog: TMissionDialog
-  Left = 192
+  Left = 198
   Top = 80
   Width = 1024
   Height = 658
@@ -406,6 +406,22 @@ object MissionDialog: TMissionDialog
         TabOrder = 22
         OnClick = btnModsFolderOpenClick
       end
+      object pnAIHelp: TPanel
+        Left = 264
+        Top = 0
+        Width = 432
+        Height = 289
+        TabOrder = 23
+        Visible = False
+        object lblAIHelp: TLabel
+          Left = 8
+          Top = 8
+          Width = 417
+          Height = 273
+          AutoSize = False
+          WordWrap = True
+        end
+      end
     end
     object RulesAndStringsPanel: TPanel
       Left = 0
@@ -487,8 +503,22 @@ object MissionDialog: TMissionDialog
     Height = 631
     Align = alRight
     TabOrder = 1
-    TabWidth = 39
+    TabWidth = 36
     OnChange = AITabControlChange
+    object sbShowAIHelp: TSpeedButton
+      Left = 297
+      Top = 2
+      Width = 23
+      Height = 18
+      Hint = 'Show help for AI property'
+      AllowAllUp = True
+      GroupIndex = 1
+      Caption = '?'
+      ParentShowHint = False
+      ShowHint = True
+      Spacing = 0
+      OnClick = sbShowAIHelpClick
+    end
     object AIValueList: TValueListEditor
       Left = 4
       Top = 6
@@ -516,51 +546,6 @@ object MissionDialog: TMissionDialog
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 1
-      object btnImportAI: TButton
-        Left = 64
-        Top = 0
-        Width = 65
-        Height = 24
-        Caption = 'Import AI'
-        TabOrder = 0
-        OnClick = btnImportAIClick
-      end
-      object btnExportAI: TButton
-        Left = 0
-        Top = 0
-        Width = 65
-        Height = 24
-        Caption = 'Export AI'
-        TabOrder = 1
-        OnClick = btnExportAIClick
-      end
-      object btnCopyAI: TButton
-        Left = 136
-        Top = 0
-        Width = 65
-        Height = 24
-        Caption = 'Copy AI'
-        TabOrder = 2
-        OnClick = btnCopyAIClick
-      end
-      object btnPasteAI: TButton
-        Left = 200
-        Top = 0
-        Width = 65
-        Height = 24
-        Caption = 'Paste AI'
-        TabOrder = 3
-        OnClick = btnPasteAIClick
-      end
-      object cbDiffMode: TCheckBox
-        Left = 272
-        Top = 4
-        Width = 41
-        Height = 17
-        Caption = 'Diff'
-        TabOrder = 4
-        OnClick = cbDiffModeClick
-      end
       object pnSelectDefenceAreaFromMap: TPanel
         Left = 0
         Top = 0
@@ -579,6 +564,51 @@ object MissionDialog: TMissionDialog
           TabOrder = 0
           OnClick = btnSelectDefenceAreaFromMapClick
         end
+      end
+      object btnImportAI: TButton
+        Left = 64
+        Top = 0
+        Width = 64
+        Height = 24
+        Caption = 'Import AI'
+        TabOrder = 0
+        OnClick = btnImportAIClick
+      end
+      object btnExportAI: TButton
+        Left = 0
+        Top = 0
+        Width = 64
+        Height = 24
+        Caption = 'Export AI'
+        TabOrder = 1
+        OnClick = btnExportAIClick
+      end
+      object btnCopyAI: TButton
+        Left = 136
+        Top = 0
+        Width = 64
+        Height = 24
+        Caption = 'Copy AI'
+        TabOrder = 2
+        OnClick = btnCopyAIClick
+      end
+      object btnPasteAI: TButton
+        Left = 200
+        Top = 0
+        Width = 64
+        Height = 24
+        Caption = 'Paste AI'
+        TabOrder = 3
+        OnClick = btnPasteAIClick
+      end
+      object cbDiffMode: TCheckBox
+        Left = 272
+        Top = 4
+        Width = 41
+        Height = 17
+        Caption = 'Diff'
+        TabOrder = 4
+        OnClick = cbDiffModeClick
       end
     end
   end

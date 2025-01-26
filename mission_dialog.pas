@@ -73,6 +73,9 @@ type
     lblPlayersIni: TLabel;
     cbPlayersIni: TComboBox;
     btnModsFolderOpen: TButton;
+    sbShowAIHelp: TSpeedButton;
+    pnAIHelp: TPanel;
+    lblAIHelp: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
@@ -90,6 +93,7 @@ type
     procedure edTilesetNameChange(Sender: TObject);
     procedure edTileatrNameChange(Sender: TObject);
     // AI value editor events
+    procedure sbShowAIHelpClick(Sender: TObject);
     procedure AITabControlChange(Sender: TObject);
     procedure AIValueListStringsChange(Sender: TObject);
     procedure AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -228,6 +232,7 @@ begin
     AITabControl.Tabs.Add('');
   end;
   cbMapMusic.Items := EventDialog.cbMusicName.Items;
+  pnAIHelp.BringToFront;
   // Initialize list of TEXT.UIB files
   tmp_strings := TStringList.Create;
   if FindFirst(Settings.GamePath + '\Data\UI_DATA\*.UIB', 0, SR) = 0 then
@@ -357,6 +362,20 @@ begin
     store_c_string(edTileatrName.Text, Addr(Mission.tileatr_name), Length(Mission.tileatr_name));
 end;
 
+procedure TMissionDialog.sbShowAIHelpClick(Sender: TObject);
+var
+  i: integer;
+  b: boolean;
+begin
+  pnAIHelp.Visible := sbShowAIHelp.Down;
+  for i := 0 to Length(side_label_alleg) - 1 do
+    side_label_alleg[i].Visible := not sbShowAIHelp.Down;
+  lblTimeLimitHelp.Visible := not sbShowAIHelp.Down;
+  lblTilesetName.Visible := not sbShowAIHelp.Down;
+  lblTileatrName.Visible := not sbShowAIHelp.Down;
+  AIValueListSelectCell(Sender, AIValueList.Col, AIValueList.Row, b);
+end;
+
 procedure TMissionDialog.AITabControlChange(Sender: TObject);
 begin
   update_mis_ai_values;
@@ -400,8 +419,18 @@ end;
 procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
   prop: TGameStructMemberPtr;
+  help_text: string;
+  i: integer;
 begin
   prop := GameStructs.get_misai_property(ARow-1);
+  help_text := AIValueList.Cells[0, ARow] + #13;
+  for i := 0 to Length(MisAI.ai_hint_entries) - 1 do
+    if (prop.offset >= MisAI.ai_hint_entries[i].min_offset) and (prop.offset <= MisAI.ai_hint_entries[i].max_offset) then
+    begin
+      help_text := help_text + MisAI.ai_hint_entries[i].hint;
+      break;
+    end;
+  lblAIHelp.Caption := help_text;
   if (prop.offset < DEFENCE_AREAS_START_BYTE) or (prop.offset > DEFENCE_AREAS_END_BYTE) then
   begin
     pnSelectDefenceAreaFromMap.Visible := false;
