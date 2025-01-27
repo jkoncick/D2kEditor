@@ -37,6 +37,7 @@ type
 type
   TCoordDefinition = record
     name: String;
+    help_text: String;
     show_if: TShowIfDefinition;
     coord_type: CoordType;
     marker: char;
@@ -50,6 +51,7 @@ type
 type
   TArgDefinition = record
     name: String;
+    help_text: String;
     show_if: TShowIfDefinition;
     arg_type: ArgType;
     list_type: ListType;
@@ -68,6 +70,7 @@ type
 type
   TEventTypeDefinition = record
     name: String;
+    help_text: String;
     coords: array[0..3] of TCoordDefinition;
     args: array[0..6] of TArgDefinition;
     gamestruct_index: integer;
@@ -90,6 +93,7 @@ type
 type
   TConditionTypeDefinition = record
     name: String;
+    help_text: String;
     coords: array[0..1] of TCoordDefinition;
     args: array[0..6] of TArgDefinition;
     gamestruct_index: integer;
@@ -170,6 +174,9 @@ type
     procedure load_coord_definition(coord: TCoordDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
     procedure load_argument_definition(arg: TArgDefinitionPtr; ini: TMemIniFile; ini_sect: string; index: integer);
     procedure load_filter_criteria(ini: TMemIniFile; index: integer; object_name: string);
+  public
+    function get_event_type_help_text(event_type: integer): String;
+    function get_condition_type_help_text(condition_type: integer): String;
   end;
 
 function evaluate_show_if(show_if: TShowIfDefinitionPtr; data_ptr: Pointer; struct_def: TStructDefinitionPtr): boolean;
@@ -219,6 +226,7 @@ begin
     inc(cnt_valid_event_types);
     // Load name
     event_types[i].name := tmp_strings[i];
+    event_types[i].help_text := ini.ReadString(tmp_strings[i], 'help', '');
     // Load coords
     for j := 0 to Length(event_types[i].coords) - 1 do
       load_coord_definition(Addr(event_types[i].coords[j]), ini, tmp_strings[i], j);
@@ -299,6 +307,7 @@ begin
     inc(cnt_valid_condition_types);
     // Load name
     condition_types[i].name := tmp_strings[i];
+    condition_types[i].help_text := ini.ReadString(tmp_strings[i], 'help', '');
     // Load coords
     for j := 0 to Length(condition_types[i].coords) - 1 do
       load_coord_definition(Addr(condition_types[i].coords[j]), ini, tmp_strings[i], j);
@@ -411,6 +420,7 @@ var
 begin
   n := 'coord' + inttostr(index);
   coord.name := ini.ReadString(ini_sect, n + '.name', '');
+  coord.help_text := ini.ReadString(ini_sect, n + '.help', '');
   load_show_if_definition(Addr(coord.show_if), ini.ReadString(ini_sect, n + '.showif', ''));
   // Load coordinate type
   coord.coord_type := ctNone;
@@ -436,6 +446,7 @@ var
 begin
   n := 'arg' + inttostr(index);
   arg.name := ini.ReadString(ini_sect, n + '.name', '');
+  arg.help_text := ini.ReadString(ini_sect, n + '.help', '');
   load_show_if_definition(Addr(arg.show_if), ini.ReadString(ini_sect, n + '.showif', ''));
   // Load argument type
   arg.arg_type := atNone;
@@ -581,6 +592,36 @@ begin
     '>': result := value > show_if.value;
     '<': result := value < show_if.value;
   end;
+end;
+
+function TEventConfig.get_event_type_help_text(event_type: integer): String;
+var
+  et: TEventTypeDefinitionPtr;
+  i: integer;
+begin
+  et := Addr(event_types[event_type]);
+  result := et.name + #13 + StringReplace(et.help_text, '_', #13, [rfReplaceAll]) + #13#13;
+  for i := 0 to Length(et.coords) - 1 do
+    if et.coords[i].help_text <> '' then
+      result := result + et.coords[i].name + ': ' + StringReplace(et.coords[i].help_text, '_', #13, [rfReplaceAll]) + #13#13;
+  for i := 0 to Length(et.args) - 1 do
+    if et.args[i].help_text <> '' then
+      result := result + et.args[i].name + ': ' + StringReplace(et.args[i].help_text, '_', #13, [rfReplaceAll]) + #13#13;
+end;
+
+function TEventConfig.get_condition_type_help_text(condition_type: integer): String;
+var
+  ct: TConditionTypeDefinitionPtr;
+  i: integer;
+begin
+  ct := Addr(condition_types[condition_type]);
+  result := ct.name + #13 + StringReplace(ct.help_text, '_', #13, [rfReplaceAll]) + #13#13;
+  for i := 0 to Length(ct.coords) - 1 do
+    if ct.coords[i].help_text <> '' then
+      result := result + ct.coords[i].name + ': ' + StringReplace(ct.coords[i].help_text, '_', #13, [rfReplaceAll]) + #13#13;
+  for i := 0 to Length(ct.args) - 1 do
+    if ct.args[i].help_text <> '' then
+      result := result + ct.args[i].name + ': ' + StringReplace(ct.args[i].help_text, '_', #13, [rfReplaceAll]) + #13#13;
 end;
 
 end.

@@ -189,6 +189,19 @@ object EventDialog: TEventDialog
         Caption = 'Property:'
         Visible = False
       end
+      object sbShowEventHelp: TSpeedButton
+        Left = 208
+        Top = 0
+        Width = 28
+        Height = 18
+        Hint = 'Show help for this event type'
+        AllowAllUp = True
+        GroupIndex = 1
+        Caption = '?'
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = sbShowEventHelpClick
+      end
       object cbxEventType: TComboBox
         Left = 64
         Top = 24
@@ -210,16 +223,16 @@ object EventDialog: TEventDialog
       object cbEventAutoBlock: TCheckBox
         Left = 64
         Top = 0
-        Width = 97
+        Width = 81
         Height = 17
         Caption = 'Auto-block'
         TabOrder = 2
         OnClick = EventFlagsClick
       end
       object cbEventBlocked: TCheckBox
-        Left = 152
+        Left = 144
         Top = 0
-        Width = 89
+        Width = 57
         Height = 17
         Caption = 'Blocked'
         TabOrder = 3
@@ -987,6 +1000,19 @@ object EventDialog: TEventDialog
         Caption = 'Property:'
         Visible = False
       end
+      object sbShowConditionHelp: TSpeedButton
+        Left = 184
+        Top = 0
+        Width = 28
+        Height = 18
+        Hint = 'Show help for this condition type'
+        AllowAllUp = True
+        GroupIndex = 1
+        Caption = '?'
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = sbShowConditionHelpClick
+      end
       object cbxConditionType: TComboBox
         Left = 80
         Top = 24
@@ -1059,6 +1085,115 @@ object EventDialog: TEventDialog
         OnClick = lbConditionTypeListClick
         OnDblClick = lbConditionTypeListDblClick
       end
+    end
+  end
+  object pnEventExportMarker: TPanel
+    Left = 168
+    Top = 3
+    Width = 465
+    Height = 16
+    BevelOuter = bvNone
+    Color = clYellow
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -13
+    Font.Name = 'MS Sans Serif'
+    Font.Style = [fsBold]
+    ParentBackground = False
+    ParentFont = False
+    TabOrder = 3
+    Visible = False
+    object lblEventExportMarker: TLabel
+      Left = 0
+      Top = 0
+      Width = 461
+      Height = 16
+      Caption = 
+        'Select a contiguous range of events to export. Press Esc to canc' +
+        'el.'
+    end
+  end
+  object SelectVariablePanel: TPanel
+    Left = 168
+    Top = 0
+    Width = 185
+    Height = 329
+    TabOrder = 5
+    Visible = False
+    object lblSelectVariableList: TLabel
+      Left = 8
+      Top = 4
+      Width = 73
+      Height = 13
+      Caption = 'Select variable:'
+    end
+    object lbSelectVariableList: TListBox
+      Left = 8
+      Top = 20
+      Width = 169
+      Height = 229
+      ItemHeight = 13
+      TabOrder = 0
+      OnClick = lbSelectVariableListClick
+      OnDblClick = btnSelectVariableOkClick
+    end
+    object pnSelectVariableBottomPanel: TPanel
+      Left = 1
+      Top = 256
+      Width = 183
+      Height = 72
+      Align = alBottom
+      BevelOuter = bvNone
+      TabOrder = 1
+      object lblSelectVariableName: TLabel
+        Left = 8
+        Top = 0
+        Width = 107
+        Height = 13
+        Caption = 'Custom variable name:'
+      end
+      object edSelectVariableName: TEdit
+        Left = 8
+        Top = 16
+        Width = 169
+        Height = 21
+        TabOrder = 0
+        OnChange = edSelectVariableNameChange
+      end
+      object btnSelectVariableOk: TBitBtn
+        Left = 100
+        Top = 40
+        Width = 75
+        Height = 25
+        TabOrder = 1
+        OnClick = btnSelectVariableOkClick
+        Kind = bkOK
+      end
+      object btnSelectVariableCancel: TBitBtn
+        Left = 8
+        Top = 40
+        Width = 75
+        Height = 25
+        TabOrder = 2
+        OnClick = btnSelectVariableCancelClick
+        Kind = bkCancel
+      end
+    end
+  end
+  object pnEventHelp: TPanel
+    Left = 352
+    Top = 64
+    Width = 625
+    Height = 337
+    TabOrder = 6
+    Visible = False
+    object lblEventHelp: TLabel
+      Left = 8
+      Top = 8
+      Width = 609
+      Height = 321
+      AutoSize = False
+      WordWrap = True
     end
   end
   object CreateEventsPanel: TPanel
@@ -1136,32 +1271,6 @@ object EventDialog: TEventDialog
       TabOrder = 4
     end
   end
-  object pnEventExportMarker: TPanel
-    Left = 168
-    Top = 3
-    Width = 465
-    Height = 16
-    BevelOuter = bvNone
-    Color = clYellow
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -13
-    Font.Name = 'MS Sans Serif'
-    Font.Style = [fsBold]
-    ParentBackground = False
-    ParentFont = False
-    TabOrder = 3
-    Visible = False
-    object lblEventExportMarker: TLabel
-      Left = 0
-      Top = 0
-      Width = 461
-      Height = 16
-      Caption = 
-        'Select a contiguous range of events to export. Press Esc to canc' +
-        'el.'
-    end
-  end
   object pnConditionFilter: TPanel
     Left = 840
     Top = 96
@@ -1233,73 +1342,6 @@ object EventDialog: TEventDialog
       ReadOnly = True
       TabOrder = 5
       OnClick = edConditionFilterAmountVarClick
-    end
-  end
-  object SelectVariablePanel: TPanel
-    Left = 168
-    Top = 0
-    Width = 185
-    Height = 329
-    TabOrder = 5
-    Visible = False
-    object lblSelectVariableList: TLabel
-      Left = 8
-      Top = 4
-      Width = 73
-      Height = 13
-      Caption = 'Select variable:'
-    end
-    object lbSelectVariableList: TListBox
-      Left = 8
-      Top = 20
-      Width = 169
-      Height = 229
-      ItemHeight = 13
-      TabOrder = 0
-      OnClick = lbSelectVariableListClick
-      OnDblClick = btnSelectVariableOkClick
-    end
-    object pnSelectVariableBottomPanel: TPanel
-      Left = 1
-      Top = 256
-      Width = 183
-      Height = 72
-      Align = alBottom
-      BevelOuter = bvNone
-      TabOrder = 1
-      object lblSelectVariableName: TLabel
-        Left = 8
-        Top = 0
-        Width = 107
-        Height = 13
-        Caption = 'Custom variable name:'
-      end
-      object edSelectVariableName: TEdit
-        Left = 8
-        Top = 16
-        Width = 169
-        Height = 21
-        TabOrder = 0
-        OnChange = edSelectVariableNameChange
-      end
-      object btnSelectVariableOk: TBitBtn
-        Left = 100
-        Top = 40
-        Width = 75
-        Height = 25
-        TabOrder = 1
-        OnClick = btnSelectVariableOkClick
-        Kind = bkOK
-      end
-      object btnSelectVariableCancel: TBitBtn
-        Left = 8
-        Top = 40
-        Width = 75
-        Height = 25
-        TabOrder = 2
-        OnClick = btnSelectVariableCancelClick
-        Kind = bkCancel
-      end
     end
   end
   object EventGridPopupMenu: TPopupMenu

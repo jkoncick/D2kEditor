@@ -253,6 +253,10 @@ type
     pnConditionTypeFilter: TPanel;
     lblConditionTypeFilter: TLabel;
     edConditionTypeFilter: TEdit;
+    pnEventHelp: TPanel;
+    lblEventHelp: TLabel;
+    sbShowEventHelp: TSpeedButton;
+    sbShowConditionHelp: TSpeedButton;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -294,6 +298,7 @@ type
     // Event properties panel actions
     procedure cbxEventTypeChange(Sender: TObject);
     procedure EventFlagsClick(Sender: TObject);
+    procedure sbShowEventHelpClick(Sender: TObject);
     procedure cbxEventGameStructMemberChange(Sender: TObject);
     // Event data panel actions
     // -- Value List
@@ -368,6 +373,7 @@ type
     procedure MarkConditionsClick(Sender: TObject);
     // Condition properties panel actions
     procedure cbxConditionTypeChange(Sender: TObject);
+    procedure sbShowConditionHelpClick(Sender: TObject);
     procedure cbxConditionGameStructMemberChange(Sender: TObject);
     // Condition filter panel actions
     procedure seConditionFilterAmountChange(Sender: TObject);
@@ -451,6 +457,7 @@ type
     procedure enable_mission_ini_features;
     // Fill data procedures
     procedure fill_grids;
+    procedure fill_event_help_text;
     // Event-related procedures
     procedure fill_event_type_list;
     procedure fill_event_grid_row(index: integer);
@@ -621,6 +628,7 @@ begin
   end;
   SelectVariablePanel.Height := EventGrid.Height;
   lbSelectVariableList.Height := SelectVariablePanel.Height - pnSelectVariableBottomPanel.Height - lbSelectVariableList.Top - 4;
+  pnEventHelp.Top := EventGrid.Height - pnEventHelp.Height;
 end;
 
 procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1010,6 +1018,13 @@ begin
     tmp_event.event_flags := tmp_event.event_flags or 2;
   if rbEventConditionsOr.Checked then
     tmp_event.event_flags := tmp_event.event_flags or 4;
+end;
+
+procedure TEventDialog.sbShowEventHelpClick(Sender: TObject);
+begin
+  sbShowConditionHelp.Down := false;
+  pnEventHelp.Visible := sbShowEventHelp.Down;
+  fill_event_help_text;
 end;
 
 procedure TEventDialog.cbxEventGameStructMemberChange(Sender: TObject);
@@ -1762,6 +1777,13 @@ begin
   change_condition_type(EventConfig.condition_type_mapping[cbxConditionType.ItemIndex]);
 end;
 
+procedure TEventDialog.sbShowConditionHelpClick(Sender: TObject);
+begin
+  sbShowEventHelp.Down := false;
+  pnEventHelp.Visible := sbShowConditionHelp.Down;
+  fill_event_help_text;
+end;
+
 procedure TEventDialog.cbxConditionGameStructMemberChange(Sender: TObject);
 var
   ct: TConditionTypeDefinitionPtr;
@@ -2338,6 +2360,24 @@ begin
   loading := false;
 end;
 
+procedure TEventDialog.fill_event_help_text;
+begin
+  if sbShowEventHelp.Down  then
+  begin
+    if cbxEventType.Enabled then
+      lblEventHelp.Caption := EventConfig.get_event_type_help_text(EventConfig.event_type_mapping[cbxEventType.ItemIndex])
+    else
+      lblEventHelp.Caption := '';
+  end
+  else if sbShowConditionHelp.Down then
+  begin
+    if cbxConditionType.Enabled then
+      lblEventHelp.Caption := EventConfig.get_condition_type_help_text(EventConfig.condition_type_mapping[cbxConditionType.ItemIndex])
+    else
+      lblEventHelp.Caption := '';
+  end;
+end;
+
 procedure TEventDialog.fill_event_type_list;
 var
   i: integer;
@@ -2451,6 +2491,7 @@ begin
   loading := false;
   edEventNote.Enabled := event_valid;
   fill_event_ui;
+  fill_event_help_text;
   selected_event_had_counterpart := event_valid and (Mission.event_indentation[index].counterpart_event <> -1);
 end;
 
@@ -2785,6 +2826,7 @@ begin
   if (old_et.event_data <> new_et.event_data) then
     FillChar(tmp_event.data, Length(tmp_event.data), 0);
   fill_event_ui;
+  fill_event_help_text;
 end;
 
 procedure TEventDialog.apply_event_changes;
@@ -3080,6 +3122,7 @@ begin
   cbxConditionType.Enabled := condition_valid;
   edConditionNote.Enabled := condition_valid;
   fill_condition_ui;
+  fill_event_help_text;
   if Markselcondition1.Checked then
     EventGrid.Invalidate;
 end;
@@ -3224,6 +3267,7 @@ begin
       tmp_condition.coord_y[i] := new_ct.coords[i].default;
     end;
   fill_condition_ui;
+  fill_event_help_text;
 end;
 
 procedure TEventDialog.apply_condition_changes;
