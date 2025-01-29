@@ -2005,7 +2005,6 @@ object StructuresEditor: TStructuresEditor
           OnChange = RedrawUnitPreview
         end
         object cbUnitIsInfantry: TCheckBox
-          Tag = 512
           Left = 8
           Top = 64
           Width = 73
@@ -2015,7 +2014,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbUnitFlagUF_STEALTH: TCheckBox
           Tag = 16
-          Left = 128
+          Left = 184
           Top = 88
           Width = 57
           Height = 17
@@ -2025,7 +2024,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbUnitFlagUF_SELFHEALING: TCheckBox
           Tag = 8388608
-          Left = 8
+          Left = 96
           Top = 88
           Width = 73
           Height = 17
@@ -2049,7 +2048,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbUnitFlagUF_NO_AI: TCheckBox
           Tag = 2048
-          Left = 224
+          Left = 248
           Top = 88
           Width = 49
           Height = 17
@@ -2061,6 +2060,19 @@ object StructuresEditor: TStructuresEditor
           ShowHint = True
           TabOrder = 8
           OnClick = UnitFlagCheckboxChange
+        end
+        object cbUnitNotEdible: TCheckBox
+          Left = 8
+          Top = 88
+          Width = 73
+          Height = 17
+          Hint = 
+            'Unit cannot be eaten by sandworm and is not targeted by sandworm' +
+            '.'
+          Caption = 'Not edible'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 9
         end
       end
       object gbUnitMovement: TGroupBox

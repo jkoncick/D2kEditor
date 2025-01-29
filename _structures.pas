@@ -73,7 +73,8 @@ type
     MovementRestrictionTerrain: byte;
     CustomDeathSoundNumber:     byte;
     CustomDeathSound:           cardinal;
-    _ZeroBytes:                 array[0..63] of byte;
+    NotEdible:                  byte;
+    _ZeroBytes:                 array[0..62] of byte;
   end;
 
   TUnitTemplatePtr = ^TUnitTemplate;

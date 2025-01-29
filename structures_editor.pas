@@ -622,6 +622,7 @@ type
     lblUnitCustomDeathSoundNumber: TLabel;
     edUnitMovementRestrictionTerrain: TEdit;
     edBuildingBuildRestrictionTerrain: TEdit;
+    cbUnitNotEdible: TCheckBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -3087,6 +3088,7 @@ begin
   seUnitSightRadius.Value := unt.SightRadius;
   cbxUnitHealthBarSize.ItemIndex := unt.HealthBarSize;
   cbUnitIsInfantry.Checked := unt.IsInfantry <> 0;
+  cbUnitNotEdible.Checked := unt.NotEdible <> 0;
   cbxUnitSpecialBehavior.ItemIndex := unt.SpecialBehavior;
   // Movement group box
   edUnitSpeed.Text := inttostr(unt.Speed shr 12);
@@ -3467,6 +3469,7 @@ begin
   unt.SightRadius := seUnitSightRadius.Value;
   unt.HealthBarSize := cbxUnitHealthBarSize.ItemIndex;
   unt.IsInfantry := IfThen(cbUnitIsInfantry.Checked, 1, 0);
+  unt.NotEdible := IfThen(cbUnitNotEdible.Checked, 1, 0);
   unt.SpecialBehavior := cbxUnitSpecialBehavior.ItemIndex;
   // Movement group box
   unt.Speed := strtointdef(edUnitSpeed.Text, 0) shl 12;
