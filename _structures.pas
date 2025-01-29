@@ -70,7 +70,7 @@ type
     SecondaryWeaponNoAutoAttack:byte;
     SecondaryWeaponShootOffset: byte;
     SecondaryWeaponShootAngle:  byte;
-    _ZeroPadding:               byte;
+    MovementRestrictionTerrain: byte;
     CustomDeathSoundNumber:     byte;
     CustomDeathSound:           cardinal;
     _ZeroBytes:                 array[0..63] of byte;
@@ -162,7 +162,8 @@ type
     SecondaryWeaponDoubleShot:  byte;
     SecondaryWeaponShootOffset: byte;
     SecondaryWeaponShootAngle:  byte;
-    _ZeroBytes:                 array[0..113] of byte;
+    BuildRestrictionTerrain:    byte;
+    _ZeroBytes:                 array[0..112] of byte;
   end;
 
   TBuildingTemplatePtr = ^TBuildingTemplate;

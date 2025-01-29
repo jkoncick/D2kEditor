@@ -570,7 +570,6 @@ type
     cbxUnitMovementRestriction: TComboBox;
     lblBuildingBuildMaxDistance: TLabel;
     seBuildingBuildMaxDistance: TSpinEdit;
-    lblBuildingBuildMaxDistanceHint: TLabel;
     lblImagePaletteColorIndex: TLabel;
     btnImagePaletteSetDefaultColors: TButton;
     btnImagePaletteRemapColors: TButton;
@@ -621,6 +620,8 @@ type
     lblUnitCustomDeathSound: TLabel;
     seUnitCustomDeathSoundNumber: TSpinEdit;
     lblUnitCustomDeathSoundNumber: TLabel;
+    edUnitMovementRestrictionTerrain: TEdit;
+    edBuildingBuildRestrictionTerrain: TEdit;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -3023,6 +3024,7 @@ begin
   seBuildingExitPoint2X.Value := bld.ExitPoint2X;
   seBuildingExitPoint2Y.Value := bld.ExitPoint2Y;
   cbxBuildingBuildRestriction.ItemIndex := bld.BuildRestriction;
+  edBuildingBuildRestrictionTerrain.Text := IntToBin(bld.BuildRestrictionTerrain, 8);
   seBuildingBuildMaxDistance.Value := bld.BuildMaxDistance;
   // Others and unknown group box
   edBuildingFlags.Text := IntToHex(bld.Flags, 8);
@@ -3092,6 +3094,7 @@ begin
   seUnitUnitRotationSpeed.Value := unt.UnitRotationSpeed;
   cbUnitCanCrushInfantry.Checked := unt.CanCrushInfantry <> 0;
   cbxUnitMovementRestriction.ItemIndex := unt.MovementRestriction;
+  edUnitMovementRestrictionTerrain.Text := IntToBin(unt.MovementRestrictionTerrain, 8);
   // Weapons group box
   cbxUnitPrimaryWeapon.ItemIndex := unt.PrimaryWeapon + 1;
   cbxUnitSecondaryWeapon.ItemIndex := unt.SecondaryWeapon + 1;
@@ -3416,6 +3419,7 @@ begin
   bld.ExitPoint2X := seBuildingExitPoint2X.Value;
   bld.ExitPoint2Y := seBuildingExitPoint2Y.Value;
   bld.BuildRestriction := cbxBuildingBuildRestriction.ItemIndex;
+  bld.BuildRestrictionTerrain := BinToInt(edBuildingBuildRestrictionTerrain.Text);
   bld.BuildMaxDistance := seBuildingBuildMaxDistance.Value;
   // Others and unknown group box
   bld.Flags := strtointdef('$' + edBuildingFlags.Text, 0);
@@ -3470,6 +3474,7 @@ begin
   unt.UnitRotationSpeed := seUnitUnitRotationSpeed.Value;
   unt.CanCrushInfantry := IfThen(cbUnitCanCrushInfantry.Checked, 1, 0);
   unt.MovementRestriction := cbxUnitMovementRestriction.ItemIndex;
+  unt.MovementRestrictionTerrain := BinToInt(edUnitMovementRestrictionTerrain.Text);
   // Weapons group box
   unt.PrimaryWeapon := cbxUnitPrimaryWeapon.ItemIndex - 1;
   unt.SecondaryWeapon := cbxUnitSecondaryWeapon.ItemIndex - 1;

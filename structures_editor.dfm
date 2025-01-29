@@ -480,14 +480,14 @@ object StructuresEditor: TStructuresEditor
         TabOrder = 4
         object imgBuildingTilesOccupiedAll: TImage
           Left = 8
-          Top = 32
+          Top = 30
           Width = 63
           Height = 63
           OnMouseDown = imgBuildingTilesOccupiedAllMouseDown
         end
         object imgBuildingTilesOccupiedSolid: TImage
           Left = 88
-          Top = 33
+          Top = 30
           Width = 63
           Height = 63
           OnMouseDown = imgBuildingTilesOccupiedSolidMouseDown
@@ -521,25 +521,18 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Exit point 2  X / Y:'
         end
         object lblBuildingBuildRestriction: TLabel
-          Left = 96
+          Left = 88
           Top = 100
-          Width = 74
+          Width = 39
           Height = 13
-          Caption = 'Build restriction:'
+          Caption = 'Restrict:'
         end
         object lblBuildingBuildMaxDistance: TLabel
-          Left = 184
+          Left = 216
           Top = 100
           Width = 66
           Height = 13
           Caption = 'Max distance:'
-        end
-        object lblBuildingBuildMaxDistanceHint: TLabel
-          Left = 228
-          Top = 116
-          Width = 50
-          Height = 13
-          Caption = '0 = default'
         end
         object seBuildingExitPoint1X: TSpinEdit
           Left = 160
@@ -610,7 +603,7 @@ object StructuresEditor: TStructuresEditor
           Tag = 2097152
           Left = 8
           Top = 100
-          Width = 73
+          Width = 65
           Height = 17
           Hint = 
             'Building has skirt on tiles below it - only for 2 or 3 tiles wid' +
@@ -635,38 +628,32 @@ object StructuresEditor: TStructuresEditor
           OnClick = BuildingFlagCheckboxChange
         end
         object cbxBuildingBuildRestriction: TComboBox
-          Left = 96
-          Top = 116
+          Left = 132
+          Top = 98
           Width = 77
           Height = 21
           Hint = 
-            'Type of terrain the building can be built on (buildings on diffe' +
-            'rent terrain than Buildable won'#39't provide build radius)'
+            'Customizable building placement restrictions.'#13'Normal = Default b' +
+            'ehavior (building can be built on tiles with build-on attribute)' +
+            '.'#13'Or = In addition to tiles with build-on attribute, building ca' +
+            'n be built also on tiles with specified terrain types.'#13'And = Bui' +
+            'lding can be built on tiles having build-on attribute and being ' +
+            'one of specified terrain types at same time.'#13'Terrain = Building ' +
+            'can be built only on tiles with specified terrain types.'#13'Buildin' +
+            'gs built on tiles without build-on attribute won'#39't provide build' +
+            ' radius.'
           Style = csDropDownList
           ItemHeight = 13
           ParentShowHint = False
           ShowHint = True
           TabOrder = 6
           Items.Strings = (
-            'Buildable'
-            'Terrain 1'
-            'Terrain 2'
-            'Terrain 3'
-            'Terrain 4'
-            'Terrain 5'
-            'Terrain 6'
-            'Terrain 7'
-            'Anywhere'
-            'Ter.bit 1'
-            'Ter.bit 2'
-            'Ter.bit 1+2'
-            'Ter.bit 3'
-            'Ter.bit 3+1'
-            'Ter.bit 3+2'
-            'Sandy')
+            'Normal or'
+            'Normal and'
+            'Terrain')
         end
         object seBuildingBuildMaxDistance: TSpinEdit
-          Left = 184
+          Left = 216
           Top = 116
           Width = 41
           Height = 22
@@ -681,6 +668,20 @@ object StructuresEditor: TStructuresEditor
           ShowHint = True
           TabOrder = 7
           Value = 0
+        end
+        object edBuildingBuildRestrictionTerrain: TEdit
+          Left = 132
+          Top = 120
+          Width = 77
+          Height = 21
+          Hint = 
+            'List of terrain types.'#13'It'#39's a binary number with 8 digits (0 or ' +
+            '1), each digit is for one terrain type,'#13'leftmost is terrain 0 an' +
+            'd rightmost is terrain 7.'
+          MaxLength = 8
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 8
         end
       end
       object gbBuildingProperties: TGroupBox
@@ -2092,10 +2093,10 @@ object StructuresEditor: TStructuresEditor
         end
         object lblUnitMovementRestriction: TLabel
           Left = 220
-          Top = 12
+          Top = 8
           Width = 53
-          Height = 26
-          Caption = 'Movement'#13'Restriction:'
+          Height = 13
+          Caption = 'Restriction:'
         end
         object lblUnitCanCrushInfantry: TLabel
           Left = 146
@@ -2155,34 +2156,45 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxUnitMovementRestriction: TComboBox
           Left = 220
-          Top = 40
+          Top = 24
           Width = 77
           Height = 21
           Hint = 
-            'Units with different than Normal movement won'#39't be carried by ca' +
-            'rryalls'
+            'Customizable unit movement restrictions.'#13'Normal = Default behavi' +
+            'or (unit can move on tiles with walk-on or drive-on attribute re' +
+            'spectively).'#13'Sandy = Unit can move on tiles with sandy attribute' +
+            ' (like a sandworm).'#13'Or = In addition to tiles where unit can nor' +
+            'mally move, it will also be able to move on tiles with specified' +
+            ' terrain types.'#13'And = Unit can move on tiles where it can normal' +
+            'ly move, which must also be one of specified terrain types.'#13'Terr' +
+            'ain = Unit can move only on tiles with specified terrain types.'#13 +
+            'Units with other than "Normal or" restriction won'#39't be picked up' +
+            ' by carryalls.'
           Style = csDropDownList
           ItemHeight = 13
           ParentShowHint = False
           ShowHint = True
           TabOrder = 4
           Items.Strings = (
-            'Normal'
-            'Terrain 1'
-            'Terrain 2'
-            'Terrain 3'
-            'Terrain 4'
-            'Terrain 5'
-            'Terrain 6'
-            'Terrain 7'
-            'Anywhere'
-            'Ter.bit 1'
-            'Ter.bit 2'
-            'Ter.bit 1+2'
-            'Ter.bit 3'
-            'Ter.bit 3+1'
-            'Ter.bit 3+2'
-            'Sandy')
+            'Normal or'
+            'Normal and'
+            'Sandy or'
+            'Sandy and'
+            'Terrain')
+        end
+        object edUnitMovementRestrictionTerrain: TEdit
+          Left = 220
+          Top = 46
+          Width = 77
+          Height = 21
+          Hint = 
+            'List of terrain types.'#13'It'#39's a binary number with 8 digits (0 or ' +
+            '1), each digit is for one terrain type,'#13'leftmost is terrain 0 an' +
+            'd rightmost is terrain 7.'
+          MaxLength = 8
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 5
         end
       end
       object gbUnitWeapons: TGroupBox
