@@ -820,6 +820,9 @@ begin
     ord('M'): begin sbMarkImpassableTiles.Down := not sbMarkImpassableTiles.Down; SettingChange(sbMarkImpassableTiles); end;
     ord('B'): begin sbMarkBuildableTiles.Down := not sbMarkBuildableTiles.Down; SettingChange(sbMarkBuildableTiles); end;
     ord('W'): begin sbMarkOwnerSide.Down := not sbMarkOwnerSide.Down; SettingChange(sbMarkOwnerSide); end;
+    ord('E'): begin sbShowEventMarkers.Down := not sbShowEventMarkers.Down; SettingChange(sbShowEventMarkers); end;
+    ord('H'): begin sbShowEventAreas.Down := not sbShowEventAreas.Down; SettingChange(sbShowEventAreas); end;
+    ord('D'): begin sbMarkDefenceAreas.Down := not sbMarkDefenceAreas.Down; SettingChange(sbMarkDefenceAreas); end;
     end;
   end else
   if mode(mTerrain) then
