@@ -334,7 +334,7 @@ begin
       begin
         tile := data[x + cnv_left, y + cnv_top].tile;
         tile_type := Tileset.get_tile_type(tile);
-        tile_attr := Tileset.attributes[tile];
+        tile_attr := Tileset.attributes[tile and $0FFF];
         // Draw impassable/buildable tile marker
         if (tile_type = ttImpassable) and o_mark_impassable then
           draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, clRed, 2)
