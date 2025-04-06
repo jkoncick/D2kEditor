@@ -3402,6 +3402,8 @@ begin
   if not show then
     exit;
   ccg.caption.Caption := coorddef.name + ':';
+  ccg.caption.Hint := StringReplace(coorddef.help_text, '_', #13, [rfReplaceAll, rfIgnoreCase]);
+  ccg.caption.ShowHint := coorddef.help_text <> '';
   is_var_x := (ccg.var_flag_ptr^ and (1 shl (ccg.coord_index * 2))) <> 0;
   is_var_y := (ccg.var_flag_ptr^ and (1 shl (ccg.coord_index * 2 + 1))) <> 0;
   value_x := get_integer_value(ccg.data_ptr, ccg.offset_x, 1);
@@ -3522,6 +3524,8 @@ begin
   if not show then
     exit;
   acg.caption.Caption := argdef.name + ':';
+  acg.caption.Hint := StringReplace(argdef.help_text, '_', #13, [rfReplaceAll, rfIgnoreCase]);
+  acg.caption.ShowHint := argdef.help_text <> '';
   is_var := (acg.var_flag_ptr^ and (1 shl acg.struct_member)) <> 0;
   acg.btn_var_toggle.Caption := IfThen(is_var, 'C', 'V');
   // Manage visibility of datatype-specific controls

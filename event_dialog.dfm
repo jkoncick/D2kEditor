@@ -225,7 +225,13 @@ object EventDialog: TEventDialog
         Top = 0
         Width = 81
         Height = 17
+        Hint = 
+          'The event will block itself when it is executed. Use this to mak' +
+          'e the event execute only once.'#13'The event can still be unblocked ' +
+          'with event 20 "Un/block Event".'
         Caption = 'Auto-block'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 2
         OnClick = EventFlagsClick
       end
@@ -234,7 +240,12 @@ object EventDialog: TEventDialog
         Top = 0
         Width = 57
         Height = 17
+        Hint = 
+          'The event will not execute. It can execute only after it is unbl' +
+          'ocked by event 20 "Un/block Event".'
         Caption = 'Blocked'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 3
         OnClick = EventFlagsClick
       end
@@ -837,7 +848,12 @@ object EventDialog: TEventDialog
           Top = 0
           Width = 49
           Height = 17
+          Hint = 
+            'All conditions in the list must be true for the event to execute' +
+            '. The event will always execute if the list is empty.'
           Caption = 'AND'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           OnClick = EventFlagsClick
         end
@@ -846,7 +862,12 @@ object EventDialog: TEventDialog
           Top = 0
           Width = 49
           Height = 17
+          Hint = 
+            'At least one conditions in the list must be true for the event t' +
+            'o execute. The event will not execute if the list is empty.'
           Caption = 'OR'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
           OnClick = EventFlagsClick
         end
@@ -1182,16 +1203,16 @@ object EventDialog: TEventDialog
   end
   object pnEventHelp: TPanel
     Left = 352
-    Top = 64
+    Top = 0
     Width = 625
-    Height = 337
+    Height = 401
     TabOrder = 6
     Visible = False
     object lblEventHelp: TLabel
       Left = 8
       Top = 8
       Width = 609
-      Height = 321
+      Height = 389
       AutoSize = False
       WordWrap = True
     end
