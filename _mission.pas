@@ -214,7 +214,7 @@ type
     function get_object_filter_contents(filter: TObjectFilterPtr; filter_type: integer; event_index: integer): string;
     function check_event_has_condition(index: integer; condition_index: integer; var negation: boolean): boolean;
     // Creating/deleting events/conditions
-    function add_event(position, event_type: integer): integer;
+    function add_event(position, event_type, copy_from_event: integer): integer;
     function add_condition(condition_type: integer): boolean;
     procedure delete_event(deleted_index: integer);
     procedure delete_condition(deleted_index: integer);
@@ -1201,7 +1201,7 @@ begin
   result := false;
 end;
 
-function TMission.add_event(position, event_type: integer): integer;
+function TMission.add_event(position, event_type, copy_from_event: integer): integer;
 var
   i, j: integer;
   event: ^TEvent;
@@ -1220,17 +1220,25 @@ begin
     MissionIni.event_notes[i] := MissionIni.event_notes[i-1];
   end;
   // Initialize new event with default values
-  FillChar(event_data[position], sizeof(TEvent), 0);
-  event_data[position].event_type := event_type;
-  et := Addr(EventConfig.event_types[event_type]);
-  for i := 0 to High(et.coords) do
+  if copy_from_event = -1 then
   begin
-    event_data[position].coord_x[i] := et.coords[i].default;
-    event_data[position].coord_y[i] := et.coords[i].default;
+    FillChar(event_data[position], sizeof(TEvent), 0);
+    event_data[position].event_type := event_type;
+    et := Addr(EventConfig.event_types[event_type]);
+    for i := 0 to High(et.coords) do
+    begin
+      event_data[position].coord_x[i] := et.coords[i].default;
+      event_data[position].coord_y[i] := et.coords[i].default;
+    end;
+    for i := 0 to High(et.args) do
+      set_integer_struct_member(Addr(event_data[position]), Addr(event_args_struct_members), i, et.args[i].default);
+    MissionIni.event_notes[position] := '';
+  end else
+  // Copy data from event
+  begin
+    event_data[position] := event_data[copy_from_event];
+    MissionIni.event_notes[position] := MissionIni.event_notes[copy_from_event];
   end;
-  for i := 0 to High(et.args) do
-    set_integer_struct_member(Addr(event_data[position]), Addr(event_args_struct_members), i, et.args[i].default);
-  MissionIni.event_notes[position] := '';
   // Go through all events and update event references
   for i := 0 to num_events do
   begin
@@ -1574,7 +1582,7 @@ begin
     exit;
   for i := 0 to num_events - 1 do
   begin
-    if add_event(num_events, 18) = -1 then
+    if add_event(num_events, 18, -1) = -1 then
       exit;
     event := Addr(event_data[num_events-1]);
     event.side := side;
@@ -1601,7 +1609,7 @@ begin
   // Create all needed events
   for i := 1 to 3 do
   begin
-    if add_event(num_events, 0) = -1 then
+    if add_event(num_events, 0, -1) = -1 then
       exit;
     event[i] := Addr(event_data[num_events-1]);
   end;
@@ -1663,7 +1671,7 @@ begin
   if num_sides = 0 then
     exit;
   // Create message event
-  if add_event(num_events, 17) = -1 then
+  if add_event(num_events, 17, -1) = -1 then
     exit;
   event := Addr(event_data[num_events - 1]);
   set_integer_value(Addr(event.data), 21, 4, side_annihilated_msgid[side]);
@@ -1702,7 +1710,7 @@ begin
       exit;
   end;
   // Try to create new event (Set flag) and condition (Flag)
-  if (add_event(event_num+1, 0) = -1) or not add_condition(-1) then
+  if (add_event(event_num+1, 0, -1) = -1) or not add_condition(-1) then
     exit;
   flag_number := num_conditions - 1;
   new_condition := event_data[event_num].num_conditions;

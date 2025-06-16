@@ -700,7 +700,7 @@ var
 begin
   if event_type_list_mapping[lbEventTypeList.ItemIndex] < 0 then
     exit;
-  newpos := Mission.add_event(selected_event + 1, event_type_list_mapping[lbEventTypeList.ItemIndex]);
+  newpos := Mission.add_event(selected_event + 1, event_type_list_mapping[lbEventTypeList.ItemIndex], -1);
   if newpos <> -1 then
   begin
     fill_grids;
@@ -845,7 +845,7 @@ end;
 
 procedure TEventDialog.Addevent1Click(Sender: TObject);
 begin
-  if Mission.add_event(Mission.num_events, 0) <> -1 then
+  if Mission.add_event(Mission.num_events, 0, -1) <> -1 then
   begin
     fill_grids;
     if EventGrid.Row = Mission.num_events then
@@ -859,7 +859,7 @@ procedure TEventDialog.Insertevent1Click(Sender: TObject);
 var
   newpos: integer;
 begin
-  newpos := Mission.add_event(selected_event, 0);
+  newpos := Mission.add_event(selected_event, 0, -1);
   if newpos <> -1 then
   begin
     fill_grids;
@@ -872,10 +872,8 @@ end;
 
 procedure TEventDialog.Duplicateevent1Click(Sender: TObject);
 begin
-  if Mission.add_event(selected_event + 1, 0) <> -1 then
+  if Mission.add_event(selected_event + 1, 0, selected_event) <> -1 then
   begin
-    Mission.event_data[selected_event + 1] := Mission.event_data[selected_event];
-    MissionIni.event_notes[selected_event + 1] := MissionIni.event_notes[selected_event];
     fill_grids;
     EventGrid.Row := selected_event + 2;
   end;
