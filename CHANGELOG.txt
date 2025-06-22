@@ -1,5 +1,28 @@
 D2kEditor changelog
 
+Version 2.3 (Released 2025-06-16)
+---------------------------------
+Added: Remap Structures feature
+Added: New unit, building and weapon properties in Structures editor with respect to new game features
+Added: New AI property "DontPreferTargetingHumanPlayers"
+Added: Image importing and exporting improvements (exporting and importing multiple images at once)
+Added: New event type "Add Radar Marker"
+Added: Tooltips to structures editor
+Added: Debug Features for map testing purpose
+Added: Show Event Areas feature
+Fixed: Test Map dialog remembers the settings even if cancelled
+Added: Event type search filter and event type categories
+Added: Event separators (also colored)
+Added: Preferences window
+Added: Ability to draw map blocks of Change Map Block event on a map
+Added: Show crate markers option
+Added: Built-in AI properties help
+Added: Built-in events and conditions help
+Fixed: Crash on tile markings
+Fixed: Duplicate Event action did not update indentation
+Removed: Obsolete manuals
+
+
 Version 2.2 (released 2024-02-13)
 ---------------------------------
 Added: Support for new game features related to events (event variables, indentation of blocks etc.)
