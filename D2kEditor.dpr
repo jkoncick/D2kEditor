@@ -34,7 +34,10 @@ uses
   _launcher in '_launcher.pas',
   _gamelists in '_gamelists.pas',
   _gamestructs in '_gamestructs.pas',
-  _eventconfig in '_eventconfig.pas';
+  _eventconfig in '_eventconfig.pas',
+  pngimage in 'pngdelphi\pngimage.pas',
+  zlibpas in 'pngdelphi\zlibpas.pas',
+  pnglang in 'pngdelphi\pnglang.pas';
 
 {$R *.res}
 

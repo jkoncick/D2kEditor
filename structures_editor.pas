@@ -2262,7 +2262,7 @@ var
   acg: TArtControlGroupPtr;
   image_index: integer;
   i: integer;
-  prefix: string;
+  ext, prefix: string;
 begin
   group_index := (Sender as TControl).Tag;
   acg := Addr(art_control_groups[group_index]);
@@ -2282,8 +2282,9 @@ begin
     if ImageExportDialog.Execute then
       for i := 0 to acg.frame_list.Items.Count - 1 do
       begin
+        ext := ExtractFileExt(ImageExportDialog.FileName);
         prefix := ChangeFileExt(ImageExportDialog.FileName, '');
-        StructGraphics.export_single_image(prefix + '_' + IntToStr(i) + '.bmp', acg.first_image_index + i);
+        StructGraphics.export_single_image(prefix + '_' + IntToStr(i) + ext, acg.first_image_index + i);
       end;
   end;
   acg.frame_list.SetFocus;

@@ -73,7 +73,7 @@ object MainWindow: TMainWindow
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 681
+    Top = 673
     Width = 952
     Height = 19
     Panels = <
@@ -1459,8 +1459,9 @@ object MainWindow: TMainWindow
     Left = 192
   end
   object MapImageSaveDialog: TSaveDialog
-    DefaultExt = 'bmp'
-    Filter = 'Image (*.bmp)|*.bmp'
+    DefaultExt = 'png'
+    Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
+    FilterIndex = 2
     Title = 'Save map image'
     Left = 160
   end

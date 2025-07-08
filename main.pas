@@ -8,7 +8,9 @@ uses
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, XPMan, Math, Spin, Buttons,
   ShellApi, IniFiles, Clipbrd,
   // Units
-  _utils, _dispatcher, _renderer, _map, _mission, _missionini, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher, _gamelists, _eventconfig;
+  _utils, _dispatcher, _renderer, _map, _mission, _missionini, _tileset, _structures, _stringtable, _settings, _randomgen, _launcher, _gamelists, _eventconfig,
+  // External libraries
+  pngimage;
 
 const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
 
@@ -928,6 +930,7 @@ end;
 procedure TMainWindow.Savemapimage1Click(Sender: TObject);
 var
   tmp_bitmap: TBitmap;
+  PNG: TPNGObject;
 begin
   if not Map.loaded then
     exit;
@@ -943,19 +946,35 @@ begin
       sbShowEventMarkers.Down, sbShowEventAreas.Down, sbMarkDefenceAreas.Down, sbShowCrateMarkers.Down,
       Usehouseidcolors1.Checked, Showunknownspecials1.Checked,
       false);
-    tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
+    if CompareText(ExtractFileExt(MapImageSaveDialog.FileName), '.PNG') = 0 then
+    begin
+      PNG := TPNGObject.Create;
+      PNG.Assign(tmp_bitmap);
+      PNG.SaveToFile(MapImageSaveDialog.FileName);
+      PNG.Destroy;
+    end else
+      tmp_bitmap.SaveToFile(MapImageSaveDialog.FileName);
     tmp_bitmap.Destroy;
   end;
 end;
 
 procedure TMainWindow.Saveminimapimage1Click(Sender: TObject);
+var
+  PNG: TPNGObject;
 begin
   if not Map.loaded then
     exit;
   MapImageSaveDialog.Title := 'Save minimap image';
   if MapImageSaveDialog.Execute then
   begin
-    minimap_buffer.SaveToFile(MapImageSaveDialog.FileName);
+    if CompareText(ExtractFileExt(MapImageSaveDialog.FileName), '.PNG') = 0 then
+    begin
+      PNG := TPNGObject.Create;
+      PNG.Assign(minimap_buffer);
+      PNG.SaveToFile(MapImageSaveDialog.FileName);
+      PNG.Destroy;
+    end else
+      minimap_buffer.SaveToFile(MapImageSaveDialog.FileName);
   end;
 end;
 

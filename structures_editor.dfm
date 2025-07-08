@@ -4302,16 +4302,17 @@ object StructuresEditor: TStructuresEditor
     Left = 764
   end
   object ImageImportDialog: TOpenDialog
-    DefaultExt = 'bmp'
-    Filter = 'BMP image (*.BMP)|*.bmp'
+    DefaultExt = 'png'
+    Filter = 'Supported images (*.bmp, *.png)|*.bmp;*.png'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Title = 'Import Image'
     Left = 860
     Top = 32
   end
   object ImageExportDialog: TSaveDialog
-    DefaultExt = 'bmp'
-    Filter = 'BMP image (*.BMP)|*.bmp'
+    DefaultExt = 'png'
+    Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
+    FilterIndex = 2
     Title = 'Export Image'
     Left = 828
     Top = 32

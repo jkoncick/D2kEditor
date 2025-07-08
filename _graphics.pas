@@ -167,7 +167,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, IniFiles, Classes, _settings, _dispatcher, _missionini, Math;
+uses Forms, SysUtils, IniFiles, Classes, _settings, _dispatcher, _missionini, Math, pngimage;
 
 procedure TStructGraphics.init;
 begin
@@ -931,11 +931,19 @@ end;
 procedure TStructGraphics.export_single_image(filename: string; entry_index: integer);
 var
   tmp_bitmap: TBitmap;
+  PNG: TPNGObject;
 begin
   tmp_bitmap := get_raw_structure_image(entry_index);
   if tmp_bitmap = nil then
     exit;
-  tmp_bitmap.SaveToFile(filename);
+  if CompareText(ExtractFileExt(filename), '.PNG') = 0 then
+  begin
+    PNG := TPNGObject.Create;
+    PNG.Assign(tmp_bitmap);
+    PNG.SaveToFile(filename);
+    PNG.Destroy;
+  end else
+    tmp_bitmap.SaveToFile(filename);
   tmp_bitmap.Destroy;
 end;
 
@@ -950,6 +958,7 @@ end;
 function TStructGraphics.import_single_image(filename: string; entry_index: integer; is_icon: boolean): boolean;
 var
   tmp_bitmap: TBitmap;
+  PNG: TPNGObject;
   buffer: array of byte;
   header, orig_header: TR16EntryHeaderPtr;
   image_data: TByteArrayPtr;
@@ -961,7 +970,16 @@ var
 begin
   result := false;
   tmp_bitmap := TBitmap.Create;
-  tmp_bitmap.LoadFromFile(filename);
+  if CompareText(ExtractFileExt(filename), '.PNG') = 0 then
+  begin
+    PNG := TPNGObject.Create;
+    PNG.LoadFromFile(filename);
+    if PNG.Header.ColorType = COLOR_PALETTE then
+      PNG.RemoveTransparency;
+    tmp_bitmap.Assign(PNG);
+    PNG.Destroy;
+  end else
+    tmp_bitmap.LoadFromFile(filename);
   // Perform validation
   if is_icon and ((tmp_bitmap.Width <> 60) or (tmp_bitmap.Height <> 47)) then
   begin
