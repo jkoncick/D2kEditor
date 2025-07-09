@@ -1065,39 +1065,57 @@ end;
 function TMap.remap_tiles(ini_filename: String): boolean;
 var
   ini: TMemIniFile;
-  strings: TStringList;
-  from_tiles, to_tiles: array of word;
-  count: integer;
-  i, x, y: integer;
+  strings, decoder: TStringList;
+  from_tiles, to_tiles, to_first_tile: array of word;
+  count, from_count, to_count: integer;
+  i, j, x, y: integer;
 begin
   result := false;
   // Load ini file
   ini := TMemIniFile.Create(ini_filename);
   strings := TStringList.Create;
+  decoder := TStringList.Create;
+  decoder.Delimiter := ',';
   // Handle Remap_Tiles section
   ini.ReadSection('Remap_Tiles', strings);
-  count := strings.Count;
-  if count <> 0 then
+  from_count := strings.Count;
+  to_count := 0;
+  if from_count <> 0 then
   begin
     result := true;
-    SetLength(from_tiles, count);
-    SetLength(to_tiles, count);
-    for i := 0 to count - 1 do
+    SetLength(from_tiles, from_count);
+    SetLength(to_tiles, from_count);
+    SetLength(to_first_tile, from_count + 1);
+    to_first_tile[0] := 0;
+    for i := 0 to from_count - 1 do
     begin
       from_tiles[i] := strtoint(strings[i]);
-      to_tiles[i] := ini.ReadInteger('Remap_Tiles', strings[i], 0);
+      decoder.DelimitedText := ini.ReadString('Remap_Tiles', strings[i], '');
+      for j := 0 to decoder.Count - 1 do
+      begin
+        if to_count = Length(to_tiles) then
+          SetLength(to_tiles, Length(to_tiles) * 2);
+        to_tiles[to_count] := StrToInt(decoder[j]);
+        inc(to_count);
+      end;
+      to_first_tile[i + 1] := to_count;
     end;
     // Remap the tiles
     for y := 0 to height - 1 do
       for x := 0 to width - 1 do
-        for i := 0 to count - 1 do
+        for i := 0 to from_count - 1 do
           if map_data[x, y].tile = from_tiles[i] then
           begin
-            map_data[x, y].tile := to_tiles[i];
+            to_count := to_first_tile[i+1] - to_first_tile[i];
+            if to_count = 1 then
+              map_data[x, y].tile := to_tiles[to_first_tile[i]]
+            else if to_count > 1 then
+              map_data[x, y].tile := to_tiles[to_first_tile[i] + random(to_count)];
             break;
           end;
     SetLength(from_tiles, 0);
     SetLength(to_tiles, 0);
+    SetLength(to_first_tile, 0);
   end;
   // Handle Remap_Specials section
   ini.ReadSection('Remap_Specials', strings);
@@ -1126,6 +1144,7 @@ begin
   end;
   // Finalize
   strings.Destroy;
+  decoder.Destroy;
   ini.Destroy;
   if not result then
     exit;
