@@ -23,10 +23,17 @@ type
     // Tileset events
     evFLLTilesetList,
     evFLTilesetImage,
+    evFLTilesetFile,
     evFLTileatrBin,
     evFLTilesetIni,
-    evTileatrModify,
-    evTileatrFilenameChange,
+    evTileimageFilenameChange,
+    evTlsFilenameChange,
+    evTilesetImageChange,
+    evTilesetAttributesChange,
+    evTilesetMinimapColorsChange,
+    evTilesetFillAreasChange,
+    evTilesetPaintGroupsChange,
+    evTilesetBlockPresetsChange,
     // Structures events
     evFLTemplatesBin,
     evFLBuilexpBin,
@@ -70,6 +77,10 @@ type
     paUpdateGameStructMembers,
     // Update various contents
     paUpdateTileset,
+    paUpdateTilesetFilenames,
+    paUpdateFillAreas,
+    paUpdatePaintGroups,
+    paUpdateBlockPresets,
     paUpdateStructureControls,
     paUpdateMapDimensions,
     paUpdateMapName,
@@ -88,7 +99,7 @@ type
     paUpdateMisAiValues,
     // Update whole dialog contents
     paUpdateEventDialog,
-    paUpdateTileAtrEditor,
+    paUpdateTilesetEditor,
     paUpdateStructuresEditor,
     // Rendering
     paResetMapBlocksDrawn,
@@ -105,9 +116,12 @@ type
   private
     // Pending action set
     pact: set of TDispatcherPendingAction;
+    error_title: String;
+    error_message: String;
 
   public
     procedure register_event(event: TDispatcherRegisteredEvent);
+    procedure register_error(title, message: String);
     procedure do_pending_actions;
 
   private
@@ -130,10 +144,10 @@ var
 implementation
 
 uses
-  Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, _renderer, main, set_dialog,
+  Windows, Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, _renderer, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
-  tileatr_editor, structures_editor, debug_window;
+  tileset_editor, structures_editor, debug_window;
 
 { TDispatcher }
 
@@ -158,11 +172,18 @@ begin
     evMissionIniCustomTextChange: pact := pact + [paUpdateEventDialog];
     // Tileset events
     evFLLTilesetList:             pact := pact + [paUpdateTilesetList];
-    evFLTilesetImage:             pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
-    evFLTileatrBin:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
-    evFLTilesetIni:               pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paRenderMinimap, paUpdateDebugValues];
-    evTileatrModify:              pact := pact + [paRenderMap, paRenderMinimap, paRenderCursorImage];
-    evTileatrFilenameChange:      pact := pact + [paUpdateTileset, paUpdateTileAtrEditor, paUpdateDebugValues];
+    evFLTilesetImage:             pact := pact + [paUpdateTileset, paUpdateTilesetEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
+    evFLTilesetFile:              pact := pact + [paUpdateTileset, paUpdateTilesetEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLTileatrBin:               pact := pact + [paUpdateTileset, paUpdateTilesetEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLTilesetIni:               pact := pact + [paUpdateTileset, paUpdateTilesetEditor, paRenderMinimap, paUpdateDebugValues];
+    evTileimageFilenameChange:    pact := pact + [paUpdateTilesetFilenames, paUpdateDebugValues];
+    evTlsFilenameChange:          pact := pact + [paUpdateTilesetFilenames, paUpdateDebugValues];
+    evTilesetImageChange:         pact := pact + [paUpdateTileset, paUpdateTilesetEditor, paRenderMap, paRenderCursorImage];
+    evTilesetAttributesChange:    pact := pact + [paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evTilesetMinimapColorsChange: pact := pact + [paRenderMinimap, paUpdateDebugValues];
+    evTilesetFillAreasChange:     pact := pact + [paUpdateFillAreas, paUpdateDebugValues];
+    evTilesetPaintGroupsChange:   pact := pact + [paUpdatePaintGroups];
+    evTilesetBlockPresetsChange:  pact := pact + [paUpdateBlockPresets, paUpdateDebugValues];
     // Structures events
     evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
@@ -201,21 +222,37 @@ begin
   end;
 end;
 
+procedure TDispatcher.register_error(title, message: String);
+begin
+  error_title := title;
+  error_message := message;
+end;
+
 procedure TDispatcher.do_pending_actions;
 begin
+  if (error_title <> '') or (error_message <> '') then
+  begin
+    Application.MessageBox(PChar(error_message), PChar(error_title), MB_OK or MB_ICONERROR);
+    error_title := '';
+    error_message := '';
+  end;
   if (pact = []) then
     exit;
   // Update selection lists
-  if paUpdateTilesetList        in pact then begin SetDialog.update_tileset_list; TileAtrEditor.update_tileset_list; end;
-  if paUpdateTextList           in pact then TileAtrEditor.update_text_list;
+  if paUpdateTilesetList        in pact then SetDialog.update_tileset_list;
+  if paUpdateTextList           in pact then TilesetEditor.update_text_list;
   if paUpdateSoundList          in pact then begin EventDialog.update_sound_list; StructuresEditor.update_sound_list; end;
   if paUpdateStructuresList     in pact then EventDialog.update_structures_list;
   if paUpdateStructuresListTranslated in pact then update_structures_list_translated;
   if paUpdateMiscObjectList     in pact then MainWindow.update_misc_object_list;
   if paUpdateSideList           in pact then update_side_list;
   if paUpdateGameStructMembers  in pact then update_game_struct_members;
-  if paUpdateTileset            in pact then update_tileset;
   // Update various contents
+  if paUpdateTileset            in pact then update_tileset;
+  if paUpdateTilesetFilenames   in pact then TilesetEditor.update_tileset_filenames;
+  if paUpdateFillAreas          in pact then MainWindow.update_fill_area_types;
+  if paUpdatePaintGroups        in pact then MainWindow.update_paint_tile_groups;
+  if paUpdateBlockPresets       in pact then begin MainWindow.update_block_preset_groups; BlockPresetDialog.update_tileset; end;
   if paUpdateStructureControls  in pact then MainWindow.update_structure_controls;
   if paUpdateMapDimensions      in pact then MainWindow.update_map_dimensions;
   if paUpdateMapName            in pact then update_map_name;
@@ -224,7 +261,7 @@ begin
   if paUpdateEventMarkers       in pact then update_event_markers;
   if paUpdateEventAreas         in pact then update_event_areas;
   if paUpdateSideColours        in pact then MissionDialog.update_side_colors;
-  if paUpdateSpeedModifiers     in pact then TileAtrEditor.update_speed_modifiers;
+  if paUpdateSpeedModifiers     in pact then TilesetEditor.update_speed_modifiers;
   if paUpdateVariableNames      in pact then EventDialog.update_variable_names;
   if paUpdateGameLists          in pact then update_game_lists;
   if paUpdateEventTypeConfiguration in pact then EventDialog.update_event_type_configuration;
@@ -234,7 +271,7 @@ begin
   if paUpdateMisAiValues        in pact then MissionDialog.update_mis_ai_values;
   // Update whole dialog contents
   if paUpdateEventDialog        in pact then EventDialog.update_contents;
-  if paUpdateTileAtrEditor      in pact then TileAtrEditor.update_contents;
+  if paUpdateTilesetEditor      in pact then TilesetEditor.update_contents;
   if paUpdateStructuresEditor   in pact then StructuresEditor.update_contents;
   // Rendering
   if paResetMapBlocksDrawn      in pact then Renderer.reset_map_blocks;
@@ -289,7 +326,6 @@ end;
 
 procedure TDispatcher.update_tileset;
 begin
-  Tileset.update_tileset_index;
   MainWindow.update_tileset;
   SetDialog.update_tileset;
   TilesetDialog.update_tileset;
@@ -349,7 +385,7 @@ procedure TDispatcher.update_game_lists;
 begin
   MainWindow.update_game_lists;
   StructuresEditor.update_game_lists;
-  TileAtrEditor.update_game_lists;
+  TilesetEditor.update_game_lists;
 end;
 
 end.

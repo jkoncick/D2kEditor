@@ -270,7 +270,7 @@ begin
     MissionIni.unload_mission_ini(false);
     unload_mission;
     // Change tileset to default or currently loaded one
-    if (Tileset.tileset_index = -1) then
+    if Tileset.tileset_name = '' then
       Tileset.change_tileset_to_default
     else
       Tileset.load_tileset(false);

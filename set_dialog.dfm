@@ -187,13 +187,17 @@ object SetDialog: TSetDialog
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
-    object Tileset_List: TListBox
+    object Tileset_List: TStringGrid
       Left = 0
       Top = 0
       Width = 176
       Height = 101
       Align = alClient
-      ItemHeight = 13
+      ColCount = 6
+      DefaultColWidth = 24
+      DefaultRowHeight = 17
+      FixedCols = 0
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
       TabOrder = 0
       OnDblClick = BtnOKClick
     end
@@ -223,6 +227,29 @@ object SetDialog: TSetDialog
       Caption = 'OK'
       TabOrder = 0
       OnClick = BtnOKClick
+    end
+  end
+  object NewTileset_Menu: TPanel
+    Left = 0
+    Top = 0
+    Width = 176
+    Height = 101
+    Align = alClient
+    BevelOuter = bvNone
+    TabOrder = 5
+    object NewTileset_lblTilesetName: TLabel
+      Left = 28
+      Top = 32
+      Width = 63
+      Height = 13
+      Caption = 'Tileset name:'
+    end
+    object NewTileset_edTilesetName: TEdit
+      Left = 28
+      Top = 48
+      Width = 121
+      Height = 21
+      TabOrder = 0
     end
   end
 end

@@ -313,8 +313,8 @@ begin
         if get_spice(data[min(xx+1,data_width-1), min(yy+1,data_height-1)]) > 0 then
           inc(spice_tile_value, 128); // bottom-right
         tile := thin_spice_tiles[spice_tile_value];
-      end else
-      if spice_amount = 2 then
+      end
+      else if spice_amount = 2 then
         tile := thick_spice_tiles[thick_spice_pattern[yy and 7, xx and 7]-1]
       else if (tile <> 65535) and ((tile and $1000) <> 0) then
         // Concrete
@@ -322,13 +322,24 @@ begin
       if tile = 65535 then
       begin
         // Blank tile
-        cnv_target.Pen.Color := clBtnFace;
         cnv_target.Brush.Color := clBtnFace;
         cnv_target.Brush.Style := bsSolid;
-        cnv_target.Rectangle(x*32,y*32,x*32+32,y*32+32);
+        cnv_target.FillRect(Rect(x*32,y*32,x*32+32,y*32+32));
+      end
+      else if tile >= Tileset.cnt_tiles then
+      begin
+        // Tile exceeding number of tiles in tileset
+        cnv_target.Brush.Color := $FF00FF;
+        cnv_target.Brush.Style := bsSolid;
+        cnv_target.FillRect(Rect(x*32,y*32,x*32+32,y*32+32));
+        cnv_target.Brush.Color := clBlack;
+        cnv_target.FillRect(Rect(x*32,y*32,x*32+16,y*32+16));
+        cnv_target.FillRect(Rect(x*32+16,y*32+16,x*32+32,y*32+32));
       end else
+      begin
         // Actual tile
         cnv_target.CopyRect(rect(x*32,y*32,x*32+32,y*32+32),Tileset.tileimage.Canvas,rect((tile mod 20)*32,(tile div 20 * 32),(tile mod 20)*32+32,(tile div 20 * 32+32)));
+      end;
       // Draw tile markers
       if o_mark_impassable or o_mark_buildable or o_mark_owner_side then
       begin
@@ -993,6 +1004,7 @@ var
   unit_template: TUnitTemplatePtr;
   building_template: TBuildingTemplatePtr;
   bmp_data: TCardinalArrayPtr;
+  rule_index: integer;
 begin
   min_x := 0;
   min_y := 0;
@@ -1025,7 +1037,7 @@ begin
     for x:= min_x to max_x do
     begin
       index := (bmp_target.height - (y+border_y) - 1) * bmp_target.width + x+border_x;
-      bmp_data[index] := Tileset.get_tile_color(data[x,y].tile, data[x,y].special);
+      bmp_data[index] := Tileset.get_tile_color(data[x,y].tile, data[x,y].special, rule_index);
     end;
   // Rendering structures
   for y:= Max(min_y - (MAX_BUILDING_SIZE - 1), 0) to max_y do

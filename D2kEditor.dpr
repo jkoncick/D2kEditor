@@ -14,7 +14,7 @@ uses
   mission_dialog in 'mission_dialog.pas' {MissionDialog},
   map_stats_dialog in 'map_stats_dialog.pas' {MapStatsDialog},
   mission_launcher in 'mission_launcher.pas' {MissionLauncher},
-  tileatr_editor in 'tileatr_editor.pas' {TileAtrEditor},
+  tileset_editor in 'tileset_editor.pas' {TilesetEditor},
   structures_editor in 'structures_editor.pas' {StructuresEditor},
   debug_window in 'debug_window.pas' {DebugWindow},
   _utils in '_utils.pas',
@@ -81,7 +81,7 @@ begin
   Application.CreateForm(TMissionDialog, MissionDialog);
   Application.CreateForm(TMapStatsDialog, MapStatsDialog);
   Application.CreateForm(TMissionLauncher, MissionLauncher);
-  Application.CreateForm(TTileAtrEditor, TileAtrEditor);
+  Application.CreateForm(TTilesetEditor, TilesetEditor);
   Application.CreateForm(TStructuresEditor, StructuresEditor);
   Application.CreateForm(TDebugWindow, DebugWindow);
   // All GUI settings must be loaded after all dialogs are created.

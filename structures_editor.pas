@@ -4032,21 +4032,17 @@ begin
   // Find proper paint tile group with buildable tiles
   paint_tile_group := 0;
   for i := 0 to cnt_paint_tile_groups - 1 do
-    if Tileset.get_tile_type(Tileset.paint_tile_groups[i].tile_index) = ttBuildable then
+    if (Tileset.paint_tile_lists[i].cnt_tiles > 0) and (Tileset.get_tile_type(Tileset.paint_tile_lists[i].tiles[0]) = ttBuildable) then
     begin
       paint_tile_group := i;
       break;
     end;
-  // Find starting tile index for paint tile group
-  start_index := 0;
-  for i := -4 to paint_tile_group - 1 do
-    inc(start_index, Tileset.paint_tile_groups[i].paint_tiles_cnt);
   // Draw terrain
   for y := 0 to 4 do
     for x := 0 to 3 do
     begin
-      if Tileset.paint_tile_groups[paint_tile_group].paint_tiles_cnt > 0 then
-        tile_index := Tileset.paint_tiles[start_index + (y * 4 + x) mod Tileset.paint_tile_groups[paint_tile_group].paint_tiles_cnt]
+      if Tileset.paint_tile_lists[paint_tile_group].cnt_tiles > 0 then
+        tile_index := Tileset.paint_tile_lists[paint_tile_group].tiles[(y * 4 + x) mod Tileset.paint_tile_lists[paint_tile_group].cnt_tiles]
       else
         tile_index := Tileset.paint_tile_groups[paint_tile_group].tile_index;
       tile_x := tile_index mod 20;

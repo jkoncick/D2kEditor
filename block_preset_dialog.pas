@@ -4,17 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls;
-
-const num_rows = 4;
-const num_cols = 10;
-const block_preset_keys: array[0..num_rows-1, 0..num_cols-1] of char =
-  (
-    ('1', '2', '3', '4', '5', '6', '7', '8', '9', '0'),
-    ('Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'),
-    ('A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':'),
-    ('Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?')
-  );
+  Dialogs, ExtCtrls, _tileset;
 
 type
   TBlockPresetDialog = class(TForm)
@@ -22,14 +12,11 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure CMDialogKey(var AMessage: TCMDialogKey); message CM_DIALOGKEY;
-    procedure BlockPresetImageMouseDown(Sender: TObject;
-      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure BlockPresetImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   private
-    variants_cnt: array[0..num_rows-1, 0..num_cols-1] of integer;
-    variants_current: array[0..num_rows-1, 0..num_cols-1] of integer;
+    variants_current: array[0..cnt_block_preset_keys-1] of integer;
     render_letters: boolean;
     // Pending action flags
     pending_update_tileset: boolean;
@@ -40,10 +27,10 @@ type
     // Other procedures
     procedure init_presets;
     procedure next_variant_all;
-    procedure next_variant(row, col: integer);
-    procedure select_preset(row, col: integer);
+    procedure next_variant(key_index: integer);
+    procedure select_preset(key_index: integer);
     procedure draw_all;
-    procedure draw_block_preset(row, col: integer);
+    procedure draw_block_preset(key_index: integer);
   end;
 
 var
@@ -51,7 +38,7 @@ var
 
 implementation
 
-uses _tileset, _settings, _graphics, main, tileset_dialog;
+uses _settings, _graphics, main, tileset_dialog;
 
 {$R *.dfm}
 
@@ -73,10 +60,9 @@ begin
   MainWindow.block_preset_dialog_opened := true;
 end;
 
-procedure TBlockPresetDialog.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TBlockPresetDialog.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
-  i, j: integer;
+  i: integer;
 begin
   case key of
     27: Close;
@@ -96,16 +82,14 @@ begin
       key := ord(':');
     if key = 191 then
       key := ord('?');
-    for i := 0 to num_rows -1 do
-      for j:= 0 to num_cols -1 do
+    for i := 0 to cnt_block_preset_keys - 1 do
+      if ord(block_preset_keys[i]) = key then
       begin
-        if ord(block_preset_keys[i,j]) = key then
-        begin
-          if ssShift in Shift then
-            next_variant(i, j)
-          else
-            select_preset(i, j);
-        end;
+        if ssShift in Shift then
+          next_variant(i)
+        else
+          select_preset(i);
+        break;
       end;
   end;
 end;
@@ -120,8 +104,7 @@ begin
     inherited;
 end;
 
-procedure TBlockPresetDialog.BlockPresetImageMouseDown(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TBlockPresetDialog.BlockPresetImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   row, col: integer;
 begin
@@ -129,11 +112,11 @@ begin
   row := Y div 96;
   if Button = mbRight then
   begin
-    next_variant(row, col);
+    next_variant(row * block_preset_cols + col);
   end
   else if Button = mbLeft then
   begin
-    select_preset(row, col);
+    select_preset(row * block_preset_cols + col);
   end
   else if Button = mbMiddle then
   begin
@@ -155,63 +138,53 @@ end;
 
 procedure TBlockPresetDialog.init_presets;
 var
-  i, j: integer;
-  key_index: integer;
+  i: integer;
 begin
   Caption := 'Block preset selection - ' + Tileset.block_preset_groups[MainWindow.block_preset_group].name;
-  for i := 0 to num_rows -1 do
-    for j:= 0 to num_cols -1 do
-    begin
-      variants_current[i,j] := 0;
-      key_index := Tileset.block_key_to_index(ord(block_preset_keys[i,j]));
-      if key_index = -1 then
-        variants_cnt[i,j] := 0
-      else
-        variants_cnt[i,j] := Tileset.block_preset_key_variants[MainWindow.block_preset_group, key_index].num_variants;
-    end;
+  for i := 0 to cnt_block_preset_keys - 1 do
+    variants_current[i] := 0;
   draw_all;
 end;
 
 procedure TBlockPresetDialog.next_variant_all;
 var
-  i, j: integer;
+  i: integer;
 begin
-  for i := 0 to num_rows -1 do
-    for j:= 0 to num_cols -1 do
-      next_variant(i,j);
+  for i := 0 to cnt_block_preset_keys - 1 do
+    next_variant(i);
 end;
 
-procedure TBlockPresetDialog.next_variant(row, col: integer);
+procedure TBlockPresetDialog.next_variant(key_index: integer);
+var
+  num_variants: integer;
 begin
-  if variants_cnt[row,col] > 1 then
+  num_variants := Tileset.block_preset_key_variants[MainWindow.block_preset_group, key_index];
+  if num_variants > 1 then
   begin
-    variants_current[row,col] := (variants_current[row,col] + 1) mod variants_cnt[row,col];
-    draw_block_preset(row, col);
+    variants_current[key_index] := (variants_current[key_index] + 1) mod num_variants;
+    draw_block_preset(key_index);
   end;
 end;
 
-procedure TBlockPresetDialog.select_preset(row, col: integer);
-var
-  key: word;
+procedure TBlockPresetDialog.select_preset(key_index: integer);
 begin
-  key := ord(block_preset_keys[row, col]);
-  MainWindow.select_block_preset(tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row, col]));
+  MainWindow.select_block_preset(tileset.get_block_preset_index(MainWindow.block_preset_group, key_index, variants_current[key_index]));
   if settings.HidePresetWindow then
     Hide;
 end;
 
 procedure TBlockPresetDialog.draw_all;
 var
-  i, j: integer;
+  i: integer;
 begin
-  for i := 0 to num_rows -1 do
-    for j:= 0 to num_cols -1 do
-      draw_block_preset(i,j);
+  for i := 0 to cnt_block_preset_keys - 1 do
+    draw_block_preset(i);
 end;
 
-procedure TBlockPresetDialog.draw_block_preset(row, col: integer);
+procedure TBlockPresetDialog.draw_block_preset(key_index: integer);
 var
-  key: word;
+  row, col: integer;
+  preset_index: integer;
   preset: PBlockPreset;
   size_x, size_y: integer;
   src_x, src_y: integer;
@@ -223,13 +196,15 @@ var
   tile_x, tile_y: integer;
   tile_attr: Cardinal;
   side: integer;
+  num_variants: integer;
 begin
-  key := ord(block_preset_keys[row, col]);
-  preset := @Tileset.block_presets[tileset.get_block_preset(MainWindow.block_preset_group, key, variants_current[row,col])];
+  row := key_index div block_preset_cols;
+  col := key_index mod block_preset_cols;
+  preset_index := tileset.get_block_preset_index(MainWindow.block_preset_group, key_index, variants_current[key_index]);
+  preset := @Tileset.block_presets[preset_index];
   BlockPresetImage.Canvas.Pen.Color := clBtnFace;
   BlockPresetImage.Canvas.Brush.Color := clBtnFace;
   BlockPresetImage.Canvas.Rectangle(col*96, row*96, col*96+96, row*96+96);
-
   min_x := col * 96;
   min_y := row * 96;
   size_x := preset.width*32;
@@ -239,7 +214,7 @@ begin
   for x := 0 to preset.width - 1 do
     for y := 0 to preset.height - 1 do
     begin
-      tile := Tileset.block_preset_tiles[preset.block_preset_tile_index + x + y * preset.width];
+      tile := Tileset.block_preset_tiles[Tileset.block_preset_first_tile_indexes[preset_index] + x + y * preset.width];
       if tile = 65535 then
         continue;
       tile_x := tile mod 20;
@@ -271,10 +246,11 @@ begin
       end;
     end;
 
-  if variants_cnt[row,col] > 1 then
-    BlockPresetImage.Canvas.TextOut(col*96+64, row*96+81, inttostr(variants_current[row,col]+1) + ' of ' + inttostr(variants_cnt[row,col]));
+  num_variants := Tileset.block_preset_key_variants[MainWindow.block_preset_group, key_index];
+  if num_variants > 1 then
+    BlockPresetImage.Canvas.TextOut(col * 96 + 64, row * 96 + 81, inttostr(variants_current[key_index] + 1) + ' of ' + inttostr(num_variants));
   if render_letters then
-    BlockPresetImage.Canvas.TextOut(col * 96 + 4, row * 96 + 2, block_preset_keys[row,col]);
+    BlockPresetImage.Canvas.TextOut(col * 96 + 4, row * 96 + 2, block_preset_keys[key_index]);
 
   BlockPresetImage.Canvas.Pen.Color := clBlack;
   BlockPresetImage.Canvas.MoveTo(col*96, row*96);

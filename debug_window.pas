@@ -70,15 +70,14 @@ begin
 
   s := TStringList.Create;
 
-  add_debug_value(s, Tileset, 'Tileset index', inttostr(Tileset.tileset_index));
   add_debug_value(s, Tileset, 'Tileset name', Tileset.tileset_name);
   add_debug_value(s, Tileset, 'Attributes name', Tileset.tileatr_name);
   add_debug_value(s, Tileset, 'Image file', Tileset.tileimage_filename);
+  add_debug_value(s, Tileset, 'TLS file', Tileset.tls_filename);
   add_debug_value(s, Tileset, 'Attributes file', Tileset.tileatr_filename);
-  add_debug_value(s, Tileset, 'Configuration file', Tileset.config_filename);
+  add_debug_value(s, Tileset, 'INI file', Tileset.ini_filename);
   add_debug_value(s, Tileset, 'Minimap color rules used', Format('%d / %d', [Tileset.minimap_color_rules_used, max_minimap_color_rules]));
   add_debug_value(s, Tileset, 'Fill area rules used', Format('%d / %d', [Tileset.fill_area_rules_used, max_fill_area_rules]));
-  add_debug_value(s, Tileset, 'Paint tiles used', Format('%d / %d', [Tileset.paint_tiles_used, max_paint_tiles]));
   add_debug_value(s, Tileset, 'Block presets used', Format('%d / %d', [Tileset.block_presets_used, max_block_presets]));
   add_debug_value(s, Tileset, 'Block preset tiles used', Format('%d / %d', [Tileset.block_preset_tiles_used, max_block_preset_tiles]));
   //--add_debug_value(s, Tileset, 'Connection points used', Format('%d / %d', [Tileset.connection_points_used, max_connection_points]));

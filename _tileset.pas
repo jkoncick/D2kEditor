@@ -5,32 +5,43 @@ interface
 uses Windows, Graphics, Classes, IniFiles, _utils;
 
 // Tileset constants
-const cnt_tileset_tiles = 800;
-const cnt_paint_tile_groups = 8;
-const cnt_block_preset_groups = 8;
-const cnt_block_preset_keys = 40; // 0-9, A-Z...
+const min_tileset_tiles = 800;
+const max_tileset_tiles = 4000;
 const max_minimap_color_rules = 32;
 const max_fill_area_rules = 16;
-const max_paint_tiles = 128;
-const max_block_presets = 640;
-const max_block_preset_tiles = 1024;
-//--const max_connection_points = 512;
-//--const cnt_connection_point_types = 16;
-//--const cnt_block_groups = 256;
+const cnt_paint_tile_groups = 8;
+const cnt_block_preset_groups = 8;
+const max_block_presets = 1024;
+const max_block_preset_tiles = 4096;
+const max_connection_points = 2048;     // Used for random map generator
+const cnt_connection_point_types = 16;  // Used for random map generator
+const cnt_block_groups = 512;           // Used for random map generator
+const max_paint_tiles = 32;
 
 // Constants for get_block_preset function
 const bpNext = -1;
 const bpRandom = -2;
 
+// Constants for block presets
+const block_preset_rows = 4;
+const block_preset_cols = 10;
+const cnt_block_preset_keys = block_preset_rows * block_preset_cols;
+const block_preset_keys: array[0..cnt_block_preset_keys-1] of char =
+  (
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+    'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
+    'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
+    'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?'
+  );
+
 // Constants for tileset image
 const tileimage_width = 640;
-const tileimage_height = 1280;
-const r16_file_size = 1661600;
 const r16_tile_header_size = 29;
 const r16_tile_data_size = 32 * 32 * 2;
-const r8_file_size = 842400;
+const r16_tile_total_size = r16_tile_header_size + r16_tile_data_size;
 const r8_tile_header_size = 29;
 const r8_tile_data_size = 32 * 32;
+const r8_tile_total_size = r8_tile_header_size + r8_tile_data_size;
 
 // Tileset attributes (game)
 const taConcrete = $800;
@@ -57,6 +68,33 @@ type
   );
 
 type
+  TTilesetListEntry = record
+    name: string;
+    fancy_name: string;
+    author: string;
+    num_tiles: integer;
+    attributes: string;
+    location: string;
+  end;
+
+type
+  TTilesetHeader = record
+    version_major: integer;
+    version_minor: integer;
+    reserved1: integer;
+    reserved2: integer;
+    custom_minimap_colors_allowed: byte;
+    default_paint_group: shortint;
+    reserved3: byte;
+    reserved4: byte;
+    rule_do_not_draw_rock_craters: byte;
+    rule_do_not_draw_sand_craters: byte;
+    reserved_rules: array[0..13] of byte;
+    tileset_fancy_name: array[0..31] of char;
+    author_name: array[0..31] of char;
+  end;
+
+type
   TTileAtrRule = record
     attr: int64;
     not_attr: int64;
@@ -65,6 +103,7 @@ type
 
 type
   TMinimapColorRule = record
+    name: array[0..31] of char;
     rule: TTileAtrRule;
     color: cardinal;
     color_8bit: byte; // Used by Dune2000 game only
@@ -73,174 +112,189 @@ type
 
 type
   TFillAreaRule = record
-    name: string;
+    name: array[0..31] of char;
     rule: TTileAtrRule;
   end;
 
 type
   TPaintTileGroup = record
-    name: string;
+    name: array[0..31] of char;
     tile_index: word;
-    smooth_preset_group: shortint;
-    paint_tiles_cnt: byte;
     restriction_rule: TTileAtrRule;
-    smooth_presets: string;
-    random_map_used: boolean;
-    random_map: array of word;
+    smooth_preset_group: shortint;
+    smooth_presets: array[0..31] of char;
+    random_map_name: array[0..31] of char;
   end;
 
 type
   TBlockPresetGroup = record
-    name: string;
+    name: array[0..31] of char;
     paint_group: integer;
-  end;
-
-type
-  TBlockPresetVariantList = record
-    first_preset_index: word;
-    num_variants: byte;
   end;
 
 type
   TBlockPreset = record
     width: byte;
     height: byte;
-    block_preset_tile_index: word;
-    block_group: byte;
-    num_connection_points: byte;
-    connection_point_index: word;
+    num_connection_points: byte;  // Used for random map generator
+    block_group: word;            // Used for random map generator
   end;
 
   PBlockPreset = ^TBlockPreset;
 
-type
+type // Used for random map generator
   TConnectionPoint = record
     type_and_direction: byte;
     offset: byte;
   end;
 
-type
-  TBlockGroup = record
-    repeat_distance: byte;
-    absolute_weight: word;
-  end;
-
-type
+type // Used for random map generator
   TConnectionPointType = record
     paint_group: byte;
     connection_point_width: byte;
     connection_point_height: byte;
   end;
 
+type // Used for random map generator
+  TBlockGroup = record
+    repeat_distance: byte;
+    absolute_weight: word;
+  end;
+
+type
+  TPaintTileList = record
+    cnt_tiles: integer;
+    tiles: array[0..max_paint_tiles-1] of word;
+  end;
+
 // Tileset class
 type
   TTileset = class
 
-  private
-    last_block_preset_variant: integer;
-    last_block_preset_group: integer;
-    last_block_preset_key: word;
-
   public
     // List of available tilesets
     cnt_tilesets: integer;
-    tileset_list: TStringList;
-    tileatr_mapping: THashedStringList;
+    tileset_list: array of TTilesetListEntry;
+    tileset_index_mapping: array of integer;
 
     // Status variables
-    tileset_index: integer;
     tileset_name: String;
     tileatr_name: String;
     tileimage_filename: String;
+    tls_filename: String;
     tileatr_filename: String;
-    config_filename: String;
+    ini_filename: String;
 
-    // Tileset image variables
+    // Tileset image
+    cnt_tiles: integer;
     tileimage: TBitmap;
+    tileimage_modified: boolean;
     palette_loaded: Boolean;
     palette: PLogPalette;
 
-    // Tile attribute variables
-    attributes: array[0..cnt_tileset_tiles-1] of cardinal;
-    tile_hint_text: array[0..cnt_tileset_tiles-1] of integer;
-    attributes_editor: array[0..cnt_tileset_tiles-1] of byte;
-    block_preset_coverage: array[0..cnt_tileset_tiles-1] of byte;
-    tile_paint_group: array[0..cnt_tileset_tiles-1] of shortint;
+    // Tileset data
+    header: TTilesetHeader;
 
-    // Tileset configuration
-    matching_tileatr_name: string;
-    default_paint_group: integer;
+    attributes: array[0..max_tileset_tiles-1] of cardinal;
+    attributes_extra: array[0..max_tileset_tiles-1] of cardinal;
+    tile_hint_text: array[0..max_tileset_tiles-1] of integer;
+    restrictions: array[0..max_tileset_tiles-1] of cardinal;
 
-    minimap_color_rules: array[0..max_minimap_color_rules-1] of TMinimapColorRule;
+    extra_attribute_names: array[0..7, 0..31] of char;
+
     minimap_color_rules_used: integer;
+    minimap_color_rules: array[0..max_minimap_color_rules-1] of TMinimapColorRule;
 
-    fill_area_rules: array[0..max_fill_area_rules-1] of TFillAreaRule;
     fill_area_rules_used: integer;
-
-    editor_attribute_names: array[0..7] of string;
+    fill_area_rules: array[0..max_fill_area_rules-1] of TFillAreaRule;
 
     paint_tile_groups: array[-4..cnt_paint_tile_groups-1] of TPaintTileGroup;
-    paint_tiles: array[0..max_paint_tiles-1] of word; // Tile numbers of clean sand/rock/dunes
-    paint_tiles_used: integer;
 
     block_preset_groups: array[0..cnt_block_preset_groups-1] of TBlockPresetGroup;
-    block_preset_key_variants: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of TBlockPresetVariantList;
+    block_preset_key_variants: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of byte;
     block_presets: array[0..max_block_presets-1] of TBlockPreset;
-    block_presets_used: integer;
-    block_preset_tiles: array[0..max_block_preset_tiles] of word;
-    block_preset_tiles_used: integer;
+    block_preset_tiles: array[0..max_block_preset_tiles-1] of word;
 
-    {--// Tileset configuration specific for random map generator
-    connection_points: array[0..max_connection_points-1] of TConnectionPoint;
-    connection_points_used: integer;
-    block_groups: array[0..cnt_block_groups] of TBlockGroup;
-    connection_point_types: array[0..cnt_connection_point_types-1] of TConnectionPointType;}
+    connection_points: array[0..max_connection_points-1] of TConnectionPoint;               // Used for random map generator
+    connection_point_types: array[0..cnt_connection_point_types-1] of TConnectionPointType; // Used for random map generator
+    block_groups: array[0..cnt_block_groups] of TBlockGroup;                                // Used for random map generator
+
+    // Internal editor data
+    paint_tile_lists: array[0..cnt_paint_tile_groups-1] of TPaintTileList;
+    paint_tile_random_maps: array[0..cnt_paint_tile_groups-1] of array of word;
+    block_presets_used: integer;
+    block_preset_tiles_used: integer;
+    block_preset_key_variant_first_preset_indexes: array[0..cnt_block_preset_groups-1, 0..cnt_block_preset_keys-1] of word;
+    block_preset_first_tile_indexes: array[0..max_block_presets-1] of word;
+    connection_points_used: integer;                                                    // Used for random map generator
+    block_preset_first_connection_point_indexes: array[0..max_block_presets-1] of word; // Used for random map generator
+
+  private
+    last_block_preset_variant: integer;
+    last_block_preset_group: integer;
+    last_block_preset_key: integer;
 
   public
     procedure init;
+    // Load tileset list
     procedure load_tileset_list;
-    // Dispatcher procedures
-    procedure update_tileset_index;
-    // Changing tileset
+    // New tileset
+    procedure new_tileset(p_tileset_name: String);
+    // Change tileset
     procedure change_tileset_by_index(index: integer);
     procedure change_tileset_by_name(p_tileset_name, p_tileatr_name: String);
     procedure change_tileset_to_default;
     procedure change_tileset_next;
-    // Loading tileset parts
+    // Load/save tileset
     procedure load_tileset(force_reload: boolean);
-    // Loading tileset image
+    procedure save_tileset;
+    // Load/save tileset image
     procedure load_tileimage(p_tileset_name: string; force: boolean);
-    procedure load_tileimage_from_file(filename: String);
     procedure load_r16_image(filename: String);
     procedure load_r8_image(filename: String);
     procedure load_palette;
-    procedure load_bmp_image(filename: String);
-    // Loading tile attributes
+    procedure save_tileimage;
+    procedure save_r16_image(filename: String);
+    // Load/save tls
+    function load_tls(p_tileset_name: string; force: boolean): boolean;
+    procedure save_tls;
+    // Load tile attributes
     procedure load_tileatr(p_tileatr_name: string; force: boolean);
-    procedure load_tileatr_from_file(filename: String);
-    procedure load_tileatr_bin_file(filename: String);
-    // Load tileset configuration
-    procedure load_config(p_tileset_name: string; use_default, force: boolean);
-    function load_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;
-    // Saving tile attributes
-    procedure save_tileatr;
-    procedure save_tileatr_to_file(filename: String);
-    // Radar color file for Dune2000 game
-    procedure produce_radar_color_file;
-
-    // Functions related to tileset configuration
+    // Load ini configuration
+    procedure load_ini(p_tileset_name: string; force: boolean);
+    // Process internal data
+    procedure process_internal_data;
+    procedure process_paint_tile_lists;
+    procedure process_paint_tile_random_maps;
+    procedure process_block_presets;
+    // Editing tileset image
+    procedure import_tileimage_from_file(filename: String);
+    procedure export_tileimage_to_file(filename: String);
+    procedure import_tileimage_portion_from_file(filename: String; pos_x, pos_y: integer);
+    procedure export_tileimage_portion_to_file(filename: String; pos_x, pos_y, size_x, size_y: integer);
+    procedure copy_tileimage_portion(src_x, src_y, dest_x, dest_y, size_x, size_y: integer);
+    procedure swap_tileimage_portion(src_x, src_y, dest_x, dest_y, size_x, size_y: integer);
+    procedure erase_tileimage_portion(pos_x, pos_y, size_x, size_y: integer);
+    procedure resize_tileset(new_cnt_tiles: integer);
+    // Editing tile attributes
+    procedure set_tile_attributes(tile: word; value: Int64);
+    // Editing block presets
+    procedure add_block_preset(group: integer; key_index: integer; width, height: integer; tiles: array of word);
+    procedure delete_block_preset(preset_index: integer);
+    // Miscellaneous functions
     function get_paint_tile_group_char(group: integer): char;
     function get_tile_attributes(tile, special: word; use_internal_attributes: boolean): Int64;
-    procedure set_tile_attributes(tile: word; value: Int64);
     function get_tile_type(tile: word): TileType;
-    function get_tile_color(tile, special: word): Cardinal;
+    function get_tile_color(tile, special: word; var rule_index: integer): Cardinal;
     function get_fill_area_type(tile: word; special: word): integer;
+    function get_tile_paint_group(tile: word): integer;
     function check_area_type(tile, special: word; area_type: integer): boolean;
     function check_paint_tile_restriction(tile, special: word; paint_tile_group: integer): boolean;
     function evaluate_rule(attr_value: int64; rule_ptr: TTileAtrRulePtr): boolean;
-    function block_key_to_index(key: word): integer;
     function get_random_paint_tile(group, x, y: integer): integer;
-    function get_block_preset(group: integer; key: word; variant: integer): integer;
+    function get_block_preset_index(group: integer; key_index: integer; variant: integer): integer;
+    function string_to_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;
+    function rule_to_string(rule_ptr: TTileAtrRulePtr): string;
   end;
 
 var
@@ -248,12 +302,14 @@ var
 
 implementation
 
-uses Forms, SysUtils, StrUtils, Math, _map, _settings, _dispatcher;
+uses Forms, SysUtils, StrUtils, Math, _map, _settings, _graphics, _dispatcher, _missionini, pngimage;
 
 procedure TTileset.init;
 begin
-  tileset_index := -1;
+  // Initialize tileset image
+  cnt_tiles := min_tileset_tiles;
   tileimage := Graphics.TBitmap.Create;
+  tileimage_modified := false;
   palette_loaded := false;
   // Initialize empty block preset
   block_presets[0].width := 0;
@@ -267,64 +323,178 @@ var
   SR: TSearchRec;
   tmp_strings: TStringList;
   tmp_inifile: TIniFile;
-  tmp_tileset_pretty_name: string;
-  tmp_tileset_name: string;
-  tmp_tileatr_name: string;
+  tileimage_location: string;
   i: integer;
+  tileset_file: file of byte;
+  f: file of byte;
+  header: TTilesetHeader;
+  tileset_fancy_name_mapping: TStringList;
 begin
   tmp_strings := TStringList.Create;
+  tileset_fancy_name_mapping := TStringList.Create;
+  // Find tileset INI files in editor folder
   if FindFirst(current_dir + 'tilesets\*.ini', 0, SR) = 0 then
   begin
     repeat
       if SR.Name <> 'template.ini' then
-        tmp_strings.Add(SR.Name);
+        tmp_strings.Values[ChangeFileExt(SR.Name, '')] := 'INI';
     until FindNext(SR) <> 0;
       FindClose(SR);
   end;
+  // Find tileset TLS files in game folder
+  if FindFirst(Settings.GamePath + '\Data\Tilesets\*.TLS', 0, SR) = 0 then
+  begin
+    repeat
+      tmp_strings.Values[ChangeFileExt(SR.Name, '')] := 'TLS';
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  // Find tileset TLS files in CustomCampaignData folder
+  if (MissionIni.CampaignFolder <> '') and (MissionIni.ModsFolder <> '') and (FindFirst(Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\' + MissionIni.ModsFolder + '\Data\Tilesets\*.TLS', 0, SR) = 0) then
+  begin
+    repeat
+      tmp_strings.Values[ChangeFileExt(SR.Name, '')] := 'TLS Mod';
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  // Initialize variables
   cnt_tilesets := tmp_strings.Count;
-  tileset_list := TStringList.Create;
-  tileatr_mapping := THashedStringList.Create;
-  tileset_list.Capacity := cnt_tilesets;
-  tileatr_mapping.Capacity := cnt_tilesets;
+  SetLength(tileset_list, cnt_tilesets);
+  SetLength(tileset_index_mapping, cnt_tilesets);
+  // Process tilesets
   for i := 0 to cnt_tilesets -1 do
   begin
-    tmp_inifile := TIniFile.Create(current_dir+'\tilesets\'+tmp_strings[i]);
-    tmp_tileset_name := ChangeFileExt(tmp_strings[i], '');
-    tmp_tileset_pretty_name := tmp_inifile.ReadString('Basic','name', tmp_tileset_name);
-    tmp_tileatr_name := tmp_inifile.ReadString('Basic','tileatr', '');
-    tileset_list.Add(tmp_tileset_pretty_name + '=' + tmp_tileset_name);
-    tileatr_mapping.Add(tmp_tileset_name + '=' + tmp_tileatr_name);
-    tmp_inifile.Destroy;
+    tileset_list[i].name := tmp_strings.Names[i];
+    tileset_list[i].location := tmp_strings.ValueFromIndex[i];
+    tileimage_location := '';
+    if tileset_list[i].location = 'INI' then
+    begin
+      tmp_inifile := TIniFile.Create(current_dir + '\tilesets\' + tileset_list[i].name + '.ini');
+      tileimage_location := Settings.GamePath + '\Data';
+      tileset_list[i].fancy_name := tmp_inifile.ReadString('Basic', 'name', tileset_list[i].name);
+      tileset_list[i].author :=     tmp_inifile.ReadString('Basic', 'author', '');
+      tileset_list[i].num_tiles :=  0;
+      tileset_list[i].attributes := tmp_inifile.ReadString('Basic', 'tileatr', '');
+      tmp_inifile.Destroy;
+    end
+    else if tileset_list[i].location = 'TLS' then
+    begin
+      AssignFile(tileset_file, Settings.GamePath + '\Data\Tilesets\' + tileset_list[i].name + '.TLS');
+      Reset(tileset_file);
+      BlockRead(tileset_file, header, sizeof(header));
+      CloseFile(tileset_file);
+      tileimage_location := Settings.GamePath + '\Data';
+      tileset_list[i].fancy_name := header.tileset_fancy_name;
+      tileset_list[i].author :=     header.author_name;
+      tileset_list[i].num_tiles :=  0;
+      tileset_list[i].attributes := '';
+    end
+    else if tileset_list[i].location = 'TLS Mod' then
+    begin
+      AssignFile(tileset_file, Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\' + MissionIni.ModsFolder + '\Data\Tilesets\' + tileset_list[i].name + '.TLS');
+      Reset(tileset_file);
+      BlockRead(tileset_file, header, sizeof(header));
+      CloseFile(tileset_file);
+      tileimage_location := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\' + MissionIni.ModsFolder + '\Data';
+      tileset_list[i].fancy_name := header.tileset_fancy_name;
+      tileset_list[i].author :=     header.author_name;
+      tileset_list[i].num_tiles :=  0;
+      tileset_list[i].attributes := '';
+    end;
+    tileset_fancy_name_mapping.Add(tileset_list[i].fancy_name + '=' + IntToStr(i));
+    // Get number of tiles by checking R8/R16 file size
+    if FileExists(tileimage_location + '\' + tileset_list[i].name + '.R16') then
+    begin
+      AssignFile(f, tileimage_location + '\' + tileset_list[i].name + '.R16');
+      FileMode := fmOpenRead;
+      Reset(f);
+      tileset_list[i].num_tiles := FileSize(f) div r16_tile_total_size;
+      Close(f);
+    end
+    else if FileExists(tileimage_location + '\' + tileset_list[i].name + '.R8') then
+    begin
+      AssignFile(f, tileimage_location + '\' + tileset_list[i].name + '.R8');
+      FileMode := fmOpenRead;
+      Reset(f);
+      tileset_list[i].num_tiles := FileSize(f) div r8_tile_total_size;
+      Close(f);
+    end
   end;
+  // Process tileset index mapping
+  tileset_fancy_name_mapping.Sort;
+  for i := 0 to cnt_tilesets -1 do
+    tileset_index_mapping[i] := StrToInt(tileset_fancy_name_mapping.ValueFromIndex[i]);
+  // Clean up
   tmp_strings.Destroy;
-  tileset_list.Sort;
+  tileset_fancy_name_mapping.Destroy;
+  // Register event in dispatcher
   Dispatcher.register_event(evFLLTilesetList);
 end;
 
-procedure TTileset.update_tileset_index;
+procedure TTileset.new_tileset(p_tileset_name: String);
 var
   i: integer;
 begin
-  tileset_index := -1;
-  // Try to find the tileset in list of known tilesets
-  for i := 0 to cnt_tilesets-1 do
-    // Case-insensitive string compare
-    if AnsiCompareText(tileset_name, tileset_list.ValueFromIndex[i]) = 0 then
+  for i := 0 to cnt_tilesets - 1 do
+    if AnsiCompareText(tileset_list[i].name, p_tileset_name) = 0 then
     begin
-      tileset_index := i;
-      break;
+      Dispatcher.register_error('New tileset', 'Tileset with name ' + p_tileset_name + ' already exists.');
+      exit;
     end;
-  // Check if corresponding tileatr name matches
-  if (tileset_index <> -1) and (AnsiCompareText(tileatr_mapping.Values[tileset_name], tileatr_name) <> 0) then
-    tileset_index := -1;
+  // Initialize status
+  tileset_name := p_tileset_name;
+  tileatr_name := '';
+  tileimage_filename := '';
+  tls_filename := '';
+  tileatr_filename := '';
+  ini_filename := '';
+  // Initialize tileset image
+  cnt_tiles := min_tileset_tiles;
+  tileimage.Height := (cnt_tiles div 20) * 32;
+  tileimage.Canvas.Pen.Color := clBlack;
+  tileimage.Canvas.Brush.Color := clBlack;
+  tileimage.Canvas.Brush.Style := bsSolid;
+  tileimage.Canvas.Rectangle(0, 0, tileimage_width, tileimage.Height);
+  tileimage_modified := true;
+  // Initialize header
+  FillChar(header, sizeof(header), 0);
+  header.version_major := 1;
+  header.version_minor := 0;
+  // Initialize attributes and hints
+  for i := 0 to cnt_tiles - 1 do
+  begin
+    attributes[i] := 0;
+    attributes_extra[i] := 0;
+    tile_hint_text[i] := -1;
+    restrictions[i] := 0;
+  end;
+  // Initialize configuration
+  FillChar(extra_attribute_names, sizeof(extra_attribute_names), 0);
+  minimap_color_rules_used := 1;
+  FillChar(minimap_color_rules, sizeof(minimap_color_rules), 0);
+  fill_area_rules_used := 1;
+  FillChar(fill_area_rules, sizeof(fill_area_rules), 0);
+  FillChar(paint_tile_groups, sizeof(paint_tile_groups), 0);
+  for i := -4 to cnt_paint_tile_groups - 1 do
+    paint_tile_groups[i].smooth_preset_group := -1;
+  FillChar(block_preset_groups, sizeof(block_preset_groups), 0);
+  FillChar(block_preset_key_variants, sizeof(block_preset_key_variants), 0);
+  FillChar(block_presets, sizeof(block_presets), 0);
+  FillChar(block_preset_tiles, sizeof(block_preset_tiles), 0);
+  FillChar(connection_points, sizeof(connection_points), 0);
+  FillChar(connection_point_types, sizeof(connection_point_types), 0);
+  FillChar(block_groups, sizeof(block_groups), 0);
+  process_internal_data;
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLTilesetFile);
 end;
 
 procedure TTileset.change_tileset_by_index(index: integer);
 begin
   if (index >= cnt_tilesets) or (index < 0) then
     exit;
-  tileset_name := tileset_list.ValueFromIndex[index];
-  tileatr_name := tileatr_mapping.Values[tileset_name];
+  tileset_name := tileset_list[index].name;
+  tileatr_name := tileset_list[index].attributes;
   load_tileset(false);
 end;
 
@@ -336,27 +506,52 @@ begin
 end;
 
 procedure TTileset.change_tileset_to_default;
+var
+  i: integer;
 begin
-  change_tileset_by_name(Settings.DefaultTilesetName, tileatr_mapping.Values[Settings.DefaultTilesetName]);
+  for i := 0 to cnt_tilesets - 1 do
+    if tileset_list[i].name = Settings.DefaultTilesetName then
+    begin
+      change_tileset_by_index(i);
+      break;
+    end;
 end;
 
 procedure TTileset.change_tileset_next;
+var
+  i: integer;
 begin
-  if cnt_tilesets = 0 then
-    exit;
-  change_tileset_by_index((tileset_index + 1) mod cnt_tilesets);
+  for i := 0 to cnt_tilesets - 1 do
+    if tileset_list[tileset_index_mapping[i]].name = tileset_name then
+    begin
+      change_tileset_by_index(tileset_index_mapping[(i + 1) mod cnt_tilesets]);
+      break;
+    end;
 end;
 
 procedure TTileset.load_tileset(force_reload: boolean);
+var
+  tileset_file_found: boolean;
 begin
   load_tileimage(tileset_name, force_reload);
-  load_tileatr(tileatr_name, force_reload);
-  load_config(tileset_name, true, force_reload);
+  tileset_file_found := load_tls(tileset_name, force_reload);
+  // TLS file not found, fall back to loading TILEATRx.BIN file and tileset ini configuration file
+  if not tileset_file_found then
+  begin
+    load_tileatr(tileatr_name, force_reload);
+    load_ini(tileset_name, force_reload);
+  end;
   // Failsafe to default tileset if tileset image/attributes could not be loaded
   if (tileimage_filename = '') and (tileset_name <> Settings.DefaultTilesetName) then
     load_tileimage(Settings.DefaultTilesetName, false);
-  if (tileatr_filename = '') and (tileset_name <> Settings.DefaultTilesetName) then
-    load_tileatr(tileatr_mapping.Values[Settings.DefaultTilesetName], false);
+  if (tls_filename = '') and (tileatr_filename = '') and (ini_filename = '') and (tileset_name <> Settings.DefaultTilesetName) then
+    load_tls(Settings.DefaultTilesetName, false);
+end;
+
+procedure TTileset.save_tileset;
+begin
+  save_tileimage;
+  save_tls;
 end;
 
 procedure TTileset.load_tileimage(p_tileset_name: string; force: boolean);
@@ -364,65 +559,32 @@ var
   tmp_filename: string;
 begin
   // Try to find R16 file
-  if Settings.LoadR16Image then
-  begin
-    tmp_filename := find_file('Data\' + p_tileset_name + '.R16', '');
-    if (tmp_filename <> '') and (tmp_filename = tileimage_filename) and not force then
-      exit;
-    if tmp_filename <> '' then
-    begin
-      load_r16_image(tmp_filename);
-      exit;
-    end;
-  end;
-  // Try to find R8 file
-  if Settings.LoadR8Image then
-  begin
-    tmp_filename := find_file('Data\' + p_tileset_name + '.R8', '');
-    if (tmp_filename <> '') and (tmp_filename = tileimage_filename) and not force then
-      exit;
-    if tmp_filename <> '' then
-    begin
-      load_r8_image(tmp_filename);
-      exit;
-    end;
-  end;
-  // Try to find bmp file
-  tmp_filename := find_file('Data\' + p_tileset_name + '.bmp', '');
+  tmp_filename := find_file('Data\' + p_tileset_name + '.R16', '');
   if (tmp_filename <> '') and (tmp_filename = tileimage_filename) and not force then
     exit;
   if tmp_filename <> '' then
   begin
-    load_bmp_image(tmp_filename);
+    load_r16_image(tmp_filename);
+    tileimage_modified := false;
     exit;
   end;
-  Application.MessageBox(PChar('Could not find image file for tileset ' + p_tileset_name), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
-end;
-
-procedure TTileset.load_tileimage_from_file(filename: String);
-var
-  ext: String;
-begin
-  if (filename = '') or not FileExists(filename) then
+  // Try to find R8 file
+  tmp_filename := find_file('Data\' + p_tileset_name + '.R8', '');
+  if (tmp_filename <> '') and (tmp_filename = tileimage_filename) and not force then
     exit;
-  Ext := UpperCase(ExtractFileExt(filename));
-  if Ext = '.R16' then
-    load_r16_image(filename)
-  else if Ext = '.R8' then
-    load_r8_image(filename)
-  else if Ext = '.BMP' then
-    load_bmp_image(filename);
-  // Check if load was succesful
-  if tileimage_filename <> filename then
+  if tmp_filename <> '' then
+  begin
+    load_r8_image(tmp_filename);
+    tileimage_modified := false;
     exit;
-  // Load tileset configuration
-  tileset_name := UpperCase(ChangeFileExt(ExtractFileName(filename), ''));
-  load_config(tileset_name, false, false);
+  end;
+  Dispatcher.register_error('Error loading tileset graphics', 'Could not find image file for tileset ' + p_tileset_name);
 end;
 
 procedure TTileset.load_r16_image(filename: String);
 var
   f: file of byte;
+  file_size: integer;
   r16_file_buffer: array of byte;
   r16_tile_data_buffer: TWordArrayPtr;
   r16_tileset_data_buffer: TWordArrayPtr;
@@ -432,28 +594,30 @@ begin
   AssignFile(f, filename);
   FileMode := fmOpenRead;
   Reset(f);
-  if (filesize(f) <> r16_file_size) then
+  file_size := filesize(f);
+  if (file_size mod r16_tile_total_size) <> 0 then
   begin
-    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r16_file_size) + ' bytes)'), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
+    Dispatcher.register_error('Error loading tileset graphics', 'The file ' + filename + ' does not have expected size - must be a multiple of ' + inttostr(r16_tile_total_size) + ' bytes)');
     Close(f);
     exit;
   end;
-  SetLength(r16_file_buffer, r16_file_size);
-  BlockRead(f, r16_file_buffer[0], r16_file_size);
+  cnt_tiles := file_size div r16_tile_total_size;
+  SetLength(r16_file_buffer, file_size);
+  BlockRead(f, r16_file_buffer[0], file_size);
   Close(f);
   // Arrange image data into tileset image
   tileimage.Width := tileimage_width;
-  tileimage.Height := tileimage_height;
+  tileimage.Height := (cnt_tiles div 20) * 32;
   tileimage.PixelFormat := pf15bit;
-  r16_tileset_data_buffer := tileimage.ScanLine[tileimage_height-1];
-  for i := 0 to cnt_tileset_tiles-1 do
+  r16_tileset_data_buffer := tileimage.ScanLine[tileimage.Height-1];
+  for i := 0 to cnt_tiles-1 do
   begin
     offset := i * (r16_tile_header_size + r16_tile_data_size) + r16_tile_header_size;
     r16_tile_data_buffer := Addr(r16_file_buffer[offset]);
     for y := 0 to 31 do
       for x := 0 to 31 do
       begin
-        r16_tileset_data_buffer[x + ((i mod 20) * 32) + ((tileimage_height - (y + ((i div 20) * 32)) - 1) * tileimage_width)] := r16_tile_data_buffer[x + y*32];
+        r16_tileset_data_buffer[x + ((i mod 20) * 32) + ((tileimage.Height - (y + ((i div 20) * 32)) - 1) * tileimage_width)] := r16_tile_data_buffer[x + y*32];
       end;
   end;
   tileimage.PixelFormat := pf32bit;
@@ -466,6 +630,7 @@ end;
 procedure TTileset.load_r8_image(filename: String);
 var
   f: file of byte;
+  file_size: integer;
   r8_file_buffer: array of byte;
   r8_tile_data_buffer: TByteArrayPtr;
   r8_tileset_data_buffer: TByteArrayPtr;
@@ -475,31 +640,33 @@ begin
   AssignFile(f, filename);
   FileMode := fmOpenRead;
   Reset(f);
-  if (filesize(f) <> r8_file_size) then
+  file_size := filesize(f);
+  if (file_size mod r8_tile_total_size) <> 0 then
   begin
-    Application.MessageBox(PChar('Error loading tileset image from ' + filename + ':'#13'File does not have expected size (' + inttostr(r8_file_size) + ' bytes)'), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
+    Dispatcher.register_error('Error loading tileset graphics', 'The file ' + filename + ' does not have expected size - must be a multiple of ' + inttostr(r8_tile_total_size) + ' bytes)');
     Close(f);
     exit;
   end;
-  SetLength(r8_file_buffer, r8_file_size);
-  BlockRead(f, r8_file_buffer[0], r8_file_size);
+  cnt_tiles := file_size div r8_tile_total_size;
+  SetLength(r8_file_buffer, file_size);
+  BlockRead(f, r8_file_buffer[0], file_size);
   Close(f);
   // Arrange image data into tileset image
   tileimage.Width := tileimage_width;
-  tileimage.Height := tileimage_height;
+  tileimage.Height := (cnt_tiles div 20) * 32;
   tileimage.PixelFormat := pf8bit;
   load_palette;
   if palette_loaded then
     tileimage.Palette := CreatePalette(palette^);
-  r8_tileset_data_buffer := tileimage.ScanLine[tileimage_height-1];
-  for i := 0 to cnt_tileset_tiles-1 do
+  r8_tileset_data_buffer := tileimage.ScanLine[tileimage.Height-1];
+  for i := 0 to cnt_tiles-1 do
   begin
     offset := i * (r8_tile_header_size + r8_tile_data_size) + r8_tile_header_size;
     r8_tile_data_buffer := Addr(r8_file_buffer[offset]);
     for y := 0 to 31 do
       for x := 0 to 31 do
       begin
-        r8_tileset_data_buffer[x + ((i mod 20) * 32) + ((tileimage_height - (y + ((i div 20) * 32)) - 1) * tileimage_width)] := r8_tile_data_buffer[x + y*32];
+        r8_tileset_data_buffer[x + ((i mod 20) * 32) + ((tileimage.Height - (y + ((i div 20) * 32)) - 1) * tileimage_width)] := r8_tile_data_buffer[x + y*32];
       end;
   end;
   tileimage.PixelFormat := pf32bit;
@@ -521,7 +688,7 @@ begin
   filename := Settings.GamePath+'\Data\bin\PALETTE.BIN';
   if not FileExists(filename) then
   begin
-    Application.MessageBox(PChar('Error loading palette. Could not find file ' + filename), 'Error loading tileset graphics', MB_OK or MB_ICONERROR);
+    Dispatcher.register_error('Error loading tileset graphics', 'Cannot load palette. Could not find file ' + filename);
     exit;
   end;
   AssignFile(f, filename);
@@ -541,58 +708,197 @@ begin
   palette_loaded := true;
 end;
 
-procedure TTileset.load_bmp_image(filename: String);
+procedure TTileset.save_tileimage;
+var
+  name_pattern: string;
+  tmp_filename: string;
 begin
-  // Load bmp file
-  tileimage.LoadFromFile(filename);
-  tileimage.PixelFormat := pf32bit;
-  // Update file name
-  tileimage_filename := filename;
+  if not tileimage_modified then
+    exit;
+  name_pattern := 'Data\' + tileset_name + '.R16';
+  tmp_filename := Settings.GamePath + '\' + name_pattern;
+  if not manage_filesave(tmp_filename, name_pattern, evTileimageFilenameChange) then
+    exit;
+  save_r16_image(tmp_filename);
+  // Update filename
+  if tileimage_filename <> tmp_filename then
+  begin
+    tileimage_filename := tmp_filename;
+    Dispatcher.register_event(evTileimageFilenameChange);
+  end;
+  tileimage_modified := false;
+end;
+
+procedure TTileset.save_r16_image(filename: String);
+var
+  f: file of byte;
+  r16_file_buffer: array of byte;
+  r16_header: TR16EntryHeaderPtr;
+  r16_tile_data_buffer: TWordArrayPtr;
+  r16_tileset_data_buffer: TWordArrayPtr;
+  i, x, y, header_offset, offset: integer;
+  tmp_bitmap: TBitmap;
+begin
+  // Initialize buffer
+  SetLength(r16_file_buffer, cnt_tiles * r16_tile_total_size);
+  // Arrange image data into tileset image
+  tmp_bitmap := TBitmap.Create;
+  tmp_bitmap.Assign(tileimage);
+  tmp_bitmap.PixelFormat := pf15bit;
+  r16_tileset_data_buffer := tmp_bitmap.ScanLine[tileimage.Height-1];
+  for i := 0 to cnt_tiles-1 do
+  begin
+    // Fill header
+    header_offset := i * (r16_tile_header_size + r16_tile_data_size);
+    r16_header := Addr(r16_file_buffer[header_offset]);
+    r16_header.EntryType := 1;
+    r16_header.ImageWidth := 32;
+    r16_header.ImageHeight := 32;
+    r16_header.ImageHandle := $01FE8514;
+    r16_header.BitsPerPixel := 16;
+    r16_header.FrameHeight := 32;
+    r16_header.FrameWidth := 32;
+    // Fill pixel data
+    offset := header_offset + r16_tile_header_size;
+    r16_tile_data_buffer := Addr(r16_file_buffer[offset]);
+    for y := 0 to 31 do
+      for x := 0 to 31 do
+      begin
+        r16_tile_data_buffer[x + y*32] := r16_tileset_data_buffer[x + ((i mod 20) * 32) + ((tileimage.Height - (y + ((i div 20) * 32)) - 1) * tileimage_width)];
+      end;
+  end;
+  tmp_bitmap.Destroy;
+  // Save buffer into file
+  AssignFile(f, filename);
+  ReWrite(f);
+  BlockWrite(f, r16_file_buffer[0], Length(r16_file_buffer));
+  Close(f);
+  SetLength(r16_file_buffer, 0);
+end;
+
+function TTileset.load_tls(p_tileset_name: string; force: boolean): boolean;
+var
+  tmp_filename: string;
+  tileset_file: file of byte;
+begin
+  result := true;
+  // Try to find TLS file
+  tmp_filename := find_file('Data\Tilesets\' + p_tileset_name + '.TLS', '');
+  // TLS file not found
+  if tmp_filename = '' then
+  begin
+    result := false;
+    exit;
+  end;
+  // TLS file found and is same
+  if (tmp_filename = tls_filename) and not force then
+    exit;
+  // Load tileset file
+  AssignFile(tileset_file, tmp_filename);
+  Reset(tileset_file);
+  BlockRead(tileset_file, header,                     sizeof(header));
+  BlockRead(tileset_file, attributes,                 sizeof(attributes));
+  BlockRead(tileset_file, attributes_extra,           sizeof(attributes_extra));
+  BlockRead(tileset_file, tile_hint_text,             sizeof(tile_hint_text));
+  BlockRead(tileset_file, restrictions,               sizeof(restrictions));
+  BlockRead(tileset_file, extra_attribute_names,      sizeof(extra_attribute_names));
+  BlockRead(tileset_file, minimap_color_rules_used,   sizeof(minimap_color_rules_used));
+  BlockRead(tileset_file, minimap_color_rules,        sizeof(minimap_color_rules));
+  BlockRead(tileset_file, fill_area_rules_used,       sizeof(fill_area_rules_used));
+  BlockRead(tileset_file, fill_area_rules,            sizeof(fill_area_rules));
+  BlockRead(tileset_file, paint_tile_groups,          sizeof(paint_tile_groups));
+  BlockRead(tileset_file, block_preset_groups,        sizeof(block_preset_groups));
+  BlockRead(tileset_file, block_preset_key_variants,  sizeof(block_preset_key_variants));
+  BlockRead(tileset_file, block_presets,              sizeof(block_presets));
+  BlockRead(tileset_file, block_preset_tiles,         sizeof(block_preset_tiles));
+  BlockRead(tileset_file, connection_points,          sizeof(connection_points));
+  BlockRead(tileset_file, connection_point_types,     sizeof(connection_point_types));
+  BlockRead(tileset_file, block_groups,               sizeof(block_groups));
+  CloseFile(tileset_file);
+  // Process internal data
+  process_internal_data;
+  // Update filename
+  tls_filename := tmp_filename;
+  // Unset TILEATRx.BIN and tileset.ini filename
+  tileatr_name := '';
+  tileatr_filename := '';
+  ini_filename := '';
   // Register event in dispatcher
-  Dispatcher.register_event(evFLTilesetImage);
+  Dispatcher.register_event(evFLTilesetFile);
+end;
+
+procedure TTileset.save_tls;
+var
+  name_pattern: string;
+  tmp_filename: string;
+  tileset_file: file of byte;
+begin
+  name_pattern := 'Data\Tilesets\' + tileset_name + '.TLS';
+  tmp_filename := Settings.GamePath + '\' + name_pattern;
+  if not manage_filesave(tmp_filename, name_pattern, evTlsFilenameChange) then
+    exit;
+  // Save tileset file
+  AssignFile(tileset_file, tmp_filename);
+  ReWrite(tileset_file);
+  BlockWrite(tileset_file, header,                    sizeof(header));
+  BlockWrite(tileset_file, attributes,                sizeof(attributes));
+  BlockWrite(tileset_file, attributes_extra,          sizeof(attributes_extra));
+  BlockWrite(tileset_file, tile_hint_text,            sizeof(tile_hint_text));
+  BlockWrite(tileset_file, restrictions,              sizeof(restrictions));
+  BlockWrite(tileset_file, extra_attribute_names,     sizeof(extra_attribute_names));
+  BlockWrite(tileset_file, minimap_color_rules_used,  sizeof(minimap_color_rules_used));
+  BlockWrite(tileset_file, minimap_color_rules,       sizeof(minimap_color_rules));
+  BlockWrite(tileset_file, fill_area_rules_used,      sizeof(fill_area_rules_used));
+  BlockWrite(tileset_file, fill_area_rules,           sizeof(fill_area_rules));
+  BlockWrite(tileset_file, paint_tile_groups,         sizeof(paint_tile_groups));
+  BlockWrite(tileset_file, block_preset_groups,       sizeof(block_preset_groups));
+  BlockWrite(tileset_file, block_preset_key_variants, sizeof(block_preset_key_variants));
+  BlockWrite(tileset_file, block_presets,             sizeof(block_presets));
+  BlockWrite(tileset_file, block_preset_tiles,        sizeof(block_preset_tiles));
+  BlockWrite(tileset_file, connection_points,         sizeof(connection_points));
+  BlockWrite(tileset_file, connection_point_types,    sizeof(connection_point_types));
+  BlockWrite(tileset_file, block_groups,              sizeof(block_groups));
+  CloseFile(tileset_file);
+  // Unset TILEATRx.BIN and tileset.ini filename
+  tileatr_name := '';
+  tileatr_filename := '';
+  ini_filename := '';
+  // Update filename
+  if tls_filename <> tmp_filename then
+  begin
+    tls_filename := tmp_filename;
+    load_tileset_list;
+    Dispatcher.register_event(evTlsFilenameChange);
+  end;
 end;
 
 procedure TTileset.load_tileatr(p_tileatr_name: string; force: boolean);
 var
   tmp_filename: string;
+  tileatr_file: file of cardinal;
 begin
   tmp_filename := find_file('Data\bin\' + p_tileatr_name + '.BIN', 'tile attributes');
   if (tmp_filename = '') or ((tmp_filename = tileatr_filename) and not force) then
     exit;
-  load_tileatr_bin_file(tmp_filename);
-end;
-
-procedure TTileset.load_tileatr_from_file(filename: String);
-begin
-  if (filename = '') or not FileExists(filename) then
-    exit;
-  tileatr_name := UpperCase(ChangeFileExt(ExtractFileName(filename), ''));
-  load_tileatr_bin_file(filename);
-end;
-
-procedure TTileset.load_tileatr_bin_file(filename: String);
-var
-  tileatr_file: file of cardinal;
-begin
   // Load TILEATR.BIN file
-  AssignFile(tileatr_file, filename);
+  AssignFile(tileatr_file, tmp_filename);
   Reset(tileatr_file);
-  if FileSize(tileatr_file) <> (cnt_tileset_tiles * 2) then
+  if FileSize(tileatr_file) <> (min_tileset_tiles * 2) then
   begin
-    Application.MessageBox(PChar('Error loading tile attributes from ' + filename + ':'#13'File does not have expected size (' + inttostr(cnt_tileset_tiles * 2 * 4) + ' bytes)'), 'Error loading tile attributes', MB_OK or MB_ICONERROR);
+    Dispatcher.register_error('Error loading tile attributes', 'The file ' + tmp_filename + ' does not have expected size (' + inttostr(min_tileset_tiles * 2 * 4) + ' bytes)');
     CloseFile(tileatr_file);
     exit;
   end;
-  BlockRead(tileatr_file, attributes, cnt_tileset_tiles);
-  BlockRead(tileatr_file, tile_hint_text, cnt_tileset_tiles);
+  BlockRead(tileatr_file, attributes, min_tileset_tiles);
+  BlockRead(tileatr_file, tile_hint_text, min_tileset_tiles);
   CloseFile(tileatr_file);
   // Update file name
-  tileatr_filename := filename;
+  tileatr_filename := tmp_filename;
   // Register event in dispatcher
   Dispatcher.register_event(evFLTileatrBin);
 end;
 
-procedure TTileset.load_config(p_tileset_name: string; use_default, force: boolean);
+procedure TTileset.load_ini(p_tileset_name: string; force: boolean);
 var
   tmp_filename: string;
   ini: TMemIniFile;
@@ -608,25 +914,19 @@ var
   tile, index, width, height, pos_x, pos_y: integer;
   custom_tiles: boolean;
   group_name: String;
-  random_map: String;
-  map_filename: String;
-  map_file: file of word;
-  map_file_buffer: array[0..max_map_width*max_map_height*2-1] of word;
-  map_width, map_height: word;
 begin
   tmp_filename := find_file('tilesets\' + p_tileset_name + '.ini', '');
-  if (tmp_filename <> '') and (tmp_filename = config_filename) and not force then
+  if (tmp_filename <> '') and (tmp_filename = ini_filename) and not force then
     exit;
   if tmp_filename = '' then
   begin
-    if not use_default then
-      exit;
     Application.MessageBox(PChar('Could not find tileset configuration ini file for tileset ' + p_tileset_name + '. Loading default tileset configuration instead.'), 'Error loading tileset configuration', MB_ICONWARNING or MB_OK);
     tmp_filename := find_file('tilesets\template.ini', 'tileset configuration');
-    if (tmp_filename = '') or (tmp_filename = config_filename) then
+    if (tmp_filename = '') or (tmp_filename = ini_filename) then
       exit;
   end;
-  config_filename := tmp_filename;
+  ini_filename := tmp_filename;
+  tls_filename := '';
 
   ini := TMemIniFile.Create(tmp_filename);
   tmp_strings := TStringList.Create;
@@ -635,16 +935,36 @@ begin
   decoder.Delimiter := ';';
   decoder2.Delimiter := '.';
   // Load basic information
-  matching_tileatr_name := ini.ReadString('Basic', 'tileatr', '');
-  default_paint_group := ini.ReadInteger('Basic', 'default_paint_group', 1) - 1;
+  FillChar(header, sizeof(header), 0);
+  header.version_major := 1;
+  header.version_minor := 0;
+  header.default_paint_group := ini.ReadInteger('Basic', 'default_paint_group', 1) - 1;
+  store_c_string(ini.ReadString('Basic', 'name', ''), Addr(header.tileset_fancy_name), Length(header.tileset_fancy_name));
+  store_c_string(ini.ReadString('Basic', 'author', ''), Addr(header.author_name), Length(header.author_name));
   config_version := ini.ReadInteger('Basic', 'version', 0);
   if config_version <> CURRENT_TILESET_CONFIG_VERSION then
     Application.MessageBox(PChar(
-      'The tileset configuration file ''' + config_filename + ''''#13 +
+      'The tileset configuration file ''' + ini_filename + ''''#13 +
       'was made for different version of D2kEditor and may be incompatible with the version you use.'#13 +
       'Please get the latest available version of tileset configuration ini file or fix your file.'#13 +
       'You can get one or ask for help on FED2k forums.'),
       'Tileset configuration warning', MB_ICONWARNING + MB_OK);
+  // Load extra attributes
+  for i := 0 to max_tileset_tiles - 1 do
+    attributes_extra[i] := 0;
+  for i := 0 to 7 do
+  begin
+    decoder.DelimitedText := ini.ReadString('Editor_Tile_Attributes', 'Attribute'+inttostr(i+1), '');
+    for j := 0 to decoder.Count-1 do
+    begin
+      tile := strtoint(decoder[j]);
+      if (tile >= 0) and (tile < cnt_tiles) then
+        attributes_extra[tile] := attributes_extra[tile] or (1 shl i)
+    end;
+  end;
+  // Load extra attribute names
+  for i := 0 to 7 do
+    store_c_string(ini.ReadString('Editor_Tile_Attribute_Names', 'Attribute'+inttostr(i+1), 'Editor Attribute '+inttostr(i+1)), Addr(extra_attribute_names[i]), Length(extra_attribute_names[i]));
   // Load minimap color rules
   minimap_color_rules_used := 0;
   ini.ReadSection('Minimap_Color_Rules', tmp_strings);
@@ -652,8 +972,9 @@ begin
   begin
     if i >= max_minimap_color_rules then
       break;
+    minimap_color_rules[i].name := '';
     minimap_color_rules[i].color := strtoint(tmp_strings[i]);
-    load_rule(ini.ReadString('Minimap_Color_Rules', tmp_strings[i], '0'), Addr(minimap_color_rules[i].rule));
+    string_to_rule(ini.ReadString('Minimap_Color_Rules', tmp_strings[i], '0'), Addr(minimap_color_rules[i].rule));
     inc(minimap_color_rules_used);
   end;
   // Load fill area rules
@@ -663,108 +984,49 @@ begin
   begin
     if i >= max_fill_area_rules then
       break;
-    fill_area_rules[i].name := tmp_strings[i];
-    load_rule(ini.ReadString('Fill_Area_Rules', tmp_strings[i], '0'), Addr(fill_area_rules[i].rule));
+    store_c_string(tmp_strings[i], Addr(fill_area_rules[i].name), Length(fill_area_rules[i].name));
+    string_to_rule(ini.ReadString('Fill_Area_Rules', tmp_strings[i], '0'), Addr(fill_area_rules[i].rule));
     inc(fill_area_rules_used);
   end;
-  // Load editor attribute names
-  for i := 0 to 7 do
-    editor_attribute_names[i] := ini.ReadString('Editor_Tile_Attribute_Names', 'Attribute'+inttostr(i+1), 'Editor Attribute '+inttostr(i+1));
-  // Reset editor attributes
-  for i := 0 to cnt_tileset_tiles - 1 do
-    attributes_editor[i] := 0;
-  // Load editor attributes
-  for i := 0 to 7 do
-  begin
-    decoder.DelimitedText := ini.ReadString('Editor_Tile_Attributes', 'Attribute'+inttostr(i+1), '');
-    for j := 0 to decoder.Count-1 do
-    begin
-      tile := strtoint(decoder[j]);
-      if (tile >= 0) and (tile < cnt_tileset_tiles) then
-        attributes_editor[tile] := attributes_editor[tile] or (1 shl i)
-    end;
-  end;
   // Load paint tile groups
-  paint_tiles_used := 0;
-  for i := 0 to cnt_tileset_tiles - 1 do
-    tile_paint_group[i] := -128;
   for i := -4 to cnt_paint_tile_groups - 1 do
   begin
     group_name := 'Group' + get_paint_tile_group_char(i);
-    paint_tile_groups[i].name := ini.ReadString('Paint_Tile_Groups', group_name+'.name', '');
+    store_c_string(ini.ReadString('Paint_Tile_Groups', group_name+'.name', ''), Addr(paint_tile_groups[i].name), Length(paint_tile_groups[i].name));
     paint_tile_groups[i].tile_index := ini.ReadInteger('Paint_Tile_Groups', group_name+'.tile', 0);
-    paint_tile_groups[i].paint_tiles_cnt := 0;
-    decoder.DelimitedText := ini.ReadString('Paint_Tile_Groups', group_name+'.paint_tiles', '');
-    for j := 0 to decoder.Count-1 do
+    string_to_rule(ini.ReadString('Paint_Tile_Groups', group_name+'.restriction_rule', '0'), Addr(paint_tile_groups[i].restriction_rule));
+    if i >= 0 then
     begin
-      if paint_tiles_used < max_paint_tiles then
+      decoder.DelimitedText := ini.ReadString('Paint_Tile_Groups', group_name+'.paint_tiles', '');
+      for j := 0 to decoder.Count-1 do
       begin
         tile := strtoint(decoder[j]);
-        paint_tiles[paint_tiles_used] := tile;
-        inc(paint_tile_groups[i].paint_tiles_cnt);
-        inc(paint_tiles_used);
-        tile_paint_group[tile] := i;
+        if (tile >= 0) and (tile < cnt_tiles) then
+          attributes_extra[tile] := attributes_extra[tile] or (1 shl (i + 8));
       end;
+      if (decoder.Count = 0) and (StrLen(paint_tile_groups[i].name) > 0) then
+        attributes_extra[paint_tile_groups[i].tile_index] := attributes_extra[paint_tile_groups[i].tile_index] or (1 shl (i + 8));
+      paint_tile_groups[i].smooth_preset_group := ini.ReadInteger('Paint_Tile_Groups', group_name+'.smooth_preset_group', 0) - 1;
+      store_c_string(ini.ReadString('Paint_Tile_Groups', group_name+'.smooth_presets', ''), Addr(paint_tile_groups[i].smooth_presets), Length(paint_tile_groups[i].smooth_presets));
+      store_c_string(ini.ReadString('Paint_Tile_Groups', group_name+'.random_map', ''), Addr(paint_tile_groups[i].random_map_name), Length(paint_tile_groups[i].random_map_name));
     end;
-    if (decoder.Count = 0) and (i >= -2) and (paint_tile_groups[i].name <> '') then
-      tile_paint_group[paint_tile_groups[i].tile_index] := i;
-    paint_tile_groups[i].smooth_preset_group := ini.ReadInteger('Paint_Tile_Groups', group_name+'.smooth_preset_group', 0) - 1;
-    paint_tile_groups[i].smooth_presets := ini.ReadString('Paint_Tile_Groups', group_name+'.smooth_presets', '');
-    load_rule(ini.ReadString('Paint_Tile_Groups', group_name+'.restriction_rule', '0'), Addr(paint_tile_groups[i].restriction_rule));
-    // Load random paint background map
-    paint_tile_groups[i].random_map_used := false;
-    random_map := ini.ReadString('Paint_Tile_Groups', group_name+'.random_map', '');
-    map_filename := current_dir + 'tilesets\' + random_map + '.map';
-    if (random_map <> '') and FileExists(map_filename) then
-    begin
-      AssignFile(map_file, map_filename);
-      Reset(map_file);
-      Read(map_file, map_width);
-      Read(map_file, map_height);
-      if (map_width = max_map_width) and (map_height = max_map_height) then
-      begin
-        SetLength(paint_tile_groups[i].random_map, max_map_width * max_map_height);
-        BlockRead(map_file, map_file_buffer[0], Length(map_file_buffer));
-        for j := 0 to max_map_width * max_map_height - 1 do
-          paint_tile_groups[i].random_map[j] := map_file_buffer[j*2];
-        paint_tile_groups[i].random_map_used := true;
-      end;
-      CloseFile(map_file);
-    end;
-    if not paint_tile_groups[i].random_map_used then
-      SetLength(paint_tile_groups[i].random_map, 0);
   end;
   // Load block preset groups
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
-    block_preset_groups[i].name := ini.ReadString('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.name', '');
+    store_c_string(ini.ReadString('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.name', ''), Addr(block_preset_groups[i].name), Length(block_preset_groups[i].name));
     block_preset_groups[i].paint_group := ini.ReadInteger('Block_Preset_Groups', 'Group'+inttostr(i+1)+'.paint', -4) - 1;
   end;
   // Load block presets
   preset_index := 1;
   preset_tile_index := 0;
-  for i := 0 to cnt_tileset_tiles - 1 do
-    block_preset_coverage[i] := 0;
   for i := 0 to cnt_block_preset_groups - 1 do
   begin
     for j := 0 to cnt_block_preset_keys - 1 do
     begin
-      key := ' ';
-      if (j >= 0) and (j <= 9) then
-        key := chr(j + ord('0'))
-      else if (j >= 10) and (j <= 35) then
-        key := chr(j + ord('A') - 10)
-      else if j = 36 then
-        key := '<'
-      else if j = 37 then
-        key := '>'
-      else if j = 38 then
-        key := ':'
-      else if j = 39 then
-        key := '?';
+      key := block_preset_keys[j];
       decoder.DelimitedText := ini.ReadString('Block_Preset_Group_'+(inttostr(i+1)), key, '');
-      block_preset_key_variants[i, j].num_variants := decoder.Count;
-      block_preset_key_variants[i, j].first_preset_index := preset_index;
+      block_preset_key_variants[i, j] := decoder.Count;
       for k := 0 to decoder.Count - 1 do
       begin
         decoder2.DelimitedText := decoder[k];
@@ -790,7 +1052,6 @@ begin
           continue;
         block_presets[preset_index].width := width;
         block_presets[preset_index].height := height;
-        block_presets[preset_index].block_preset_tile_index := preset_tile_index;
         // Load preset tiles
         if not custom_tiles then
         begin
@@ -807,7 +1068,6 @@ begin
               begin
                 tile := index + x + (y * 20);
                 block_preset_tiles[preset_tile_index + x + y * width] := tile;
-                inc(block_preset_coverage[tile]);
               end;
         end else
         begin
@@ -819,8 +1079,6 @@ begin
             begin
               tile := strtoint(decoder2[x + y * width + 2]);
               block_preset_tiles[preset_tile_index + x + y * width] := tile;
-              if tile <> -1 then
-                inc(block_preset_coverage[tile]);
             end;
         end;
         inc(preset_tile_index, width * height);
@@ -828,8 +1086,6 @@ begin
       end;
     end;
   end;
-  block_presets_used := preset_index;
-  block_preset_tiles_used := preset_tile_index;
 
   {--// Load connection points
   connection_point_index := 0;
@@ -911,136 +1167,384 @@ begin
   decoder.Destroy;
   decoder2.Destroy;
 
+  process_internal_data;
   // Register event in dispatcher
   Dispatcher.register_event(evFLTilesetIni);
 end;
 
-function TTileset.load_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;
-var
-  decoder: TStringList;
+procedure TTileset.process_internal_data;
 begin
-  if rule = '' then
+  process_paint_tile_lists;
+  process_paint_tile_random_maps;
+  process_block_presets;
+end;
+
+procedure TTileset.process_paint_tile_lists;
+var
+  i: integer;
+  tile_paint_group: integer;
+begin
+  FillChar(paint_tile_lists, sizeof(paint_tile_lists), 0);
+  for i := 0 to cnt_tiles - 1 do
   begin
-    result := false;
+    tile_paint_group := get_tile_paint_group(i);
+    if (tile_paint_group >= 0) and (paint_tile_lists[tile_paint_group].cnt_tiles < max_paint_tiles) then
+    begin
+      paint_tile_lists[tile_paint_group].tiles[paint_tile_lists[tile_paint_group].cnt_tiles] := i;
+      inc(paint_tile_lists[tile_paint_group].cnt_tiles);
+    end;
+  end;
+end;
+
+procedure TTileset.process_paint_tile_random_maps;
+var
+  i, j: integer;
+  map_filename: String;
+  map_file: file of word;
+  map_file_buffer: array[0..max_map_width*max_map_height*2-1] of word;
+  map_width, map_height: word;
+begin
+  for i := 0 to cnt_paint_tile_groups - 1 do
+  begin
+    SetLength(paint_tile_random_maps[i], 0);
+    if StrLen(paint_tile_groups[i].random_map_name) > 0 then
+    begin
+      map_filename := current_dir + 'tilesets\' + paint_tile_groups[i].random_map_name + '.map';
+      if FileExists(map_filename) then
+      begin
+        AssignFile(map_file, map_filename);
+        Reset(map_file);
+        Read(map_file, map_width);
+        Read(map_file, map_height);
+        if (map_width = max_map_width) and (map_height = max_map_height) then
+        begin
+          SetLength(paint_tile_random_maps[i], max_map_width * max_map_height);
+          BlockRead(map_file, map_file_buffer[0], Length(map_file_buffer));
+          for j := 0 to max_map_width * max_map_height - 1 do
+            paint_tile_random_maps[i][j] := map_file_buffer[j*2];
+        end;
+        CloseFile(map_file);
+      end;
+    end;
+  end;
+end;
+
+procedure TTileset.process_block_presets;
+var
+  i, j: integer;
+begin
+  block_presets_used := 1;
+  block_preset_tiles_used := 0;
+  for i := 0 to cnt_block_preset_groups - 1 do
+    for j := 0 to cnt_block_preset_keys - 1 do
+    begin
+      block_preset_key_variant_first_preset_indexes[i,j] := block_presets_used;
+      inc(block_presets_used, block_preset_key_variants[i,j]);
+    end;
+  for i := 0 to block_presets_used - 1 do
+  begin
+    block_preset_first_tile_indexes[i] := block_preset_tiles_used;
+    inc(block_preset_tiles_used, block_presets[i].width * block_presets[i].height);
+  end;
+end;
+
+procedure TTileset.import_tileimage_from_file(filename: String);
+var
+  tmp_bitmap: TGraphic;
+  ext: String;
+  error: String;
+begin
+  error := '';
+  // Check for file existence
+  if (filename = '') then
+    exit;
+  if not FileExists(filename) then
+  begin
+    Dispatcher.register_error('Error loading tileset image', 'The file ' + filename + ' does not exist.');
     exit;
   end;
-  decoder := TStringList.Create;
-  decoder.Delimiter := ';';
-  decoder.DelimitedText := rule;
-  rule_ptr.attr := strtoint64def(decoder[0], -1);
-  if decoder.Count = 2 then
-    rule_ptr.not_attr := strtoint64def(decoder[1], -1)
+  ext := UpperCase(ExtractFileExt(filename));
+  if ext = '.R16' then
+    load_r16_image(filename)
+  else if ext = '.R8' then
+    load_r8_image(filename)
   else
-    rule_ptr.not_attr := 0;
-  result := (decoder.Count <= 2) and (rule_ptr.attr <> -1) and (rule_ptr.not_attr <> -1);
-  decoder.Destroy;
-end;
-
-procedure TTileset.save_tileatr;
-var
-  tileatr_file: file of cardinal;
-  lines_input, lines_output, encoder: TStringList;
-  i, j, found_editor_attr_section, found_next_section: integer;
-  line: String;
-begin
-  // Save TILEATR*.BIN file
-  if tileatr_filename = '' then
-    exit;
-  if not manage_filesave(tileatr_filename, 'Data\bin\' + tileatr_name + '.BIN', evTileatrFilenameChange) then
-    exit;
-  AssignFile(tileatr_file, tileatr_filename);
-  ReWrite(tileatr_file);
-  BlockWrite(tileatr_file, attributes, cnt_tileset_tiles);
-  BlockWrite(tileatr_file, tile_hint_text, cnt_tileset_tiles);
-  CloseFile(tileatr_file);
-  // Save editor attributes into tileset .ini file
-  if (config_filename = '') or (AnsiCompareText(tileatr_filename, Settings.GamePath + '\Data\bin\' + matching_tileatr_name + '.BIN') <> 0) then
-    exit;
-  lines_input := TStringList.Create;
-  lines_output := TStringList.Create;
-  encoder := TStringList.Create;
-  encoder.Delimiter := ';';
-  lines_input.LoadFromFile(config_filename);
-  // Find existing [Editor_Tile_Attributes] section and next section
-  found_editor_attr_section := -1;
-  found_next_section := -1;
-  for i := 0 to lines_input.Count - 1 do
   begin
-    if lines_input[i] = '[Editor_Tile_Attributes]' then
-      found_editor_attr_section := i;
-    if lines_input[i] = '[Paint_Tile_Groups]' then
-      found_next_section := i;
-  end;
-  if found_next_section = -1 then
-    found_next_section := lines_input.Count; // Append to end of file if not found
-  if found_editor_attr_section = -1 then
-    found_editor_attr_section := found_next_section; // Place before next section
-  // Copy contents of input file to output till place where we should put [Editor_Tile_Attributes] section
-  for i := 0 to found_editor_attr_section - 1 do
-    lines_output.Add(lines_input[i]);
-  // Write [Editor_Tile_Attributes] section
-  lines_output.Add('[Editor_Tile_Attributes]');
-  for i := 0 to 7 do
-  begin
-    encoder.Clear;
-    for j := 0 to cnt_tileset_tiles-1 do
+    if ext = '.BMP' then
+      tmp_bitmap := TBitmap.Create
+    else if ext = '.PNG' then
+      tmp_bitmap := TPNGObject.Create
+    else
     begin
-      if (attributes_editor[j] and (1 shl i)) <> 0 then
-        encoder.Add(inttostr(j));
+      Dispatcher.register_error('Error loading tileset image', 'Unsupported image format ' + ext);
+      exit;
     end;
-    if encoder.Count > 0 then
-      lines_output.Add('Attribute' + inttostr(i+1) + '=' + encoder.DelimitedText);
-  end;
-  if found_editor_attr_section = found_next_section then
-    lines_output.Add('');
-  // Copy rest of input file contents while skipping old [Editor_Tile_Attributes] section
-  for i := found_editor_attr_section to lines_input.Count - 1 do
+    tmp_bitmap.LoadFromFile(filename);
+    // Check the image
+    if tmp_bitmap.Width <> tileimage_width then
+      error := 'Tileset image width must be 640 pixels (20 tiles * 32 pixels)'
+    else if (tmp_bitmap.Height mod 32) <> 0 then
+      error := 'Tileset image height must be a multiple of 32 pixels'
+    else if tmp_bitmap.Height < 1280 then
+      error := 'Tileset image height must be at least 1280 pixels (40 tiles * 32 pixels)'
+    else if tmp_bitmap.Height > 6400 then
+      error := 'Tileset image height must be at most 6400 pixels (200 tiles * 32 pixels)';
+    if error = '' then
     begin
-      line := lines_input[i];
-      if (line <> '[Editor_Tile_Attributes]') and not AnsiStartsStr('Attribute', line) then
-        lines_output.Add(line);
-    end;
-  lines_output.SaveToFile(config_filename);
-  lines_input.Destroy;
-  lines_output.Destroy;
-  encoder.Destroy;
+      // Assign tile image
+      tileimage.Assign(tmp_bitmap);
+      tileimage.PixelFormat := pf32bit;
+      // Update count of tiles
+      cnt_tiles := (tmp_bitmap.Height div 32) * 20;
+      // Update file name
+      tileimage_filename := filename;
+      // Register event in dispatcher
+      Dispatcher.register_event(evFLTilesetImage);
+    end else
+      Dispatcher.register_error('Error loading tileset image', error);
+    // Clean up
+    tmp_bitmap.Destroy;
+  end;
+  tileimage_modified := true;
 end;
 
-procedure TTileset.save_tileatr_to_file(filename: String);
-begin
-  tileatr_name := UpperCase(ChangeFileExt(ExtractFileName(filename), ''));
-  tileatr_filename := filename;
-  save_tileatr;
-  // Register event in dispatcher
-  Dispatcher.register_event(evTileatrFilenameChange);
-end;
-
-procedure TTileset.produce_radar_color_file;
+procedure TTileset.export_tileimage_to_file(filename: String);
 var
-  radar_color_file: file of byte;
-  filename: string;
-  extra_attributes: array[0..cnt_tileset_tiles-1] of cardinal;
+  PNG: TPNGObject;
+  ext: String;
+begin
+  ext := UpperCase(ExtractFileExt(filename));
+  if ext = '.R16' then
+    save_r16_image(filename)
+  else if ext = '.BMP' then
+    tileimage.SaveToFile(filename)
+  else if ext = '.PNG' then
+  begin
+    PNG := TPNGObject.Create;
+    PNG.Assign(tileimage);
+    PNG.SaveToFile(filename);
+    PNG.Destroy;
+  end;
+end;
+
+procedure TTileset.import_tileimage_portion_from_file(filename: String; pos_x, pos_y: integer);
+var
+  tmp_bitmap: TBitmap;
+  PNG: TPNGObject;
+  ext: String;
+  error: String;
+begin
+  error := '';
+  // Check for file existence
+  if (filename = '') then
+    exit;
+  if not FileExists(filename) then
+  begin
+    Dispatcher.register_error('Error loading tileset portion image', 'The file ' + filename + ' does not exist.');
+    exit;
+  end;
+  // Load file
+  ext := UpperCase(ExtractFileExt(filename));
+  tmp_bitmap := TBitmap.Create;
+  if ext = '.BMP' then
+    tmp_bitmap.LoadFromFile(filename)
+  else if ext = '.PNG' then
+  begin
+    PNG := TPNGObject.Create;
+    PNG.LoadFromFile(filename);
+    tmp_bitmap.Assign(PNG);
+    PNG.Destroy;
+  end else
+  begin
+    Dispatcher.register_error('Error loading tileset portion image', 'Unsupported image format ' + ext);
+    tmp_bitmap.Destroy;
+    exit;
+  end;
+  // Check image dimensions
+  if ((tmp_bitmap.Width mod 32) <> 0) or ((tmp_bitmap.Height mod 32) <> 0) then
+  begin
+    Dispatcher.register_error('Error loading tileset portion image', 'The image width and height must be divisible by 32.');
+    tmp_bitmap.Destroy;
+    exit;
+  end;
+  // Copy contents to tileimage
+  tileimage.Canvas.CopyRect(Rect(pos_x * 32, pos_y * 32, pos_x * 32 + tmp_bitmap.Width, pos_y * 32 + tmp_bitmap.Height), tmp_bitmap.Canvas, Rect(0, 0, tmp_bitmap.Width, tmp_bitmap.Height));
+  tileimage_modified := true;
+  Dispatcher.register_event(evTilesetImageChange);
+  tmp_bitmap.Destroy;
+end;
+
+procedure TTileset.export_tileimage_portion_to_file(filename: String; pos_x, pos_y, size_x, size_y: integer);
+var
+  tmp_bitmap: TBitmap;
+  PNG: TPNGObject;
+  ext: String;
+begin
+  // Prepare the portion
+  tmp_bitmap := TBitmap.Create;
+  tmp_bitmap.Width := size_x * 32;
+  tmp_bitmap.Height := size_y * 32;
+  tmp_bitmap.PixelFormat := pf32bit;
+  tmp_bitmap.Canvas.CopyRect(Rect(0, 0, size_x * 32, size_y * 32), tileimage.Canvas, Rect(pos_x * 32, pos_y * 32, (pos_x + size_x) * 32, (pos_y + size_y) * 32));
+  // Save to file
+  ext := UpperCase(ExtractFileExt(filename));
+  if ext = '.BMP' then
+    tmp_bitmap.SaveToFile(filename)
+  else if ext = '.PNG' then
+  begin
+    PNG := TPNGObject.Create;
+    PNG.Assign(tmp_bitmap);
+    PNG.SaveToFile(filename);
+    PNG.Destroy;
+  end;
+  // Clean up
+  tmp_bitmap.Destroy;
+end;
+
+procedure TTileset.copy_tileimage_portion(src_x, src_y, dest_x, dest_y, size_x, size_y: integer);
+begin
+  tileimage.Canvas.CopyRect(
+    Rect(dest_x * 32, dest_y * 32, (dest_x + size_x) * 32, (dest_y + size_y) * 32),
+    tileimage.Canvas,
+    Rect(src_x * 32, src_y * 32, (src_x + size_x) * 32, (src_y + size_y) * 32)
+  );
+  tileimage_modified := true;
+  Dispatcher.register_event(evTilesetImageChange);
+end;
+
+procedure TTileset.swap_tileimage_portion(src_x, src_y, dest_x, dest_y, size_x, size_y: integer);
+var
+  tmp_bitmap: TBitmap;
+begin
+  tmp_bitmap := TBitmap.Create;
+  tmp_bitmap.Width := size_x * 32;
+  tmp_bitmap.Height := size_y * 32;
+  tmp_bitmap.PixelFormat := pf32bit;
+  tmp_bitmap.Canvas.CopyRect(
+    Rect(0, 0, size_x * 32, size_y * 32),
+    tileimage.Canvas,
+    Rect(dest_x * 32, dest_y * 32, (dest_x + size_x) * 32, (dest_y + size_y) * 32)
+  );
+  tileimage.Canvas.CopyRect(
+    Rect(dest_x * 32, dest_y * 32, (dest_x + size_x) * 32, (dest_y + size_y) * 32),
+    tileimage.Canvas,
+    Rect(src_x * 32, src_y * 32, (src_x + size_x) * 32, (src_y + size_y) * 32)
+  );
+  tileimage.Canvas.CopyRect(
+    Rect(src_x * 32, src_y * 32, (src_x + size_x) * 32, (src_y + size_y) * 32),
+    tmp_bitmap.Canvas,
+    Rect(0, 0, size_x * 32, size_y * 32)
+  );
+  tileimage_modified := true;
+  Dispatcher.register_event(evTilesetImageChange);
+end;
+
+procedure TTileset.erase_tileimage_portion(pos_x, pos_y, size_x, size_y: integer);
+begin
+  tileimage.Canvas.Pen.Color := clBlack;
+  tileimage.Canvas.Brush.Color := clBlack;
+  tileimage.Canvas.Brush.Style := bsSolid;
+  tileimage.Canvas.Rectangle(pos_x * 32, pos_y * 32, (pos_x + size_x) * 32, (pos_y + size_y) * 32);
+  tileimage_modified := true;
+  Dispatcher.register_event(evTilesetImageChange);
+end;
+
+procedure TTileset.resize_tileset(new_cnt_tiles: integer);
+var
+  old_cnt_tiles: integer;
   i: integer;
 begin
-  filename := ChangeFileExt(tileimage_filename, '.rcl');
-  AssignFile(radar_color_file, filename);
-  ReWrite(radar_color_file);
-  BlockWrite(radar_color_file, minimap_color_rules_used, sizeof(minimap_color_rules_used));
-  BlockWrite(radar_color_file, minimap_color_rules, sizeof(minimap_color_rules));
-  for i := 0 to cnt_tileset_tiles - 1 do
+  if cnt_tiles = new_cnt_tiles then
+    exit;
+  if (new_cnt_tiles < min_tileset_tiles) or (new_cnt_tiles > max_tileset_tiles) or ((new_cnt_tiles mod 20) <> 0) then
   begin
-    extra_attributes[i] := attributes_editor[i];
-    if tile_paint_group[i] <> -128 then
-    begin
-      if tile_paint_group[i] >= 0 then
-        extra_attributes[i] := extra_attributes[i] or (1 shl (tile_paint_group[i] + 8))
-      else
-        extra_attributes[i] := extra_attributes[i] or (1 shl (tile_paint_group[i] + 20));
-    end;
+    Dispatcher.register_error('Resize tileset', Format('Number of tiles must be between %d and %d and must be divisible by 20.', [min_tileset_tiles, max_tileset_tiles]));
+    exit;
   end;
-  BlockWrite(radar_color_file, extra_attributes, sizeof(extra_attributes));
-  CloseFile(radar_color_file);
-  Application.MessageBox(PChar('Radar color rules were saved into ' + filename), 'Produce radar color file', MB_ICONINFORMATION);
+  old_cnt_tiles := cnt_tiles;
+  cnt_tiles := new_cnt_tiles;
+  // Resize image
+  tileimage.Height := (cnt_tiles div 20) * 32;
+  tileimage.Canvas.Pen.Color := clBlack;
+  tileimage.Canvas.Brush.Color := clBlack;
+  tileimage.Canvas.Brush.Style := bsSolid;
+  tileimage.Canvas.Rectangle(0, (old_cnt_tiles div 20) * 32, tileimage_width, (cnt_tiles div 20) * 32);
+  // Initialize attributes and hints
+  for i := old_cnt_tiles to cnt_tiles - 1 do
+  begin
+    attributes[i] := 0;
+    attributes_extra[i] := 0;
+    tile_hint_text[i] := -1;
+    restrictions[i] := 0;
+  end;
+  tileimage_modified := true;
+  Dispatcher.register_event(evTilesetImageChange);
+end;
+
+procedure TTileset.set_tile_attributes(tile: word; value: Int64);
+begin
+  attributes[tile] := value and $FFFFFFFF;
+  attributes_extra[tile] := (value shr 32) and $FF;
+end;
+
+procedure TTileset.add_block_preset(group, key_index, width, height: integer; tiles: array of word);
+var
+  i: integer;
+  add_at_index: integer;
+  tiles_to_add: integer;
+begin
+  tiles_to_add := width * height;
+  if block_presets_used = max_block_presets then
+  begin
+    Dispatcher.register_error('Add block preset', 'Maximum number of block presets reached.');
+    exit;
+  end;
+  if (block_preset_tiles_used + tiles_to_add) > max_block_preset_tiles then
+  begin
+    Dispatcher.register_error('Add block preset', 'Maximum number of block preset tiles reached.');
+    exit;
+  end;
+  // Add block preset
+  add_at_index := block_preset_key_variant_first_preset_indexes[group, key_index] + block_preset_key_variants[group, key_index];
+  for i := block_presets_used downto add_at_index + 1 do
+    block_presets[i] := block_presets[i - 1];
+  block_presets[add_at_index].width := width;
+  block_presets[add_at_index].height := height;
+  inc(block_preset_key_variants[group, key_index]);
+  // Add block preset tiles
+  add_at_index := block_preset_first_tile_indexes[add_at_index - 1] + block_presets[add_at_index - 1].width * block_presets[add_at_index - 1].height;
+  for i := block_preset_tiles_used + tiles_to_add - 1 downto add_at_index + tiles_to_add do
+    block_preset_tiles[i] := block_preset_tiles[i - tiles_to_add];
+  for i := 0 to tiles_to_add - 1 do
+    block_preset_tiles[add_at_index + i] := tiles[i];
+  process_block_presets;
+  Dispatcher.register_event(evTilesetBlockPresetsChange);
+end;
+
+procedure TTileset.delete_block_preset(preset_index: integer);
+var
+  i, j, k: integer;
+  num_variants, first_preset_index: integer;
+  tiles_to_delete: integer;
+begin
+  for i := 0 to cnt_block_preset_groups - 1 do
+    for j := 0 to cnt_block_preset_keys - 1 do
+      begin
+        num_variants := block_preset_key_variants[i, j];
+        first_preset_index := block_preset_key_variant_first_preset_indexes[i, j];
+        if (preset_index >= first_preset_index) and (preset_index < first_preset_index + num_variants) then
+        begin
+          tiles_to_delete := block_presets[preset_index].width * block_presets[preset_index].height;
+          Dec(block_preset_key_variants[i, j]);
+          for k := block_preset_first_tile_indexes[preset_index] to block_preset_tiles_used - tiles_to_delete - 1 do
+            block_preset_tiles[k] := block_preset_tiles[k + tiles_to_delete];
+          for k := preset_index to block_presets_used - 2 do
+              block_presets[k] := block_presets[k + 1];
+          preset_index := -1;
+        end;
+      end;
+  process_block_presets;
+  Dispatcher.register_event(evTilesetBlockPresetsChange);
 end;
 
 function TTileset.get_paint_tile_group_char(group: integer): char;
@@ -1053,29 +1557,22 @@ end;
 
 function TTileset.get_tile_attributes(tile, special: word; use_internal_attributes: boolean): Int64;
 var
-  editor_attributes, paint_tile_group_attributes, tile_property_attributes: int64;
+  extra_attributes, void_attribute, tile_property_attributes: int64;
   spice_amount: integer;
 begin
-  // Standard game attributes: 32 bits
   result := attributes[tile and $0FFF];
-  // Explicit editor attributes (Area type 1-8): 8 bits
-  editor_attributes := attributes_editor[tile and $0FFF];
-  editor_attributes := (editor_attributes shl 32) and $000000FF00000000;
-  result := result or editor_attributes;
+  extra_attributes := attributes_extra[tile and $0FFF];
+  extra_attributes := extra_attributes shl 32;
+  result := result or extra_attributes;
   if use_internal_attributes then
   begin
-    // Internal attributes (paint tile group 1-8, A-D): 12 bits
-    paint_tile_group_attributes := 0;
-    if tile_paint_group[tile and $0FFF] <> -128 then
-    begin
-      if tile_paint_group[tile and $0FFF] >= 0 then
-        paint_tile_group_attributes := paint_tile_group_attributes or (1 shl (tile_paint_group[tile and $0FFF] + 8))
-      else
-        paint_tile_group_attributes := paint_tile_group_attributes or (1 shl (tile_paint_group[tile and $0FFF] + 20))
-    end;
-    paint_tile_group_attributes := (paint_tile_group_attributes shl 32) and $000FFF0000000000;
-    result := result or paint_tile_group_attributes;
-    // Internal attributes (thin spice, thick spice, concrete): 3 bits
+    // Void attribute
+    void_attribute := 0;
+    if (tile and $0FFF) = paint_tile_groups[-1].tile_index then
+      void_attribute := $00080000;
+    void_attribute := void_attribute shl 32;
+    result := result or void_attribute;
+    // Thin spice, thick spice, concrete
     spice_amount := IfThen((tile and $1000) = 0, (tile shr 13) and 7, 0);
     tile_property_attributes := 0;
     if (special = 1) or (spice_amount = 1) or (spice_amount = 2) then
@@ -1084,15 +1581,9 @@ begin
       tile_property_attributes := $00020000;
     if ((tile and $1000) <> 0) then
       tile_property_attributes := $00040000;
-    tile_property_attributes := (tile_property_attributes shl 32) and $0007000000000000;
+    tile_property_attributes := tile_property_attributes shl 32;
     result := result or tile_property_attributes;
   end;
-end;
-
-procedure TTileset.set_tile_attributes(tile: word; value: Int64);
-begin
-  attributes[tile] := value and $FFFFFFFF;
-  attributes_editor[tile] := (value shr 32) and $FF;
 end;
 
 function TTileset.get_tile_type(tile: word): TileType;
@@ -1110,17 +1601,19 @@ begin
     result := ttPassable
 end;
 
-function TTileset.get_tile_color(tile, special: word): Cardinal;
+function TTileset.get_tile_color(tile, special: word; var rule_index: integer): Cardinal;
 var
   i: integer;
   attr_value: int64;
 begin
+  rule_index := -1;
   attr_value := get_tile_attributes(tile, special, true);
   for i := 0 to minimap_color_rules_used - 1 do
   begin
     if evaluate_rule(attr_value, Addr(minimap_color_rules[i].rule)) then
     begin
       result := minimap_color_rules[i].color;
+      rule_index := i;
       exit;
     end;
   end;
@@ -1142,6 +1635,27 @@ begin
     end;
   end;
   result := fill_area_rules_used - 1;
+end;
+
+function TTileset.get_tile_paint_group(tile: word): integer;
+var
+  i: integer;
+begin
+  tile := tile and $0FFF;
+  result := -128;
+  if tile = paint_tile_groups[-1].tile_index then
+  begin
+    result := -1;
+    exit;
+  end;
+  for i := 0 to cnt_paint_tile_groups - 1 do
+  begin
+    if (attributes_extra[tile] and (1 shl (i + 8))) <> 0 then
+    begin
+      result := i;
+      break;
+    end;
+  end;
 end;
 
 function TTileset.check_area_type(tile, special: word; area_type: integer): boolean;
@@ -1175,63 +1689,32 @@ begin
     result := (attr_value and rule_ptr.attr) = rule_ptr.attr;
 end;
 
-function TTileset.block_key_to_index(key: word): integer;
-begin
-  if (key >= ord('0')) and (key <= ord('9')) then
-    result := key - ord('0')
-  else if (key >= ord('A')) and (key <= ord('Z')) then
-    result := key - ord('A') + 10
-  else if (key = 188) or (key = ord('<')) then
-    result := 36
-  else if (key = 190) or (key = ord('>')) then
-    result := 37
-  else if (key = 186) or (key = ord(':')) then
-    result := 38
-  else if (key = 191) or (key = ord('?')) then
-    result := 39
-  else
-    result := -1;
-end;
-
 function TTileset.get_random_paint_tile(group, x, y: integer): integer;
-var
-  i: integer;
-  start_index: integer;
 begin
   if group >= cnt_paint_tile_groups then
   begin
     result := 0;
     exit;
   end;
-  if Settings.UseRandomPaintMap and paint_tile_groups[group].random_map_used then
+  if Settings.UseRandomPaintMap and (Length(paint_tile_random_maps[group]) > 0) then
   begin
-    result := paint_tile_groups[group].random_map[x + y * max_map_width];
+    result := paint_tile_random_maps[group][x + y * max_map_width];
     exit;
   end;
-  if paint_tile_groups[group].paint_tiles_cnt = 0 then
+  if (group < 0) or (paint_tile_lists[group].cnt_tiles = 0) then
   begin
     result := paint_tile_groups[group].tile_index;
     exit;
   end;
-  start_index := 0;
-  for i := -4 to group - 1 do
-    inc(start_index, paint_tile_groups[i].paint_tiles_cnt);
-  result := paint_tiles[random(paint_tile_groups[group].paint_tiles_cnt) + start_index];
+  result := paint_tile_lists[group].tiles[random(paint_tile_lists[group].cnt_tiles)];
 end;
 
-function TTileset.get_block_preset(group: integer; key: word; variant: integer): integer;
+function TTileset.get_block_preset_index(group: integer; key_index: integer; variant: integer): integer;
 var
   num_variants: integer;
-  key_index, preset_index: integer;
+  preset_index: integer;
 begin
-  key_index := block_key_to_index(key);
-  // Unknown key
-  if key_index = -1 then
-  begin
-    result := 0;
-    exit;
-  end;
-  num_variants := block_preset_key_variants[group, key_index].num_variants;
+  num_variants := block_preset_key_variants[group, key_index];
   // No block preset for this key
   if num_variants = 0 then
   begin
@@ -1247,7 +1730,7 @@ begin
   begin
     if variant = bpNext then
     begin
-      if (last_block_preset_group <> group) or (last_block_preset_key <> key) then
+      if (last_block_preset_group <> group) or (last_block_preset_key <> key_index) then
         last_block_preset_variant := 0
       else if last_block_preset_variant >= num_variants then
         last_block_preset_variant := 0;
@@ -1259,14 +1742,45 @@ begin
       // Get random variant but different from the last one
       repeat
         variant := random(num_variants);
-      until (variant <> last_block_preset_variant) or (last_block_preset_key <> key);
+      until (variant <> last_block_preset_variant) or (last_block_preset_key <> key_index);
       last_block_preset_variant := variant;
     end;
   end;
-  preset_index := block_preset_key_variants[group, key_index].first_preset_index + variant;
+  preset_index := block_preset_key_variant_first_preset_indexes[group, key_index] + variant;
   last_block_preset_group := group;
-  last_block_preset_key := key;
+  last_block_preset_key := key_index;
   result := preset_index;
+end;
+
+function TTileset.string_to_rule(rule: String; rule_ptr: TTileAtrRulePtr): boolean;
+var
+  decoder: TStringList;
+begin
+  if rule = '' then
+  begin
+    result := false;
+    exit;
+  end;
+  decoder := TStringList.Create;
+  decoder.Delimiter := ';';
+  decoder.DelimitedText := rule;
+  rule_ptr.attr := strtoint64def(decoder[0], -1);
+  if decoder.Count = 2 then
+    rule_ptr.not_attr := strtoint64def(decoder[1], -1)
+  else
+    rule_ptr.not_attr := 0;
+  result := (decoder.Count <= 2) and (rule_ptr.attr <> -1) and (rule_ptr.not_attr <> -1);
+  decoder.Destroy;
+end;
+
+function TTileset.rule_to_string(rule_ptr: TTileAtrRulePtr): string;
+begin
+  if rule_ptr.attr >= 0 then
+    result := '$' + IntToHex(rule_ptr.attr, 1)
+  else
+    result := '-$' + IntToHex(rule_ptr.attr * -1, 1);
+  if rule_ptr.not_attr <> 0 then
+    result := result + ';$' + IntToHex(rule_ptr.not_attr, 1);
 end;
 
 end.

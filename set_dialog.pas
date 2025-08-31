@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Spin, ExtCtrls;
+  Dialogs, StdCtrls, Spin, ExtCtrls, Grids;
 
 type
   TSetDialog = class(TForm)
@@ -29,8 +29,11 @@ type
     ChStrOwn_LbSideFrom: TLabel;
     ChStrOwn_LbSideTo: TLabel;
     Tileset_Menu: TPanel;
-    Tileset_List: TListBox;
     pnButtons: TPanel;
+    Tileset_List: TStringGrid;
+    NewTileset_Menu: TPanel;
+    NewTileset_edTilesetName: TEdit;
+    NewTileset_lblTilesetName: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
@@ -69,6 +72,18 @@ begin
   SetMapSize_Width.Value := Settings.DefaultMapWidth;
   SetMapSize_Height.MaxValue := max_map_height;
   SetMapSize_Height.Value := Settings.DefaultMapHeight;
+  Tileset_List.Cells[0,0] := 'Name';
+  Tileset_List.Cells[1,0] := 'Fancy name';
+  Tileset_List.Cells[2,0] := 'Author';
+  Tileset_List.Cells[3,0] := 'Tiles';
+  Tileset_List.Cells[4,0] := 'Attributes';
+  Tileset_List.Cells[5,0] := 'Location';
+  Tileset_List.ColWidths[0] := 72;
+  Tileset_List.ColWidths[1] := 192;
+  Tileset_List.ColWidths[2] := 128;
+  Tileset_List.ColWidths[3] := 40;
+  Tileset_List.ColWidths[4] := 72;
+  Tileset_List.ColWidths[5] := 65;
 end;
 
 procedure TSetDialog.FormKeyDown(Sender: TObject; var Key: Word;
@@ -84,6 +99,8 @@ procedure TSetDialog.FormShow(Sender: TObject);
 begin
   if current_menu = 5 then
     Tileset_List.SetFocus
+  else if current_menu = 6 then
+    NewTileset_edTilesetName.SetFocus
   else
     BtnOK.SetFocus;
 end;
@@ -94,7 +111,9 @@ begin
   ShiftMap_Menu.Visible := False;
   ChStrOwn_Menu.Visible := False;
   Tileset_Menu.Visible := False;
+  NewTileset_Menu.Visible := False;
   Height := 172;
+  Width := 176;
   case menu of
     1:  begin
           Caption := 'Set map size';
@@ -115,7 +134,13 @@ begin
     5:  begin
           Tileset_Menu.Visible := True;
           Caption := 'Select tileset';
-          Height := 350;
+          Height := 516;
+          Width := 600;
+        end;
+    6:  begin
+          NewTileset_Menu.Visible := True;
+          Caption := 'New tileset';
+          NewTileset_edTilesetName.Text := '';
         end;
   end;
   current_menu := menu;
@@ -156,8 +181,18 @@ begin
           end;
         end;
     5:  begin
-          ModalResult := mrOk;
-          Tileset.change_tileset_by_index(Tileset_List.ItemIndex);
+          if Tileset_List.Row > 0 then
+          begin
+            ModalResult := mrOk;
+            Tileset.change_tileset_by_index(Tileset.tileset_index_mapping[Tileset_List.Row - 1]);
+          end;
+        end;
+    6:  begin
+          if NewTileset_edTilesetName.Text <> '' then
+          begin
+            ModalResult := mrOk;
+            Tileset.new_tileset(NewTileset_edTilesetName.Text);
+          end;
         end;
   end;
 end;
@@ -169,21 +204,21 @@ end;
 
 procedure TSetDialog.update_tileset_list;
 var
-  tilesets: TStringList;
-  i: integer;
-  default_tileset: integer;
+  i, index: integer;
 begin
-  tilesets := TStringList.Create;
-  default_tileset := 0;
+  Tileset_List.RowCount := Tileset.cnt_tilesets + 1;
   for i := 0 to Tileset.cnt_tilesets - 1 do
   begin
-    tilesets.Add(Tileset.tileset_list.Names[i]);
-    if Tileset.tileset_list.ValueFromIndex[i] = Settings.DefaultTilesetName then
-      default_tileset := i;
+    index := Tileset.tileset_index_mapping[i];
+    Tileset_List.Cells[0, i+1] := Tileset.tileset_list[index].name;
+    Tileset_List.Cells[1, i+1] := Tileset.tileset_list[index].fancy_name;
+    Tileset_List.Cells[2, i+1] := Tileset.tileset_list[index].author;
+    Tileset_List.Cells[3, i+1] := IntToStr(Tileset.tileset_list[index].num_tiles);
+    Tileset_List.Cells[4, i+1] := Tileset.tileset_list[index].attributes;
+    Tileset_List.Cells[5, i+1] := Tileset.tileset_list[index].location;
+    if Tileset.tileset_list[index].name = Settings.DefaultTilesetName then
+      Tileset_List.Row := i + 1;
   end;
-  Tileset_List.Items := tilesets;
-  tilesets.Destroy;
-  Tileset_List.ItemIndex := default_tileset;
 end;
 
 procedure TSetDialog.update_side_list(side_list: TStringList);
@@ -200,8 +235,12 @@ begin
 end;
 
 procedure TSetDialog.update_tileset;
+var
+  i: integer;
 begin
-  Tileset_List.ItemIndex := Tileset.tileset_index;
+  for i := 0 to Tileset.cnt_tilesets - 1 do
+    if Tileset.tileset_name = Tileset.tileset_list[Tileset.tileset_index_mapping[i]].name then
+      Tileset_List.Row := i + 1;
 end;
 
 function TSetDialog.check_map_dimensions: boolean;

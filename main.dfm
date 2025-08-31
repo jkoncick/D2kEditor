@@ -73,7 +73,7 @@ object MainWindow: TMainWindow
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 673
+    Top = 681
     Width = 952
     Height = 19
     Panels = <
@@ -1126,15 +1126,6 @@ object MainWindow: TMainWindow
           State = cbChecked
           TabOrder = 4
         end
-        object cbBrushSize: TComboBox
-          Left = 80
-          Top = 2
-          Width = 73
-          Height = 21
-          Style = csDropDownList
-          ItemHeight = 13
-          TabOrder = 5
-        end
         object cbSelectAreaType: TComboBox
           Left = 32
           Top = 196
@@ -1142,7 +1133,7 @@ object MainWindow: TMainWindow
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
-          TabOrder = 6
+          TabOrder = 5
         end
         object cbxConcreteSide: TComboBox
           Left = 48
@@ -1151,9 +1142,21 @@ object MainWindow: TMainWindow
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
-          TabOrder = 7
+          TabOrder = 6
           Visible = False
           OnChange = SideSelectChange
+        end
+        object tbBrushSize: TTrackBar
+          Left = 75
+          Top = 0
+          Width = 81
+          Height = 24
+          Max = 4
+          Min = 1
+          PageSize = 1
+          Position = 1
+          TabOrder = 7
+          ThumbLength = 16
         end
       end
     end
@@ -1267,28 +1270,13 @@ object MainWindow: TMainWindow
         ShortCut = 24658
         OnClick = Reloadtileset1Click
       end
-      object N3: TMenuItem
-        Caption = '-'
-      end
-      object Loadtileset1: TMenuItem
-        Caption = 'Use custom image'
-        OnClick = Loadtileset1Click
-      end
-      object Loadtilesetattributes1: TMenuItem
-        Caption = 'Use custom attributes'
-        OnClick = Loadtilesetattributes1Click
-      end
       object N6: TMenuItem
         Caption = '-'
       end
-      object TileAttributeseditor1: TMenuItem
-        Caption = 'Tile attributes editor...'
+      object Tileseteditor1: TMenuItem
+        Caption = 'Tileset editor...'
         ShortCut = 16449
-        OnClick = TileAttributeseditor1Click
-      end
-      object Produceradarcolorfile1: TMenuItem
-        Caption = 'Produce radar color file'
-        OnClick = Produceradarcolorfile1Click
+        OnClick = Tileseteditor1Click
       end
     end
     object Structures1: TMenuItem
@@ -1439,16 +1427,6 @@ object MainWindow: TMainWindow
     Title = 'Open map'
     Left = 32
   end
-  object TilesetOpenDialog: TOpenDialog
-    DefaultExt = 'bmp'
-    Filter = 
-      'Supported formats (*.bmp,R16,R8)|*.R16;*.R8;*.bmp|Dune2000 R16 t' +
-      'ileset image (*.R16)|*.R16|Dune2000 R8 tileset image (*.R8)|*.R8' +
-      '|BMP image (*.bmp)|*.bmp'
-    InitialDir = '.\tilesets'
-    Title = 'Load Tileset image'
-    Left = 96
-  end
   object MapSaveDialog: TSaveDialog
     DefaultExt = 'map'
     Filter = 'Dune 2000 map (*.map)|*.map|All files (*.*)|*.*'
@@ -1456,41 +1434,34 @@ object MainWindow: TMainWindow
     Left = 64
   end
   object XPManifest1: TXPManifest
-    Left = 192
+    Left = 128
   end
   object MapImageSaveDialog: TSaveDialog
     DefaultExt = 'png'
     Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
     FilterIndex = 2
     Title = 'Save map image'
-    Left = 160
-  end
-  object TileatrOpenDialog: TOpenDialog
-    DefaultExt = 'bin'
-    Filter = 'Dune 2000 Tileset attributes (*.bin)|*.bin'
-    InitialDir = '.\tilesets'
-    Title = 'Load Tileset attributes'
-    Left = 128
+    Left = 96
   end
   object GridColorDialog: TColorDialog
-    Left = 224
+    Left = 160
   end
   object FindDune2000Dialog: TOpenDialog
     Filter = 'Dune 2000 game executable (DUNE2000.EXE)|dune2000.exe'
     InitialDir = 'C:\'
     Title = 'Find Dune 2000 game location'
-    Left = 320
+    Left = 256
   end
   object RemapTilesOpenDialog: TOpenDialog
     DefaultExt = 'ini'
     Filter = 'Remap tiles ini file (*.ini)|*.ini'
     Title = 'Select remap tiles ini file'
-    Left = 256
+    Left = 192
   end
   object RemapStructuresOpenDialog: TOpenDialog
     DefaultExt = 'ini'
     Filter = 'Remap structures ini file (*.ini)|*.ini'
     Title = 'Select remap structures ini file'
-    Left = 288
+    Left = 224
   end
 end

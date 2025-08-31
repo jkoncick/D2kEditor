@@ -12,8 +12,6 @@ uses
   // External libraries
   pngimage;
 
-const brush_size_presets: array[0..7,1..2] of word = ((1,1),(2,2),(3,3),(4,4),(2,1),(1,2),(3,2),(2,3));
-
 type
   SelectedMode = (mStructures, mStructuresPaint, mTerrain, mPaintMode, mBlockMode, mSelectMode);
 
@@ -40,8 +38,6 @@ type
     MapOpenDialog: TOpenDialog;
     Savemap1: TMenuItem;
     ileset1: TMenuItem;
-    Loadtileset1: TMenuItem;
-    TilesetOpenDialog: TOpenDialog;
     MapSaveDialog: TSaveDialog;
     Changetileset1: TMenuItem;
     MiniMap: TImage;
@@ -53,7 +49,6 @@ type
     N2: TMenuItem;
     Exit1: TMenuItem;
     Selectnext1: TMenuItem;
-    N3: TMenuItem;
     Map1: TMenuItem;
     Setmapsize1: TMenuItem;
     Shiftmap1: TMenuItem;
@@ -95,8 +90,6 @@ type
     Launchgame1: TMenuItem;
     Quicklaunch1: TMenuItem;
     Launchwithsettings1: TMenuItem;
-    TileatrOpenDialog: TOpenDialog;
-    Loadtilesetattributes1: TMenuItem;
     N10: TMenuItem;
     Copy1: TMenuItem;
     Paste1: TMenuItem;
@@ -108,7 +101,6 @@ type
     BlockFrame: TBevel;
     Bevel1: TBevel;
     Bevel2: TBevel;
-    cbBrushSize: TComboBox;
     LbPaintTileGroupName: TLabel;
     lbUnitGroup: TListBox;
     lblUnitGroup: TLabel;
@@ -125,7 +117,7 @@ type
     N7: TMenuItem;
     Gridcolor1: TMenuItem;
     Preferences1: TMenuItem;
-    TileAttributeseditor1: TMenuItem;
+    Tileseteditor1: TMenuItem;
     Saveminimapimage1: TMenuItem;
     Reloadtileset1: TMenuItem;
     cbSelectAreaType: TComboBox;
@@ -211,13 +203,13 @@ type
     cbCrateBloomSpawnerRespawning: TCheckBox;
     lblCrateBloomRadiusPlus: TLabel;
     Converttoadvanced1: TMenuItem;
-    Produceradarcolorfile1: TMenuItem;
     Remapstructures1: TMenuItem;
     RemapStructuresOpenDialog: TOpenDialog;
     sbShowEventMarkers: TSpeedButton;
     sbShowEventAreas: TSpeedButton;
     sbMarkDefenceAreas: TSpeedButton;
     sbShowCrateMarkers: TSpeedButton;
+    tbBrushSize: TTrackBar;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -251,10 +243,7 @@ type
     procedure Changetileset1Click(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
     procedure Reloadtileset1Click(Sender: TObject);
-    procedure Loadtileset1Click(Sender: TObject);
-    procedure Loadtilesetattributes1Click(Sender: TObject);
-    procedure TileAttributeseditor1Click(Sender: TObject);
-    procedure Produceradarcolorfile1Click(Sender: TObject);
+    procedure Tileseteditor1Click(Sender: TObject);
     procedure Structureseditor1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure Preferences1Click(Sender: TObject);
@@ -377,6 +366,9 @@ type
     procedure update_side_list(side_list: TStringList);
     procedure update_misc_object_list;
     procedure update_tileset;
+    procedure update_fill_area_types;
+    procedure update_paint_tile_groups;
+    procedure update_block_preset_groups;
     procedure update_structure_controls;
     procedure update_map_dimensions;
     procedure update_map_name;
@@ -417,7 +409,7 @@ implementation
 
 uses
   // Dialogs
-  settings_dialog, set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window;
+  settings_dialog, set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileset_editor, structures_editor, debug_window;
 
 {$R *.dfm}
 
@@ -425,7 +417,6 @@ procedure TMainWindow.FormCreate(Sender: TObject);
 var
   i: integer;
   btn: TSpeedButton;
-  tmp_strings: TStringList;
   SR: TSearchRec;
   menuitem: TMenuItem;
 begin
@@ -440,12 +431,6 @@ begin
   top := 40;
   CursorImage.Picture.Bitmap.TransparentColor := clBtnFace;
   // Initialize terrain editing controls
-  tmp_strings := TStringList.Create;
-  for i := 0 to Length(brush_size_presets) - 1 do
-    tmp_strings.Add(inttostr(brush_size_presets[i,1]) + ' x ' + inttostr(brush_size_presets[i,2]));
-  cbBrushSize.Items := tmp_strings;
-  cbBrushSize.ItemIndex := 0;
-  tmp_strings.Destroy;
   for i := -4 to cnt_paint_tile_groups-1 do
   begin
     btn := TSpeedButton.Create(self);
@@ -573,7 +558,7 @@ begin
   end;
   Settings.save_editor_settings;
   MainWindow.OnResize := nil;
-  TileAtrEditor.OnResize := nil;
+  TilesetEditor.OnResize := nil;
 end;
 
 procedure TMainWindow.FormResize(Sender: TObject);
@@ -793,12 +778,6 @@ begin
   // Shift+key
   if ssShift in Shift then
   begin
-    // Brush size preset selection
-    if (key >= ord('1')) and (key <= ord('8')) then
-    begin
-      cbBrushSize.ItemIndex := key - ord('1');
-      render_editing_marker;
-    end;
     case key of
     // Structures editing mode selection
     ord('E'): begin lbMiscObject.ItemIndex := 3; lbMiscObjectClick(nil); EditorPages.TabIndex := 0; EditorPages.SetFocus; end;
@@ -844,7 +823,7 @@ begin
     // If Ctrl is held and in paint mode, change brush size
     if (ssShift in Shift) and mode(mTerrain) then
     begin
-      cbBrushSize.ItemIndex := Min(cbBrushSize.ItemIndex + 1, 3);
+      tbBrushSize.Position := tbBrushSize.Position + 1;
       render_editing_marker;
       exit;
     end;
@@ -866,7 +845,7 @@ begin
     // If Ctrl is held and in paint mode, change brush size
     if (ssShift in Shift) and mode(mTerrain) then
     begin
-      cbBrushSize.ItemIndex := Max(cbBrushSize.ItemIndex - 1, 0);
+      tbBrushSize.Position := tbBrushSize.Position - 1;
       render_editing_marker;
       exit;
     end;
@@ -1060,26 +1039,9 @@ begin
   Tileset.load_tileset(true);
 end;
 
-procedure TMainWindow.Loadtileset1Click(Sender: TObject);
+procedure TMainWindow.Tileseteditor1Click(Sender: TObject);
 begin
-  if TilesetOpenDialog.Execute then
-    Tileset.load_tileimage_from_file(TilesetOpenDialog.FileName);
-end;
-
-procedure TMainWindow.Loadtilesetattributes1Click(Sender: TObject);
-begin
-  if TileatrOpenDialog.Execute then
-    Tileset.load_tileatr_from_file(TileatrOpenDialog.FileName);
-end;
-
-procedure TMainWindow.TileAttributeseditor1Click(Sender: TObject);
-begin
-  TileAtrEditor.Show;
-end;
-
-procedure TMainWindow.Produceradarcolorfile1Click(Sender: TObject);
-begin
-  Tileset.produce_radar_color_file;
+  TilesetEditor.Show;
 end;
 
 procedure TMainWindow.Structureseditor1Click(Sender: TObject);
@@ -1107,7 +1069,7 @@ begin
         Settings.GridColor := GridColorDialog.Color;
         if sbShowGrid.Down or sbShowEventAreas.Down then
           render_map;
-        TileAtrEditor.update_grid_color;
+        TilesetEditor.update_grid_color;
         TilesetDialog.update_grid_color;
       end;
     end;
@@ -1243,7 +1205,6 @@ begin
               '0-9, A-Z = Block preset'#13+
               '` (key under Esc) = Switch to paint mode'#13+
               'F1 - F4 = Change block preset group'#13+
-              'Shift + 1 - 8 = Change brush size'#13+
               'Shift + T = Toggle select structures'#13+
               'Num 2,4,6,8 = Move block on map'#13+
               'Num 5 = Place block'#13#13+
@@ -1584,13 +1545,13 @@ begin
       else if mode(mPaintMode) then
       begin
         // Paint
-        Map.paint_rect(map_x, map_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], paint_tile_group, cbxConcreteSide.ItemIndex);
+        Map.paint_rect(map_x, map_y, tbBrushSize.Position, tbBrushSize.Position, paint_tile_group, cbxConcreteSide.ItemIndex);
       end;
     end
     else if button = mbMiddle then
     begin
       // Copy selected block
-      copy_block_from_map(brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], map_x, map_y, false, false, -1);
+      copy_block_from_map(tbBrushSize.Position, tbBrushSize.Position, map_x, map_y, false, false, -1);
       exit;
     end;
   end;
@@ -1945,16 +1906,34 @@ begin
 end;
 
 procedure TMainWindow.update_tileset;
+begin
+  // Show tileset name
+  StatusBar.Panels[1].Text := Tileset.tileset_name;
+  update_fill_area_types;
+  update_paint_tile_groups;
+  update_block_preset_groups;
+end;
+
+procedure TMainWindow.update_fill_area_types;
 var
   area_types: TStringList;
   i: integer;
+begin
+  // Fill Area type combo box
+  area_types := TStringList.Create;
+  area_types.Add('(Everything)');
+  for i := 0 to Tileset.fill_area_rules_used - 1 do
+    area_types.Add(Tileset.fill_area_rules[i].name);
+  cbSelectAreaType.Items := area_types;
+  cbSelectAreaType.ItemIndex := 0;
+  area_types.Destroy;
+end;
+
+procedure TMainWindow.update_paint_tile_groups;
+var
+  i: integer;
   tile_x, tile_y: integer;
 begin
-  // Show tileset name
-  if Tileset.tileset_index <> -1 then
-    StatusBar.Panels[1].Text := Tileset.tileset_name
-  else
-    StatusBar.Panels[1].Text := '*' + Tileset.tileset_name;
   // Draw glyphs on paint tile group buttons in terrain editing GUI
   for i := -4 to cnt_paint_tile_groups-1 do
   begin
@@ -1973,23 +1952,21 @@ begin
     paint_tile_select[i].Enabled := Tileset.paint_tile_groups[i].name <> '';
     paint_tile_select[i].Hint := Tileset.paint_tile_groups[i].name;
   end;
+  // Update paint tile group label
+  if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
+    LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
+end;
+
+procedure TMainWindow.update_block_preset_groups;
+var
+  i: integer;
+begin
   // Set text on block preset group buttons
   for i := 0 to cnt_block_preset_groups-1 do
   begin
     block_preset_select[i].Enabled := Tileset.block_preset_groups[i].name <> '';
     block_preset_select[i].Caption := Tileset.block_preset_groups[i].name;
   end;
-  // Fill Area type combo box
-  area_types := TStringList.Create;
-  area_types.Add('(Everything)');
-  for i := 0 to Tileset.fill_area_rules_used - 1 do
-    area_types.Add(Tileset.fill_area_rules[i].name);
-  cbSelectAreaType.Items := area_types;
-  cbSelectAreaType.ItemIndex := 0;
-  area_types.Destroy;
-  // Update paint tile group label
-  if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
-    LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
 end;
 
 procedure TMainWindow.update_structure_controls;
@@ -2306,7 +2283,7 @@ begin
   begin
     // Draw paint brush marker
     Renderer.draw_editing_marker(MapCanvas.Canvas, map_canvas_left, map_canvas_top, map_canvas_width, map_canvas_height,
-      Addr(Map.data), mouse_old_x, mouse_old_y, brush_size_presets[cbBrushSize.ItemIndex,1], brush_size_presets[cbBrushSize.ItemIndex,2], emPaintArea, 0);
+      Addr(Map.data), mouse_old_x, mouse_old_y, tbBrushSize.Position, tbBrushSize.Position, emPaintArea, 0);
   end else
   begin
     Renderer.remove_editing_marker(MapCanvas.Canvas);
@@ -2584,15 +2561,30 @@ begin
   result := result and not ((ForegroundWindow = MissionDialog.Handle) and PtInRect(MissionDialog.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = EventDialog.Handle) and PtInRect(EventDialog.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = MissionLauncher.Handle) and PtInRect(MissionLauncher.BoundsRect, Mouse.CursorPos));
-  result := result and not ((ForegroundWindow = TileAtrEditor.Handle) and PtInRect(TileAtrEditor.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = TilesetEditor.Handle) and PtInRect(TilesetEditor.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = StructuresEditor.Handle) and PtInRect(StructuresEditor.BoundsRect, Mouse.CursorPos));
   result := result and not (DebugWindow.Visible and PtInRect(DebugWindow.BoundsRect, Mouse.CursorPos));
   result := result or block_select_started;
 end;
 
 procedure TMainWindow.apply_key_preset(key: word);
+var
+  i: integer;
 begin
-  select_block_preset(Tileset.get_block_preset(block_preset_group, key, bpNext));
+  if key = 188 then
+    key := ord('<');
+  if key = 190 then
+    key := ord('>');
+  if key = 186 then
+    key := ord(':');
+  if key = 191 then
+    key := ord('?');
+  for i := 0 to cnt_block_preset_keys - 1 do
+    if ord(block_preset_keys[i]) = key then
+    begin
+      select_block_preset(Tileset.get_block_preset_index(block_preset_group, i, bpNext));
+      break;
+    end;
 end;
 
 procedure TMainWindow.start_position_selection(x, y: integer; mode: PositionSelectionMode);
@@ -2666,7 +2658,7 @@ begin
   for x := 0 to block_width - 1 do
     for y := 0 to block_height - 1 do
     begin
-      block_data[x,y].tile := Tileset.block_preset_tiles[preset.block_preset_tile_index + x + y * preset.width];
+      block_data[x,y].tile := Tileset.block_preset_tiles[Tileset.block_preset_first_tile_indexes[preset_index] + x + y * preset.width];
       block_data[x,y].special := IfThen(block_data[x,y].tile = 65535, 65535, 0);
     end;
   RbBlockMode.Checked := true;

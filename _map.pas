@@ -285,7 +285,7 @@ begin
   map_height := new_height;
   for x := 0 to map_width - 1 do
     for y := 0 to map_height - 1 do
-      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
+      map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.header.default_paint_group, x, y);
   map_filename := '';
   map_loaded := true;
   map_modified := false;
@@ -382,7 +382,7 @@ begin
         if (area_type = -1) or Tileset.check_area_type(value.tile, value.special, area_type) then
         begin
           if erase then
-            modify_map_tile(x + xx, y + yy, IfThen(copy_terrain, Tileset.get_random_paint_tile(Tileset.default_paint_group, x + xx, y + yy), 65535), IfThen((not copy_terrain) and (value.special <= 2), 65535, 0));
+            modify_map_tile(x + xx, y + yy, IfThen(copy_terrain, Tileset.get_random_paint_tile(Tileset.header.default_paint_group, x + xx, y + yy), 65535), IfThen((not copy_terrain) and (value.special <= 2), 65535, 0));
           if (not copy_structures) and (value.special > 2) then
             value.special := 0;
         end else
@@ -455,7 +455,7 @@ begin
     is_spice := (special = 1) or (special = 2) or (((tile and $1000) = 0) and ((tile and $E000) <> 0));
     if tile_dirty[x, y]
     or (not Tileset.check_area_type(tile, special, area_type))
-    or ((paint_tile_group = Tileset.tile_paint_group[tile and $0FFF]) and not is_spice)
+    or ((paint_tile_group = Tileset.get_tile_paint_group(tile)) and not is_spice)
     or ((paint_tile_group < -2) and is_spice)
     or (Settings.RestrictPainting and (not Tileset.check_paint_tile_restriction(tile, special, paint_tile_group)))
     then
@@ -536,25 +536,36 @@ begin
   if y < 0 then y := 0;
   if x >= map_width then x := map_width - 1;
   if y >= map_height then y := map_height - 1;
-  result := Tileset.tile_paint_group[map_data[x,y].tile] = tmp_paint_tile_group;
+  result := Tileset.get_tile_paint_group(map_data[x,y].tile) = tmp_paint_tile_group;
   if not exact then
   begin
     if (tmp_paint_tile_group >= 0) then
-      result := result or ((Tileset.attributes_editor[map_data[x,y].tile] and (1 shl tmp_paint_tile_group)) <> 0)
+      result := result or ((Tileset.attributes_extra[map_data[x,y].tile] and (1 shl tmp_paint_tile_group)) <> 0)
     else
-      result := result or (Tileset.attributes_editor[map_data[x,y].tile] = 0);
+      result := result or (Tileset.attributes_extra[map_data[x,y].tile] = 0);
   end;
 end;
 
-procedure TMap.put_edge_block(var xpos, ypos: integer; moveoff_x,
-  moveoff_y, blockoff_x, blockoff_y: integer; smooth_preset_type: SmoothPresetType);
+procedure TMap.put_edge_block(var xpos, ypos: integer; moveoff_x, moveoff_y, blockoff_x, blockoff_y: integer; smooth_preset_type: SmoothPresetType);
 var
+  preset_index: integer;
   block_preset: PBlockPreset;
   smooth_preset_group: integer;
   x, y: integer;
+  key: char;
+  key_index, i: integer;
 begin
   smooth_preset_group := Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_preset_group;
-  block_preset := @Tileset.block_presets[Tileset.get_block_preset(smooth_preset_group, ord(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets[ord(smooth_preset_type)+1]), bpRandom)];
+  key := Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets[ord(smooth_preset_type)];
+  key_index := 0;
+  for i := 0 to Length(block_preset_keys) - 1 do
+    if block_preset_keys[i] = key then
+    begin
+      key_index := i;
+      break;
+    end;
+  preset_index := Tileset.get_block_preset_index(smooth_preset_group, key_index, bpRandom);
+  block_preset := @Tileset.block_presets[preset_index];
   // Reuse already defined block-key-presets for this purpose
   // Place edge block (it can be either 1x1 or 2x2, so we use loops)
   for y := 0 to block_preset.height - 1 do
@@ -566,7 +577,7 @@ begin
       // into history and in the end we apply the changes (like doing redo)
       undo_history[undo_max].x := x + xpos + blockoff_x;
       undo_history[undo_max].y := y + ypos + blockoff_y;
-      undo_history[undo_max].data.tile := Tileset.block_preset_tiles[block_preset.block_preset_tile_index + x + y * block_preset.width];
+      undo_history[undo_max].data.tile := Tileset.block_preset_tiles[Tileset.block_preset_first_tile_indexes[preset_index] + x + y * block_preset.width];
       undo_history[undo_max].data.special := 0;
       undo_history[undo_max].is_first := false;
       undo_max := (undo_max + 1) and max_undo_steps;
@@ -588,8 +599,8 @@ begin
   start_y := y;
   Renderer.invalidate_init;
   tmp_paint_tile_group := paint_tile_group;
-  use_curves := length(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets) = 20;
-  use_cornerlink := length(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets) = 14;
+  use_curves := StrLen(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets) = 20;
+  use_cornerlink := StrLen(Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_presets) = 14;
   undo_max := undo_pos;
   steps := 0;
   // Start smoothing edge from starting point (where user shift-clicked)
@@ -902,7 +913,7 @@ begin
     for j := 0 to new_width - 1 do
       if (i >= map_height) or (j >= map_width) then
       begin
-        map_data[j,i].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, j, i);
+        map_data[j,i].tile := Tileset.get_random_paint_tile(Tileset.header.default_paint_group, j, i);
         map_data[j,i].special := 0;
       end;
   // Set new map size
@@ -930,7 +941,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.header.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -945,7 +956,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.header.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -960,7 +971,7 @@ begin
                 map_data[x,y] := map_data[src_x,y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.header.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;
@@ -975,7 +986,7 @@ begin
                 map_data[x,y] := map_data[x,src_y]
               else
               begin
-                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.default_paint_group, x, y);
+                map_data[x,y].tile := Tileset.get_random_paint_tile(Tileset.header.default_paint_group, x, y);
                 map_data[x,y].special := 0;
               end;
             end;

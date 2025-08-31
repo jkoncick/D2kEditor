@@ -595,6 +595,7 @@ end;
 
 procedure TMissionIni.load_custom_campaign_data_files(load_tilesets: boolean);
 begin
+  Tileset.load_tileset_list;
   if load_tilesets then
     Tileset.load_tileset(false);
   Structures.load_templates_bin(false);

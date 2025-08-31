@@ -24,8 +24,6 @@ type
     CheckMapErrorsOnSave: boolean;
     CheckMapErrorsOnTest: boolean;
     // Preferences - Other settings
-    LoadR16Image: boolean;
-    LoadR8Image: boolean;
     CleanUpExtraModFilesAfterLaunch: boolean;
     // Preferences - Buttons below minimap
     ShowGrid: boolean;
@@ -87,7 +85,7 @@ implementation
 
 uses
   SysUtils, StdCtrls, main, settings_dialog, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileatr_editor, structures_editor, debug_window, _utils,
+  mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileset_editor, structures_editor, debug_window, _utils,
   Grids;
 
 procedure TSettings.load_precreate_editor_settings;
@@ -109,8 +107,6 @@ begin
   CheckMapErrorsOnSave    := ini.ReadBool   ('Preferences', 'CheckMapErrorsOnSave',     true);
   CheckMapErrorsOnTest    := ini.ReadBool   ('Preferences', 'CheckMapErrorsOnTest',     true);
   // Preferences - Other settings
-  LoadR16Image            := ini.ReadBool   ('Preferences', 'LoadR16Image',             true);
-  LoadR8Image             := ini.ReadBool   ('Preferences', 'LoadR8Image',              true);
   CleanUpExtraModFilesAfterLaunch := ini.ReadBool('Preferences', 'CleanUpExtraModFilesAfterLaunch', false);
   // Preferences - Buttons below minimap
   ShowGrid                := ini.ReadBool   ('Preferences', 'ShowGrid',                 false);
@@ -160,15 +156,13 @@ begin
     EventDialog.EventGrid.ColWidths[i] := load_control_property_int(EventDialog.EventGrid, Format('ColWidths[%d]', [i]), EventDialog.EventGrid.ColWidths[i]);
   load_window_position(MapStatsDialog);
   load_window_position(MissionLauncher);
-  load_window_position(TileAtrEditor);
-  TileAtrEditor.cbAlwaysOnTop.State := TCheckBoxState(load_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State)));
+  load_window_position(TilesetEditor);
+  TilesetEditor.cbAlwaysOnTop.State := TCheckBoxState(load_control_property_int(TilesetEditor.cbAlwaysOnTop, 'State', Ord(TilesetEditor.cbAlwaysOnTop.State)));
   load_window_position(StructuresEditor);
   load_window_position(DebugWindow);
   // Load file dialog paths
   load_file_dialog_initial_dir(MainWindow.MapOpenDialog,              MissionsPath);
   load_file_dialog_initial_dir(MainWindow.MapSaveDialog,              MissionsPath);
-  load_file_dialog_initial_dir(MainWindow.TilesetOpenDialog,          GamePath + '\Data');
-  load_file_dialog_initial_dir(MainWindow.TileatrOpenDialog,          GamePath + '\Data\bin');
   load_file_dialog_initial_dir(MainWindow.MapImageSaveDialog,         '');
   load_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog,       current_dir);
   load_file_dialog_initial_dir(MainWindow.RemapStructuresOpenDialog,  current_dir);
@@ -176,7 +170,10 @@ begin
   load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,          current_dir + 'AI_templates');
   load_file_dialog_initial_dir(EventDialog.ExportEventsDialog,        '');
   load_file_dialog_initial_dir(EventDialog.ImportEventsDialog,        '');
-  load_file_dialog_initial_dir(TileAtrEditor.SaveTileAtrDialog,       GamePath + '\Data\bin');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetImageOpenDialog,  '');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetImageSaveDialog,  '');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetPortionOpenDialog,'');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetPortionSaveDialog,'');
   load_file_dialog_initial_dir(StructuresEditor.ItemExportDialog,     '');
   load_file_dialog_initial_dir(StructuresEditor.ItemImportDialog,     '');
   load_file_dialog_initial_dir(StructuresEditor.ArtExportDialog,      '');
@@ -211,8 +208,6 @@ begin
   ini.WriteBool   ('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);
   ini.WriteBool   ('Preferences', 'CheckMapErrorsOnTest', CheckMapErrorsOnTest);
   // Preferences - Other settings
-  ini.WriteBool   ('Preferences', 'LoadR16Image', LoadR16Image);
-  ini.WriteBool   ('Preferences', 'LoadR8Image', LoadR8Image);
   ini.WriteBool   ('Preferences', 'CleanUpExtraModFilesAfterLaunch', CleanUpExtraModFilesAfterLaunch);
   // Preferences - Buttons below minimap
   ini.WriteBool   ('Preferences', 'ShowGrid', ShowGrid);
@@ -259,15 +254,13 @@ begin
   save_window_position(MapStatsDialog);
   save_window_position(MissionLauncher);
   MissionLauncher.save_mission_grid_column_states;
-  save_window_position(TileAtrEditor);
-  save_control_property_int(TileAtrEditor.cbAlwaysOnTop, 'State', Ord(TileAtrEditor.cbAlwaysOnTop.State));
+  save_window_position(TilesetEditor);
+  save_control_property_int(TilesetEditor.cbAlwaysOnTop, 'State', Ord(TilesetEditor.cbAlwaysOnTop.State));
   save_window_position(StructuresEditor);
   save_window_position(DebugWindow);
   // Save file dialog paths
   save_file_dialog_initial_dir(MainWindow.MapOpenDialog);
   save_file_dialog_initial_dir(MainWindow.MapSaveDialog);
-  save_file_dialog_initial_dir(MainWindow.TilesetOpenDialog);
-  save_file_dialog_initial_dir(MainWindow.TileatrOpenDialog);
   save_file_dialog_initial_dir(MainWindow.MapImageSaveDialog);
   save_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog);
   save_file_dialog_initial_dir(MainWindow.RemapStructuresOpenDialog);
@@ -275,7 +268,10 @@ begin
   save_file_dialog_initial_dir(MissionDialog.ImportAIDialog);
   save_file_dialog_initial_dir(EventDialog.ExportEventsDialog);
   save_file_dialog_initial_dir(EventDialog.ImportEventsDialog);
-  save_file_dialog_initial_dir(TileAtrEditor.SaveTileAtrDialog);
+  save_file_dialog_initial_dir(TilesetEditor.TilesetImageOpenDialog);
+  save_file_dialog_initial_dir(TilesetEditor.TilesetImageSaveDialog);
+  save_file_dialog_initial_dir(TilesetEditor.TilesetPortionOpenDialog);
+  save_file_dialog_initial_dir(TilesetEditor.TilesetPortionSaveDialog);
   save_file_dialog_initial_dir(StructuresEditor.ItemExportDialog);
   save_file_dialog_initial_dir(StructuresEditor.ItemImportDialog);
   save_file_dialog_initial_dir(StructuresEditor.ArtExportDialog);

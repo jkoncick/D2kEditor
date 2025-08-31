@@ -228,14 +228,17 @@ begin
       Application.MessageBox(PChar(Format('Saved a modified copy of original game file ''%s'' into'#13'''%s''', [filename, tmp_filename])), 'Saving a new copy into CustomCampaignData', MB_ICONINFORMATION or MB_OK);
       filename := tmp_filename;
       Dispatcher.register_event(filename_change_event);
-      // Create directories if they don't exist
-      tmp_dir := ExtractFileDir(tmp_filename);
-      if not DirectoryExists(tmp_dir) then
-        ForceDirectories(tmp_dir);
     end;
-  end;
-  if not confirm_overwrite_original_file(filename, Settings.GamePath + '\' + name_pattern, Mission.mis_assigned) then
+  end
+  else if not confirm_overwrite_original_file(filename, Settings.GamePath + '\' + name_pattern, Mission.mis_assigned) then
+  begin
     result := false;
+    exit;
+  end;
+  // Create directories if they don't exist
+  tmp_dir := ExtractFileDir(filename);
+  if not DirectoryExists(tmp_dir) then
+    ForceDirectories(tmp_dir);
 end;
 
 function confirm_overwrite_original_file(actual_filename, orig_filename: string; mods_folder_allowed: boolean): boolean;
