@@ -45,14 +45,14 @@ object EventDialog: TEventDialog
     Height = 401
     Align = alClient
     BevelOuter = bvNone
-    TabOrder = 2
+    TabOrder = 1
     object EventGrid: TStringGrid
       Left = 168
       Top = 0
       Width = 1202
       Height = 401
       Align = alClient
-      ColCount = 8
+      ColCount = 6
       DefaultRowHeight = 18
       RowCount = 2
       Font.Charset = EASTEUROPE_CHARSET
@@ -60,7 +60,7 @@ object EventDialog: TEventDialog
       Font.Height = -11
       Font.Name = 'MS Sans Serif'
       Font.Style = []
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowSelect, goThumbTracking]
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goRowSelect, goThumbTracking]
       ParentFont = False
       PopupMenu = EventGridPopupMenu
       ScrollBars = ssVertical
@@ -68,7 +68,6 @@ object EventDialog: TEventDialog
       OnDrawCell = EventGridDrawCell
       OnKeyDown = EventGridKeyDown
       OnMouseDown = EventGridMouseDown
-      OnMouseUp = EventGridMouseUp
       OnMouseWheelDown = EventGridMouseWheelDown
       OnMouseWheelUp = EventGridMouseWheelUp
       OnSelectCell = EventGridSelectCell
@@ -136,7 +135,7 @@ object EventDialog: TEventDialog
       Width = 312
       Height = 288
       Align = alLeft
-      ColCount = 4
+      ColCount = 3
       DefaultRowHeight = 18
       RowCount = 2
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowSelect, goThumbTracking]
@@ -1108,38 +1107,12 @@ object EventDialog: TEventDialog
       end
     end
   end
-  object pnEventExportMarker: TPanel
-    Left = 168
-    Top = 3
-    Width = 465
-    Height = 16
-    BevelOuter = bvNone
-    Color = clYellow
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -13
-    Font.Name = 'MS Sans Serif'
-    Font.Style = [fsBold]
-    ParentBackground = False
-    ParentFont = False
-    TabOrder = 3
-    Visible = False
-    object lblEventExportMarker: TLabel
-      Left = 0
-      Top = 0
-      Width = 461
-      Height = 16
-      Caption = 
-        'Select a contiguous range of events to export. Press Esc to canc' +
-        'el.'
-    end
-  end
   object SelectVariablePanel: TPanel
     Left = 168
     Top = 0
     Width = 185
     Height = 329
-    TabOrder = 5
+    TabOrder = 3
     Visible = False
     object lblSelectVariableList: TLabel
       Left = 8
@@ -1206,7 +1179,7 @@ object EventDialog: TEventDialog
     Top = 0
     Width = 625
     Height = 401
-    TabOrder = 6
+    TabOrder = 4
     Visible = False
     object lblEventHelp: TLabel
       Left = 8
@@ -1217,88 +1190,13 @@ object EventDialog: TEventDialog
       WordWrap = True
     end
   end
-  object CreateEventsPanel: TPanel
-    Left = 528
-    Top = 96
-    Width = 209
-    Height = 177
-    TabOrder = 1
-    Visible = False
-    object lblCreateEvents: TLabel
-      Left = 24
-      Top = 24
-      Width = 128
-      Height = 13
-      Caption = 'Create Unit spawn event(s)'
-    end
-    object lblCreateEventsSide: TLabel
-      Left = 24
-      Top = 60
-      Width = 24
-      Height = 13
-      Caption = 'Side:'
-    end
-    object lblCreateEventsCount: TLabel
-      Left = 24
-      Top = 92
-      Width = 87
-      Height = 13
-      Caption = 'Number of events:'
-    end
-    object btnCreateEventsCancel: TBitBtn
-      Left = 24
-      Top = 128
-      Width = 75
-      Height = 25
-      TabOrder = 0
-      OnClick = btnCreateEventsCancelClick
-      Kind = bkCancel
-    end
-    object btnCreateEventsOk: TBitBtn
-      Left = 112
-      Top = 128
-      Width = 75
-      Height = 25
-      TabOrder = 1
-      OnClick = btnCreateEventsOkClick
-      Kind = bkOK
-    end
-    object cbCreateEventsSide: TComboBox
-      Left = 64
-      Top = 56
-      Width = 121
-      Height = 21
-      Style = csDropDownList
-      ItemHeight = 13
-      TabOrder = 2
-      OnChange = cbCreateEventsSideChange
-    end
-    object seCreateEventsNum: TSpinEdit
-      Left = 128
-      Top = 88
-      Width = 57
-      Height = 22
-      MaxValue = 255
-      MinValue = 0
-      TabOrder = 3
-      Value = 1
-    end
-    object cbCreateEventsUseHouseID: TCheckBox
-      Left = 24
-      Top = 90
-      Width = 97
-      Height = 17
-      Caption = 'Use house ID:'
-      TabOrder = 4
-    end
-  end
   object pnConditionFilter: TPanel
     Left = 840
     Top = 96
     Width = 288
     Height = 288
     BevelOuter = bvNone
-    TabOrder = 4
+    TabOrder = 2
     Visible = False
     object lblConditionFilterAmount: TLabel
       Left = 0
@@ -1368,30 +1266,15 @@ object EventDialog: TEventDialog
   object EventGridPopupMenu: TPopupMenu
     OnPopup = PopupMenuPopup
     Left = 392
-    object Addevent1: TMenuItem
-      Caption = 'Add event'
-      ShortCut = 45
-      OnClick = Addevent1Click
-    end
-    object Insertevent1: TMenuItem
-      Caption = 'Insert before'
-      ShortCut = 16429
-      OnClick = Insertevent1Click
-    end
     object Duplicateevent1: TMenuItem
-      Caption = 'Duplicate event'
-      ShortCut = 8237
+      Caption = 'Duplicate event(s)'
+      ShortCut = 45
       OnClick = Duplicateevent1Click
     end
     object Deleteselectedevent1: TMenuItem
-      Caption = 'Delete event'
+      Caption = 'Delete event(s)'
       ShortCut = 46
       OnClick = Deleteselectedevent1Click
-    end
-    object Deletelastevent1: TMenuItem
-      Caption = 'Delete last event'
-      ShortCut = 16430
-      OnClick = Deletelastevent1Click
     end
     object MoveUp1: TMenuItem
       Caption = 'Move Up'
@@ -1403,34 +1286,15 @@ object EventDialog: TEventDialog
       ShortCut = 34
       OnClick = MoveDown1Click
     end
-    object N1: TMenuItem
-      Caption = '-'
+    object Blockevents1: TMenuItem
+      Caption = 'Block event(s)'
+      ShortCut = 16450
+      OnClick = Blockevents1Click
     end
-    object Createevent1: TMenuItem
-      Caption = 'Create events'
-      object Unitspawn1: TMenuItem
-        Caption = 'Unit spawn'
-        ShortCut = 112
-        OnClick = Unitspawn1Click
-      end
-      object Harvesterreplacement1: TMenuItem
-        Caption = 'Harvester replacement'
-        ShortCut = 113
-        OnClick = Harvesterreplacement1Click
-      end
-      object Annihilatemessage1: TMenuItem
-        Caption = 'Side annihilated message'
-        ShortCut = 114
-        OnClick = Annihilatemessage1Click
-      end
-    end
-    object Createrunonceflag1: TMenuItem
-      Caption = 'Add run-once flag'
-      ShortCut = 115
-      OnClick = Createrunonceflag1Click
-    end
-    object N2: TMenuItem
-      Caption = '-'
+    object Unblockevents1: TMenuItem
+      Caption = 'Unblock event(s)'
+      ShortCut = 16469
+      OnClick = Unblockevents1Click
     end
     object Exportevents1: TMenuItem
       Caption = 'Export events'

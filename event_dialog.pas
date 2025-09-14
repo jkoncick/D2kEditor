@@ -8,9 +8,6 @@ uses
   _mission, _eventconfig, _utils;
 
 type
-  CreateEventType = (ceUnitSpawn, ceHarvRepl, ceAnnihMsg);
-
-type
   VariableSelectionType = (vsCoord, vsArg, vsVarArg, vsEventMessageVar, vsCondExprVar, vsCondExprValue, vsEventFilterSkip, vsEventFilterLimit, vsEventObjectIndex, vsConditionFilterAmount, vsFilter);
 
 type
@@ -108,33 +105,15 @@ type
     seMessageId: TSpinEdit;
     edMessageText: TEdit;
     EventGridPopupMenu: TPopupMenu;
-    Addevent1: TMenuItem;
     Deleteselectedevent1: TMenuItem;
-    Deletelastevent1: TMenuItem;
     ConditionGridPopupMenu: TPopupMenu;
     Addcondition1: TMenuItem;
     Deleteselectedcondition1: TMenuItem;
     Deletelastcondition1: TMenuItem;
     MoveUp1: TMenuItem;
     MoveDown1: TMenuItem;
-    Insertevent1: TMenuItem;
     Duplicateevent1: TMenuItem;
     Duplicatecondition1: TMenuItem;
-    N1: TMenuItem;
-    Createevent1: TMenuItem;
-    Unitspawn1: TMenuItem;
-    Harvesterreplacement1: TMenuItem;
-    Annihilatemessage1: TMenuItem;
-    Createrunonceflag1: TMenuItem;
-    CreateEventsPanel: TPanel;
-    lblCreateEvents: TLabel;
-    btnCreateEventsCancel: TBitBtn;
-    btnCreateEventsOk: TBitBtn;
-    lblCreateEventsSide: TLabel;
-    cbCreateEventsSide: TComboBox;
-    lblCreateEventsCount: TLabel;
-    seCreateEventsNum: TSpinEdit;
-    cbCreateEventsUseHouseID: TCheckBox;
     btnPlusCondition: TButton;
     edEventNote: TEdit;
     lblEventNote: TLabel;
@@ -152,7 +131,6 @@ type
     MoveDown2: TMenuItem;
     btnMoveConditionUp: TButton;
     btnMoveConditionDown: TButton;
-    N2: TMenuItem;
     edpValueList: TPanel;
     EventValueSelectionList: TListBox;
     pnEventValueListPadding: TPanel;
@@ -184,8 +162,6 @@ type
     rbEventConditionsOr: TRadioButton;
     Exportevents1: TMenuItem;
     Importevents1: TMenuItem;
-    lblEventExportMarker: TLabel;
-    pnEventExportMarker: TPanel;
     ExportEventsDialog: TSaveDialog;
     ImportEventsDialog: TOpenDialog;
     edpFilter: TPanel;
@@ -257,6 +233,8 @@ type
     lblEventHelp: TLabel;
     sbShowEventHelp: TSpeedButton;
     sbShowConditionHelp: TSpeedButton;
+    Blockevents1: TMenuItem;
+    Unblockevents1: TMenuItem;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -272,29 +250,18 @@ type
     procedure EventGridSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure EventGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure EventGridMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure EventGridMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure EventGridMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
-    // Event grid popup menu actions
-    procedure Addevent1Click(Sender: TObject);
-    procedure Insertevent1Click(Sender: TObject);
     procedure Duplicateevent1Click(Sender: TObject);
     procedure Deleteselectedevent1Click(Sender: TObject);
-    procedure Deletelastevent1Click(Sender: TObject);
     procedure MoveUp1Click(Sender: TObject);
     procedure MoveDown1Click(Sender: TObject);
-    procedure Unitspawn1Click(Sender: TObject);
-    procedure Harvesterreplacement1Click(Sender: TObject);
-    procedure Annihilatemessage1Click(Sender: TObject);
-    procedure Createrunonceflag1Click(Sender: TObject);
+    procedure Blockevents1Click(Sender: TObject);
+    procedure Unblockevents1Click(Sender: TObject);
     procedure Exportevents1Click(Sender: TObject);
     procedure Importevents1Click(Sender: TObject);
     procedure MarkEventsClick(Sender: TObject);
-    // Create events panel actions
-    procedure btnCreateEventsCancelClick(Sender: TObject);
-    procedure cbCreateEventsSideChange(Sender: TObject);
-    procedure btnCreateEventsOkClick(Sender: TObject);
     // Event properties panel actions
     procedure cbxEventTypeChange(Sender: TObject);
     procedure EventFlagsClick(Sender: TObject);
@@ -416,7 +383,6 @@ type
 
     loading: boolean;
     selected_coord_index: integer;
-    create_event_type: CreateEventType;
     notes_enabled: boolean;
     msg_text_is_custom: boolean;
     copy_conditions_from: integer;
@@ -535,25 +501,19 @@ begin
   EventGrid.ColWidths[1] := 20;
   EventGrid.Cells[2,0] := 'Event type';
   EventGrid.ColWidths[2] := 90;
-  EventGrid.Cells[3,0] := 'Position';
-  EventGrid.ColWidths[3] := 50;
-  EventGrid.Cells[4,0] := 'Side';
-  EventGrid.ColWidths[4] := 72;
-  EventGrid.Cells[5,0] := 'Contents';
-  EventGrid.ColWidths[5] := 400;
-  EventGrid.Cells[6,0] := 'Conditions';
-  EventGrid.ColWidths[6] := 400;
-  EventGrid.Cells[7,0] := 'Note';
-  EventGrid.ColWidths[7] := 1140;
+  EventGrid.Cells[3,0] := 'Contents';
+  EventGrid.ColWidths[3] := 400;
+  EventGrid.Cells[4,0] := 'Conditions';
+  EventGrid.ColWidths[4] := 400;
+  EventGrid.Cells[5,0] := 'Note';
+  EventGrid.ColWidths[5] := 1140;
   // Initialize condition grid
   ConditionGrid.Cells[0,0] := '#';
   ConditionGrid.ColWidths[0] := 24;
   ConditionGrid.Cells[1,0] := 'Condition type';
   ConditionGrid.ColWidths[1] := 84;
-  ConditionGrid.Cells[2,0] := 'Side';
-  ConditionGrid.ColWidths[2] := 72;
-  ConditionGrid.Cells[3,0] := 'Contents';
-  ConditionGrid.ColWidths[3] := 108;
+  ConditionGrid.Cells[2,0] := 'Contents';
+  ConditionGrid.ColWidths[2] := 180;
   StringList := TStringList.Create;
   // Initialize music names
   if FindFirst(Settings.GamePath + '\Data\Music\*.AUD', 0, SR) = 0 then
@@ -635,24 +595,16 @@ procedure TEventDialog.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShift
 begin
   if key = 13 then // Enter
   begin
-    if CreateEventsPanel.Visible then
-      btnCreateEventsOkClick(Sender)
-    else if SelectVariablePanel.Visible then
+    if SelectVariablePanel.Visible then
       end_variable_selection(true)
     else
       apply_changes;
   end;
   if key = 27 then // Escape
   begin
-    if CreateEventsPanel.Visible then
-      btnCreateEventsCancelClick(Sender)
-    else if SelectVariablePanel.Visible then
+    if SelectVariablePanel.Visible then
       end_variable_selection(false)
-    else if pnEventExportMarker.Visible then
-    begin
-      pnEventExportMarker.Visible := false;
-      EventGrid.Options := EventGrid.Options - [goRangeSelect];
-    end else
+    else
       Close;
   end;
   if key = 123 then // F2
@@ -751,23 +703,6 @@ begin
   end;
 end;
 
-procedure TEventDialog.EventGridMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-var
-  first_event, last_event: integer;
-begin
-  if not pnEventExportMarker.Visible then
-    exit;
-  first_event := EventGrid.Selection.Top - 1;
-  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
-  pnEventExportMarker.Visible := false;
-  EventGrid.Options := EventGrid.Options - [goRangeSelect];
-  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
-    exit;
-  ExportEventsDialog.Title := Format('Export events (%d - %d)', [first_event, last_event]);
-  if ExportEventsDialog.Execute then
-    Mission.export_events(first_event, last_event, ExportEventsDialog.FileName);
-end;
-
 procedure TEventDialog.EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
   if EventGrid.TopRow < (Min(Mission.num_events + IfThen(Settings.EventGridShowEmptyLines, EventGrid.Height div EventGrid.RowHeights[1], 2), MAX_EVENTS + 1) - EventGrid.VisibleRowCount) then
@@ -793,7 +728,7 @@ var
 begin
   if (ARow = 0) or (ACol = 0) or (ARow - 1 = selected_event) or (ARow - 1 >= Mission.num_events) then
     exit;
-  if (goRangeSelect in EventGrid.Options) and (ARow >= EventGrid.Selection.Top) and (ARow <= EventGrid.Selection.Bottom) then
+  if (ARow >= EventGrid.Selection.Top) and (ARow <= EventGrid.Selection.Bottom) then
     exit;
   event_note := IfThen(MissionIni.mission_ini_assigned, MissionIni.event_notes[ARow - 1], '');
   is_separator := Length(event_note) > 0;
@@ -843,123 +778,135 @@ begin
   EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
 end;
 
-procedure TEventDialog.Addevent1Click(Sender: TObject);
-begin
-  if Mission.add_event(Mission.num_events, 0, -1) <> -1 then
-  begin
-    fill_grids;
-    if EventGrid.Row = Mission.num_events then
-      select_event(EventGrid.Row-1)
-    else
-      EventGrid.Row := Mission.num_events;
-  end;
-end;
-
-procedure TEventDialog.Insertevent1Click(Sender: TObject);
-var
-  newpos: integer;
-begin
-  newpos := Mission.add_event(selected_event, 0, -1);
-  if newpos <> -1 then
-  begin
-    fill_grids;
-    if EventGrid.Row = newpos + 1 then
-      select_event(newpos)
-    else
-      EventGrid.Row := newpos + 1;
-  end;
-end;
-
 procedure TEventDialog.Duplicateevent1Click(Sender: TObject);
+var
+  first_event, last_event: integer;
+  num_events : integer;
+  i: integer;
+  r: TGridRect;
 begin
-  if Mission.add_event(selected_event + 1, 0, selected_event) <> -1 then
-  begin
-    fill_grids;
-    EventGrid.Row := selected_event + 2;
-  end;
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
+    exit;
+  num_events := last_event - first_event + 1;
+  for i := 0 to num_events - 1 do
+    Mission.add_event(last_event + i + 1, 0, first_event + i);
+  Inc(selected_event, num_events);
+  select_event(selected_event);
+  EventGrid.Row := selected_event + 1;
+  fill_grids;
+  r.Left := 1;
+  r.Right := EventGrid.ColCount - 1;
+  r.Top := first_event + num_events + 1;
+  r.Bottom := last_event + num_events + 1;
+  EventGrid.Selection := r;
 end;
 
 procedure TEventDialog.Deleteselectedevent1Click(Sender: TObject);
+var
+  first_event, last_event: integer;
+  i: integer;
 begin
-  if selected_event >= Mission.num_events then
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
-  Mission.delete_event(selected_event);
+  for i := first_event to last_event do
+    Mission.delete_event(first_event);
   fill_grids;
+  selected_event := first_event;
   select_event(selected_event);
-end;
-
-procedure TEventDialog.Deletelastevent1Click(Sender: TObject);
-begin
-  if Mission.num_events = 0 then
-    exit;
-  Mission.delete_event(Mission.num_events - 1);
-  fill_grids;
-  select_event(selected_event);
+  EventGrid.Row := selected_event + 1;
 end;
 
 procedure TEventDialog.MoveUp1Click(Sender: TObject);
+var
+  first_event, last_event: integer;
+  i: integer;
+  r: TGridRect;
 begin
-  if selected_event = 0 then
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (first_event = 0) or (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
-  Mission.swap_events(selected_event, selected_event-1);
+  for i := first_event to last_event do
+    Mission.swap_events(i, i-1);
   Dec(selected_event);
   select_event(selected_event);
-  EventGrid.Row := selected_event+1;
+  EventGrid.Row := selected_event + 1;
+  r.Left := 1;
+  r.Right := EventGrid.ColCount - 1;
+  r.Top := first_event;
+  r.Bottom := last_event;
+  EventGrid.Selection := r;
   fill_grids;
 end;
 
 procedure TEventDialog.MoveDown1Click(Sender: TObject);
+var
+  first_event, last_event: integer;
+  i: integer;
+  r: TGridRect;
 begin
-  if selected_event >= Mission.num_events - 1 then
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (last_event >= Mission.num_events - 1) or (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
-  Mission.swap_events(selected_event, selected_event+1);
+  for i := last_event downto first_event do
+    Mission.swap_events(i, i+1);
   Inc(selected_event);
   select_event(selected_event);
-  EventGrid.Row := selected_event+1;
+  EventGrid.Row := selected_event + 1;
+  r.Left := 1;
+  r.Right := EventGrid.ColCount - 1;
+  r.Top := first_event + 2;
+  r.Bottom := last_event + 2;
+  EventGrid.Selection := r;
   fill_grids;
 end;
 
-procedure TEventDialog.Unitspawn1Click(Sender: TObject);
+procedure TEventDialog.Blockevents1Click(Sender: TObject);
+var
+  first_event, last_event: integer;
+  i: integer;
 begin
-  CreateEventsPanel.Visible := true;
-  lblCreateEvents.Caption := 'Create Unit spawn events';
-  seCreateEventsNum.Visible := true;
-  lblCreateEventsCount.Visible := true;
-  cbCreateEventsUseHouseID.Visible := false;
-  create_event_type := ceUnitSpawn;
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
+    exit;
+  for i := first_event to last_event do
+    Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or 2;
+  fill_grids;
+  select_event(selected_event);
 end;
 
-procedure TEventDialog.Harvesterreplacement1Click(Sender: TObject);
+procedure TEventDialog.Unblockevents1Click(Sender: TObject);
+var
+  first_event, last_event: integer;
+  i: integer;
 begin
-  CreateEventsPanel.Visible := true;
-  lblCreateEvents.Caption := 'Create Harvester replacement';
-  seCreateEventsNum.Visible := false;
-  lblCreateEventsCount.Visible := false;
-  cbCreateEventsUseHouseID.Visible := false;
-  create_event_type := ceHarvRepl;
-end;
-
-procedure TEventDialog.Annihilatemessage1Click(Sender: TObject);
-begin
-  CreateEventsPanel.Visible := true;
-  lblCreateEvents.Caption := 'Create Side annihilated message';
-  seCreateEventsNum.Visible := true;
-  lblCreateEventsCount.Visible := false;
-  cbCreateEventsUseHouseID.Visible := true;
-  create_event_type := ceAnnihMsg;
-  seCreateEventsNum.Value := cbCreateEventsSide.ItemIndex;
-end;
-
-procedure TEventDialog.Createrunonceflag1Click(Sender: TObject);
-begin
-  Mission.add_run_once_flag(selected_event);
-  update_contents;
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
+    exit;
+  for i := first_event to last_event do
+    Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not 2);
+  fill_grids;
+  select_event(selected_event);
 end;
 
 procedure TEventDialog.Exportevents1Click(Sender: TObject);
+var
+  first_event, last_event: integer;
 begin
-  pnEventExportMarker.Visible := true;
-  EventGrid.Options := EventGrid.Options + [goRangeSelect];
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
+    exit;
+  ExportEventsDialog.Title := Format('Export events (%d - %d)', [first_event, last_event]);
+  if ExportEventsDialog.Execute then
+    Mission.export_events(first_event, last_event, ExportEventsDialog.FileName);
 end;
 
 procedure TEventDialog.Importevents1Click(Sender: TObject);
@@ -971,33 +918,6 @@ end;
 procedure TEventDialog.MarkEventsClick(Sender: TObject);
 begin
   EventGrid.Invalidate;
-end;
-
-procedure TEventDialog.btnCreateEventsCancelClick(Sender: TObject);
-begin
-  CreateEventsPanel.Visible := false;
-  EventGrid.SetFocus;
-end;
-
-procedure TEventDialog.cbCreateEventsSideChange(Sender: TObject);
-begin
-  if create_event_type = ceAnnihMsg then
-    seCreateEventsNum.Value := cbCreateEventsSide.ItemIndex;
-end;
-
-procedure TEventDialog.btnCreateEventsOkClick(Sender: TObject);
-begin
-  EventGrid.Row := Mission.num_events + 1;
-  case create_event_type of
-    ceUnitSpawn: Mission.create_unit_spawn(cbCreateEventsSide.ItemIndex, seCreateEventsNum.Value);
-    ceHarvRepl: Mission.create_harvester_replacement(cbCreateEventsSide.ItemIndex);
-    ceAnnihMsg: Mission.create_annihilated_message(cbCreateEventsSide.ItemIndex, cbCreateEventsUseHouseID.Checked, seCreateEventsNum.Value);
-  end;
-  CreateEventsPanel.Visible := false;
-  EventGrid.SetFocus;
-  fill_grids;
-  select_event(EventGrid.Row - 1);
-  select_condition(ConditionGrid.Row - 1);
 end;
 
 procedure TEventDialog.cbxEventTypeChange(Sender: TObject);
@@ -1592,7 +1512,21 @@ begin
 end;
 
 procedure TEventDialog.btnEventConditionListPasteClick(Sender: TObject);
+var
+  first_event, last_event: integer;
+  i: integer;
 begin
+  first_event := EventGrid.Selection.Top - 1;
+  last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
+    exit;
+  for i := first_event to last_event do
+  begin
+    Mission.event_data[i].num_conditions := Mission.event_data[copy_conditions_from].num_conditions;
+    Move(Mission.event_data[copy_conditions_from].condition_index, Mission.event_data[i].condition_index, Length(Mission.event_data[i].condition_index));
+    Move(Mission.event_data[copy_conditions_from].condition_not, Mission.event_data[i].condition_not, Length(Mission.event_data[i].condition_not));
+  end;
+  fill_grids;
   tmp_event.num_conditions := Mission.event_data[copy_conditions_from].num_conditions;
   Move(Mission.event_data[copy_conditions_from].condition_index, tmp_event.condition_index, Length(tmp_event.condition_index));
   Move(Mission.event_data[copy_conditions_from].condition_not, tmp_event.condition_not, Length(tmp_event.condition_not));
@@ -2238,12 +2172,8 @@ end;
 
 procedure TEventDialog.update_side_list(side_list: TStringList);
 var
-  prev_index: integer;
   i: integer;
 begin
-  prev_index := cbCreateEventsSide.ItemIndex;
-  cbCreateEventsSide.Items := side_list;
-  cbCreateEventsSide.ItemIndex := Max(prev_index, 0);
   cached_lists[Byte(ilSides)].Assign(side_list);
   cached_lists[Byte(ilSidesAny)].Assign(side_list);
   cached_lists[Byte(ilSidesAny)].Add('Any');
@@ -2413,7 +2343,6 @@ var
   row: integer;
   event: ^TEvent;
   et: TEventTypeDefinitionPtr;
-  x_str, y_str: string;
   indent: string;
   i: integer;
 begin
@@ -2433,33 +2362,12 @@ begin
   for i := 0 to Mission.event_indentation[index].indent - 1 do
     indent := indent + '  ';
   EventGrid.Cells[2,row] := indent + et.name;
-  if (et.coords[0].coord_type = ctPoint) and (et.coords[0].marker <> ' ') and evaluate_show_if(Addr(et.coords[0].show_if), event, Addr(event_args_struct_members)) then
-  begin
-    if (event.coord_var_flags and 1) <> 0 then
-      x_str := Mission.get_variable_name(event.coord_x[0], 1, index)
-    else
-      x_str := inttostr(event.coord_x[0]);
-    if (event.coord_var_flags and 2) <> 0 then
-      y_str := Mission.get_variable_name(event.coord_y[0], 1, index)
-    else
-      y_str := inttostr(event.coord_y[0]);
-    EventGrid.Cells[3,row] := x_str + ' , ' + y_str;
-  end else
-    EventGrid.Cells[3,row] := '';
-  if et.has_side and evaluate_show_if(Addr(et.args[0].show_if), event, Addr(event_args_struct_members)) then
-  begin
-    if (event.arg_var_flags and 1) <> 0 then
-      EventGrid.Cells[4,row] := Mission.get_variable_name(event.side, 1, index)
-    else
-      EventGrid.Cells[4,row] := IfThen(event.side < 8, Structures.side_names[event.side], 'Any')
-  end else
-    EventGrid.Cells[4,row] := '';
   // Contents
-  EventGrid.Cells[5,row] := Mission.get_event_contents(index);
+  EventGrid.Cells[3,row] := Mission.get_event_contents(index);
   // Conditions
-  EventGrid.Cells[6,row] := Mission.get_event_conditions(index);
+  EventGrid.Cells[4,row] := Mission.get_event_conditions(index);
   // Note
-  EventGrid.Cells[7,row] := MissionIni.event_notes[index];
+  EventGrid.Cells[5,row] := MissionIni.event_notes[index];
 end;
 
 procedure TEventDialog.select_event(index: integer);
@@ -3085,18 +2993,10 @@ begin
   cond := Addr(Mission.condition_data[index]);
   ct := Addr(EventConfig.condition_types[cond.condition_type]);
   ConditionGrid.Cells[0,row] := inttostr(index);
-  // Basic information
+  // Condition type
   ConditionGrid.Cells[1,row] := ct.name;
-  if ct.has_side and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
-  begin
-    if (cond.arg_var_flags and 1) <> 0 then
-      ConditionGrid.Cells[2,row] := Mission.get_variable_name(cond.side, 1, -1)
-    else
-      ConditionGrid.Cells[2,row] := IfThen(cond.side < 8, Structures.side_names[cond.side], 'Any')
-  end else
-    ConditionGrid.Cells[2,row] := '';
   // Contents
-  ConditionGrid.Cells[3,row] := Mission.get_condition_contents(index, false);
+  ConditionGrid.Cells[2,row] := Mission.get_condition_contents(index, false);
 end;
 
 procedure TEventDialog.select_condition(index: integer);
@@ -3526,6 +3426,7 @@ begin
   acg.caption.ShowHint := argdef.help_text <> '';
   is_var := (acg.var_flag_ptr^ and (1 shl acg.struct_member)) <> 0;
   acg.btn_var_toggle.Caption := IfThen(is_var, 'C', 'V');
+  acg.btn_var_toggle.Visible := argdef.arg_type <> atVariable;
   // Manage visibility of datatype-specific controls
   acg.text_edit.Visible := is_var or (argdef.arg_type = atBigNumber) or (argdef.arg_type = atHexNumber) or (argdef.arg_type = atFloat) or (argdef.arg_type = atVariable);
   acg.spin_edit.Visible := (not is_var) and (argdef.arg_type = atNumber);

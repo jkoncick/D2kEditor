@@ -221,12 +221,6 @@ type
     function condition_is_used(index: integer): boolean;
     procedure swap_events(e1, e2: integer);
     procedure swap_conditions(c1, c2: integer);
-    // Auto-creating common events
-    function get_or_create_condition(condition_type: ConditionType; side: integer; time_amount: cardinal; unit_type_or_comp_func: byte): integer;
-    procedure create_unit_spawn(side: integer; num_events: integer);
-    procedure create_harvester_replacement(side: integer);
-    procedure create_annihilated_message(side: integer; use_house_id: boolean; used_house_id: integer);
-    procedure add_run_once_flag(event_num: integer);
     // Export and import
     procedure export_events(first_event, last_event: integer; filename: string);
     procedure import_events(filename: string);
@@ -707,12 +701,14 @@ begin
     inc(i);
     if et.contents[i] <> '%' then
       continue;
-    contents := contents + copy(et.contents, start, i - start);
     if (et.contents[i+1]) = 'c' then
     begin
       idx := (Ord(et.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(et.coords[idx].show_if), event, Addr(event_args_struct_members)) then
+      begin
+        contents := contents + copy(et.contents, start, i - start);
         contents := contents + get_coords_contents(event.coord_x[idx], event.coord_y[idx], (event.coord_var_flags and (1 shl (idx * 2))) <> 0, (event.coord_var_flags and (1 shl (idx * 2 + 1))) <> 0, index);
+      end;
       start := i + 3;
     end else
     if (et.contents[i+1]) = 'a' then
@@ -720,6 +716,7 @@ begin
       idx := (Ord(et.contents[i+2]) - Ord('0'));
       if evaluate_show_if(Addr(et.args[idx].show_if), event, Addr(event_args_struct_members)) then
       begin
+        contents := contents + copy(et.contents, start, i - start);
         arg_def_ptr := Addr(et.args[idx]);
         // Override argument definition gamestruct member value
         if (et.gamestruct_index <> -1) and (idx = et.gamestruct_value_arg) then
@@ -756,11 +753,13 @@ begin
     end else
     if (et.contents[i+1]) = 's' then
     begin
+      contents := contents + copy(et.contents, start, i - start);
       contents := contents + get_event_data_contents(index);
       start := i + 2;
     end else
     if (et.contents[i+1]) = 'm' then
     begin
+      contents := contents + copy(et.contents, start, i - start);
       data_type := get_integer_struct_member(event, Addr(event_args_struct_members), et.gamestruct_datatype_arg);
       offset := get_integer_struct_member(event, Addr(event_args_struct_members), et.gamestruct_offset_arg);
       gamestruct_member_index := GameStructs.get_struct_member_index(et.gamestruct_index, data_type, offset);
@@ -812,15 +811,7 @@ var
 begin
   cond := Addr(condition_data[index]);
   ct := Addr(EventConfig.condition_types[cond.condition_type]);
-  if (ct.has_side) and show_side and evaluate_show_if(Addr(ct.args[0].show_if), cond, Addr(condition_args_struct_members)) then
-  begin
-    if cond.side < Length(Structures.side_names) then
-      contents := contents + Structures.side_names[cond.side]
-    else
-      contents := contents + 'Any';
-    if Length(ct.contents) > 0 then
-      contents := contents + ' ';
-  end;
+  contents := '';
   i := 0;
   start := 1;
   while i < Length(ct.contents) do
@@ -920,7 +911,7 @@ begin
     y_str := get_variable_name(y, 1, event_index)
   else
     y_str := IntToStr(y);
-  result := Format('%s , %s', [x_str, y_str]);
+  result := Format('(%s , %s)', [x_str, y_str]);
 end;
 
 function TMission.get_argument_contents(value: integer; is_var: boolean; argdef: TArgDefinitionPtr; event_index: integer): String;
@@ -936,7 +927,7 @@ begin
     atNumber: result := inttostr(value);
     atHexNumber: result := IntToHex(value, 8);
     atList: result := get_list_value_contents(value, argdef.list_type, argdef.values, argdef.game_list_type, argdef.item_list_type);
-    atBool: if (value <> 0) then result := '(' + argdef.name + ')';
+    atBool: result := IfThen(value <> 0, 'Yes', 'No');
     atSwitch: result := argdef.values[IfThen(value <> 0, 1, 0)];
     atVariable: result := get_variable_name(value, 1, event_index);
   end;
@@ -1263,6 +1254,9 @@ begin
   // Finalize
   mis_modified := true;
   result := position;
+  // Add also END event
+  if (event_type <> 255) and EventConfig.event_types[event_type].is_start_block then
+    add_event(position + 1, 255, -1);
 end;
 
 function TMission.add_condition(condition_type: integer): boolean;
@@ -1535,198 +1529,6 @@ begin
     Dispatcher.register_event(evMisEventPositionChange);
   if condition_used_area then
     Dispatcher.register_event(evMisEventAreaChange);
-end;
-
-function TMission.get_or_create_condition(condition_type: ConditionType;
-  side: integer; time_amount: cardinal;
-  unit_type_or_comp_func: byte): integer;
-var
-  i: integer;
-  cond: ^TCondition;
-begin
-  // Try to find condition if it already exists
-  for i := 0 to num_conditions - 1 do
-  begin
-    cond := Addr(condition_data[i]);
-    if  (cond.condition_type = Byte(condition_type)) and
-        (cond.side = side) and
-        (cond.val2 = time_amount) and
-        (cond.arg2 = unit_type_or_comp_func) and
-        (condition_type <> ctFlag) then // Always create new flag
-    begin
-      result := i;
-      exit;
-    end;
-  end;
-  // Condition does not exist, must create one
-  if not add_condition(Byte(condition_type)) then
-  begin
-    result := -1;
-    exit;
-  end;
-  result := num_conditions - 1;
-  cond := Addr(condition_data[result]);
-  cond.side := side;
-  cond.val2 := time_amount;
-  cond.arg2 := unit_type_or_comp_func;
-end;
-
-procedure TMission.create_unit_spawn(side, num_events: integer);
-var
-  i: integer;
-  cond_index: integer;
-  event: ^TEvent;
-begin
-  cond_index := get_or_create_condition(ctTimer,0,1,2);
-  if cond_index = -1 then
-    exit;
-  for i := 0 to num_events - 1 do
-  begin
-    if add_event(num_events, 18, -1) = -1 then
-      exit;
-    event := Addr(event_data[num_events-1]);
-    event.side := side;
-    event.num_conditions := 1;
-    event.condition_index[0] := cond_index;
-  end;
-  Dispatcher.register_event(evMisEventPositionChange);
-end;
-
-procedure TMission.create_harvester_replacement(side: integer);
-var
-  event: array[1..3] of ^TEvent;
-  cond_index: array[1..4] of integer;
-  i: integer;
-begin
-  // Create all needed conditions
-  cond_index[1] := get_or_create_condition(ctBaseDestroyed, side, 0, 0);
-  cond_index[2] := get_or_create_condition(ctUnitExists, side, 0, Structures.templates.GroupIDs[16]);
-  cond_index[3] := get_or_create_condition(ctTimer, 0, 500, 3);
-  cond_index[4] := get_or_create_condition(ctFlag, 0, 0, 0);
-  for i := 1 to 4 do
-    if cond_index[i] = -1 then
-      exit;
-  // Create all needed events
-  for i := 1 to 3 do
-  begin
-    if add_event(num_events, 0, -1) = -1 then
-      exit;
-    event[i] := Addr(event_data[num_events-1]);
-  end;
-  // Fill all event contents
-  event[1].event_type := 0;
-  event[1].side := side;
-  event[1].amount := 1;
-  event[1].data[0] := Structures.templates.GroupIDs[16];
-  event[2].event_type := 19;
-  event[2].side := cond_index[4];
-  event[2].value := 0;
-  event[3].event_type := 19;
-  event[3].side := cond_index[4];
-  event[3].value := 1;
-  // Fill all event conditions
-  event[1].num_conditions := 4;
-  event[2].num_conditions := 4;
-  event[3].num_conditions := 2;
-  for i := 1 to 4 do
-  begin
-    event[1].condition_index[i-1] := cond_index[i];
-    event[2].condition_index[i-1] := cond_index[i];
-  end;
-  event[1].condition_not[0] := 1;
-  event[1].condition_not[1] := 1;
-  event[2].condition_not[0] := 1;
-  event[2].condition_not[1] := 1;
-  event[3].condition_index[0] := cond_index[2];
-  event[3].condition_index[1] := cond_index[4];
-  event[3].condition_not[1] := 1;
-  Dispatcher.register_event(evMisEventPositionChange);
-end;
-
-procedure TMission.create_annihilated_message(side: integer; use_house_id: boolean; used_house_id: integer);
-var
-  sides: array[0..CNT_SIDES-1] of integer;
-  num_sides: integer;
-  event: ^TEvent;
-  cond1_index, cond2_index: integer;
-  i: integer;
-begin
-  num_sides := 0;
-  // Get list of sides to make base/units destroyed conditions for
-  if use_house_id then
-  begin
-    // All sides having given house ID
-    for i := 0 to CNT_SIDES-1 do
-      if house_id[i] = used_house_id then
-      begin
-        sides[num_sides] := i;
-        inc(num_sides);
-      end;
-  end else
-  begin
-    // Just the side itself
-    sides[0] := side;
-    num_sides := 1;
-  end;
-  if num_sides = 0 then
-    exit;
-  // Create message event
-  if add_event(num_events, 17, -1) = -1 then
-    exit;
-  event := Addr(event_data[num_events - 1]);
-  set_integer_value(Addr(event.data), 21, 4, side_annihilated_msgid[side]);
-  event.value := 300;
-  // Create base/units destroyed conditions
-  for i := 0 to num_sides - 1 do
-  begin
-    cond1_index := get_or_create_condition(ctBaseDestroyed, sides[i], 0, 0);
-    cond2_index := get_or_create_condition(ctUnitsDestroyed, sides[i], 0, 0);
-    if (cond1_index = -1) or (cond2_index = -1) then
-      exit;
-    event.condition_index[i*2] := cond1_index;
-    event.condition_index[i*2+1] := cond2_index;
-    event.num_conditions := event.num_conditions + 2;
-  end;
-  // Finally create run-once flag
-  add_run_once_flag(num_events - 1);
-end;
-
-procedure TMission.add_run_once_flag(event_num: integer);
-var
-  flag_number: integer;
-  new_condition: integer;
-  i: integer;
-begin
-  if event_num >= num_events then
-    exit;
-  // Check if this event is Set flag (can be ignored)
-  if event_data[event_num].event_type = 19 then
-    exit;
-  // Check if this event has already flag in list of conditions
-  for i := 0 to event_data[event_num].num_conditions do
-  begin
-    if (event_data[event_num].condition_not[i] = 1) and
-      (condition_data[event_data[event_num].condition_index[i]].condition_type = Byte(ctFlag)) then
-      exit;
-  end;
-  // Try to create new event (Set flag) and condition (Flag)
-  if (add_event(event_num+1, 0, -1) = -1) or not add_condition(-1) then
-    exit;
-  flag_number := num_conditions - 1;
-  new_condition := event_data[event_num].num_conditions;
-  // Add new flag to event's conditions
-  event_data[event_num].num_conditions := new_condition + 1;
-  event_data[event_num].condition_index[new_condition] := flag_number;
-  event_data[event_num].condition_not[new_condition] := 1;
-  // Fill new event
-  event_data[event_num+1].event_type := 19;
-  event_data[event_num+1].side := flag_number;
-  event_data[event_num+1].value := 1;
-  event_data[event_num+1].num_conditions := new_condition + 1;
-  Move(event_data[event_num].condition_index, event_data[event_num+1].condition_index, Length(event_data[0].condition_index));
-  Move(event_data[event_num].condition_not, event_data[event_num+1].condition_not, Length(event_data[0].condition_not));
-  // Fill new condition
-  condition_data[flag_number].condition_type := Byte(ctFlag);
 end;
 
 procedure TMission.export_events(first_event, last_event: integer; filename: string);
