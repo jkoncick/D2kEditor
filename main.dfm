@@ -281,9 +281,9 @@ object MainWindow: TMainWindow
         end
         object StructPages: TPageControl
           Left = 0
-          Top = 0
+          Top = 24
           Width = 158
-          Height = 358
+          Height = 334
           ActivePage = PageStructBasic
           Align = alBottom
           TabOrder = 2
@@ -377,7 +377,7 @@ object MainWindow: TMainWindow
               Left = 0
               Top = 0
               Width = 150
-              Height = 330
+              Height = 306
               ActivePage = PageStructBuildings
               Align = alClient
               TabOrder = 0

@@ -63,6 +63,26 @@ const atr_colors_editor: array[0..7] of cardinal = (
   $00A0A0
   );
 
+const restriction_rects: array[0..7] of TRect = (
+    (Left: 10; Top:  0; Right: 15; Bottom: 10),
+    (Left: 16; Top:  0; Right: 21; Bottom: 10),
+    (Left: 21; Top: 10; Right: 31; Bottom: 15),
+    (Left: 21; Top: 16; Right: 31; Bottom: 21),
+    (Left: 10; Top: 21; Right: 15; Bottom: 31),
+    (Left: 16; Top: 21; Right: 21; Bottom: 31),
+    (Left:  0; Top: 10; Right: 10; Bottom: 15),
+    (Left:  0; Top: 16; Right: 10; Bottom: 21)
+  );
+
+const restriction_directions: array[0..7] of String = ('Up L', 'Up R', 'Right U', 'Right D', 'Down L', 'Down R', 'Left U', 'Left D');
+
+const restriction_colors: array[0..3] of cardinal = (
+  $0000A0,
+  $00A000,
+  $A00000,
+  $505050
+  );
+
 const fill_area_group_colors: array[0..max_fill_area_rules-1] of cardinal = (
   $808080,
   $C00000,
@@ -221,6 +241,10 @@ type
     gbTilesetRules: TGroupBox;
     cbRuleDoNotDrawRockCraters: TCheckBox;
     cbRuleDoNotDrawSandCraters: TCheckBox;
+    PageRestrictions: TTabSheet;
+    clbRestrictions: TCheckListBox;
+    rgRestrictionsOperation: TRadioGroup;
+    lblPageRestrictionsMouseActions: TLabel;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -658,6 +682,9 @@ var
   tile_index: integer;
   tile_value: int64;
   min_x, min_y, max_x, max_y, size_x, size_y: integer;
+  i: integer;
+  restrictions: byte;
+  subtile: integer;
 begin
   pos_x := X div 32;
   pos_y := Y div 32 + tileset_top;
@@ -675,6 +702,25 @@ begin
     end
     else if PageControl.ActivePage = PageHints then
       lbTileHintText.ItemIndex := Tileset.tile_hint_text[tile_index]
+    else if PageControl.ActivePage = PageRestrictions then
+    begin
+      if ssCtrl in Shift then
+      begin
+        for i := 0 to 3 do
+          Tileset.restrictions[tile_index, i] := 0;
+      end else
+      begin
+        subtile := -1;
+        for i := 0 to 7 do
+          if PtInRect(restriction_rects[i], Point(X mod 32, Y mod 32)) then
+          begin
+            subtile := i;
+            break;
+          end;
+        if subtile > -1 then
+          Tileset.restrictions[tile_index, subtile div 2] := Tileset.restrictions[tile_index, subtile div 2] and (not (15 shl (4 * (subtile mod 2))));
+      end;
+    end
     else if PageControl.ActivePage = PagePaint then
     begin
       if (sgPaintTileGroups.Row >= 5) then
@@ -719,6 +765,37 @@ begin
         set_tile_attributes(tile_index, true)
       else if PageControl.ActivePage = PageHints then
         Tileset.tile_hint_text[tile_index] := lbTileHintText.ItemIndex
+      else if PageControl.ActivePage = PageRestrictions then
+      begin
+        restrictions := 0;
+        for i := 0 to 3 do
+          if clbRestrictions.Checked[i] then
+            restrictions := restrictions or (1 shl i);
+        if ssCtrl in Shift then
+        begin
+          for i := 0 to 7 do
+            case SetOperation(rgRestrictionsOperation.ItemIndex) of
+              opSet: Tileset.restrictions[tile_index, i div 2] := (Tileset.restrictions[tile_index, i div 2] and (not (15 shl (4 * (i mod 2))))) or (restrictions shl (4 * (i mod 2)));
+              opAdd: Tileset.restrictions[tile_index, i div 2] := Tileset.restrictions[tile_index, i div 2] or (restrictions shl (4 * (i mod 2)));
+              opRemove: Tileset.restrictions[tile_index, i div 2] := Tileset.restrictions[tile_index, i div 2] and (not (restrictions shl (4 * (i mod 2))));
+            end;
+        end else
+        begin
+          subtile := -1;
+          for i := 0 to 7 do
+            if PtInRect(restriction_rects[i], Point(X mod 32, Y mod 32)) then
+            begin
+              subtile := i;
+              break;
+            end;
+          if subtile > -1 then
+            case SetOperation(rgRestrictionsOperation.ItemIndex) of
+              opSet: Tileset.restrictions[tile_index, subtile div 2] := (Tileset.restrictions[tile_index, subtile div 2] and (not (15 shl (4 * (subtile mod 2))))) or (restrictions shl (4 * (i mod 2)));
+              opAdd: Tileset.restrictions[tile_index, subtile div 2] := Tileset.restrictions[tile_index, subtile div 2] or (restrictions shl (4 * (subtile mod 2)));
+              opRemove: Tileset.restrictions[tile_index, subtile div 2] := Tileset.restrictions[tile_index, subtile div 2] and (not (restrictions shl (4 * (subtile mod 2))));
+            end;
+        end;
+      end
       else if PageControl.ActivePage = PagePaint then
       begin
         if (sgPaintTileGroups.Row >= 5) and (Tileset.paint_tile_lists[sgPaintTileGroups.Row - 5].cnt_tiles < max_paint_tiles) and ((Tileset.attributes_extra[tile_index] and $FF00) = 0) then
@@ -767,7 +844,7 @@ var
   tile_hint_text_id: integer;
   hint_str: string;
   show_hint: boolean;
-  i: integer;
+  i, j: integer;
   tile_value: int64;
   and_value: int64;
   color: cardinal;
@@ -821,6 +898,21 @@ begin
     begin
       hint_str := StringTable.get_text(tile_hint_text_id, false, is_custom);
       show_hint := true;
+    end;
+  end
+  else if PageControl.ActivePage = PageRestrictions then
+  begin
+    for i := 0 to 7 do
+    begin
+      hint_str := hint_str + restriction_directions[i] + ':';
+      for j := 0 to 3 do
+        if (Tileset.restrictions[tile_index,i div 2] and (1 shl (j + 4 * (i mod 2)))) <> 0 then
+        begin
+          hint_str := hint_str + ' ' + clbRestrictions.Items[j];
+          show_hint := true;
+        end;
+      if i < 7 then
+        hint_str := hint_str + #13;
     end;
   end
   else if PageControl.ActivePage = PageColors then
@@ -2032,6 +2124,24 @@ begin
             tile_text := inttostr(Tileset.tile_hint_text[tile_index]);
           end;
         end
+        else if PageControl.ActivePage = PageRestrictions then
+        begin
+          mark_tile := false;
+          for i := 0 to 7 do
+          begin
+            color := 0;
+            for j := 0 to 3 do
+              if (Tileset.restrictions[tile_index,i div 2] and (1 shl (j + 4 * (i mod 2)))) <> 0 then
+                color := color or restriction_colors[j];
+            if color <> 0 then
+            begin
+              TilesetImage.Canvas.Pen.Color := color;
+              TilesetImage.Canvas.Pen.Width := 2;
+              TilesetImage.Canvas.Rectangle(x * 32 + restriction_rects[i].Left + 2, y * 32 + restriction_rects[i].Top + 2, x * 32 + restriction_rects[i].Right + 1, y * 32 + restriction_rects[i].Bottom + 1);
+              mark_tile := true;
+            end;
+          end;
+        end
         else if PageControl.ActivePage = PageColors then
         begin
           mark_tile := true;
@@ -2087,6 +2197,8 @@ begin
         // Mark tile with color
         if mark_tile then
         begin
+          if PageControl.ActivePage = PageRestrictions then
+            continue;
           TilesetImage.Canvas.Pen.Color := color;
           TilesetImage.Canvas.Rectangle(x*32+1, y*32+1, x*32+31, y*32+31);
           TilesetImage.Canvas.Rectangle(x*32+2, y*32+2, x*32+30, y*32+30);

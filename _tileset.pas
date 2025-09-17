@@ -198,7 +198,7 @@ type
     attributes: array[0..max_tileset_tiles-1] of cardinal;
     attributes_extra: array[0..max_tileset_tiles-1] of cardinal;
     tile_hint_text: array[0..max_tileset_tiles-1] of integer;
-    restrictions: array[0..max_tileset_tiles-1] of cardinal;
+    restrictions: array[0..max_tileset_tiles-1, 0..3] of byte;
 
     extra_attribute_names: array[0..7, 0..31] of char;
 
@@ -461,13 +461,11 @@ begin
   header.version_major := 1;
   header.version_minor := 0;
   // Initialize attributes and hints
+  FillChar(attributes, sizeof(attributes), 0);
+  FillChar(attributes_extra, sizeof(attributes_extra), 0);
   for i := 0 to cnt_tiles - 1 do
-  begin
-    attributes[i] := 0;
-    attributes_extra[i] := 0;
     tile_hint_text[i] := -1;
-    restrictions[i] := 0;
-  end;
+  FillChar(restrictions, sizeof(restrictions), 0);
   // Initialize configuration
   FillChar(extra_attribute_names, sizeof(extra_attribute_names), 0);
   minimap_color_rules_used := 1;
@@ -1475,7 +1473,7 @@ begin
     attributes[i] := 0;
     attributes_extra[i] := 0;
     tile_hint_text[i] := -1;
-    restrictions[i] := 0;
+    FillChar(restrictions[i], sizeof(restrictions[i]), 0);
   end;
   tileimage_modified := true;
   Dispatcher.register_event(evTilesetImageChange);

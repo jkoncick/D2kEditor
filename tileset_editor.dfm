@@ -36,7 +36,7 @@ object TilesetEditor: TTilesetEditor
     TabOrder = 1
     OnChange = PageControlChange
     object PageImage: TTabSheet
-      Caption = 'Image     '
+      Caption = 'Image       '
       object lblNumberOfTiles: TLabel
         Left = 680
         Top = 282
@@ -276,7 +276,7 @@ object TilesetEditor: TTilesetEditor
       end
     end
     object PageAttributes: TTabSheet
-      Caption = 'Attributes'
+      Caption = 'Attributes  '
       ImageIndex = 1
       object lbTileAtrValue: TLabel
         Left = 680
@@ -534,7 +534,7 @@ object TilesetEditor: TTilesetEditor
       end
     end
     object PageHints: TTabSheet
-      Caption = 'Hints       '
+      Caption = 'Hints         '
       ImageIndex = 2
       object lblPageHintsMouseActions: TLabel
         Left = 892
@@ -565,8 +565,60 @@ object TilesetEditor: TTilesetEditor
         OnClick = btnTileHintTextClearClick
       end
     end
+    object PageRestrictions: TTabSheet
+      Caption = 'Restrictions'
+      ImageIndex = 7
+      object lblPageRestrictionsMouseActions: TLabel
+        Left = 680
+        Top = 120
+        Width = 197
+        Height = 65
+        AutoSize = False
+        Caption = 
+          'Mouse actions:'#13'Left = Modify restrictions'#13'Right = Clear restrict' +
+          'ions'#13'Hold Ctrl to modify all four directions'
+      end
+      object clbRestrictions: TCheckListBox
+        Left = 680
+        Top = 2
+        Width = 204
+        Height = 73
+        Color = clWhite
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        ItemHeight = 17
+        Items.Strings = (
+          'Block sight'
+          '(Unused 1)'
+          '(Unused 2)'
+          '(Unused 3)')
+        ParentFont = False
+        Style = lbOwnerDrawFixed
+        TabOrder = 0
+      end
+      object rgRestrictionsOperation: TRadioGroup
+        Left = 680
+        Top = 78
+        Width = 204
+        Height = 37
+        Hint = 'Keyboard shortcut: S/A/R'
+        Caption = ' Operation '
+        Columns = 3
+        ItemIndex = 0
+        Items.Strings = (
+          'Set'
+          'Add'
+          'Remove')
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+      end
+    end
     object PageColors: TTabSheet
-      Caption = 'Colors     '
+      Caption = 'Colors       '
       ImageIndex = 3
       object lblMinimapColorRuleName: TLabel
         Left = 680
@@ -701,7 +753,7 @@ object TilesetEditor: TTilesetEditor
       end
     end
     object PageFillArea: TTabSheet
-      Caption = 'Fill Area   '
+      Caption = 'Fill Area     '
       ImageIndex = 4
       object lblFillAreaRuleName: TLabel
         Left = 680
@@ -813,7 +865,7 @@ object TilesetEditor: TTilesetEditor
       end
     end
     object PagePaint: TTabSheet
-      Caption = 'Paint       '
+      Caption = 'Paint         '
       ImageIndex = 6
       object lblPaintTileGroupButtonImage: TLabel
         Left = 680
@@ -943,7 +995,7 @@ object TilesetEditor: TTilesetEditor
       end
     end
     object PagePresets: TTabSheet
-      Caption = 'Presets   '
+      Caption = 'Presets     '
       ImageIndex = 5
       object lblBlockPresetGroupName: TLabel
         Left = 680
@@ -1185,7 +1237,7 @@ object TilesetEditor: TTilesetEditor
     OnClick = cbOptionClick
   end
   object MainMenu: TMainMenu
-    Left = 424
+    Left = 520
     object Newtileset1: TMenuItem
       Caption = 'New tileset'
       OnClick = Newtileset1Click
@@ -1238,7 +1290,7 @@ object TilesetEditor: TTilesetEditor
       '*.R8)|*.R8|BMP image (*.bmp)|*.bmp|PNG image (*.png)|*.png'
     InitialDir = '.\tilesets'
     Title = 'Import tileset image'
-    Left = 456
+    Left = 552
   end
   object TilesetImageSaveDialog: TSaveDialog
     DefaultExt = 'png'
@@ -1247,7 +1299,7 @@ object TilesetEditor: TTilesetEditor
       ')|*.R16'
     FilterIndex = 2
     Title = 'Export tileset image'
-    Left = 488
+    Left = 584
   end
   object TilesetPortionOpenDialog: TOpenDialog
     DefaultExt = 'png'
@@ -1256,13 +1308,13 @@ object TilesetEditor: TTilesetEditor
       'p|PNG image (*.png)|*.png'
     InitialDir = '.\tilesets'
     Title = 'Import tileset portion'
-    Left = 520
+    Left = 616
   end
   object TilesetPortionSaveDialog: TSaveDialog
     DefaultExt = 'png'
     Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
     FilterIndex = 2
     Title = 'Export tileset portion'
-    Left = 552
+    Left = 648
   end
 end
