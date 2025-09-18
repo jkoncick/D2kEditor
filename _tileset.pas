@@ -1482,7 +1482,7 @@ end;
 procedure TTileset.set_tile_attributes(tile: word; value: Int64);
 begin
   attributes[tile] := value and $FFFFFFFF;
-  attributes_extra[tile] := (value shr 32) and $FF;
+  attributes_extra[tile] := value shr 32;
 end;
 
 procedure TTileset.add_block_preset(group, key_index, width, height: integer; tiles: array of word);

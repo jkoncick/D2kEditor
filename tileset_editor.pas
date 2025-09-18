@@ -694,7 +694,7 @@ begin
   begin
     if PageControl.ActivePage = PageAttributes then
     begin
-      tile_value := Tileset.get_tile_attributes(tile_index, 0, false);
+      tile_value := Tileset.get_tile_attributes(tile_index, 0, false) and $ffffffffff;
       set_tile_attribute_value(tile_value, 0);
       set_tile_attribute_list(tile_value, 0);
       set_tile_attribute_rule(tile_value, 0);
@@ -2443,7 +2443,7 @@ begin
   operation := SetOperation(rgOperation.ItemIndex);
   // Get the target tileatr value according to the operation
   case operation of
-    opSet:    target_value := selected_value;
+    opSet:    target_value := selected_value or (current_value and $ff0000000000);
     opAdd:    target_value := current_value or selected_value;
     opRemove: target_value := current_value and (not selected_value);
     end;
