@@ -1004,7 +1004,11 @@ begin
       case event.value of
         0: contents := contents + inttostr(event.data[i]);
         1: contents := contents + Structures.get_unit_name_str(event.data[i]);
-        2: contents := contents + Structures.get_building_name_str(event.data[i]);
+        2: contents := contents + Structures.get_unit_group_str(event.data[i]);
+        3: contents := contents + Structures.get_building_name_str(event.data[i]);
+        4: contents := contents + Structures.get_building_group_str(event.data[i]);
+        5: contents := contents + Structures.templates.WeaponStrings[event.data[i]];
+        6: contents := contents + Structures.templates.ExplosionStrings[event.data[i]];
       end;
       dummy := true;
     end;
@@ -1926,7 +1930,7 @@ begin
     // Handle event arguments
     for j := 0 to Length(et.args) - 1 do
     begin
-      if (et.args[j].arg_type = atList) and (et.args[j].list_type = ltItem) then
+      if (et.args[j].arg_type = atList) and (et.args[j].list_type = ltItem) and ((event.arg_var_flags and (1 shl j)) = 0) then
       begin
         struct_type := get_integer_struct_member(event, Addr(event_args_struct_members), j);
         struct_type := Structures.remap_structure(remap_structures_data, et.args[j].item_list_type, struct_type);
@@ -1939,8 +1943,8 @@ begin
       filter := Addr(event.data[1]);
       for j := 0 to Length(filter.criteria_type) - 1 do
       begin
-        filter_criteria := Addr(EventConfig.filter_criteria[ord(et.event_data) - ord(edUnitFilter), filter.criteria_type[j]]);
-        if (filter_criteria.list_type = ltItem) then
+        filter_criteria := Addr(EventConfig.filter_criteria[ord(et.event_data) - ord(edUnitFilter), filter.criteria_type[j] and 63]);
+        if (filter_criteria.list_type = ltItem) and ((filter.pos_and_var_flags and (1 shl (j + 8))) = 0) then
           filter.criteria_value[j] := Structures.remap_structure(remap_structures_data, filter_criteria.item_list_type, filter.criteria_value[j]);
       end;
     end;
@@ -1949,6 +1953,23 @@ begin
     begin
       for j := 0 to event.amount - 1 do
         event.data[j] := remap_structures_data.remap_units[event.data[j]];
+    end;
+    // Handle event value list
+    if (et.event_data = edValueList) and (event.value > 0) then
+    begin
+      for j := 0 to event.amount - 1 do
+        event.data[j] := Structures.remap_structure(remap_structures_data, ItemListType(Integer(event.value) - 1 + Ord(ilUnits)), event.data[j]);
+    end;
+    // Handle event If and Else If
+    if (et.event_data = edCondExpr) and (event.amount > 0) then
+    begin
+      filter := Addr(event.data[1]);
+      for j := 0 to Length(filter.criteria_type) - 1 do
+      begin
+        filter_criteria := Addr(EventConfig.filter_criteria[event.amount - 1, filter.criteria_type[j] and 63]);
+        if (filter_criteria.list_type = ltItem) and ((filter.pos_and_var_flags and (1 shl (j + 8))) = 0) then
+          filter.criteria_value[j] := Structures.remap_structure(remap_structures_data, filter_criteria.item_list_type, filter.criteria_value[j]);
+      end;
     end;
   end;
   // Remap structures on conditions
@@ -1959,7 +1980,7 @@ begin
     // Handle condition arguments
     for j := 0 to Length(ct.args) - 1 do
     begin
-      if (ct.args[j].arg_type = atList) and (ct.args[j].list_type = ltItem) then
+      if (ct.args[j].arg_type = atList) and (ct.args[j].list_type = ltItem) and ((condition.arg_var_flags and (1 shl j)) = 0) then
       begin
         struct_type := get_integer_struct_member(condition, Addr(condition_args_struct_members), j);
         struct_type := Structures.remap_structure(remap_structures_data, ct.args[j].item_list_type, struct_type);
@@ -1972,8 +1993,8 @@ begin
       filter := Addr(condition_data[i]);
       for j := 0 to Length(filter.criteria_type) - 1 do
       begin
-        filter_criteria := Addr(EventConfig.filter_criteria[ord(ct.condition_data) - ord(cdUnitFilter), filter.criteria_type[j]]);
-        if (filter_criteria.list_type = ltItem) then
+        filter_criteria := Addr(EventConfig.filter_criteria[ord(ct.condition_data) - ord(cdUnitFilter), filter.criteria_type[j] and 63]);
+        if (filter_criteria.list_type = ltItem) and ((filter.pos_and_var_flags and (1 shl (j + 8))) = 0) then
           filter.criteria_value[j] := Structures.remap_structure(remap_structures_data, filter_criteria.item_list_type, filter.criteria_value[j]);
       end;
     end;

@@ -2532,10 +2532,8 @@ begin
           lblEventValueSelectionList.Caption := 'Value selection';
           lblEventValueList.Caption := 'Values in event';
           list_type := ilNone;
-          case tmp_event.value of
-            1: list_type := ilUnits;
-            2: list_type := ilBuildings;
-          end;
+          if tmp_event.value > 0 then
+            list_type := ItemListType(Integer(tmp_event.value) - 1 + Ord(ilUnits));
           EventValueSelectionList.Items := cached_lists[Ord(list_type)];
         end;
       edCoordList:
@@ -2773,7 +2771,11 @@ begin
   result := '';
   case event_value_list_type of
     edUnitList: result := Structures.get_unit_name_str(tmp_event.data[index]);
-    edValueList: result := EventValueSelectionList.Items[tmp_event.data[index]];
+    edValueList:
+      if tmp_event.data[index] < EventValueSelectionList.Items.Count then
+        result := EventValueSelectionList.Items[tmp_event.data[index]]
+      else
+        result := IntToStr(tmp_event.data[index]);
     edCoordList: result := Format('%d , %d', [tmp_event.data[index * 2 + 1], tmp_event.data[index * 2 + 2]]);
     edAreaList: result := Format('%d , %d : %d , %d', [tmp_event.data[index * 4 + 1], tmp_event.data[index * 4 + 2], tmp_event.data[index * 4 + 3], tmp_event.data[index * 4 + 4]]);
   end;
