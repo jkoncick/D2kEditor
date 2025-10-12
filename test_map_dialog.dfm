@@ -4,7 +4,7 @@ object TestMapDialog: TTestMapDialog
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Test Map Settings'
-  ClientHeight = 249
+  ClientHeight = 263
   ClientWidth = 233
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -63,7 +63,7 @@ object TestMapDialog: TTestMapDialog
   end
   object btnCancel: TButton
     Left = 16
-    Top = 216
+    Top = 230
     Width = 89
     Height = 25
     Caption = 'Cancel'
@@ -72,7 +72,7 @@ object TestMapDialog: TTestMapDialog
   end
   object btnLaunch: TButton
     Left = 128
-    Top = 216
+    Top = 230
     Width = 89
     Height = 25
     Caption = 'Launch'
@@ -83,7 +83,7 @@ object TestMapDialog: TTestMapDialog
     Left = 16
     Top = 72
     Width = 201
-    Height = 137
+    Height = 150
     ItemHeight = 13
     Items.Strings = (
       'Reveal map'
@@ -95,7 +95,8 @@ object TestMapDialog: TTestMapDialog
       'Debug tiles'
       'Debug unit path'
       'Show selected unit data'
-      'Show selected building data')
+      'Show selected building data'
+      'Enable event profiling')
     TabOrder = 4
   end
 end
