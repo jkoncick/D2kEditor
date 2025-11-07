@@ -198,7 +198,7 @@ type
     attributes: array[0..max_tileset_tiles-1] of cardinal;
     attributes_extra: array[0..max_tileset_tiles-1] of cardinal;
     tile_hint_text: array[0..max_tileset_tiles-1] of integer;
-    restrictions: array[0..max_tileset_tiles-1, 0..3] of byte;
+    restrictions: array[0..max_tileset_tiles-1] of cardinal;
 
     extra_attribute_names: array[0..7, 0..31] of char;
 

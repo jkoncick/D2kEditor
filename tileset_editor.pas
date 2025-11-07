@@ -706,8 +706,7 @@ begin
     begin
       if ssCtrl in Shift then
       begin
-        for i := 0 to 3 do
-          Tileset.restrictions[tile_index, i] := 0;
+        Tileset.restrictions[tile_index] := 0;
       end else
       begin
         subtile := -1;
@@ -718,7 +717,7 @@ begin
             break;
           end;
         if subtile > -1 then
-          Tileset.restrictions[tile_index, subtile div 2] := Tileset.restrictions[tile_index, subtile div 2] and (not (15 shl (4 * (subtile mod 2))));
+          Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] and (not (15 shl (4 * (subtile))));
       end;
     end
     else if PageControl.ActivePage = PagePaint then
@@ -775,9 +774,9 @@ begin
         begin
           for i := 0 to 7 do
             case SetOperation(rgRestrictionsOperation.ItemIndex) of
-              opSet: Tileset.restrictions[tile_index, i div 2] := (Tileset.restrictions[tile_index, i div 2] and (not (15 shl (4 * (i mod 2))))) or (restrictions shl (4 * (i mod 2)));
-              opAdd: Tileset.restrictions[tile_index, i div 2] := Tileset.restrictions[tile_index, i div 2] or (restrictions shl (4 * (i mod 2)));
-              opRemove: Tileset.restrictions[tile_index, i div 2] := Tileset.restrictions[tile_index, i div 2] and (not (restrictions shl (4 * (i mod 2))));
+              opSet: Tileset.restrictions[tile_index] := (Tileset.restrictions[tile_index] and (not (15 shl (4 * i))) or (restrictions shl (4 * i)));
+              opAdd: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] or (restrictions shl (4 * i));
+              opRemove: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] and (not (restrictions shl (4 * i)));
             end;
         end else
         begin
@@ -790,9 +789,9 @@ begin
             end;
           if subtile > -1 then
             case SetOperation(rgRestrictionsOperation.ItemIndex) of
-              opSet: Tileset.restrictions[tile_index, subtile div 2] := (Tileset.restrictions[tile_index, subtile div 2] and (not (15 shl (4 * (subtile mod 2))))) or (restrictions shl (4 * (i mod 2)));
-              opAdd: Tileset.restrictions[tile_index, subtile div 2] := Tileset.restrictions[tile_index, subtile div 2] or (restrictions shl (4 * (subtile mod 2)));
-              opRemove: Tileset.restrictions[tile_index, subtile div 2] := Tileset.restrictions[tile_index, subtile div 2] and (not (restrictions shl (4 * (subtile mod 2))));
+              opSet: Tileset.restrictions[tile_index] := (Tileset.restrictions[tile_index] and (not (15 shl (4 * subtile)))) or (restrictions shl (4 * i));
+              opAdd: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] or (restrictions shl (4 * subtile));
+              opRemove: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] and (not (restrictions shl (4 * subtile)));
             end;
         end;
       end
@@ -850,6 +849,7 @@ var
   color: cardinal;
   rule_index: integer;
   tile_paint_group: integer;
+  num_restrictions: integer;
 begin
   pos_x := X div 32;
   pos_y := Y div 32 + tileset_top;
@@ -905,11 +905,13 @@ begin
     for i := 0 to 7 do
     begin
       hint_str := hint_str + restriction_directions[i] + ':';
+      num_restrictions := 0;
       for j := 0 to 3 do
-        if (Tileset.restrictions[tile_index,i div 2] and (1 shl (j + 4 * (i mod 2)))) <> 0 then
+        if (Tileset.restrictions[tile_index] and (1 shl (j + 4 * i))) <> 0 then
         begin
-          hint_str := hint_str + ' ' + clbRestrictions.Items[j];
+          hint_str := hint_str + IfThen(num_restrictions > 0, ', ', ' ') + clbRestrictions.Items[j];
           show_hint := true;
+          inc(num_restrictions);
         end;
       if i < 7 then
         hint_str := hint_str + #13;
@@ -2131,7 +2133,7 @@ begin
           begin
             color := 0;
             for j := 0 to 3 do
-              if (Tileset.restrictions[tile_index,i div 2] and (1 shl (j + 4 * (i mod 2)))) <> 0 then
+              if (Tileset.restrictions[tile_index] and (1 shl (j + 4 * i))) <> 0 then
                 color := color or restriction_colors[j];
             if color <> 0 then
             begin

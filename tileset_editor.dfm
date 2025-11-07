@@ -576,7 +576,7 @@ object TilesetEditor: TTilesetEditor
         AutoSize = False
         Caption = 
           'Mouse actions:'#13'Left = Modify restrictions'#13'Right = Clear restrict' +
-          'ions'#13'Hold Ctrl to modify all four directions'
+          'ions'#13'Hold Ctrl to modify all directions'
       end
       object clbRestrictions: TCheckListBox
         Left = 680
@@ -592,9 +592,9 @@ object TilesetEditor: TTilesetEditor
         ItemHeight = 17
         Items.Strings = (
           'Block sight'
-          '(Unused 1)'
-          '(Unused 2)'
-          '(Unused 3)')
+          'Block wall-blocked bullets'
+          'Block non-wall-blocked bullets'
+          'Block guarding')
         ParentFont = False
         Style = lbOwnerDrawFixed
         TabOrder = 0
