@@ -540,8 +540,9 @@ object StructuresEditor: TStructuresEditor
           Width = 49
           Height = 22
           Hint = 
-            'Relative offset of tile the produced unit is spawned at'#13'(can als' +
-            'o serve different purpose on different building types)'
+            'For production buildings, it is relative X-offset of tile the pr' +
+            'oduced unit is spawned at.'#13'(can also serve different purpose on ' +
+            'different building types)'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
@@ -556,7 +557,11 @@ object StructuresEditor: TStructuresEditor
           Top = 32
           Width = 49
           Height = 22
-          Hint = 'Relative offset of tile the produced unit is spawned at'
+          Hint = 
+            'For production buildings, it is relative Y-offset of tile the pr' +
+            'oduced unit is spawned at.'#13'For turrets, it is Y-offset (in pixel' +
+            's) of bullet spawn position.'#13'(can also serve different purpose o' +
+            'n different building types)'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
@@ -571,9 +576,9 @@ object StructuresEditor: TStructuresEditor
           Width = 49
           Height = 22
           Hint = 
-            'Relative offset of tile the produced unit will move to after it'#39 +
-            's spawned'#13'(can also serve different purpose on different buildin' +
-            'g types)'
+            'For production buildings, it is relative X-offset of tile the pr' +
+            'oduced unit will move to after it'#39's spawned.'#13'(can also serve dif' +
+            'ferent purpose on different building types)'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
@@ -588,9 +593,9 @@ object StructuresEditor: TStructuresEditor
           Width = 49
           Height = 22
           Hint = 
-            'Relative offset of tile the produced unit will move to after it'#39 +
-            's spawned'#13'(can also serve different purpose on different buildin' +
-            'g types)'
+            'For production buildings, it is relative Y-offset of tile the pr' +
+            'oduced unit will move to after it'#39's spawned.'#13'(can also serve dif' +
+            'ferent purpose on different building types)'
           MaxLength = 3
           MaxValue = 127
           MinValue = -128
@@ -3321,6 +3326,11 @@ object StructuresEditor: TStructuresEditor
           Top = 24
           Width = 73
           Height = 21
+          Hint = 
+            'Speed the projectile moves at.'#13'For Railgun behavior, it determin' +
+            'es the density of trail explosions and damege dealt.'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object cbWeaponFlagWF_ARC_TRAJECTORY: TCheckBox
