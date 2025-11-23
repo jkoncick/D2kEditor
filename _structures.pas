@@ -74,7 +74,8 @@ type
     CustomDeathSoundNumber:     byte;
     CustomDeathSound:           cardinal;
     NotEdible:                  byte;
-    _ZeroBytes:                 array[0..62] of byte;
+    StorageCapacity:            byte;
+    _ZeroBytes:                 array[0..61] of byte;
   end;
 
   TUnitTemplatePtr = ^TUnitTemplate;
@@ -164,7 +165,9 @@ type
     SecondaryWeaponShootOffset: byte;
     SecondaryWeaponShootAngle:  byte;
     BuildRestrictionTerrain:    byte;
-    _ZeroBytes:                 array[0..112] of byte;
+    _Padding:                   byte;
+    StorageCapacity:            cardinal;
+    _ZeroBytes:                 array[0..107] of byte;
   end;
 
   TBuildingTemplatePtr = ^TBuildingTemplate;

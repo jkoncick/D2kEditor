@@ -623,6 +623,10 @@ type
     edUnitMovementRestrictionTerrain: TEdit;
     edBuildingBuildRestrictionTerrain: TEdit;
     cbUnitNotEdible: TCheckBox;
+    lblBuildingStorageCapacity: TLabel;
+    edBuildingStorageCapacity: TEdit;
+    lblUnitStorageCapacity: TLabel;
+    edUnitStorageCapacity: TEdit;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -2983,6 +2987,7 @@ begin
   cbxBuildingArmorType.ItemIndex := bld.ArmorType;
   edBuildingPowerConsumption.Text := inttostr(bld.PowerConsumption);
   cbxBuildingHealthBarSize.ItemIndex := bld.HealthBarSize;
+  edBuildingStorageCapacity.Text := IntToStr(bld.StorageCapacity);
   seBuildingSightRadius.Value := bld.SightRadius;
   cbxBuildingSpecialBehavior.ItemIndex := bld.SpecialBehavior;
   // Turret properties group box
@@ -3088,6 +3093,7 @@ begin
   cbxUnitArmorType.ItemIndex := unt.ArmorType;
   seUnitSightRadius.Value := unt.SightRadius;
   cbxUnitHealthBarSize.ItemIndex := unt.HealthBarSize;
+  edUnitStorageCapacity.Text := IntToStr(unt.StorageCapacity);
   cbUnitIsInfantry.Checked := unt.IsInfantry <> 0;
   cbUnitNotEdible.Checked := unt.NotEdible <> 0;
   cbxUnitSpecialBehavior.ItemIndex := unt.SpecialBehavior;
@@ -3381,6 +3387,7 @@ begin
   bld.ArmorType := cbxBuildingArmorType.ItemIndex;
   bld.PowerConsumption := strtointdef(edBuildingPowerConsumption.Text, 0);
   bld.HealthBarSize := cbxBuildingHealthBarSize.ItemIndex;
+  bld.StorageCapacity := strtointdef(edBuildingStorageCapacity.Text, 0);
   bld.SightRadius := seBuildingSightRadius.Value;
   bld.SpecialBehavior := cbxBuildingSpecialBehavior.ItemIndex;
   // Turret properties group box
@@ -3469,6 +3476,7 @@ begin
   unt.ArmorType := cbxUnitArmorType.ItemIndex;
   unt.SightRadius := seUnitSightRadius.Value;
   unt.HealthBarSize := cbxUnitHealthBarSize.ItemIndex;
+  unt.StorageCapacity := strtointdef(edUnitStorageCapacity.Text, 0);
   unt.IsInfantry := IfThen(cbUnitIsInfantry.Checked, 1, 0);
   unt.NotEdible := IfThen(cbUnitNotEdible.Checked, 1, 0);
   unt.SpecialBehavior := cbxUnitSpecialBehavior.ItemIndex;

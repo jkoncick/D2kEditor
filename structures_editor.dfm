@@ -704,7 +704,7 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Health:'
         end
         object lblBuildingArmorType: TLabel
-          Left = 120
+          Left = 111
           Top = 16
           Width = 30
           Height = 13
@@ -718,11 +718,11 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Power:'
         end
         object lblBuildingHealthBarSize: TLabel
-          Left = 120
+          Left = 92
           Top = 40
-          Width = 73
+          Width = 49
           Height = 13
-          Caption = 'Health bar size:'
+          Caption = 'Healthbar:'
         end
         object lblBuildingSpecialBehavior: TLabel
           Left = 96
@@ -738,26 +738,39 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Sight:'
         end
+        object lblBuildingStorageCapacity: TLabel
+          Left = 212
+          Top = 40
+          Width = 40
+          Height = 13
+          Caption = 'Storage:'
+        end
         object edBuildingHitPoints: TEdit
           Left = 48
           Top = 16
-          Width = 65
+          Width = 57
           Height = 21
+          Hint = 'Number of Hit Points'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object cbxBuildingArmorType: TComboBox
-          Left = 152
+          Left = 144
           Top = 16
-          Width = 145
+          Width = 153
           Height = 21
+          Hint = 'Armor type'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
         end
         object edBuildingPowerConsumption: TEdit
           Left = 48
           Top = 40
-          Width = 65
+          Width = 41
           Height = 21
           Hint = 
             'Positive value = power consumption, Negative value = power produ' +
@@ -767,12 +780,15 @@ object StructuresEditor: TStructuresEditor
           TabOrder = 2
         end
         object cbxBuildingHealthBarSize: TComboBox
-          Left = 200
+          Left = 144
           Top = 40
-          Width = 97
+          Width = 65
           Height = 21
+          Hint = 'Health bar width'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
           Items.Strings = (
             '0 - 16px'
@@ -881,6 +897,18 @@ object StructuresEditor: TStructuresEditor
           ShowHint = True
           TabOrder = 11
           OnClick = BuildingFlagCheckboxChange
+        end
+        object edBuildingStorageCapacity: TEdit
+          Left = 256
+          Top = 40
+          Width = 41
+          Height = 21
+          Hint = 
+            'Spice storage capacity, applicable only to Refinery and Silo.'#13'If' +
+            ' set to 0, default values are used (2000 Refinery, 1500 Silo).'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 12
         end
       end
       object gbBuildingWeapons: TGroupBox
@@ -1940,18 +1968,18 @@ object StructuresEditor: TStructuresEditor
           Caption = 'Health:'
         end
         object lblUnitArmorType: TLabel
-          Left = 120
+          Left = 111
           Top = 16
           Width = 30
           Height = 13
           Caption = 'Armor:'
         end
         object lblUnitHealthBarSize: TLabel
-          Left = 120
+          Left = 92
           Top = 40
-          Width = 73
+          Width = 49
           Height = 13
-          Caption = 'Health bar size:'
+          Caption = 'Healthbar:'
         end
         object lblUnitSpecialBehavior: TLabel
           Left = 96
@@ -1967,29 +1995,45 @@ object StructuresEditor: TStructuresEditor
           Height = 13
           Caption = 'Sight:'
         end
+        object lblUnitStorageCapacity: TLabel
+          Left = 212
+          Top = 40
+          Width = 40
+          Height = 13
+          Caption = 'Storage:'
+        end
         object edUnitHitPoints: TEdit
           Left = 48
           Top = 16
-          Width = 65
+          Width = 57
           Height = 21
+          Hint = 'Number of Hit Points'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
         end
         object cbxUnitArmorType: TComboBox
-          Left = 152
+          Left = 144
           Top = 16
-          Width = 145
+          Width = 153
           Height = 21
+          Hint = 'Armor type'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 1
         end
         object cbxUnitHealthBarSize: TComboBox
-          Left = 200
+          Left = 144
           Top = 40
-          Width = 97
+          Width = 65
           Height = 21
+          Hint = 'Health bar width'
           Style = csDropDownList
           ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           Items.Strings = (
             '0 - 16px'
@@ -2078,6 +2122,19 @@ object StructuresEditor: TStructuresEditor
           ParentShowHint = False
           ShowHint = True
           TabOrder = 9
+        end
+        object edUnitStorageCapacity: TEdit
+          Left = 256
+          Top = 40
+          Width = 41
+          Height = 21
+          Hint = 
+            'Storage capacity, applicable only to Harvester and Saboteur.'#13'If ' +
+            'set to 0, default values are used (7 for Harvester, 160 for Sabo' +
+            'teur).'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 10
         end
       end
       object gbUnitMovement: TGroupBox
@@ -4316,23 +4373,23 @@ object StructuresEditor: TStructuresEditor
     Filter = 'Supported images (*.bmp, *.png)|*.bmp;*.png'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Title = 'Import Image'
-    Left = 860
-    Top = 32
+    Left = 876
+    Top = 16
   end
   object ImageExportDialog: TSaveDialog
     DefaultExt = 'png'
     Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
     FilterIndex = 2
     Title = 'Export Image'
-    Left = 828
-    Top = 32
+    Left = 844
+    Top = 16
   end
   object ImageRemapColorsOpenDialog: TOpenDialog
     DefaultExt = 'ini'
     Filter = 'Remap colors ini file (*.ini)|*.ini'
     Options = [ofEnableSizing]
     Title = 'Select remap colors ini file'
-    Left = 896
-    Top = 32
+    Left = 904
+    Top = 16
   end
 end
