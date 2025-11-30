@@ -342,7 +342,7 @@ type
     gbUnitMovement: TGroupBox;
     gbUnitWeapons: TGroupBox;
     lblUnitBarrelRotationSpeed: TLabel;
-    cbUnitHasBarrel: TCheckBox;
+    cbUnitPrimaryWeaponUseBarrel: TCheckBox;
     cbUnitFlagUF_FIXED_BARREL: TCheckBox;
     cbxUnitPrimaryWeapon: TComboBox;
     cbxUnitSecondaryWeapon: TComboBox;
@@ -627,6 +627,11 @@ type
     edBuildingStorageCapacity: TEdit;
     lblUnitStorageCapacity: TLabel;
     edUnitStorageCapacity: TEdit;
+    seUnitPrimaryWeaponShootYOffset: TSpinEdit;
+    seUnitSecondaryWeaponShootYOffset: TSpinEdit;
+    cbUnitSecondaryWeaponUseBarrel: TCheckBox;
+    lblUnitWeaponPriority: TLabel;
+    cbxUnitWeaponPriority: TComboBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -3110,18 +3115,22 @@ begin
   seUnitPrimaryWeaponBulkShots.Value := unt.PrimaryWeaponBulkShots;
   seUnitPrimaryWeaponShortDelay.Value := unt.PrimaryWeaponShortDelay;
   seUnitPrimaryWeaponLongDelay.Value := unt.PrimaryWeaponLongDelay;
-  cbUnitPrimaryWeaponDoubleShot.Checked := unt.PrimaryWeaponDoubleShot <> 0;
-  cbUnitPrimaryWeaponNoAutoAttack.Checked := unt.PrimaryWeaponNoAutoAttack <> 0;
+  seUnitPrimaryWeaponShootYOffset.Value := unt.PrimaryWeaponShootYOffset;
   seUnitPrimaryWeaponShootOffset.Value := unt.PrimaryWeaponShootOffset;
   seUnitPrimaryWeaponShootAngle.Value := unt.PrimaryWeaponShootAngle;
+  cbUnitPrimaryWeaponUseBarrel.Checked := unt.PrimaryWeaponUseBarrel <> 0;
+  cbUnitPrimaryWeaponDoubleShot.Checked := unt.PrimaryWeaponDoubleShot <> 0;
+  cbUnitPrimaryWeaponNoAutoAttack.Checked := unt.PrimaryWeaponNoAutoAttack <> 0;
   seUnitSecondaryWeaponBulkShots.Value := unt.SecondaryWeaponBulkShots;
   seUnitSecondaryWeaponShortDelay.Value := unt.SecondaryWeaponShortDelay;
   seUnitSecondaryWeaponLongDelay.Value := unt.SecondaryWeaponLongDelay;
-  cbUnitSecondaryWeaponDoubleShot.Checked := unt.SecondaryWeaponDoubleShot <> 0;
-  cbUnitSecondaryWeaponNoAutoAttack.Checked := unt.SecondaryWeaponNoAutoAttack <> 0;
+  seUnitSecondaryWeaponShootYOffset.Value := unt.SecondaryWeaponShootYOffset;
   seUnitSecondaryWeaponShootOffset.Value := unt.SecondaryWeaponShootOffset;
   seUnitSecondaryWeaponShootAngle.Value := unt.SecondaryWeaponShootAngle;
-  cbUnitHasBarrel.Checked := unt.HasBarrel <> 0;
+  cbUnitSecondaryWeaponUseBarrel.Checked := unt.SecondaryWeaponUseBarrel <> 0;
+  cbUnitSecondaryWeaponDoubleShot.Checked := unt.SecondaryWeaponDoubleShot <> 0;
+  cbUnitSecondaryWeaponNoAutoAttack.Checked := unt.SecondaryWeaponNoAutoAttack <> 0;
+  cbxUnitWeaponPriority.ItemIndex := unt.WeaponPriority;
   seUnitBarrelRotationSpeed.Value := unt.BarrelRotationSpeed;
   // Visuals and animations group box
   cbxUnitUnitArt.ItemIndex := unt.UnitArt + 1;
@@ -3493,18 +3502,22 @@ begin
   unt.PrimaryWeaponBulkShots := seUnitPrimaryWeaponBulkShots.Value;
   unt.PrimaryWeaponShortDelay := seUnitPrimaryWeaponShortDelay.Value;
   unt.PrimaryWeaponLongDelay := seUnitPrimaryWeaponLongDelay.Value;
-  unt.PrimaryWeaponDoubleShot := IfThen(cbUnitPrimaryWeaponDoubleShot.Checked, 1, 0);
-  unt.PrimaryWeaponNoAutoAttack := IfThen(cbUnitPrimaryWeaponNoAutoAttack.Checked, 1, 0);
+  unt.PrimaryWeaponShootYOffset := seUnitPrimaryWeaponShootYOffset.Value;
   unt.PrimaryWeaponShootOffset := seUnitPrimaryWeaponShootOffset.Value;
   unt.PrimaryWeaponShootAngle := seUnitPrimaryWeaponShootAngle.Value;
+  unt.PrimaryWeaponUseBarrel := IfThen(cbUnitPrimaryWeaponUseBarrel.Checked, 1, 0);
+  unt.PrimaryWeaponDoubleShot := IfThen(cbUnitPrimaryWeaponDoubleShot.Checked, 1, 0);
+  unt.PrimaryWeaponNoAutoAttack := IfThen(cbUnitPrimaryWeaponNoAutoAttack.Checked, 1, 0);
   unt.SecondaryWeaponBulkShots := seUnitSecondaryWeaponBulkShots.Value;
   unt.SecondaryWeaponShortDelay := seUnitSecondaryWeaponShortDelay.Value;
   unt.SecondaryWeaponLongDelay := seUnitSecondaryWeaponLongDelay.Value;
-  unt.SecondaryWeaponDoubleShot := IfThen(cbUnitSecondaryWeaponDoubleShot.Checked, 1, 0);
-  unt.SecondaryWeaponNoAutoAttack := IfThen(cbUnitSecondaryWeaponNoAutoAttack.Checked, 1, 0);
+  unt.SecondaryWeaponShootYOffset := seUnitSecondaryWeaponShootYOffset.Value;
   unt.SecondaryWeaponShootOffset := seUnitSecondaryWeaponShootOffset.Value;
   unt.SecondaryWeaponShootAngle := seUnitSecondaryWeaponShootAngle.Value;
-  unt.HasBarrel := IfThen(cbUnitHasBarrel.Checked, 1, 0);
+  unt.SecondaryWeaponUseBarrel := IfThen(cbUnitSecondaryWeaponUseBarrel.Checked, 1, 0);
+  unt.SecondaryWeaponDoubleShot := IfThen(cbUnitSecondaryWeaponDoubleShot.Checked, 1, 0);
+  unt.SecondaryWeaponNoAutoAttack := IfThen(cbUnitSecondaryWeaponNoAutoAttack.Checked, 1, 0);
+  unt.WeaponPriority := cbxUnitWeaponPriority.ItemIndex;
   unt.BarrelRotationSpeed := seUnitBarrelRotationSpeed.Value;
   // Visuals and animations group box
   unt.UnitArt := cbxUnitUnitArt.ItemIndex - 1;

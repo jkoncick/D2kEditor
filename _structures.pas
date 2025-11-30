@@ -35,7 +35,7 @@ type
     BuildSpeed:                 cardinal;
     TechLevel:                  shortint;
     AvailableInStarport:        byte;
-    HasBarrel:                  byte;
+    PrimaryWeaponUseBarrel:     byte;
     Prereq1UpgradesNeeded:      byte;
     Prereq1BuildingGroup:       integer;
     Prereq1OwnerHouse:          byte;
@@ -75,7 +75,11 @@ type
     CustomDeathSound:           cardinal;
     NotEdible:                  byte;
     StorageCapacity:            byte;
-    _ZeroBytes:                 array[0..61] of byte;
+    PrimaryWeaponShootYOffset:  shortint;
+    SecondaryWeaponShootYOffset:shortint;
+    SecondaryWeaponUseBarrel:   byte;
+    WeaponPriority:             byte;
+    _ZeroBytes:                 array[0..57] of byte;
   end;
 
   TUnitTemplatePtr = ^TUnitTemplate;

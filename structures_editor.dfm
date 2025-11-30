@@ -2139,7 +2139,7 @@ object StructuresEditor: TStructuresEditor
       end
       object gbUnitMovement: TGroupBox
         Left = 696
-        Top = 120
+        Top = 116
         Width = 305
         Height = 73
         Caption = 'Movement'
@@ -2273,75 +2273,82 @@ object StructuresEditor: TStructuresEditor
       end
       object gbUnitWeapons: TGroupBox
         Left = 696
-        Top = 200
+        Top = 192
         Width = 305
-        Height = 145
+        Height = 153
         Caption = 'Weapons'
         TabOrder = 7
         object lblUnitBarrelRotationSpeed: TLabel
           Left = 168
-          Top = 117
+          Top = 129
           Width = 83
           Height = 13
           Caption = 'Barrel turn speed:'
         end
         object lblUnitPrimaryWeaponOffsetAngle: TLabel
-          Left = 66
-          Top = 76
-          Width = 76
+          Left = 8
+          Top = 72
+          Width = 126
           Height = 13
-          Caption = 'Offset:     Angle:'
+          Caption = 'Y-Off:       C-Off:       Angle:'
         end
         object lblUnitPrimaryWeaponBulkShots: TLabel
           Left = 8
-          Top = 38
+          Top = 36
           Width = 52
           Height = 13
           Caption = 'Bulk shots:'
         end
         object lblUnitPrimaryWeaponShortLongDelay: TLabel
           Left = 66
-          Top = 38
+          Top = 36
           Width = 85
           Height = 13
           Caption = 'Short/Long delay:'
         end
         object lblUnitSecondaryWeaponShortLongDelay: TLabel
           Left = 212
-          Top = 38
+          Top = 36
           Width = 85
           Height = 13
           Caption = 'Short/Long delay:'
         end
         object lblUnitSecondaryWeaponBulkShots: TLabel
           Left = 154
-          Top = 38
+          Top = 36
           Width = 52
           Height = 13
           Caption = 'Bulk shots:'
         end
         object lblUnitSecondaryWeaponOffsetAngle: TLabel
-          Left = 212
-          Top = 76
-          Width = 76
+          Left = 154
+          Top = 72
+          Width = 126
           Height = 13
-          Caption = 'Offset:     Angle:'
+          Caption = 'Y-Off:       C-Off:       Angle:'
         end
-        object cbUnitHasBarrel: TCheckBox
+        object lblUnitWeaponPriority: TLabel
           Left = 8
-          Top = 116
-          Width = 73
+          Top = 129
+          Width = 21
+          Height = 13
+          Caption = 'Prio:'
+        end
+        object cbUnitPrimaryWeaponUseBarrel: TCheckBox
+          Left = 8
+          Top = 110
+          Width = 49
           Height = 17
-          Hint = 'Unit has barrel'
-          Caption = 'Has barrel'
+          Hint = 'The weapon uses barrel'
+          Caption = 'Barrel'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 0
         end
         object cbUnitFlagUF_FIXED_BARREL: TCheckBox
           Tag = 32768
-          Left = 84
-          Top = 116
+          Left = 86
+          Top = 128
           Width = 73
           Height = 17
           Hint = 
@@ -2355,7 +2362,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxUnitPrimaryWeapon: TComboBox
           Left = 8
-          Top = 16
+          Top = 14
           Width = 143
           Height = 21
           Hint = 'Primary weapon type'
@@ -2367,7 +2374,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbxUnitSecondaryWeapon: TComboBox
           Left = 154
-          Top = 16
+          Top = 14
           Width = 143
           Height = 21
           Hint = 'Secondary weapon type'
@@ -2379,7 +2386,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seUnitPrimaryWeaponLongDelay: TSpinEdit
           Left = 110
-          Top = 52
+          Top = 50
           Width = 41
           Height = 22
           Hint = 'Delay between bulks'
@@ -2393,7 +2400,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seUnitBarrelRotationSpeed: TSpinEdit
           Left = 256
-          Top = 116
+          Top = 128
           Width = 41
           Height = 22
           Hint = 'Delay in ticks the barrel turns by one frame'
@@ -2406,8 +2413,8 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object seUnitPrimaryWeaponShootOffset: TSpinEdit
-          Left = 66
-          Top = 90
+          Left = 56
+          Top = 86
           Width = 41
           Height = 22
           Hint = 'Distance of the bullet'#39's origin from center of unit'
@@ -2421,7 +2428,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seUnitPrimaryWeaponBulkShots: TSpinEdit
           Left = 8
-          Top = 52
+          Top = 50
           Width = 41
           Height = 22
           Hint = 
@@ -2437,7 +2444,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seUnitPrimaryWeaponShortDelay: TSpinEdit
           Left = 66
-          Top = 52
+          Top = 50
           Width = 41
           Height = 22
           Hint = 'Delay between shots within a bulk'
@@ -2451,7 +2458,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seUnitSecondaryWeaponBulkShots: TSpinEdit
           Left = 154
-          Top = 52
+          Top = 50
           Width = 41
           Height = 22
           Hint = 
@@ -2467,7 +2474,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seUnitSecondaryWeaponShortDelay: TSpinEdit
           Left = 212
-          Top = 52
+          Top = 50
           Width = 41
           Height = 22
           Hint = 'Delay between shots within a bulk'
@@ -2481,7 +2488,7 @@ object StructuresEditor: TStructuresEditor
         end
         object seUnitSecondaryWeaponLongDelay: TSpinEdit
           Left = 256
-          Top = 52
+          Top = 50
           Width = 41
           Height = 22
           Hint = 
@@ -2496,19 +2503,19 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object cbUnitPrimaryWeaponDoubleShot: TCheckBox
-          Left = 8
-          Top = 79
-          Width = 57
+          Left = 60
+          Top = 110
+          Width = 41
           Height = 17
           Hint = 'Unit fires two shots at once'
-          Caption = 'Double'
+          Caption = 'Dbl'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 12
         end
         object seUnitPrimaryWeaponShootAngle: TSpinEdit
-          Left = 110
-          Top = 90
+          Left = 104
+          Top = 86
           Width = 41
           Height = 22
           Hint = 
@@ -2523,8 +2530,8 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object seUnitSecondaryWeaponShootOffset: TSpinEdit
-          Left = 212
-          Top = 90
+          Left = 202
+          Top = 86
           Width = 41
           Height = 22
           Hint = 'Distance of the bullet'#39's origin from center of unit'
@@ -2537,8 +2544,8 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object seUnitSecondaryWeaponShootAngle: TSpinEdit
-          Left = 256
-          Top = 90
+          Left = 250
+          Top = 86
           Width = 41
           Height = 22
           Hint = 
@@ -2553,41 +2560,98 @@ object StructuresEditor: TStructuresEditor
           Value = 0
         end
         object cbUnitSecondaryWeaponDoubleShot: TCheckBox
-          Left = 154
-          Top = 79
-          Width = 55
+          Left = 206
+          Top = 110
+          Width = 41
           Height = 17
           Hint = 'Unit fires two shots at once'
-          Caption = 'Double'
+          Caption = 'Dbl'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 16
         end
         object cbUnitPrimaryWeaponNoAutoAttack: TCheckBox
-          Left = 8
-          Top = 97
-          Width = 57
+          Left = 100
+          Top = 110
+          Width = 49
           Height = 17
           Hint = 
             'Don'#39't automatically attack nearby enemy units/buildings with thi' +
             's weapon'
-          Caption = 'No auto'
+          Caption = 'NAuto'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 17
         end
         object cbUnitSecondaryWeaponNoAutoAttack: TCheckBox
-          Left = 154
-          Top = 97
-          Width = 57
+          Left = 246
+          Top = 110
+          Width = 49
           Height = 17
           Hint = 
             'Don'#39't automatically attack nearby enemy units/buildings with thi' +
             's weapon'
-          Caption = 'No auto'
+          Caption = 'NAuto'
           ParentShowHint = False
           ShowHint = True
           TabOrder = 18
+        end
+        object seUnitPrimaryWeaponShootYOffset: TSpinEdit
+          Left = 8
+          Top = 86
+          Width = 41
+          Height = 22
+          Hint = 'Y-offset of the bullet'#39's origin. Can be negative or positive.'
+          MaxLength = 3
+          MaxValue = 127
+          MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 19
+          Value = 0
+        end
+        object seUnitSecondaryWeaponShootYOffset: TSpinEdit
+          Left = 154
+          Top = 86
+          Width = 41
+          Height = 22
+          Hint = 'Y-offset of the bullet'#39's origin. Can be negative or positive.'
+          MaxLength = 3
+          MaxValue = 127
+          MinValue = -128
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 20
+          Value = 0
+        end
+        object cbUnitSecondaryWeaponUseBarrel: TCheckBox
+          Left = 154
+          Top = 110
+          Width = 49
+          Height = 17
+          Hint = 'The weapon uses barrel'
+          Caption = 'Barrel'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 21
+        end
+        object cbxUnitWeaponPriority: TComboBox
+          Left = 32
+          Top = 128
+          Width = 49
+          Height = 21
+          Hint = 
+            'Weapon priority. If a specific weapon is prioritized, it is alwa' +
+            'ys used, unless only the other weapon has sufficient range.'
+          Style = csDropDownList
+          ItemHeight = 13
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 22
+          Items.Strings = (
+            'None'
+            'Pri'
+            'Sec')
         end
       end
       object gbUnitVisuals: TGroupBox
