@@ -1150,8 +1150,9 @@ object StructuresEditor: TStructuresEditor
           Width = 41
           Height = 22
           Hint = 
-            'Angle of splitting one shot from the other (usable for double sh' +
-            'ot)'
+            'Offset angle from the direction the weapon is shooting in.'#13'On do' +
+            'uble-shot weapons, the second shot will be offset in the opposit' +
+            'e angle,'#13'making both shots split from each other.'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
@@ -1191,8 +1192,9 @@ object StructuresEditor: TStructuresEditor
           Width = 41
           Height = 22
           Hint = 
-            'Angle of splitting one shot from the other (usable for double sh' +
-            'ot)'
+            'Offset angle from the direction the weapon is shooting in.'#13'On do' +
+            'uble-shot weapons, the second shot will be offset in the opposit' +
+            'e angle,'#13'making both shots split from each other.'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
@@ -2519,8 +2521,9 @@ object StructuresEditor: TStructuresEditor
           Width = 41
           Height = 22
           Hint = 
-            'Angle of splitting one shot from the other (usable for double sh' +
-            'ot)'
+            'Offset angle from the direction the weapon is shooting in.'#13'On do' +
+            'uble-shot weapons, the second shot will be offset in the opposit' +
+            'e angle,'#13'making both shots split from each other.'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
@@ -2549,8 +2552,9 @@ object StructuresEditor: TStructuresEditor
           Width = 41
           Height = 22
           Hint = 
-            'Angle of splitting one shot from the other (usable for double sh' +
-            'ot)'
+            'Offset angle from the direction the weapon is shooting in.'#13'On do' +
+            'uble-shot weapons, the second shot will be offset in the opposit' +
+            'e angle,'#13'making both shots split from each other.'
           MaxLength = 3
           MaxValue = 255
           MinValue = 0
