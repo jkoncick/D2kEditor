@@ -705,7 +705,7 @@ type
     procedure fix_item_references(item_type: integer; v1, v2: integer; swap: boolean);
   public
     function add_new_item(item_type: integer; name: string; var index: integer): boolean;
-    function remove_last_item(item_type: integer): boolean;
+    function remove_item(item_type, index: integer): boolean;
     procedure rename_item(item_type, index: integer; name: string);
     procedure swap_items(item_type, index1, index2: integer);
 
@@ -717,6 +717,7 @@ type
   public
     function add_new_art(art_type, directions, frames: integer; var index: integer): boolean;
     function remove_last_art(art_type: integer): boolean;
+    function remove_art(art_type, index: integer): boolean;
     procedure modify_art(art_type, index, directions, frames: integer);
     procedure swap_arts(art_type, index1, index2: integer);
 
@@ -1675,7 +1676,7 @@ begin
   result := true;
 end;
 
-function TStructures.remove_last_item(item_type: integer): boolean;
+function TStructures.remove_item(item_type, index: integer): boolean;
 var
   ptrs: TItemTypePointersPtr;
   data_ptrs: TItemDataPointersPtr;
@@ -1685,6 +1686,9 @@ begin
   ptrs := Addr(item_type_pointers[item_type]);
   if ptrs.item_count_byte_ptr^ = 0 then
     exit;
+  // Swap all items above the deleted one so that the deleted item becomes last item
+  for i := index to ptrs.item_count_byte_ptr^ - 2 do
+    swap_items(item_type, i, i+1);
   // Decrease item count by 1
   Dec(ptrs.item_count_byte_ptr^);
   // Erase item name
@@ -1863,13 +1867,30 @@ end;
 function TStructures.remove_last_art(art_type: integer): boolean;
 var
   ptrs: TArtTypePointersPtr;
+begin
+  if (art_type = ART_BUILDING_ANIMATION) or (art_type = ART_BUILDUP) then
+    result := remove_art(art_type, templates.BuildingCount)
+  else
+  begin
+    ptrs := Addr(art_type_pointers[art_type]);
+    result := remove_art(art_type, ptrs.art_count_byte_ptr^ - 1);
+  end;
+end;
+
+function TStructures.remove_art(art_type, index: integer): boolean;
+var
+  ptrs: TArtTypePointersPtr;
   use_art_count: boolean;
+  i: integer;
 begin
   result := false;
   ptrs := Addr(art_type_pointers[art_type]);
   use_art_count := (art_type <> ART_BUILDING_ANIMATION) and (art_type <> ART_BUILDUP);
   if (use_art_count) and (ptrs.art_count_byte_ptr^ = 0) then
     exit;
+  // Swap all arts above the deleted one so that the deleted art becomes last art
+  for i := index to ptrs.art_count_byte_ptr^ - 2 do
+    swap_arts(art_type, i, i+1);
   // Decrease number of arts
   if use_art_count then
     Dec(ptrs.art_count_byte_ptr^);

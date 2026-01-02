@@ -42,7 +42,7 @@ const ICG_BTN_PASTE =    6;
 const ICG_BTN_MOVEUP =   7;
 const ICG_BTN_MOVEDOWN = 8;
 
-const ICG_BTN_CAPTIONS: array[0..8] of string = ('Add new','Remove last','Rename selected','Export','Import','Copy','Paste','Move up','Move down');
+const ICG_BTN_CAPTIONS: array[0..8] of string = ('Add new','Remove','Rename selected','Export','Import','Copy','Paste','Move up','Move down');
 
 type
   TItemControlGroupButtonLayout = record
@@ -2004,7 +2004,7 @@ begin
   group_index := (Sender as TComponent).Tag;
   icg := Addr(item_control_groups[group_index]);
   store_data;
-  if Structures.remove_last_item(group_index) then
+  if Structures.remove_item(group_index, icg.list_control.ItemIndex) then
     fill_data(icg.fill_data_action);
 end;
 
@@ -2362,8 +2362,13 @@ begin
 end;
 
 procedure TStructuresEditor.AcgRemoveArtClick(Sender: TObject);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
 begin
-  if Structures.remove_last_art((Sender as TComponent).Tag) then
+  group_index := (Sender as TComponent).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if Structures.remove_art((Sender as TComponent).Tag, acg.list_control.ItemIndex) then
     fill_data(fdaAllArt);
 end;
 
@@ -2639,6 +2644,7 @@ procedure TStructuresEditor.fill_data(action: TFillDataAction);
 var
   tmp_strings: TStringList;
   i: integer;
+  top_index: integer;
 begin
   tmp_strings := TStringList.Create;
 
@@ -2685,11 +2691,13 @@ begin
     tmp_strings.Clear;
     for i := 0 to Structures.templates.BuildingArtCount - 1 do
       tmp_strings.Add(Format('%.*d - %4d (%dd)', [2, i, Structures.building_art_image_indexes[i], Structures.templates.BuildingArtDirections[i]]));
+    top_index := lbBuildingArtList.TopIndex;
     lbBuildingArtList.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
     cbxBuildingBuildingArt.Items := tmp_strings;
     cbxBuildingBarrelArt.Items := tmp_strings;
     lbBuildingArtList.ItemIndex := Min(art_control_groups[ART_BUILDING].last_item_index, Structures.templates.BuildingArtCount - 1);
+    lbBuildingArtList.TopIndex := top_index;
     lbBuildingArtListClick(lbBuildingArtList);
     lblBuildingArtList.Caption := Format('Building art (%d of %d)', [Structures.templates.BuildingArtCount, MAX_BUILDING_ART]);
   end;
@@ -2733,11 +2741,13 @@ begin
     tmp_strings.Clear;
     for i := 0 to Structures.templates.UnitArtCount - 1 do
       tmp_strings.Add(Format('%.*d - %4d (%dd %df)', [2, i, Structures.unit_art_image_indexes[i], Structures.templates.UnitArtDirectionFrames[i], Structures.templates.UnitArtAnimationFrames[i]]));
+    top_index := lbUnitArtList.TopIndex;
     lbUnitArtList.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
     cbxUnitUnitArt.Items := tmp_strings;
     cbxUnitBarrelArt.Items := tmp_strings;
     lbUnitArtList.ItemIndex := Min(art_control_groups[ART_UNIT].last_item_index, Structures.templates.UnitArtCount - 1);
+    lbUnitArtList.TopIndex := top_index;
     lbUnitArtListClick(lbUnitArtList);
     lblUnitArtList.Caption := Format('Unit art (%d of %d)', [Structures.templates.UnitArtCount, MAX_UNIT_ART]);
   end;
@@ -2759,9 +2769,11 @@ begin
     tmp_strings.Clear;
     for i := 0 to Structures.templates.ProjectileArtCount - 1 do
       tmp_strings.Add(Format('%.*d - %4d (%dd)', [2, i, Structures.projectile_art_image_indexes[i], Structures.templates.ProjectileArtDirections[i]]));
+    top_index := lbProjectileArtList.TopIndex;
     lbProjectileArtList.Items := tmp_strings;
     cbxWeaponProjectileArt.Items := tmp_strings;
     lbProjectileArtList.ItemIndex := Min(art_control_groups[ART_PROJECTILE].last_item_index, Structures.templates.ProjectileArtCount - 1);
+    lbProjectileArtList.TopIndex := top_index;
     lbProjectileArtListClick(lbProjectileArtList);
   end;
 
@@ -2786,8 +2798,10 @@ begin
     tmp_strings.Clear;
     for i := 0 to Structures.templates.AnimationArtCount - 1 do
       tmp_strings.Add(Format('%.*d - %4d (%df)', [2, i, Structures.animation_art_image_indexes[i], Structures.templates.AnimationArtFrames[i]]));
+    top_index := lbAnimationArtList.TopIndex;
     lbAnimationArtList.Items := tmp_strings;
     lbAnimationArtList.ItemIndex := Min(art_control_groups[ART_ANIMATION].last_item_index, Structures.templates.AnimationArtCount - 1);
+    lbAnimationArtList.TopIndex := top_index;
     lbAnimationArtListClick(lbAnimationArtList);
   end;
 
@@ -2833,6 +2847,7 @@ var
   ptrs: TItemTypePointersPtr;
   icg: TItemControlGroupPtr;
   s: TDummyStringRecPtr;
+  top_index: integer;
 begin
   tmp_strings.Clear;
   ptrs := Addr(Structures.item_type_pointers[item_type]);
@@ -2842,8 +2857,10 @@ begin
     s := Addr(ptrs.item_name_list_ptr[i * ptrs.item_name_length]);
     tmp_strings.Add(Format('%.*d %s%s', [2, i, IfThen(item_type < ITEM_WEAPON, '', '- '), s.str]));
   end;
+  top_index := icg.list_control.TopIndex;
   icg.list_control.Items := tmp_strings;
   icg.list_control.ItemIndex := Min(icg.last_item_index, ptrs.item_count_byte_ptr^ - 1);
+  icg.list_control.TopIndex := top_index;
   icg.lbl_header.Caption := Format('%ss (%d of %d)', [item_type_names[item_type], ptrs.item_count_byte_ptr^, ptrs.max_item_count]);
 end;
 
@@ -2866,6 +2883,7 @@ begin
   begin
     // Armour
     sgArmourValues.RowCount := Structures.armour.WarheadCount + 1;
+    sgArmourValues.FixedRows := Min(1, sgArmourValues.RowCount - 1);
     for i := 0 to Length(Structures.armour.ArmourTypeStrings) - 1 do
       sgArmourValues.Cells[i+1, 0] := Structures.prettify_structure_name(Structures.armour.ArmourTypeStrings[i]);
     for i := 0 to Structures.armour.WarheadCount - 1 do
@@ -3899,7 +3917,7 @@ begin
   acg.btn_art_remove := TButton.Create(self);
   acg.btn_art_remove.Top := 587;
   acg.btn_art_remove.Width := 73;
-  acg.btn_art_remove.Caption := 'Remove last';
+  acg.btn_art_remove.Caption := 'Remove';
   acg.btn_art_remove.Tag := group_index;
   acg.btn_art_remove.OnClick := AcgRemoveArtClick;
   acg.btn_art_remove.Parent := container2;
