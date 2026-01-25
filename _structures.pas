@@ -231,7 +231,8 @@ type
 const MAX_UNIT_TYPES = 60;
 const MAX_BUILDING_TYPES = 100;
 const MAX_WEAPONS = 64;
-const MAX_EXPLOSIONS = 64;
+const MAX_ORIG_EXPLOSIONS = 64;
+const MAX_EXPLOSIONS = 128;
 const MAX_UNIT_ART = 90;
 const MAX_BUILDING_ART = 120;
 
@@ -813,13 +814,59 @@ end;
 procedure TStructures.load_templates_bin(force: boolean);
 var
   tmp_filename: String;
+  f: file of byte;
 begin
   tmp_filename := find_file('Data\bin\Templates.bin', 'game');
   if (tmp_filename = '') or ((tmp_filename = templates_bin_filename) and not force) then
     exit;
   templates_bin_filename := tmp_filename;
 
-  load_binary_file(tmp_filename, templates, sizeof(templates));
+  AssignFile(f, tmp_filename);
+  Reset(f);
+  BlockRead(f, templates.UnitDefinitions[0], sizeof(templates.UnitDefinitions));
+  BlockRead(f, templates.BuildingDefinitions[0], sizeof(templates.BuildingDefinitions));
+  BlockRead(f, templates.WeaponDefinitions[0], sizeof(templates.WeaponDefinitions));
+  BlockRead(f, templates.ExplosionDefinitions[0], sizeof(templates.ExplosionDefinitions[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockRead(f, templates.UnitArtAnimationFrames[0], sizeof(templates.UnitArtAnimationFrames));
+  BlockRead(f, templates.UnitArtDirectionFrames[0], sizeof(templates.UnitArtDirectionFrames));
+  BlockRead(f, templates.UnitArtCount, sizeof(templates.UnitArtCount));
+  BlockRead(f, templates.UnitCount, sizeof(templates.UnitCount));
+  BlockRead(f, templates.AnimationArtCount, sizeof(templates.AnimationArtCount));
+  BlockRead(f, templates.AnimationArtFrames[0], sizeof(templates.AnimationArtFrames[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockRead(f, templates.ExplosionCount, sizeof(templates.ExplosionCount));
+  BlockRead(f, templates.WeaponCount, sizeof(templates.WeaponCount));
+  BlockRead(f, templates.ProjectileArtDirections[0], sizeof(templates.ProjectileArtDirections));
+  BlockRead(f, templates.ProjectileArtCount, sizeof(templates.ProjectileArtCount));
+  BlockRead(f, templates.BuildingArtCount, sizeof(templates.BuildingArtCount));
+  BlockRead(f, templates.BuildingArtDirections[0], sizeof(templates.BuildingArtDirections));
+  BlockRead(f, templates.BuildingCount, sizeof(templates.BuildingCount));
+  BlockRead(f, templates.BuildingNameStrings[0], sizeof(templates.BuildingNameStrings));
+  BlockRead(f, templates.WeaponStrings[0], sizeof(templates.WeaponStrings));
+  BlockRead(f, templates.ExplosionStrings[0], sizeof(templates.ExplosionStrings[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockRead(f, templates.UnitNameStrings[0], sizeof(templates.UnitNameStrings));
+  BlockRead(f, templates.UnitGroupStrings[0], sizeof(templates.UnitGroupStrings));
+  BlockRead(f, templates.BuildingGroupStrings[0], sizeof(templates.BuildingGroupStrings));
+  BlockRead(f, templates.GroupIDs[0], sizeof(templates.GroupIDs));
+  BlockRead(f, templates.AnimationArtFlags[0], sizeof(templates.AnimationArtFlags[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockRead(f, templates.BuildingAnimationFrames[0], sizeof(templates.BuildingAnimationFrames));
+  BlockRead(f, templates.BuildupArtFrames[0], sizeof(templates.BuildupArtFrames));
+  BlockRead(f, templates.BuildingGroupCount, sizeof(templates.BuildingGroupCount));
+  BlockRead(f, templates.UnitGroupCount, sizeof(templates.UnitGroupCount));
+  // Extended data
+  if not Eof(f) then
+  begin
+    BlockRead(f, templates.ExplosionDefinitions[MAX_ORIG_EXPLOSIONS], sizeof(templates.ExplosionDefinitions[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+    BlockRead(f, templates.ExplosionStrings[MAX_ORIG_EXPLOSIONS], sizeof(templates.ExplosionStrings[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+    BlockRead(f, templates.AnimationArtFrames[MAX_ORIG_EXPLOSIONS], sizeof(templates.AnimationArtFrames[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+    BlockRead(f, templates.AnimationArtFlags[MAX_ORIG_EXPLOSIONS], sizeof(templates.AnimationArtFlags[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+  end else
+  begin
+    FillChar(templates.ExplosionDefinitions[MAX_ORIG_EXPLOSIONS], sizeof(templates.ExplosionDefinitions[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS), 0);
+    FillChar(templates.ExplosionStrings[MAX_ORIG_EXPLOSIONS], sizeof(templates.ExplosionStrings[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS), 0);
+    FillChar(templates.AnimationArtFrames[MAX_ORIG_EXPLOSIONS], sizeof(templates.AnimationArtFrames[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS), 0);
+    FillChar(templates.AnimationArtFlags[MAX_ORIG_EXPLOSIONS], sizeof(templates.AnimationArtFlags[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS), 0);
+  end;
+  CloseFile(f);
 
   compute_image_indexes;
   compute_building_and_unit_house_versions;
@@ -830,12 +877,50 @@ begin
 end;
 
 procedure TStructures.save_templates_bin;
+var
+  f: file of byte;
 begin
   if templates_bin_filename = '' then
     exit;
   if not manage_filesave(templates_bin_filename, 'Data\bin\Templates.bin', evStructuresFilenameChange) then
     exit;
-  save_binary_file(templates_bin_filename, templates, sizeof(templates));
+  AssignFile(f, templates_bin_filename);
+  Rewrite(f);
+  BlockWrite(f, templates.UnitDefinitions[0], sizeof(templates.UnitDefinitions));
+  BlockWrite(f, templates.BuildingDefinitions[0], sizeof(templates.BuildingDefinitions));
+  BlockWrite(f, templates.WeaponDefinitions[0], sizeof(templates.WeaponDefinitions));
+  BlockWrite(f, templates.ExplosionDefinitions[0], sizeof(templates.ExplosionDefinitions[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockWrite(f, templates.UnitArtAnimationFrames[0], sizeof(templates.UnitArtAnimationFrames));
+  BlockWrite(f, templates.UnitArtDirectionFrames[0], sizeof(templates.UnitArtDirectionFrames));
+  BlockWrite(f, templates.UnitArtCount, sizeof(templates.UnitArtCount));
+  BlockWrite(f, templates.UnitCount, sizeof(templates.UnitCount));
+  BlockWrite(f, templates.AnimationArtCount, sizeof(templates.AnimationArtCount));
+  BlockWrite(f, templates.AnimationArtFrames[0], sizeof(templates.AnimationArtFrames[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockWrite(f, templates.ExplosionCount, sizeof(templates.ExplosionCount));
+  BlockWrite(f, templates.WeaponCount, sizeof(templates.WeaponCount));
+  BlockWrite(f, templates.ProjectileArtDirections[0], sizeof(templates.ProjectileArtDirections));
+  BlockWrite(f, templates.ProjectileArtCount, sizeof(templates.ProjectileArtCount));
+  BlockWrite(f, templates.BuildingArtCount, sizeof(templates.BuildingArtCount));
+  BlockWrite(f, templates.BuildingArtDirections[0], sizeof(templates.BuildingArtDirections));
+  BlockWrite(f, templates.BuildingCount, sizeof(templates.BuildingCount));
+  BlockWrite(f, templates.BuildingNameStrings[0], sizeof(templates.BuildingNameStrings));
+  BlockWrite(f, templates.WeaponStrings[0], sizeof(templates.WeaponStrings));
+  BlockWrite(f, templates.ExplosionStrings[0], sizeof(templates.ExplosionStrings[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockWrite(f, templates.UnitNameStrings[0], sizeof(templates.UnitNameStrings));
+  BlockWrite(f, templates.UnitGroupStrings[0], sizeof(templates.UnitGroupStrings));
+  BlockWrite(f, templates.BuildingGroupStrings[0], sizeof(templates.BuildingGroupStrings));
+  BlockWrite(f, templates.GroupIDs[0], sizeof(templates.GroupIDs));
+  BlockWrite(f, templates.AnimationArtFlags[0], sizeof(templates.AnimationArtFlags[0]) * MAX_ORIG_EXPLOSIONS);
+  BlockWrite(f, templates.BuildingAnimationFrames[0], sizeof(templates.BuildingAnimationFrames));
+  BlockWrite(f, templates.BuildupArtFrames[0], sizeof(templates.BuildupArtFrames));
+  BlockWrite(f, templates.BuildingGroupCount, sizeof(templates.BuildingGroupCount));
+  BlockWrite(f, templates.UnitGroupCount, sizeof(templates.UnitGroupCount));
+  // Extended data
+  BlockWrite(f, templates.ExplosionDefinitions[MAX_ORIG_EXPLOSIONS], sizeof(templates.ExplosionDefinitions[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+  BlockWrite(f, templates.ExplosionStrings[MAX_ORIG_EXPLOSIONS], sizeof(templates.ExplosionStrings[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+  BlockWrite(f, templates.AnimationArtFrames[MAX_ORIG_EXPLOSIONS], sizeof(templates.AnimationArtFrames[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+  BlockWrite(f, templates.AnimationArtFlags[MAX_ORIG_EXPLOSIONS], sizeof(templates.AnimationArtFlags[MAX_ORIG_EXPLOSIONS]) * (MAX_EXPLOSIONS - MAX_ORIG_EXPLOSIONS));
+  CloseFile(f);
 end;
 
 procedure TStructures.compute_image_indexes;
