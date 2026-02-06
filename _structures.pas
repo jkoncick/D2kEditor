@@ -207,7 +207,7 @@ type
   TWeaponTemplatePtr = ^TWeaponTemplate;
 
 const EF_RISE_UP           = $00000001;
-const EF_SUBSTRACTIVE_ALPA = $00000002;
+const EF_SUBTRACTIVE_ALPA  = $00000002;
 const EF_OR_OPERATION      = $00000004;
 const EF_HOUSE_COLORED     = $00000008;
 const EF_SEMI_TRANSPARENCY = $00000010;
@@ -221,8 +221,8 @@ type
   TExplosionTemplate = packed record
     MyIndex:               byte;
     MuzzleFlashPattern:    byte;
-    _ZeroPadding2:         byte;
-    _ZeroPadding3:         byte;
+    RepeatCount:           byte;
+    AnimationDelay:        byte;
     Sound:                 integer;
   end;
 
@@ -343,6 +343,7 @@ const ST_NOTHING = 255;
 const ST_BUILDING = 128;
 const ST_UNIT = 0;
 const ST_MISC_OBJECT = 1;
+const ST_EXPLOSION = 2;
 
 type
   TTileDataEntry = record
@@ -1115,6 +1116,8 @@ begin
     result := ST_UNIT
   else if (special and 8192) <> 0 then
     result := ST_BUILDING
+  else if (special and 4096) <> 0 then
+    result := ST_EXPLOSION
   else
     result := (get_tiledata_entry(special)).stype;
 end;
@@ -1126,6 +1129,8 @@ begin
   else if (special and 16384) <> 0 then
     result := (special shr 6) and 7
   else if (special and 8192) <> 0 then
+    result := (special shr 7) and 7
+  else if (special and 4096) <> 0 then
     result := (special shr 7) and 7
   else
     result := (get_tiledata_entry(special)).side;

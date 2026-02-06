@@ -380,6 +380,7 @@ object MainWindow: TMainWindow
               Height = 306
               ActivePage = PageStructBuildings
               Align = alClient
+              MultiLine = True
               TabOrder = 0
               OnChange = EditorPagesChange
               object PageStructBuildings: TTabSheet
@@ -461,7 +462,7 @@ object MainWindow: TMainWindow
                 end
               end
               object PageStructUnits: TTabSheet
-                Caption = 'Units   '
+                Caption = 'Units'
                 ImageIndex = 1
                 object lblUnitDirection: TLabel
                   Left = 0
@@ -533,7 +534,7 @@ object MainWindow: TMainWindow
                 end
               end
               object PageStructCrates: TTabSheet
-                Caption = 'Crates '
+                Caption = 'Crates'
                 ImageIndex = 2
                 object lblCrateImage: TLabel
                   Left = 0
@@ -1013,6 +1014,40 @@ object MainWindow: TMainWindow
                   Caption = 'Respawning'
                   TabOrder = 10
                   Visible = False
+                  OnClick = StructControlClick
+                end
+              end
+              object PageStructExplosions: TTabSheet
+                Caption = 'Explosions'
+                ImageIndex = 3
+                object lbExplosionType: TListBox
+                  Tag = -1
+                  Left = 0
+                  Top = 44
+                  Width = 140
+                  Height = 216
+                  ItemHeight = 13
+                  TabOrder = 0
+                  OnClick = StructControlClick
+                end
+                object cbxExplosionSide: TComboBox
+                  Tag = -1
+                  Left = 0
+                  Top = 20
+                  Width = 140
+                  Height = 21
+                  Style = csDropDownList
+                  ItemHeight = 13
+                  TabOrder = 1
+                  OnChange = SideSelectChange
+                end
+                object cbExplosionTagged: TCheckBox
+                  Left = 0
+                  Top = 0
+                  Width = 65
+                  Height = 17
+                  Caption = 'Tagged'
+                  TabOrder = 2
                   OnClick = StructControlClick
                 end
               end

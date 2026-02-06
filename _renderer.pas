@@ -620,6 +620,20 @@ begin
         end else
           draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, $FF00FF, 2);
       end else
+      if structure_type = ST_EXPLOSION then
+      begin
+        structure_image := StructGraphics.get_structure_image(Structures.animation_art_image_indexes[special and 127], side_color, false, false, was_already_loaded);
+        if structure_image <> nil then
+          draw_structure_image(cnv_target, x*32 + 16 + structure_image.offset_x, y*32 + 16 - structure_image.offset_y, min_x, min_y, max_x, max_y, structure_image);
+        if o_mark_defence_areas and ((special and 1024) <> 0) then
+        begin
+          cnv_target.Brush.Style := bsSolid;
+          cnv_target.Brush.Color := clLime;
+          cnv_target.Pen.Color := clBlack;
+          cnv_target.Ellipse(x*32+12, y*32+12, x*32+20, y*32+20);
+          cnv_target.Brush.Style := bsClear;
+        end;
+      end else
       if o_show_unknown_specials and (special <> 65535) then
       begin
         // Unknown special value

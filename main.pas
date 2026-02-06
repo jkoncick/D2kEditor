@@ -210,6 +210,10 @@ type
     sbMarkDefenceAreas: TSpeedButton;
     sbShowCrateMarkers: TSpeedButton;
     tbBrushSize: TTrackBar;
+    PageStructExplosions: TTabSheet;
+    lbExplosionType: TListBox;
+    cbxExplosionSide: TComboBox;
+    cbExplosionTagged: TCheckBox;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -575,8 +579,9 @@ begin
   lbUnitGroup.Height := tmp_height div 2;
   lblUnitGroup.Top := lbBuildingGroup.Top + lbBuildingGroup.Height + 3;
   lbUnitGroup.Top := lblUnitGroup.Top + 16;
-  lbBuildingType.Height := StructAdvancedPages.Height - 94;
-  lbUnitType.Height := StructAdvancedPages.Height - 94;
+  lbBuildingType.Height := StructAdvancedPages.Height - 108;
+  lbUnitType.Height := StructAdvancedPages.Height - 108;
+  lbExplosionType.Height := StructAdvancedPages.Height - 88;
   StatusBar.Panels[3].Width := ClientWidth - 590;
   if Map.loaded then
   begin
@@ -1697,7 +1702,9 @@ begin
       begin
         cbxCrateType.SetFocus;
         set_crate_ui;
-      end;
+      end
+      else if StructAdvancedPages.ActivePageIndex = 3 then
+        lbExplosionType.SetFocus;
     end;
     set_special_value;
   end;
@@ -1875,6 +1882,13 @@ begin
   prev_index := cbxCrateExplodeWeaponType.ItemIndex;
   cbxCrateExplodeWeaponType.Items := tmp_strings;
   cbxCrateExplodeWeaponType.ItemIndex := Max(prev_index, 0);
+  // Explosion list
+  tmp_strings.Clear;
+  for i:= 0 to Structures.templates.ExplosionCount -1 do
+    tmp_strings.Add(Structures.templates.ExplosionStrings[i]);
+  prev_index := lbExplosionType.ItemIndex;
+  lbExplosionType.Items := tmp_strings;
+  lbExplosionType.ItemIndex := Max(prev_index, 0);
   tmp_strings.Destroy;
   // Unit list under Crates tab
   if StructAdvancedPages.ActivePageIndex = 2 then
@@ -1890,6 +1904,7 @@ begin
   cbxBuildingSide.Items := side_list;
   cbxUnitSide.Items := side_list;
   cbxConcreteSide.Items := side_list;
+  cbxExplosionSide.Items := side_list;
   set_side_comboboxes(Max(prev_index, 0));
 end;
 
@@ -2061,6 +2076,14 @@ begin
       cbBuildingPrimary.Checked := (special and 2048) <> 0;
     end;
     cbBuildingTagged.Checked := (special and 4096) <> 0;
+  end else
+  if (special and 4096) <> 0 then
+  begin
+    StructPages.ActivePageIndex := 1;
+    StructAdvancedPages.ActivePageIndex := 3;
+    lbExplosionType.ItemIndex := IfThen((special and 127) < lbExplosionType.Count, special and 127, -1);
+    set_side_comboboxes((special shr 7) and 7);
+    cbExplosionTagged.Checked := (special and 1024) <> 0;
   end else
   begin
     StructPages.ActivePageIndex := 0;
@@ -2452,7 +2475,10 @@ begin
       value := 32768 + 2048 * crate_type +
         IfThen(crate_type = 7, IfThen(cbCrateBloomSpawnerRespawning.Checked, 256, 0) + cbxCrateBloomSpawnerType.ItemIndex * 512, 256 * cbxCrateImage.ItemIndex) +
         ext_data;
-    end;
+    end
+    // Explosions tab
+    else if StructAdvancedPages.ActivePageIndex = 3 then
+      value := 4096 + IfThen(cbExplosionTagged.Checked, 1024, 0) + 128 * cbxExplosionSide.ItemIndex + lbExplosionType.ItemIndex;
   end;
   special_value_changing := true;
   SpecialValue.Text := inttostr(value);
@@ -2465,6 +2491,7 @@ begin
   cbxStructSide.ItemIndex := item_index;
   cbxBuildingSide.ItemIndex := item_index;
   cbxUnitSide.ItemIndex := item_index;
+  cbxExplosionSide.ItemIndex := item_index;
   cbxConcreteSide.ItemIndex := item_index;
   update_map_stats;
 end;

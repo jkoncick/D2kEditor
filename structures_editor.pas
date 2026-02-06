@@ -500,7 +500,7 @@ type
     lblExplosionFlags: TLabel;
     edExplosionFlags: TEdit;
     cbExplosionFlagEF_ADDITIVE_ALPHA: TCheckBox;
-    cbExplosionFlagEF_SUBSTRACTIVE_ALPA: TCheckBox;
+    cbExplosionFlagEF_SUBTRACTIVE_ALPA: TCheckBox;
     cbExplosionFlagEF_SEMI_TRANSPARENCY: TCheckBox;
     cbExplosionFlagEF_RISE_UP: TCheckBox;
     cbExplosionFlagEF_HOUSE_COLORED: TCheckBox;
@@ -632,6 +632,10 @@ type
     cbUnitSecondaryWeaponUseBarrel: TCheckBox;
     lblUnitWeaponPriority: TLabel;
     cbxUnitWeaponPriority: TComboBox;
+    lblExplosionRepeatCount: TLabel;
+    seExplosionRepeatCount: TSpinEdit;
+    lblExplosionAnimationDelay: TLabel;
+    seExplosionAnimationDelay: TSpinEdit;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -1607,7 +1611,7 @@ begin
   value := strtoint('$' + edExplosionFlags.Text);
   loading := true;
   cbExplosionFlagEF_ADDITIVE_ALPHA.Checked := (value and EF_ADDITIVE_ALPHA) <> 0;
-  cbExplosionFlagEF_SUBSTRACTIVE_ALPA.Checked := (value and EF_SUBSTRACTIVE_ALPA) <> 0;
+  cbExplosionFlagEF_SUBTRACTIVE_ALPA.Checked := (value and EF_SUBTRACTIVE_ALPA) <> 0;
   cbExplosionFlagEF_SEMI_TRANSPARENCY.Checked := (value and EF_SEMI_TRANSPARENCY) <> 0;
   cbExplosionFlagEF_RISE_UP.Checked := (value and EF_RISE_UP) <> 0;
   cbExplosionFlagEF_HOUSE_COLORED.Checked := (value and EF_HOUSE_COLORED) <> 0;
@@ -3270,6 +3274,8 @@ begin
   edExplosionName.Text := Structures.templates.ExplosionStrings[index];
   edExplosionMyIndex.Text := IntToStr(exp.MyIndex);
   edExplosionMuzzleFlashPattern.Text := IntToBin(exp.MuzzleFlashPattern, 7);
+  seExplosionRepeatCount.Value := exp.RepeatCount;
+  seExplosionAnimationDelay.Value := exp.AnimationDelay;
   cbxExplosionSound.ItemIndex := exp.Sound + 1;
   edExplosionFlags.Text := IntToHex(Structures.templates.AnimationArtFlags[index], 8);
   // Used by label
@@ -3632,6 +3638,8 @@ begin
 
   exp.MyIndex := StrToIntDef(edExplosionMyIndex.Text, 0);
   exp.MuzzleFlashPattern := BinToInt(edExplosionMuzzleFlashPattern.Text);
+  exp.RepeatCount := seExplosionRepeatCount.Value;
+  exp.AnimationDelay := seExplosionAnimationDelay.Value;
   exp.Sound := cbxExplosionSound.ItemIndex - 1;
   Structures.templates.AnimationArtFlags[index] := StrToIntDef('$' + edExplosionFlags.Text, 0);
   // Store explosion name

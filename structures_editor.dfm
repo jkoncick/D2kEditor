@@ -3667,9 +3667,9 @@ object StructuresEditor: TStructuresEditor
       end
       object lblExplosionUsedBy: TLabel
         Left = 168
-        Top = 160
+        Top = 184
         Width = 337
-        Height = 449
+        Height = 425
         AutoSize = False
         WordWrap = True
       end
@@ -3686,6 +3686,20 @@ object StructuresEditor: TStructuresEditor
         Width = 31
         Height = 13
         Caption = 'Name:'
+      end
+      object lblExplosionRepeatCount: TLabel
+        Left = 168
+        Top = 152
+        Width = 68
+        Height = 13
+        Caption = 'Repeat count:'
+      end
+      object lblExplosionAnimationDelay: TLabel
+        Left = 304
+        Top = 152
+        Width = 77
+        Height = 13
+        Caption = 'Animation delay:'
       end
       object pnAnimationArtList: TPanel
         Left = 512
@@ -3806,13 +3820,13 @@ object StructuresEditor: TStructuresEditor
         TabOrder = 7
         OnClick = ExplosionFlagCheckboxChange
       end
-      object cbExplosionFlagEF_SUBSTRACTIVE_ALPA: TCheckBox
+      object cbExplosionFlagEF_SUBTRACTIVE_ALPA: TCheckBox
         Tag = 2
         Left = 272
         Top = 80
         Width = 113
         Height = 17
-        Caption = 'Substractive alpha'
+        Caption = 'Subtractive alpha'
         TabOrder = 8
         OnClick = ExplosionFlagCheckboxChange
       end
@@ -3872,6 +3886,36 @@ object StructuresEditor: TStructuresEditor
         Caption = 'Play'
         TabOrder = 14
         OnClick = btnExplosionSoundPlayClick
+      end
+      object seExplosionRepeatCount: TSpinEdit
+        Left = 240
+        Top = 152
+        Width = 57
+        Height = 22
+        Hint = 
+          'How many times the explosion repeats before it gets removed. Val' +
+          'ue 255 means repeat infinitely.'
+        MaxValue = 255
+        MinValue = 0
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 15
+        Value = 0
+      end
+      object seExplosionAnimationDelay: TSpinEdit
+        Left = 384
+        Top = 152
+        Width = 57
+        Height = 22
+        Hint = 
+          'Delay between animation frames. The higher number the slower ani' +
+          'mation.'
+        MaxValue = 255
+        MinValue = 0
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 16
+        Value = 0
       end
     end
     object PageArmour: TTabSheet
