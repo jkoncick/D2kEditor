@@ -125,6 +125,7 @@ type
     first_image_index: integer;
     last_item_index: integer;
     is_unit: boolean;
+    zoom: integer;
     // Referenced controls
     list_control: TListBox;
     se_directions: TSpinEdit;
@@ -741,6 +742,7 @@ type
     // Art control group events
     procedure AcgFrameListClick(Sender: TObject);
     procedure AcgViewPaletteClick(Sender: TObject);
+    procedure AcgImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure AcgImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure AcgImagePropertyChange(Sender: TObject);
     procedure AcgExportImageClick(Sender: TObject);
@@ -827,8 +829,8 @@ type
     procedure draw_unit_preview;
     procedure draw_unit_frame(image_index, house: integer; is_stealth: boolean);
     procedure draw_builexp_preview;
-    procedure draw_building_art_frame(img_target: TImage; image_index, house: integer; raw, draw_background: boolean);
-    procedure draw_unit_art_frame(img_target: TImage; image_index, house: integer; raw: boolean);
+    procedure draw_building_art_frame(img_target: TImage; image_index, house, zoom: integer; raw, draw_background: boolean);
+    procedure draw_unit_art_frame(img_target: TImage; image_index, house, zoom: integer; raw: boolean);
     procedure draw_techpos_preview;
     // General procedures
     procedure apply_changes;
@@ -2169,9 +2171,9 @@ begin
   if image_not_empty then
   begin
     if acg.is_unit then
-      draw_unit_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.cb_raw_image.Checked)
+      draw_unit_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.zoom, acg.cb_raw_image.Checked)
     else
-      draw_building_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.cb_raw_image.Checked, true);
+      draw_building_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.zoom, acg.cb_raw_image.Checked, true);
     acg.edit_frame_width.Text := inttostr(header.FrameWidth);
     acg.edit_frame_height.Text := inttostr(header.FrameHeight);
     acg.edit_image_width.Text := inttostr(header.ImageWidth);
@@ -2209,6 +2211,20 @@ begin
   draw_palette(acg.first_image_index + acg.frame_list.ItemIndex, acg);
 end;
 
+procedure TStructuresEditor.AcgImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  group_index: integer;
+  acg: TArtControlGroupPtr;
+begin
+  group_index := (Sender as TControl).Tag;
+  acg := Addr(art_control_groups[group_index]);
+  if (Button = mbLeft) and (acg.zoom < 5) then
+    inc(acg.zoom)
+  else if (Button = mbRight) and (acg.zoom > 1) then
+    dec(acg.zoom);
+  AcgFrameListClick(acg.frame_list);
+end;
+
 procedure TStructuresEditor.AcgImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   group_index: integer;
@@ -2228,16 +2244,16 @@ begin
   height := header.ImageHeight;
   if acg.is_unit then
   begin
-    left := ((header.FrameWidth div 2 - header.ImageOffsetX) - (header.FrameWidth - 32) div 2) * 2 + 48;
-    top := ((header.FrameHeight div 2 - header.ImageOffsetY) - (header.FrameHeight - 32) div 2) * 2 + 48;
-    pos_x := X div 2 - left div 2;
-    pos_y := Y div 2 - top div 2;
+    left := ((header.FrameWidth div 2 - header.ImageOffsetX) - (header.FrameWidth - 32) div 2) * acg.zoom + 80 - 16 * acg.zoom;
+    top := ((header.FrameHeight div 2 - header.ImageOffsetY) - (header.FrameHeight - 32) div 2) * acg.zoom + 80 - 16 * acg.zoom;
+    pos_x := X div acg.zoom - left div acg.zoom;
+    pos_y := Y div acg.zoom - top div acg.zoom;
   end else
   begin
-    left := header.ImageOffsetX * -1;
-    top := header.FrameHeight - header.ImageOffsetY;
-    pos_x := X - left;
-    pos_y := Y - top;
+    left := (header.ImageOffsetX * -1) * acg.zoom;
+    top := (header.FrameHeight - header.ImageOffsetY) * acg.zoom;
+    pos_x := X div acg.zoom - left div acg.zoom;
+    pos_y := Y div acg.zoom - top div acg.zoom;
   end;
   if (pos_x >= 0) and (pos_x < width) and (pos_y >= 0) and (pos_y < height) then
     lblImagePaletteColorIndex.Caption := 'Index: ' + IntToStr(image_data_8bpp[pos_x + pos_y * width])
@@ -2535,9 +2551,9 @@ begin
   if viewpal_acg.cb_raw_image.Checked then
   begin
     if viewpal_acg.is_unit then
-      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, true)
+      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, true)
     else
-      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, true, true);
+      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, true, true);
   end;
 end;
 
@@ -2551,9 +2567,9 @@ begin
       exit;
     end;
     if viewpal_acg.is_unit then
-      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.cb_raw_image.Checked)
+      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, viewpal_acg.cb_raw_image.Checked)
     else
-      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.cb_raw_image.Checked, true);
+      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, viewpal_acg.cb_raw_image.Checked, true);
   end;
 end;
 
@@ -3739,16 +3755,18 @@ var
 begin
   acg := Addr(art_control_groups[group_index]);
   acg.is_unit := is_unit;
+  acg.zoom := IfThen(is_unit, 2, 1);
   // Store references to referenced controls
   acg.list_control := list_control;
   acg.se_directions := se_directions;
   acg.se_frames := se_frames;
   // Create dynamic controls
   acg.view_image := TImage.Create(self);
-  acg.view_image.Width := IfThen(is_unit, 160, 128);
+  acg.view_image.Width := 160;
   acg.view_image.Height := 160;
   acg.view_image.Top := 16;
   acg.view_image.Tag := group_index;
+  acg.view_image.OnMouseDown := AcgImageMouseDown;
   acg.view_image.OnMouseMove := AcgImageMouseMove;
   acg.view_image.Parent := container;
   acg.btn_view_palette := TButton.Create(self);
@@ -4267,18 +4285,18 @@ begin
   begin
     // Base frame
     image_index := Structures.building_art_image_indexes[building_template.BuildingArt];
-    draw_building_art_frame(imgBuilExpImage, image_index, 0, false, false);
+    draw_building_art_frame(imgBuilExpImage, image_index, 0, 1, false, false);
     // Damaged frame
     image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + Structures.templates.BuildingArtDirections[building_template.BuildingArt] + 1;
     header := StructGraphics.get_structure_image_header(image_index);
     if (header = nil) or (header.EntryType = 0) then
       // If damaged frame does not exist, use healthy frame
       image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + 1;
-    draw_building_art_frame(imgBuilExpImage, image_index, 0, false, false);
+    draw_building_art_frame(imgBuilExpImage, image_index, 0, 1, false, false);
   end;
   if building_template.BarrelArt <> -1 then
   begin
-    draw_building_art_frame(imgBuilExpImage, Structures.building_art_image_indexes[building_template.BarrelArt] + 1, 0, false, false);
+    draw_building_art_frame(imgBuilExpImage, Structures.building_art_image_indexes[building_template.BarrelArt] + 1, 0, 1, false, false);
   end;
   // Draw animations
   for i := 0 to seBuilExpNumAnimations.Value - 1 do
@@ -4302,7 +4320,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index, house: integer; raw, draw_background: boolean);
+procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index, house, zoom: integer; raw, draw_background: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
@@ -4319,14 +4337,14 @@ begin
     img_target.Canvas.Pen.Color := clAqua;
     img_target.Canvas.Brush.Color := clAqua;
     img_target.Canvas.Brush.Style := bsSolid;
-    img_target.Canvas.Rectangle(0, 0, img_target.Width, img_target.Height);
+    img_target.Canvas.Rectangle(0, 0, img_target.Width * zoom, img_target.Height * zoom);
   end;
   img_target.Canvas.Pen.Color := clGray;
   img_target.Canvas.Brush.Style := bsClear;
-  img_target.Canvas.Rectangle(0, 0, header.FrameWidth, header.FrameHeight);
+  img_target.Canvas.Rectangle(0, 0, header.FrameWidth * zoom, header.FrameHeight * zoom);
   img_target.Canvas.Brush.Style := bsSolid;
   src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
-  dest_rect := Rect(structure_image.offset_x, header.FrameHeight - structure_image.offset_y, structure_image.offset_x + structure_image.bitmap.Width, header.FrameHeight - structure_image.offset_y + structure_image.bitmap.Height);
+  dest_rect := Rect(structure_image.offset_x * zoom, (header.FrameHeight - structure_image.offset_y) * zoom, (structure_image.offset_x + structure_image.bitmap.Width) * zoom, (header.FrameHeight - structure_image.offset_y + structure_image.bitmap.Height) * zoom);
   if not raw then
   begin
     img_target.Canvas.CopyMode := cmSrcAnd;
@@ -4344,31 +4362,34 @@ begin
     StructGraphics.clear_last_structure_image(image_index, false);
 end;
 
-procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index, house: integer; raw: boolean);
+procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index, house, zoom: integer; raw: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
   raw_image: TBitmap;
+  offset_begin, offset_end: integer;
 begin
   structure_image := StructGraphics.get_structure_image(image_index, house, true, false, was_already_loaded);
   if structure_image = nil then
     exit;
   header := StructGraphics.get_structure_image_header(image_index);
+  offset_begin := 80 - zoom * 16;
+  offset_end := 80 + zoom * 16;
   img_target.Canvas.Pen.Color := clAqua;
   img_target.Canvas.Brush.Color := clAqua;
   img_target.Canvas.Brush.Style := bsSolid;
   img_target.Canvas.Rectangle(0, 0, img_target.Width, img_target.Height);
   img_target.Canvas.Pen.Color := $E0E000;
   img_target.Canvas.Brush.Color := $E0E000;
-  img_target.Canvas.Rectangle(48, 48, 112, 112);
+  img_target.Canvas.Rectangle(offset_begin, offset_begin, offset_end, offset_end);
   img_target.Canvas.Pen.Color := clGray;
   img_target.Canvas.Brush.Style := bsClear;
-  img_target.Canvas.Rectangle(80 - header.FrameWidth, 80 - header.FrameHeight, 80 + header.FrameWidth, 80 + header.FrameHeight);
+  img_target.Canvas.Rectangle(80 - ((header.FrameWidth * zoom) div 2), 80 - ((header.FrameHeight * zoom) div 2), 80 + ((header.FrameWidth * zoom) div 2), 80 + ((header.FrameHeight * zoom) div 2));
   img_target.Canvas.Brush.Style := bsSolid;
   src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
-  dest_rect := Rect(structure_image.offset_x * 2 + 48, structure_image.offset_y * 2 + 48, structure_image.offset_x * 2 + 48 + structure_image.bitmap.Width * 2, structure_image.offset_y * 2 + 48 + structure_image.bitmap.Height * 2);
+  dest_rect := Rect(structure_image.offset_x * zoom + offset_begin, structure_image.offset_y * zoom + offset_begin, structure_image.offset_x * zoom + offset_begin + structure_image.bitmap.Width * zoom, structure_image.offset_y * zoom + offset_begin + structure_image.bitmap.Height * zoom);
   if not raw then
   begin
     img_target.Canvas.CopyMode := cmSrcAnd;
