@@ -637,6 +637,7 @@ type
     seExplosionRepeatCount: TSpinEdit;
     lblExplosionAnimationDelay: TLabel;
     seExplosionAnimationDelay: TSpinEdit;
+    cbWeaponFlagWF_SYNCHRONIZED_INACCURACY: TCheckBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -1552,6 +1553,7 @@ begin
   cbWeaponFlagWF_ANIM_PROJECTILE.Checked := (value and WF_ANIM_PROJECTILE) <> 0;
   cbWeaponFlagWF_MAKE_TRAIL.Checked := (value and WF_MAKE_TRAIL) <> 0;
   cbWeaponFlagWF_DEBRIS.Checked := (value and WF_DEBRIS) <> 0;
+  cbWeaponFlagWF_SYNCHRONIZED_INACCURACY.Checked := (value and WF_SYNCHRONIZED_INACCURACY) <> 0;
   loading := false;
 end;
 

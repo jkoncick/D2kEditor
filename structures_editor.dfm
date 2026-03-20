@@ -3333,15 +3333,15 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponAntiAircraft: TCheckBox
           Left = 248
-          Top = 72
-          Width = 81
+          Top = 96
+          Width = 73
           Height = 17
           Caption = 'Anti-aircraft'
           TabOrder = 3
         end
         object cbWeaponFlagWF_BLOCKED_BY_WALL: TCheckBox
           Tag = 4096
-          Left = 204
+          Left = 148
           Top = 96
           Width = 97
           Height = 17
@@ -3361,7 +3361,7 @@ object StructuresEditor: TStructuresEditor
         end
         object cbWeaponFlagWF_SONIC: TCheckBox
           Tag = 2048
-          Left = 256
+          Left = 248
           Top = 120
           Width = 49
           Height = 17
@@ -3425,11 +3425,26 @@ object StructuresEditor: TStructuresEditor
         object cbxWeaponBehavior: TComboBox
           Left = 56
           Top = 96
-          Width = 137
+          Width = 89
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 11
+        end
+        object cbWeaponFlagWF_SYNCHRONIZED_INACCURACY: TCheckBox
+          Tag = 16777216
+          Left = 248
+          Top = 72
+          Width = 85
+          Height = 17
+          Hint = 
+            'Synchronized inaccuracy. If used on a double-shot weapon, then b' +
+            'oth shots will share same inaccuracy offset.'
+          Caption = 'Synchronized'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 12
+          OnClick = WeaponFlagCheckboxChange
         end
       end
       object dbWeaponMovement: TGroupBox

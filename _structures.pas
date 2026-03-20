@@ -176,16 +176,17 @@ type
 
   TBuildingTemplatePtr = ^TBuildingTemplate;
 
-const WF_ARC_TRAJECTORY    = $00000001;
-const WF_DEBRIS            = $00000002;
-const WF_MAKE_TRAIL        = $00000010;
-const WF_HOMING            = $00000020;
-const WF_DEVIATOR          = $00000040;
-const WF_ANIM_PROJECTILE   = $00000080;
-const WF_FALLING           = $00000100;
-const WF_PROJECTILE_ALPHA  = $00000200;
-const WF_SONIC             = $00000800;
-const WF_BLOCKED_BY_WALL   = $00001000;
+const WF_ARC_TRAJECTORY           = $00000001;
+const WF_DEBRIS                   = $00000002;
+const WF_MAKE_TRAIL               = $00000010;
+const WF_HOMING                   = $00000020;
+const WF_DEVIATOR                 = $00000040;
+const WF_ANIM_PROJECTILE          = $00000080;
+const WF_FALLING                  = $00000100;
+const WF_PROJECTILE_ALPHA         = $00000200;
+const WF_SONIC                    = $00000800;
+const WF_BLOCKED_BY_WALL          = $00001000;
+const WF_SYNCHRONIZED_INACCURACY  = $01000000;
 
 type
   TWeaponTemplate = packed record
