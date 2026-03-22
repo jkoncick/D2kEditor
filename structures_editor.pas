@@ -919,8 +919,6 @@ begin
   end;
   // Armour
   sgArmourValues.ColWidths[0] := 98;
-  sgArmourValues.Cells[13, 0] := 'Radius';
-  sgArmourValues.Cells[14, 0] := 'Inf. death';
   // Speed modifier values
   sgSpeedValues.Cells[0, 0] := 'Modifier val.';
   for i := 0 to Length(Structures.speed.Values) - 1 do
@@ -2719,7 +2717,7 @@ begin
     cbxBuildingBuildingArt.Items := tmp_strings;
     cbxBuildingBarrelArt.Items := tmp_strings;
     lbBuildingArtList.ItemIndex := Min(art_control_groups[ART_BUILDING].last_item_index, Structures.templates.BuildingArtCount - 1);
-    lbBuildingArtList.TopIndex := top_index;
+    lbBuildingArtList.TopIndex := Max(top_index, lbBuildingArtList.ItemIndex - lbBuildingArtList.ClientHeight div lbBuildingArtList.ItemHeight + 1);
     lbBuildingArtListClick(lbBuildingArtList);
     lblBuildingArtList.Caption := Format('Building art (%d of %d)', [Structures.templates.BuildingArtCount, MAX_BUILDING_ART]);
   end;
@@ -2769,7 +2767,7 @@ begin
     cbxUnitUnitArt.Items := tmp_strings;
     cbxUnitBarrelArt.Items := tmp_strings;
     lbUnitArtList.ItemIndex := Min(art_control_groups[ART_UNIT].last_item_index, Structures.templates.UnitArtCount - 1);
-    lbUnitArtList.TopIndex := top_index;
+    lbUnitArtList.TopIndex := Max(top_index, lbUnitArtList.ItemIndex - lbUnitArtList.ClientHeight div lbUnitArtList.ItemHeight + 1);
     lbUnitArtListClick(lbUnitArtList);
     lblUnitArtList.Caption := Format('Unit art (%d of %d)', [Structures.templates.UnitArtCount, MAX_UNIT_ART]);
   end;
@@ -2795,7 +2793,7 @@ begin
     lbProjectileArtList.Items := tmp_strings;
     cbxWeaponProjectileArt.Items := tmp_strings;
     lbProjectileArtList.ItemIndex := Min(art_control_groups[ART_PROJECTILE].last_item_index, Structures.templates.ProjectileArtCount - 1);
-    lbProjectileArtList.TopIndex := top_index;
+    lbProjectileArtList.TopIndex := Max(top_index, lbProjectileArtList.ItemIndex - lbProjectileArtList.ClientHeight div lbProjectileArtList.ItemHeight + 1);
     lbProjectileArtListClick(lbProjectileArtList);
   end;
 
@@ -2823,7 +2821,7 @@ begin
     top_index := lbAnimationArtList.TopIndex;
     lbAnimationArtList.Items := tmp_strings;
     lbAnimationArtList.ItemIndex := Min(art_control_groups[ART_ANIMATION].last_item_index, Structures.templates.AnimationArtCount - 1);
-    lbAnimationArtList.TopIndex := top_index;
+    lbAnimationArtList.TopIndex := Max(top_index, lbAnimationArtList.ItemIndex - lbAnimationArtList.ClientHeight div lbAnimationArtList.ItemHeight + 1);
     lbAnimationArtListClick(lbAnimationArtList);
   end;
 
@@ -2882,7 +2880,7 @@ begin
   top_index := icg.list_control.TopIndex;
   icg.list_control.Items := tmp_strings;
   icg.list_control.ItemIndex := Min(icg.last_item_index, ptrs.item_count_byte_ptr^ - 1);
-  icg.list_control.TopIndex := top_index;
+  icg.list_control.TopIndex := Max(top_index, icg.list_control.ItemIndex - icg.list_control.ClientHeight div icg.list_control.ItemHeight + 1);
   icg.lbl_header.Caption := Format('%ss (%d of %d)', [item_type_names[item_type], ptrs.item_count_byte_ptr^, ptrs.max_item_count]);
 end;
 
@@ -2905,17 +2903,20 @@ begin
   begin
     // Armour
     sgArmourValues.RowCount := Structures.armour.WarheadCount + 1;
+    sgArmourValues.ColCount := Structures.armour.ArmourTypeCount + 3;
+    sgArmourValues.Cells[Structures.armour.ArmourTypeCount + 1, 0] := 'Radius';
+    sgArmourValues.Cells[Structures.armour.ArmourTypeCount + 2, 0] := 'InfDth';
     sgArmourValues.FixedRows := Min(1, sgArmourValues.RowCount - 1);
-    for i := 0 to Length(Structures.armour.ArmourTypeStrings) - 1 do
+    for i := 0 to Structures.armour.ArmourTypeCount - 1 do
       sgArmourValues.Cells[i+1, 0] := Structures.prettify_structure_name(Structures.armour.ArmourTypeStrings[i]);
     for i := 0 to Structures.armour.WarheadCount - 1 do
       sgArmourValues.Cells[0, i+1] := Structures.armour.WarheadStrings[i];
     for i := 0 to Structures.armour.WarheadCount - 1 do
     begin
-      for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
+      for j := 0 to Structures.armour.ArmourTypeCount - 1 do
         sgArmourValues.Cells[j + 1, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].VersusArmorType[j]);
-      sgArmourValues.Cells[13, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Radius);
-      sgArmourValues.Cells[14, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].InfDeath);
+      sgArmourValues.Cells[Structures.armour.ArmourTypeCount + 1, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].Radius);
+      sgArmourValues.Cells[Structures.armour.ArmourTypeCount + 2, i + 1] := IntToStr(Structures.armour.WarheadEntries[i].InfDeath);
     end;
   end else
   if PageControl.ActivePage = PageSpeed then
@@ -3368,10 +3369,10 @@ begin
     // Armour
     for i := 0 to Structures.armour.WarheadCount - 1 do
     begin
-      for j := 0 to Length(Structures.armour.WarheadEntries[i].VersusArmorType) - 1 do
+      for j := 0 to Structures.armour.ArmourTypeCount - 1 do
         Structures.armour.WarheadEntries[i].VersusArmorType[j] := StrToIntDef(sgArmourValues.Cells[j + 1, i + 1], 0);
-      Structures.armour.WarheadEntries[i].Radius := StrToIntDef(sgArmourValues.Cells[13, i + 1], 0);
-      Structures.armour.WarheadEntries[i].InfDeath := StrToIntDef(sgArmourValues.Cells[14, i + 1], 0);
+      Structures.armour.WarheadEntries[i].Radius := StrToIntDef(sgArmourValues.Cells[Structures.armour.ArmourTypeCount + 1, i + 1], 0);
+      Structures.armour.WarheadEntries[i].InfDeath := StrToIntDef(sgArmourValues.Cells[Structures.armour.ArmourTypeCount + 2, i + 1], 0);
     end;
   end else
   if PageControl.ActivePage = PageSpeed then

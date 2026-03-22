@@ -410,6 +410,7 @@ type
     procedure set_tile_attribute_rule(value, not_value: int64);
     function get_tile_attribute_color(value: int64): cardinal;
     procedure set_tile_attributes(tile_index: integer; single_op: boolean);
+    function get_armour_type_color(armour_type: integer): cardinal;
   end;
 
 var
@@ -449,8 +450,8 @@ begin
   imgArmourTypeColors.Canvas.Brush.Style := bsSolid;
   for i := 0 to MAX_ARMOUR_TYPES-1 do
   begin
-    imgArmourTypeColors.Canvas.Pen.Color := fill_area_group_colors[i];
-    imgArmourTypeColors.Canvas.Brush.Color := fill_area_group_colors[i];
+    imgArmourTypeColors.Canvas.Pen.Color := get_armour_type_color(i);
+    imgArmourTypeColors.Canvas.Brush.Color := get_armour_type_color(i);
     imgArmourTypeColors.Canvas.Rectangle(0, i * 13, 13, i * 13 + 13);
   end;
   // Initialize minimap color rules grid
@@ -2196,7 +2197,7 @@ begin
           if cbMarkSelectedItem.Checked then
             mark_tile := Tileset.armour_types[tile_index] = lbArmourTypeList.ItemIndex;
           if mark_tile then
-            color := fill_area_group_colors[Tileset.armour_types[tile_index]];
+            color := get_armour_type_color(Tileset.armour_types[tile_index]);
         end
         else if PageControl.ActivePage = PageColors then
         begin
@@ -2516,6 +2517,19 @@ begin
   Redo1.Enabled := false;
   // Save new tileatr value
   Tileset.set_tile_attributes(tile_index, target_value);
+end;
+
+function TTilesetEditor.get_armour_type_color(armour_type: integer): cardinal;
+var
+  d: integer;
+begin
+  d := armour_type div 16;
+  result := fill_area_group_colors[armour_type mod 16];
+  case d of
+    1: result := result + $1f;
+    2: result := result + $1f00;
+    3: result := result + $1f0000;
+  end;
 end;
 
 end.

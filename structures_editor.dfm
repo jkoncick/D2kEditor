@@ -3957,7 +3957,7 @@ object StructuresEditor: TStructuresEditor
         Width = 849
         Height = 561
         ColCount = 15
-        DefaultColWidth = 51
+        DefaultColWidth = 39
         DefaultRowHeight = 20
         RowCount = 2
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goAlwaysShowEditor, goThumbTracking]

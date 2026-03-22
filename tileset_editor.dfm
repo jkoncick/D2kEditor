@@ -624,7 +624,7 @@ object TilesetEditor: TTilesetEditor
         Left = 682
         Top = 4
         Width = 13
-        Height = 156
+        Height = 832
       end
       object lbArmourTypeList: TListBox
         Left = 697

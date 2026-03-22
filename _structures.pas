@@ -293,8 +293,10 @@ type
 // ARMOUR.BIN file definitions
 // *****************************************************************************
 
-const MAX_WARHEADS = 30;
-const MAX_ARMOUR_TYPES = 12;
+const MAX_ORIG_WARHEADS = 30;
+const MAX_WARHEADS = 64;
+const MAX_ORIG_ARMOUR_TYPES = 12;
+const MAX_ARMOUR_TYPES = 64;
 
 type
   TWarheadEntry = packed record
@@ -640,7 +642,7 @@ type
     group_ids_byte_types: array[0..85] of TGroupIDsByteType;
 
     // Auxiliary variables
-    item_data_pointers: array[0..36] of TItemDataPointers;
+    item_data_pointers: array[0..6 + MAX_WARHEADS] of TItemDataPointers;
     item_type_pointers: array[0..8] of TItemTypePointers;
     art_type_pointers: array[0..5] of TArtTypePointers;
   public
@@ -1295,25 +1297,78 @@ end;
 procedure TStructures.load_armour_bin(force: boolean);
 var
   tmp_filename: String;
+  f: file of byte;
+  i: integer;
 begin
   tmp_filename := find_file('Data\bin\ARMOUR.BIN', 'game');
   if (tmp_filename = '') or ((tmp_filename = armour_bin_filename) and not force) then
     exit;
   armour_bin_filename := tmp_filename;
+
   // Read ARMOUR.BIN file
-  load_binary_file(tmp_filename, armour, sizeof(armour));
+  AssignFile(f, tmp_filename);
+  Reset(f);
+  for i := 0 to MAX_ORIG_WARHEADS - 1 do
+  begin
+    BlockRead(f, armour.WarheadEntries[i].VersusArmorType[0], sizeof(armour.WarheadEntries[i].VersusArmorType[0]) * MAX_ORIG_ARMOUR_TYPES);
+    BlockRead(f, armour.WarheadEntries[i].Radius, sizeof(armour.WarheadEntries[i].Radius));
+    BlockRead(f, armour.WarheadEntries[i].InfDeath, sizeof(armour.WarheadEntries[i].InfDeath));
+  end;
+  BlockRead(f, armour.WarheadStrings[0], sizeof(armour.WarheadStrings[0]) * MAX_ORIG_WARHEADS);
+  BlockRead(f, armour.ArmourTypeStrings[0], sizeof(armour.ArmourTypeStrings[0]) * MAX_ORIG_ARMOUR_TYPES);
+  BlockRead(f, armour.WarheadCount, sizeof(armour.WarheadCount));
+  BlockRead(f, armour.ArmourTypeCount, sizeof(armour.ArmourTypeCount));
+  // Extended data
+  if not Eof(f) then
+  begin
+    for i := 0 to MAX_ORIG_WARHEADS - 1 do
+      BlockRead(f, armour.WarheadEntries[i].VersusArmorType[MAX_ORIG_ARMOUR_TYPES], sizeof(armour.WarheadEntries[i].VersusArmorType[MAX_ORIG_ARMOUR_TYPES]) * (MAX_ARMOUR_TYPES - MAX_ORIG_ARMOUR_TYPES));
+    BlockRead(f, armour.WarheadEntries[MAX_ORIG_WARHEADS], sizeof(armour.WarheadEntries[MAX_ORIG_WARHEADS]) * (MAX_WARHEADS - MAX_ORIG_WARHEADS));
+    BlockRead(f, armour.WarheadStrings[MAX_ORIG_WARHEADS], sizeof(armour.WarheadStrings[MAX_ORIG_WARHEADS]) * (MAX_WARHEADS - MAX_ORIG_WARHEADS));
+    BlockRead(f, armour.ArmourTypeStrings[MAX_ORIG_ARMOUR_TYPES], sizeof(armour.ArmourTypeStrings[MAX_ORIG_ARMOUR_TYPES]) * (MAX_ARMOUR_TYPES - MAX_ORIG_ARMOUR_TYPES));
+  end else
+  begin
+    for i := 0 to MAX_ORIG_WARHEADS - 1 do
+      FillChar(armour.WarheadEntries[i].VersusArmorType[MAX_ORIG_ARMOUR_TYPES], sizeof(armour.WarheadEntries[i].VersusArmorType[MAX_ORIG_ARMOUR_TYPES]) * (MAX_ARMOUR_TYPES - MAX_ORIG_ARMOUR_TYPES), 0);
+    FillChar(armour.WarheadEntries[MAX_ORIG_WARHEADS], sizeof(armour.WarheadEntries[MAX_ORIG_WARHEADS]) * (MAX_WARHEADS - MAX_ORIG_WARHEADS), 0);
+    FillChar(armour.WarheadStrings[MAX_ORIG_WARHEADS], sizeof(armour.WarheadStrings[MAX_ORIG_WARHEADS]) * (MAX_WARHEADS - MAX_ORIG_WARHEADS), 0);
+    FillChar(armour.ArmourTypeStrings[MAX_ORIG_ARMOUR_TYPES], sizeof(armour.ArmourTypeStrings[MAX_ORIG_ARMOUR_TYPES]) * (MAX_ARMOUR_TYPES - MAX_ORIG_ARMOUR_TYPES), 0);
+  end;
+  CloseFile(f);
+
   // Register event in dispatcher
   Dispatcher.register_event(evFLArmourBin);
 end;
 
 
 procedure TStructures.save_armour_bin;
+var
+  f: file of byte;
+  i: integer;
 begin
   if armour_bin_filename = '' then
     exit;
   if not manage_filesave(armour_bin_filename, 'Data\bin\ARMOUR.BIN', evStructuresFilenameChange) then
     exit;
-  save_binary_file(armour_bin_filename, armour, sizeof(armour));
+  AssignFile(f, armour_bin_filename);
+  Rewrite(f);
+  for i := 0 to MAX_ORIG_WARHEADS - 1 do
+  begin
+    BlockWrite(f, armour.WarheadEntries[i].VersusArmorType[0], sizeof(armour.WarheadEntries[i].VersusArmorType[0]) * MAX_ORIG_ARMOUR_TYPES);
+    BlockWrite(f, armour.WarheadEntries[i].Radius, sizeof(armour.WarheadEntries[i].Radius));
+    BlockWrite(f, armour.WarheadEntries[i].InfDeath, sizeof(armour.WarheadEntries[i].InfDeath));
+  end;
+  BlockWrite(f, armour.WarheadStrings[0], sizeof(armour.WarheadStrings[0]) * MAX_ORIG_WARHEADS);
+  BlockWrite(f, armour.ArmourTypeStrings[0], sizeof(armour.ArmourTypeStrings[0]) * MAX_ORIG_ARMOUR_TYPES);
+  BlockWrite(f, armour.WarheadCount, sizeof(armour.WarheadCount));
+  BlockWrite(f, armour.ArmourTypeCount, sizeof(armour.ArmourTypeCount));
+  // Extended data
+  for i := 0 to MAX_ORIG_WARHEADS - 1 do
+    BlockWrite(f, armour.WarheadEntries[i].VersusArmorType[MAX_ORIG_ARMOUR_TYPES], sizeof(armour.WarheadEntries[i].VersusArmorType[MAX_ORIG_ARMOUR_TYPES]) * (MAX_ARMOUR_TYPES - MAX_ORIG_ARMOUR_TYPES));
+  BlockWrite(f, armour.WarheadEntries[MAX_ORIG_WARHEADS], sizeof(armour.WarheadEntries[MAX_ORIG_WARHEADS]) * (MAX_WARHEADS - MAX_ORIG_WARHEADS));
+  BlockWrite(f, armour.WarheadStrings[MAX_ORIG_WARHEADS], sizeof(armour.WarheadStrings[MAX_ORIG_WARHEADS]) * (MAX_WARHEADS - MAX_ORIG_WARHEADS));
+  BlockWrite(f, armour.ArmourTypeStrings[MAX_ORIG_ARMOUR_TYPES], sizeof(armour.ArmourTypeStrings[MAX_ORIG_ARMOUR_TYPES]) * (MAX_ARMOUR_TYPES - MAX_ORIG_ARMOUR_TYPES));
+  CloseFile(f);
 end;
 
 procedure TStructures.load_speed_bin(force: boolean);
