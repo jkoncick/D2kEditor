@@ -89,6 +89,7 @@ type
     paUpdateEventMarkers,
     paUpdateEventAreas,
     paUpdateSideColours,
+    paUpdateArmourList,
     paUpdateSpeedModifiers,
     paUpdateVariableNames,
     paUpdateGameLists,
@@ -187,7 +188,7 @@ begin
     // Structures events
     evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
-    evFLArmourBin:                pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
+    evFLArmourBin:                pact := pact + [paUpdateArmourList, paUpdateStructuresEditor, paUpdateDebugValues];
     evFLSpeedBin:                 pact := pact + [paUpdateSpeedModifiers, paUpdateStructuresEditor, paUpdateDebugValues];
     evFLTechposBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
     evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
@@ -218,7 +219,7 @@ begin
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
-    evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateArmourList, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
   end;
 end;
 
@@ -261,6 +262,7 @@ begin
   if paUpdateEventMarkers       in pact then update_event_markers;
   if paUpdateEventAreas         in pact then update_event_areas;
   if paUpdateSideColours        in pact then MissionDialog.update_side_colors;
+  if paUpdateArmourList         in pact then TilesetEditor.update_armour_list;
   if paUpdateSpeedModifiers     in pact then TilesetEditor.update_speed_modifiers;
   if paUpdateVariableNames      in pact then EventDialog.update_variable_names;
   if paUpdateGameLists          in pact then update_game_lists;

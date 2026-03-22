@@ -245,6 +245,9 @@ type
     clbRestrictions: TCheckListBox;
     rgRestrictionsOperation: TRadioGroup;
     lblPageRestrictionsMouseActions: TLabel;
+    PageArmour: TTabSheet;
+    lbArmourTypeList: TListBox;
+    imgArmourTypeColors: TImage;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -294,6 +297,8 @@ type
     // Hints page actions
     procedure lbTileHintTextClick(Sender: TObject);
     procedure btnTileHintTextClearClick(Sender: TObject);
+    // Armour page actions
+    procedure lbArmourTypeListClick(Sender: TObject);
     // Colors page actions
     procedure sgMinimapColorRulesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
     procedure sgMinimapColorRulesMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
@@ -378,6 +383,7 @@ type
     procedure update_tileset_filenames;
     procedure update_grid_color;
     procedure update_text_list;
+    procedure update_armour_list;
     procedure update_speed_modifiers;
   private
     procedure fill_paint_tile_group_combo_boxes;
@@ -438,6 +444,14 @@ begin
     p.Color := atr_colors_editor[i];
     p.ParentBackground := false;
     p.Parent := PageAttributes;
+  end;
+  // Create armour types color panels
+  imgArmourTypeColors.Canvas.Brush.Style := bsSolid;
+  for i := 0 to MAX_ARMOUR_TYPES-1 do
+  begin
+    imgArmourTypeColors.Canvas.Pen.Color := fill_area_group_colors[i];
+    imgArmourTypeColors.Canvas.Brush.Color := fill_area_group_colors[i];
+    imgArmourTypeColors.Canvas.Rectangle(0, i * 13, 13, i * 13 + 13);
   end;
   // Initialize minimap color rules grid
   sgMinimapColorRules.ColWidths[0] := 20;
@@ -795,6 +809,10 @@ begin
             end;
         end;
       end
+      else if PageControl.ActivePage = PageArmour then
+      begin
+        Tileset.armour_types[tile_index] := Max(lbArmourTypeList.ItemIndex, 0);
+      end
       else if PageControl.ActivePage = PagePaint then
       begin
         if (sgPaintTileGroups.Row >= 5) and (Tileset.paint_tile_lists[sgPaintTileGroups.Row - 5].cnt_tiles < max_paint_tiles) and ((Tileset.attributes_extra[tile_index] and $FF00) = 0) then
@@ -916,6 +934,11 @@ begin
       if i < 7 then
         hint_str := hint_str + #13;
     end;
+  end
+  else if PageControl.ActivePage = PageArmour then
+  begin
+    hint_str := inttostr(Tileset.armour_types[tile_index]) + ' - ' + Structures.armour.ArmourTypeStrings[Tileset.armour_types[tile_index]];
+    show_hint := true;
   end
   else if PageControl.ActivePage = PageColors then
   begin
@@ -1238,6 +1261,12 @@ end;
 procedure TTilesetEditor.btnTileHintTextClearClick(Sender: TObject);
 begin
   lbTileHintText.ItemIndex := -1;
+end;
+
+procedure TTilesetEditor.lbArmourTypeListClick(Sender: TObject);
+begin
+  if cbMarkSelectedItem.Checked then
+    render_tileset;
 end;
 
 procedure TTilesetEditor.sgMinimapColorRulesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
@@ -1736,6 +1765,23 @@ begin
   string_list.Destroy;
 end;
 
+procedure TTilesetEditor.update_armour_list;
+var
+  string_list: TStringList;
+  i: integer;
+  item_index: integer;
+begin
+  string_list := TStringList.Create;
+  for i := 0 to Structures.armour.ArmourTypeCount - 1 do
+    string_list.Add((Format('%.*d - %s', [2, i, Structures.armour.ArmourTypeStrings[i]])));
+  item_index := lbArmourTypeList.ItemIndex;
+  lbArmourTypeList.Items := string_list;
+  lbArmourTypeList.ItemIndex := Min(Max(0, item_index), lbArmourTypeList.Items.Count - 1);
+  lbArmourTypeList.Height := 5 + 13 * Structures.armour.ArmourTypeCount;
+  imgArmourTypeColors.Height := 13 * Structures.armour.ArmourTypeCount;
+  string_list.Destroy;
+end;
+
 procedure TTilesetEditor.update_speed_modifiers;
 var
   value: int64;
@@ -2143,6 +2189,14 @@ begin
               mark_tile := true;
             end;
           end;
+        end
+        else if PageControl.ActivePage = PageArmour then
+        begin
+          mark_tile := true;
+          if cbMarkSelectedItem.Checked then
+            mark_tile := Tileset.armour_types[tile_index] = lbArmourTypeList.ItemIndex;
+          if mark_tile then
+            color := fill_area_group_colors[Tileset.armour_types[tile_index]];
         end
         else if PageControl.ActivePage = PageColors then
         begin

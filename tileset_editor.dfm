@@ -617,6 +617,25 @@ object TilesetEditor: TTilesetEditor
         TabOrder = 1
       end
     end
+    object PageArmour: TTabSheet
+      Caption = 'Armour      '
+      ImageIndex = 8
+      object imgArmourTypeColors: TImage
+        Left = 682
+        Top = 4
+        Width = 13
+        Height = 156
+      end
+      object lbArmourTypeList: TListBox
+        Left = 697
+        Top = 2
+        Width = 184
+        Height = 161
+        ItemHeight = 13
+        TabOrder = 0
+        OnClick = lbArmourTypeListClick
+      end
+    end
     object PageColors: TTabSheet
       Caption = 'Colors       '
       ImageIndex = 3
@@ -1237,7 +1256,7 @@ object TilesetEditor: TTilesetEditor
     OnClick = cbOptionClick
   end
   object MainMenu: TMainMenu
-    Left = 520
+    Left = 560
     object Newtileset1: TMenuItem
       Caption = 'New tileset'
       OnClick = Newtileset1Click
@@ -1290,7 +1309,7 @@ object TilesetEditor: TTilesetEditor
       '*.R8)|*.R8|BMP image (*.bmp)|*.bmp|PNG image (*.png)|*.png'
     InitialDir = '.\tilesets'
     Title = 'Import tileset image'
-    Left = 552
+    Left = 584
   end
   object TilesetImageSaveDialog: TSaveDialog
     DefaultExt = 'png'
@@ -1299,7 +1318,7 @@ object TilesetEditor: TTilesetEditor
       ')|*.R16'
     FilterIndex = 2
     Title = 'Export tileset image'
-    Left = 584
+    Left = 608
   end
   object TilesetPortionOpenDialog: TOpenDialog
     DefaultExt = 'png'
@@ -1308,13 +1327,13 @@ object TilesetEditor: TTilesetEditor
       'p|PNG image (*.png)|*.png'
     InitialDir = '.\tilesets'
     Title = 'Import tileset portion'
-    Left = 616
+    Left = 632
   end
   object TilesetPortionSaveDialog: TSaveDialog
     DefaultExt = 'png'
     Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
     FilterIndex = 2
     Title = 'Export tileset portion'
-    Left = 648
+    Left = 656
   end
 end

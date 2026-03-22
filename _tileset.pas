@@ -199,6 +199,7 @@ type
     attributes_extra: array[0..max_tileset_tiles-1] of cardinal;
     tile_hint_text: array[0..max_tileset_tiles-1] of integer;
     restrictions: array[0..max_tileset_tiles-1] of cardinal;
+    armour_types: array[0..max_tileset_tiles-1] of byte;
 
     extra_attribute_names: array[0..7, 0..31] of char;
 
@@ -466,6 +467,7 @@ begin
   for i := 0 to cnt_tiles - 1 do
     tile_hint_text[i] := -1;
   FillChar(restrictions, sizeof(restrictions), 0);
+  FillChar(armour_types, sizeof(armour_types), 0);
   // Initialize configuration
   FillChar(extra_attribute_names, sizeof(extra_attribute_names), 0);
   minimap_color_rules_used := 1;
@@ -778,6 +780,7 @@ function TTileset.load_tls(p_tileset_name: string; force: boolean): boolean;
 var
   tmp_filename: string;
   tileset_file: file of byte;
+  file_size: integer;
 begin
   result := true;
   // Try to find TLS file
@@ -794,11 +797,22 @@ begin
   // Load tileset file
   AssignFile(tileset_file, tmp_filename);
   Reset(tileset_file);
+  file_size := filesize(tileset_file);
+  if not ((file_size = 89600) or (file_size = 93600)) then
+  begin
+    Dispatcher.register_error('Error loading tileset file', 'The file ' + tmp_filename + ' has incorrect size (' + IntToStr(file_size) + ' bytes)');
+    CloseFile(tileset_file);
+    exit;
+  end;
   BlockRead(tileset_file, header,                     sizeof(header));
   BlockRead(tileset_file, attributes,                 sizeof(attributes));
   BlockRead(tileset_file, attributes_extra,           sizeof(attributes_extra));
   BlockRead(tileset_file, tile_hint_text,             sizeof(tile_hint_text));
   BlockRead(tileset_file, restrictions,               sizeof(restrictions));
+  if file_size > 89600 then
+    BlockRead(tileset_file, armour_types,               sizeof(armour_types))
+  else
+    FillChar(armour_types, sizeof(armour_types), 0);
   BlockRead(tileset_file, extra_attribute_names,      sizeof(extra_attribute_names));
   BlockRead(tileset_file, minimap_color_rules_used,   sizeof(minimap_color_rules_used));
   BlockRead(tileset_file, minimap_color_rules,        sizeof(minimap_color_rules));
@@ -843,6 +857,7 @@ begin
   BlockWrite(tileset_file, attributes_extra,          sizeof(attributes_extra));
   BlockWrite(tileset_file, tile_hint_text,            sizeof(tile_hint_text));
   BlockWrite(tileset_file, restrictions,              sizeof(restrictions));
+  BlockWrite(tileset_file, armour_types,              sizeof(armour_types));
   BlockWrite(tileset_file, extra_attribute_names,     sizeof(extra_attribute_names));
   BlockWrite(tileset_file, minimap_color_rules_used,  sizeof(minimap_color_rules_used));
   BlockWrite(tileset_file, minimap_color_rules,       sizeof(minimap_color_rules));
@@ -947,6 +962,9 @@ begin
       'Please get the latest available version of tileset configuration ini file or fix your file.'#13 +
       'You can get one or ask for help on FED2k forums.'),
       'Tileset configuration warning', MB_ICONWARNING + MB_OK);
+  // Reset data not present in ini
+  FillChar(restrictions, sizeof(restrictions), 0);
+  FillChar(armour_types, sizeof(armour_types), 0);
   // Load extra attributes
   for i := 0 to max_tileset_tiles - 1 do
     attributes_extra[i] := 0;
@@ -1474,6 +1492,7 @@ begin
     attributes_extra[i] := 0;
     tile_hint_text[i] := -1;
     FillChar(restrictions[i], sizeof(restrictions[i]), 0);
+    armour_types[i] := 0;
   end;
   tileimage_modified := true;
   Dispatcher.register_event(evTilesetImageChange);
