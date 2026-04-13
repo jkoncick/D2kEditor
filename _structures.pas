@@ -582,7 +582,6 @@ type
     speed_bin_filename: String;
     techpos_bin_filename: String;
     tiledata_bin_filename: String;
-    sides_ini_filename: String;
     misc_objects_ini_filename: String;
     limits_ini_filename: String;
 
@@ -625,10 +624,6 @@ type
     misc_object_info: array of TMiscObjectInfo;
     adv_crate_misc_object_info: TMiscObjectInfo;
     cnt_misc_objects: integer;
-
-    // Side related data
-    side_names: array[0..CNT_SIDES-1] of string;
-    side_names_short: array[0..CNT_SIDES-1] of string;
 
     // Limits related data
     limit_sandworm_required: boolean;
@@ -688,8 +683,6 @@ type
     procedure load_misc_objects_ini;
     procedure register_misc_objects_in_tiledata;
     function get_misc_object_info_for_special(special: word): TMiscObjectInfoPtr;
-    // Sides related procedures
-    procedure load_sides_ini;
     // Limits related procedures
     procedure load_limits_ini;
     // Group IDs related procedures
@@ -783,7 +776,6 @@ begin
   load_techpos_bin(false);
   load_tiledata_bin;
   load_misc_objects_ini;
-  load_sides_ini;
   load_limits_ini;
   load_group_ids;
   // Initialize item data pointers
@@ -1524,44 +1516,6 @@ begin
     if tiledata_entry.stype = ST_MISC_OBJECT then
       result := Addr(misc_object_info[tiledata_entry.index]);
   end;
-end;
-
-procedure TStructures.load_sides_ini;
-var
-  tmp_filename, tmp_filename2: String;
-  ini: TMemIniFile;
-  i: integer;
-begin
-  // Step 1 - editor's internal file
-  tmp_filename := current_dir + 'config\players.ini';
-  // Step 2 - file under CustomCampaignData folder
-  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\' + MissionIni.ModsFolder + '\config\players.ini';
-  if FileExists(tmp_filename2) then
-    tmp_filename := tmp_filename2;
-  // Step 3 - file under Players folder
-  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\Players\' + MissionIni.PlayersFile;
-  if FileExists(tmp_filename2) then
-    tmp_filename := tmp_filename2;
-  // Check if file exists
-  if not FileExists(tmp_filename) then
-  begin
-    Application.MessageBox('Could not find file config\players.ini', 'Error loading configuration file', MB_OK or MB_ICONERROR);
-    exit;
-  end;
-  // This file is already loaded - do not load it again
-  if tmp_filename = sides_ini_filename then
-    exit;
-  sides_ini_filename := tmp_filename;
-  // Read list of sides
-  ini := TMemIniFile.Create(tmp_filename);
-  for i := 0 to CNT_SIDES-1 do
-  begin
-    side_names[i] := ini.ReadString('Player'+inttostr(i), 'name', 'Unnamed');
-    side_names_short[i] := ini.ReadString('Player'+inttostr(i), 'short', side_names[i]);
-  end;
-  ini.Destroy;
-  // Register event in dispatcher
-  Dispatcher.register_event(evFLSidesIni);
 end;
 
 procedure TStructures.load_limits_ini;

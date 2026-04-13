@@ -1326,7 +1326,7 @@ begin
         if (event.arg_var_flags and 1) <> 0 then
           tmp_hint := tmp_hint + Mission.get_variable_name(event.side, 1, event_index) + ' '
         else
-          tmp_hint := tmp_hint + IfThen(event.side < 8, Structures.side_names[event.side], 'Any') + ' ';
+          tmp_hint := tmp_hint + IfThen(event.side < 8, MissionIni.get_side_name(event.side), 'Any') + ' ';
       end;
       tmp_hint := tmp_hint + Mission.get_event_contents(event_index);
     end;

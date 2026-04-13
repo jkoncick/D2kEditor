@@ -19,6 +19,7 @@ type
     evMisDefenceAreaChange,
     // Mission ini events
     evMissionIniLoad,
+    evMissionIniSideNameChange,
     evMissionIniCustomTextChange,
     // Tileset events
     evFLLTilesetList,
@@ -42,7 +43,6 @@ type
     evFLTechposBin,
     evFLTiledataBin,
     evFLMiscObjectsIni,
-    evFLSidesIni,
     evStructuresFilenameChange,
     evStructuresImportItem,
     // StructGraphics events
@@ -145,7 +145,7 @@ var
 implementation
 
 uses
-  Windows, Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, _renderer, main, set_dialog,
+  Windows, Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, _missionini, _renderer, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
   tileset_editor, structures_editor, debug_window;
@@ -169,7 +169,8 @@ begin
     evMisEventAreaChange:         pact := pact + [paUpdateEventAreas];
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
     // Mission ini events
-    evMissionIniLoad:             pact := pact + [paUpdateMissionIniData, paUpdateEventDialog, paUpdateVariableNames];
+    evMissionIniLoad:             pact := pact + [paUpdateSideList, paUpdateMissionIniData, paUpdateEventDialog, paUpdateVariableNames];
+    evMissionIniSideNameChange:   pact := pact + [paUpdateSideList, paUpdateEventDialog];
     evMissionIniCustomTextChange: pact := pact + [paUpdateEventDialog];
     // Tileset events
     evFLLTilesetList:             pact := pact + [paUpdateTilesetList];
@@ -193,7 +194,6 @@ begin
     evFLTechposBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
     evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
-    evFLSidesIni:                 pact := pact + [paUpdateSideList, paUpdateEventDialog, paUpdateDebugValues];
     evStructuresFilenameChange:   pact := pact + [paUpdateDebugValues];
     evStructuresImportItem:       pact := pact + [paUpdateStructuresEditor];
     // StructGraphics events
@@ -310,7 +310,7 @@ var
 begin
   side_list := TStringList.Create;
   for i := 0 to CNT_SIDES - 1 do
-    side_list.Add(inttostr(i) + ' - ' + Structures.side_names[i]);
+    side_list.Add(inttostr(i) + ' - ' + MissionIni.get_side_name(i));
   MainWindow.update_side_list(side_list);
   SetDialog.update_side_list(side_list);
   TestMapDialog.update_side_list(side_list);

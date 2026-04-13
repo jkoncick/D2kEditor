@@ -36,7 +36,7 @@ var
 
 implementation
 
-uses _mission;
+uses _mission, _missionini;
 
 {$R *.dfm}
 
@@ -183,7 +183,7 @@ var
   i: integer;
 begin
   for i := 0 to CNT_SIDES - 1 do
-    StatsGrid.Cells[i+1,0] := Structures.side_names[i];
+    StatsGrid.Cells[i+1,0] := MissionIni.get_side_name(i);
 end;
 
 end.

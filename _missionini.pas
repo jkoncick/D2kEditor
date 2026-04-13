@@ -3,7 +3,7 @@ unit _missionini;
 interface
 
 uses
-  StdCtrls, ValEdit, IniFiles, Classes, _mission;
+  StdCtrls, ValEdit, IniFiles, Classes, _mission, _utils;
 
 const MAX_VARIABLES = 256;
 
@@ -20,7 +20,9 @@ type
     // Rules
     rules_ini_filename: string;
     rules: array of TRuleDefinition;
-
+    // Side names
+    side_names_ini_filename: String;
+    side_names_default: array[0..CNT_SIDES-1] of string;
     // Mission ini file related data
     mission_ini_filename: string;
     mission_ini_assigned: boolean;
@@ -36,7 +38,6 @@ type
     CampaignFolder: string;
     ModsFolder: string;
     ColoursFile: string;
-    PlayersFile: string;
     IntelId: string;
     // Vars section
     RuleValueList: TValueListEditor;
@@ -47,10 +48,13 @@ type
     condition_notes: array[0..MAX_CONDITIONS-1] of String;
     // Variables section
     variable_names: array[0..MAX_VARIABLES] of String;
+    // Sides section
+    side_names: array[0..CNT_SIDES-1] of string;
 
   public
     procedure init;
     procedure load_rules_ini;
+    procedure load_side_names_ini;
     procedure init_controls(briefing_memo: TMemo; rule_value_list, text_value_list: TValueListEditor);
     // Loading and saving procedures
     procedure load_mission_ini(map_filename: String);
@@ -69,13 +73,17 @@ type
     // Variable name related procedures
     function get_variable_name(index: integer; brackets: integer): string;
     function set_variable_name(index: integer; name: string): boolean;
+    // Side name related procedures
+    function get_side_name(index: integer): string;
+    function get_side_name_short(index: integer): string;
+    procedure set_side_name(index: integer; name: string);
+    procedure set_side_name_default(index: integer);
     // Data manipulation procedures
     procedure set_side_id(value: integer);
     procedure set_mission_number(value: integer);
     procedure set_campaign_folder(value: string);
     procedure set_mods_folder(value: string);
     procedure set_colours_file(value: string);
-    procedure set_players_file(value: string);
     procedure set_text_uib(value: string);
   private
     procedure load_custom_campaign_data_files(load_tilesets: boolean);
@@ -86,15 +94,15 @@ var
 
 implementation
 
-uses Windows, SysUtils, StrUtils, Math, Forms, _utils, _dispatcher, _tileset, _structures, _graphics, _sounds, _stringtable, _launcher, _eventconfig;
+uses Windows, SysUtils, StrUtils, Math, Forms, _dispatcher, _tileset, _structures, _graphics, _sounds, _stringtable, _launcher, _eventconfig;
 
 { TMissionIni }
 
 procedure TMissionIni.init;
 
 begin
-  // Load rule definitions from ini file
   load_rules_ini;
+  load_side_names_ini;
   // Initialize with default mission ini file data
   reset_mission_ini_data;
 end;
@@ -123,6 +131,25 @@ begin
   end;
   ini.Destroy;
   tmp_strings.Destroy;
+end;
+
+procedure TMissionIni.load_side_names_ini;
+var
+  tmp_filename: String;
+  ini: TMemIniFile;
+  i: integer;
+begin
+  // Find side_names.ini file
+  tmp_filename := find_file('config\side_names.ini', 'configuration');
+  if (tmp_filename = '') or (tmp_filename = side_names_ini_filename) then
+    exit;
+  side_names_ini_filename := tmp_filename;
+  // Load side_names.ini file
+  ini := TMemIniFile.Create(tmp_filename);
+  for i := 0 to CNT_SIDES - 1 do
+    side_names_default[i] := ini.ReadString('Sides',IntToStr(i),'');
+  ini.Destroy;
+  Dispatcher.register_event(evMissionIniSideNameChange);
 end;
 
 procedure TMissionIni.init_controls(briefing_memo: TMemo; rule_value_list, text_value_list: TValueListEditor);
@@ -171,7 +198,6 @@ begin
   CampaignFolder := ini.ReadString('Data','CampaignFolder','');
   ModsFolder :=     ini.ReadString('Data','ModsFolder','');
   ColoursFile :=    ini.ReadString('Data','ColoursFile','');
-  PlayersFile :=    ini.ReadString('Data','PlayersFile','');
   IntelId :=        ini.ReadString('Data','IntelId','');
   // Load Vars section
   tmp_strings.Clear;
@@ -192,6 +218,9 @@ begin
   // Load Variables section
   for i := 0 to Length(variable_names) - 1 do
     variable_names[i] := ini.ReadString('Variables', inttostr(i), '');
+  // Load Sides section
+  for i := 0 to CNT_SIDES - 1 do
+    side_names[i] := ini.ReadString('Sides', inttostr(i), side_names_default[i]);
   // Loading is done - clean up
   tmp_strings.Destroy;
   ini.Destroy;
@@ -241,7 +270,6 @@ begin
   if CampaignFolder = '' then ini.DeleteKey('Data','CampaignFolder') else ini.WriteString('Data','CampaignFolder',CampaignFolder);
   if ModsFolder = ''     then ini.DeleteKey('Data','ModsFolder')     else ini.WriteString('Data','ModsFolder',ModsFolder);
   if ColoursFile = ''    then ini.DeleteKey('Data','ColoursFile')    else ini.WriteString('Data','ColoursFile',ColoursFile);
-  if PlayersFile = ''    then ini.DeleteKey('Data','PlayersFile')    else ini.WriteString('Data','PlayersFile',PlayersFile);
   if IntelId = ''        then ini.DeleteKey('Data','IntelId')        else ini.WriteString('Data','IntelId',IntelId);
   // Save Vars section
   ini.EraseSection('Vars');
@@ -264,6 +292,12 @@ begin
   for i := 0 to Length(variable_names) - 1 do
     if variable_names[i] <> '' then
       ini.WriteString('Variables', inttostr(i), variable_names[i]);
+  // Save Sides section
+  for i := 0 to CNT_SIDES - 1 do
+    if side_names[i] <> side_names_default[i] then
+      ini.WriteString('Sides', inttostr(i), side_names[i])
+    else
+      ini.DeleteKey('Sides', inttostr(i));
   // Saving is done
   ini.UpdateFile;
   ini.Destroy;
@@ -303,7 +337,6 @@ begin
   CampaignFolder := '';
   ModsFolder := '';
   ColoursFile := '';
-  PlayersFile := '';
   IntelId := '';
   // Clear Vars section
   reset_rules_to_defaults;
@@ -317,6 +350,9 @@ begin
   // Clear variable names
   for i := 0 to Length(variable_names) - 1 do
     variable_names[i] := '';
+  // Clear side names
+  for i := 0 to CNT_SIDES - 1 do
+    side_names[i] := side_names_default[i];
 end;
 
 procedure TMissionIni.reset_rules_to_defaults;
@@ -551,6 +587,44 @@ begin
   end;
 end;
 
+function TMissionIni.get_side_name(index: integer): string;
+begin
+  result := side_names[index];
+end;
+
+function TMissionIni.get_side_name_short(index: integer): string;
+var
+  tmp_name: string;
+  i, len: integer;
+begin
+  tmp_name := get_side_name(index);
+  if tmp_name = '' then
+  begin
+    result := '';
+    exit;
+  end;
+  len := 5;
+  for i := 4 to 5 do
+    if (tmp_name[i] = 'a') or (tmp_name[i] = 'e') or (tmp_name[i] = 'i') or (tmp_name[i] = 'o') or (tmp_name[i] = 'u') or (tmp_name[i] = 'y') then
+    begin
+      len := i - 1;
+      break;
+    end;
+  result := Copy(tmp_name, 0, len);
+end;
+
+procedure TMissionIni.set_side_name(index: integer; name: string);
+begin
+  side_names[index] := name;
+  Dispatcher.register_event(evMissionIniSideNameChange);
+end;
+
+procedure TMissionIni.set_side_name_default(index: integer);
+begin
+  side_names[index] := side_names_default[index];
+  Dispatcher.register_event(evMissionIniSideNameChange);
+end;
+
 procedure TMissionIni.set_side_id(value: integer);
 begin
   SideId := value;
@@ -581,12 +655,6 @@ begin
   StructGraphics.load_colours_bin;
 end;
 
-procedure TMissionIni.set_players_file(value: string);
-begin
-  PlayersFile := value;
-  Structures.load_sides_ini;
-end;
-
 procedure TMissionIni.set_text_uib(value: string);
 begin
   TextUib := value;
@@ -605,7 +673,6 @@ begin
   Structures.load_techpos_bin(false);
   Structures.load_tiledata_bin;
   Structures.load_misc_objects_ini;
-  Structures.load_sides_ini;
   Structures.load_limits_ini;
   Structures.load_group_ids;
   StructGraphics.load_colours_bin;

@@ -70,21 +70,21 @@ type
     cbCampaignFolder: TComboBox;
     lblMapIntelId: TLabel;
     edMapIntelId: TEdit;
-    lblPlayersIni: TLabel;
-    cbPlayersIni: TComboBox;
     btnModsFolderOpen: TButton;
     sbShowAIHelp: TSpeedButton;
     pnAIHelp: TPanel;
     lblAIHelp: TLabel;
+    lblSideName: TLabel;
     // Form events
     procedure FormCreate(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     // Mission data editor events
     procedure seTechLevelAllChange(Sender: TObject);
     procedure edStartingMoneyAllChange(Sender: TObject);
     procedure btnHouseIDResetClick(Sender: TObject);
     procedure btnAllegianceResetClick(Sender: TObject);
+    procedure side_name_change(Sender: TObject);
+    procedure side_name_reset(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure tech_level_change(Sender: TObject);
     procedure starting_money_change(Sender: TObject);
     procedure house_id_change(Sender: TObject);
@@ -113,14 +113,13 @@ type
     procedure cbCampaignFolderChange(Sender: TObject);
     procedure cbModsFolderChange(Sender: TObject);
     procedure cbColoursBinChange(Sender: TObject);
-    procedure cbPlayersIniChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
     procedure btnModsFolderOpenClick(Sender: TObject);
     procedure MapBriefingEnter(Sender: TObject);
     procedure MapBriefingExit(Sender: TObject);
   private
     // Dynamic controls
-    side_label: array[0..CNT_SIDES-1] of TLabel;
+    side_name: array[0..CNT_SIDES-1] of TEdit;
     tech_level: array[0..CNT_SIDES-1] of TSpinEdit;
     starting_money: array[0..CNT_SIDES-1] of TEdit;
     house_id: array[0..CNT_SIDES-1] of TSpinEdit;
@@ -163,15 +162,20 @@ begin
   for i := 0 to CNT_SIDES-1 do
   begin
     // Initialize side labels
-    side_label[i] := TLabel.Create(self);
-    side_label[i].Left := 8;
-    side_label[i].Top := 28 + i * 24;
-    side_label[i].Parent := SideSettingsPanel;
+    side_name[i] := TEdit.Create(self);
+    side_name[i].Left := 8;
+    side_name[i].Top := 24 + i * 24;
+    side_name[i].Width := 76;
+    side_name[i].Tag := i;
+    side_name[i].ReadOnly := true;
+    side_name[i].Parent := SideSettingsPanel;
+    side_name[i].OnChange := side_name_change;
+    side_name[i].OnKeyDown := side_name_reset;
     // Initialize tech levels
     tech_level[i] := TSpinEdit.Create(self);
-    tech_level[i].Left := 80;
+    tech_level[i].Left := 88;
     tech_level[i].Top := 24 + i * 24;
-    tech_level[i].Width := 48;
+    tech_level[i].Width := 44;
     tech_level[i].Height := 22;
     tech_level[i].MinValue := 0;
     tech_level[i].MaxValue := 255;
@@ -181,7 +185,7 @@ begin
     tech_level[i].OnChange := tech_level_change;
     // Initialize Starting money
     starting_money[i] := TEdit.Create(self);
-    starting_money[i].Left := 132;
+    starting_money[i].Left := 136;
     starting_money[i].Top := 24 + i * 24;
     starting_money[i].Width := 56;
     starting_money[i].Height := 22;
@@ -191,9 +195,9 @@ begin
     starting_money[i].OnChange := starting_money_change;
     // Initialize house ID
     house_id[i] := TSpinEdit.Create(self);
-    house_id[i].Left := 192;
+    house_id[i].Left := 196;
     house_id[i].Top := 24 + i * 24;
-    house_id[i].Width := 48;
+    house_id[i].Width := 44;
     house_id[i].Height := 22;
     house_id[i].MinValue := 0;
     house_id[i].MaxValue := 255;
@@ -305,6 +309,19 @@ begin
       allegiance_btn[i,j].Caption := allegiance_type[Mission.allegiance[i,j]];
       allegiance_btn[i,j].Font.Color := allegiance_type_color[Mission.allegiance[i,j]];
     end;
+end;
+
+procedure TMissionDialog.side_name_change(Sender: TObject);
+begin
+  if loading then
+    exit;
+  MissionIni.set_side_name((Sender as TEdit).Tag, (Sender as TEdit).Text);
+end;
+
+procedure TMissionDialog.side_name_reset(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (key = 8) and ((Sender as TEdit).Text = '') then
+    MissionIni.set_side_name_default((Sender as TEdit).Tag);
 end;
 
 procedure TMissionDialog.tech_level_change(Sender: TObject);
@@ -573,16 +590,6 @@ begin
       FindClose(SR);
   end;
   cbColoursBin.Items := tmp_strings;
-  // Load list of Players.ini files
-  tmp_strings.Clear;
-  if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\Players\*.ini', 0, SR) = 0 then
-  begin
-    repeat
-      tmp_strings.Add(SR.Name);
-    until FindNext(SR) <> 0;
-      FindClose(SR);
-  end;
-  cbPlayersIni.Items := tmp_strings;
   tmp_strings.Destroy;
 
   if not loading then
@@ -597,11 +604,6 @@ end;
 procedure TMissionDialog.cbColoursBinChange(Sender: TObject);
 begin
   MissionIni.set_colours_file(cbColoursBin.Text);
-end;
-
-procedure TMissionDialog.cbPlayersIniChange(Sender: TObject);
-begin
-  MissionIni.set_players_file(cbPlayersIni.Text);
 end;
 
 procedure TMissionDialog.cbTextUibChange(Sender: TObject);
@@ -629,16 +631,20 @@ procedure TMissionDialog.update_side_list(side_list: TStringList);
 var
   i: integer;
   prev_index: integer;
+  name: string;
 begin
+  loading := true;
   prev_index := cbMapSideId.ItemIndex;
   cbMapSideId.Items := side_list;
   cbMapSideId.ItemIndex := prev_index;
   for i := 0 to CNT_SIDES-1 do
   begin
-    side_label[i].Caption := Structures.side_names[i];
-    side_label_alleg[i].Caption := IfThen(Length(Structures.side_names[i]) <= 8, Structures.side_names[i], Copy(Structures.side_names[i], 0, 6)+'.');
-    AITabControl.Tabs[i] := Structures.side_names_short[i];
+    name := MissionIni.get_side_name(i);
+    side_name[i].Text := name;
+    side_label_alleg[i].Caption := IfThen(Length(name) <= 8, name, Copy(name, 0, 6)+'.');
+    AITabControl.Tabs[i] := MissionIni.get_side_name_short(i);
   end;
+  loading := false;
 end;
 
 procedure TMissionDialog.update_side_colors;
@@ -722,11 +728,14 @@ end;
 procedure TMissionDialog.update_mission_ini_data;
 var
   status: boolean;
+  i: integer;
 begin
   loading := true;
   status := MissionIni.mission_ini_assigned;
 
   cbUseINI.Checked := status;
+  for i := 0 to CNT_SIDES - 1 do
+    side_name[i].ReadOnly := not status;
   btnResetToDefaults.Enabled := status;
   btnRefreshStrings.Enabled := status;
   edMapName.Enabled := status;
@@ -749,8 +758,6 @@ begin
   cbModsFolder.Text := MissionIni.ModsFolder;
   cbColoursBin.Enabled := status;
   cbColoursBin.Text := MissionIni.ColoursFile;
-  cbPlayersIni.Enabled := status;
-  cbPlayersIni.Text := MissionIni.PlayersFile;
   edMapIntelId.Enabled := status;
   edMapIntelId.Text := MissionIni.IntelId;
   RuleValueList.Enabled := status;

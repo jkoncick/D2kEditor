@@ -17,7 +17,6 @@ type
     campaign_folder: String;
     mods_folder: String;
     colours_file: String;
-    players_file: String;
     intel_id: String;
     tileset: String;
   end;
@@ -126,7 +125,6 @@ begin
     mission_data[i].campaign_folder := ini.ReadString('Data', 'CampaignFolder', '');
     mission_data[i].mods_folder := ini.ReadString('Data', 'ModsFolder', '');
     mission_data[i].colours_file := ini.ReadString('Data', 'ColoursFile', '');
-    mission_data[i].players_file := ini.ReadString('Data', 'PlayersFile', '');
     mission_data[i].intel_id := ini.ReadString('Data', 'IntelId', '');
     ini.Destroy;
     // Load mission tileset from MIS file

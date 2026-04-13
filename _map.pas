@@ -141,7 +141,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _settings, main, _launcher, _dispatcher, _eventconfig;
+uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _missionini, _settings, main, _launcher, _dispatcher, _eventconfig;
 
 procedure TMap.load_map(filename: String);
 var
@@ -820,14 +820,14 @@ begin
     num_structures := map_stats.sides[side].num_structures;
     if num_structures > Structures.limit_structures_per_side then
     begin
-      errmsg := format('You placed %d structures for side %s on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures, Structures.side_names[side], Structures.limit_structures_per_side]);
+      errmsg := format('You placed %d structures for side %s on map, which is more than game''s limit of %d.'#13'Remove some buildings or units.', [num_structures, MissionIni.get_side_name(side), Structures.limit_structures_per_side]);
       break;
     end;
     // Number of new harvester deliveries
     num_new_harv_deliveries := map_stats.sides[side].num_new_harv_deliveries;
     if num_new_harv_deliveries > Structures.limit_refineries_per_side then
     begin
-      errmsg := format('You placed %d refineries with new harvester delivery for side %s on map, which is more than game''s limit of %d.'#13'Remove some refineries or change them to be without new harvester delivery.', [num_new_harv_deliveries, Structures.side_names[side], Structures.limit_refineries_per_side]);
+      errmsg := format('You placed %d refineries with new harvester delivery for side %s on map, which is more than game''s limit of %d.'#13'Remove some refineries or change them to be without new harvester delivery.', [num_new_harv_deliveries, MissionIni.get_side_name(side), Structures.limit_refineries_per_side]);
       break;
     end;
   end;

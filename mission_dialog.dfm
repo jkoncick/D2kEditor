@@ -37,21 +37,21 @@ object MissionDialog: TMissionDialog
       BevelOuter = bvNone
       TabOrder = 0
       object lblTechLevel: TLabel
-        Left = 80
+        Left = 88
         Top = 8
-        Width = 38
+        Width = 25
         Height = 13
-        Caption = 'Tech lvl'
+        Caption = 'Tech'
       end
       object lblStartingMoney: TLabel
-        Left = 132
+        Left = 136
         Top = 8
         Width = 32
         Height = 13
         Caption = 'Credits'
       end
       object lblHouseID: TLabel
-        Left = 192
+        Left = 196
         Top = 8
         Width = 45
         Height = 13
@@ -143,7 +143,7 @@ object MissionDialog: TMissionDialog
       end
       object lblTextUib: TLabel
         Left = 440
-        Top = 392
+        Top = 368
         Width = 57
         Height = 13
         Caption = 'Text.uib file:'
@@ -176,17 +176,17 @@ object MissionDialog: TMissionDialog
         Height = 13
         Caption = 'Intel ID:'
       end
-      object lblPlayersIni: TLabel
-        Left = 440
-        Top = 368
-        Width = 66
+      object lblSideName: TLabel
+        Left = 8
+        Top = 8
+        Width = 52
         Height = 13
-        Caption = 'Players.ini file:'
+        Caption = 'Side Name'
       end
       object seTechLevelAll: TSpinEdit
-        Left = 80
+        Left = 88
         Top = 224
-        Width = 49
+        Width = 45
         Height = 22
         MaxValue = 255
         MinValue = 0
@@ -195,7 +195,7 @@ object MissionDialog: TMissionDialog
         OnChange = seTechLevelAllChange
       end
       object edStartingMoneyAll: TEdit
-        Left = 132
+        Left = 136
         Top = 224
         Width = 57
         Height = 21
@@ -204,9 +204,9 @@ object MissionDialog: TMissionDialog
         OnChange = edStartingMoneyAllChange
       end
       object btnHouseIDReset: TButton
-        Left = 192
+        Left = 196
         Top = 224
-        Width = 65
+        Width = 61
         Height = 22
         Caption = 'Reset'
         TabOrder = 3
@@ -222,9 +222,9 @@ object MissionDialog: TMissionDialog
         OnClick = btnAllegianceResetClick
       end
       object edTimeLimit: TEdit
-        Left = 80
+        Left = 88
         Top = 256
-        Width = 89
+        Width = 81
         Height = 21
         TabOrder = 1
         Text = '0'
@@ -340,7 +340,7 @@ object MissionDialog: TMissionDialog
       end
       object cbTextUib: TComboBox
         Left = 520
-        Top = 390
+        Top = 366
         Width = 161
         Height = 21
         Enabled = False
@@ -387,23 +387,13 @@ object MissionDialog: TMissionDialog
         TabOrder = 20
         OnChange = MissionIniPropertyChange
       end
-      object cbPlayersIni: TComboBox
-        Left = 520
-        Top = 366
-        Width = 161
-        Height = 21
-        Enabled = False
-        ItemHeight = 13
-        TabOrder = 21
-        OnChange = cbPlayersIniChange
-      end
       object btnModsFolderOpen: TButton
         Left = 336
         Top = 293
         Width = 97
         Height = 22
         Caption = 'Open Mods folder'
-        TabOrder = 22
+        TabOrder = 21
         OnClick = btnModsFolderOpenClick
       end
       object pnAIHelp: TPanel
@@ -411,7 +401,7 @@ object MissionDialog: TMissionDialog
         Top = 0
         Width = 432
         Height = 289
-        TabOrder = 23
+        TabOrder = 22
         Visible = False
         object lblAIHelp: TLabel
           Left = 8

@@ -14,7 +14,7 @@ type
     shown: boolean;
   end;
 
-const mission_grid_column_definitions: array[0..11] of TMissionGridColumnDefinition =
+const mission_grid_column_definitions: array[0..10] of TMissionGridColumnDefinition =
   (
     (name: 'File name';       short: '';   width: 160; shown: false),
     (name: 'Mission name';    short: '';   width: 256; shown: true),
@@ -24,7 +24,6 @@ const mission_grid_column_definitions: array[0..11] of TMissionGridColumnDefinit
     (name: 'Campaign folder'; short: '';   width: 80;  shown: true),
     (name: 'Mods folder';     short: '';   width: 80;  shown: true),
     (name: 'Colours.bin';     short: '';   width: 80;  shown: false),
-    (name: 'Players.ini';     short: '';   width: 80;  shown: false),
     (name: 'Text.uib';        short: '';   width: 80;  shown: true),
     (name: 'Intel ID';        short: '';   width: 80;  shown: false),
     (name: 'Tileset';         short: '';   width: 64;  shown: true)
@@ -216,10 +215,9 @@ begin
           5: sgMissionList.Cells[col, i + 1] := campaign_folder;
           6: sgMissionList.Cells[col, i + 1] := mods_folder;
           7: sgMissionList.Cells[col, i + 1] := colours_file;
-          8: sgMissionList.Cells[col, i + 1] := players_file;
-          9: sgMissionList.Cells[col, i + 1] := text_uib;
-          10: sgMissionList.Cells[col, i + 1] := intel_id;
-          11: sgMissionList.Cells[col, i + 1] := tileset;
+          8: sgMissionList.Cells[col, i + 1] := text_uib;
+          9: sgMissionList.Cells[col, i + 1] := intel_id;
+          10: sgMissionList.Cells[col, i + 1] := tileset;
         end;
       inc(col);
     end;

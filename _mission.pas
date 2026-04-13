@@ -940,8 +940,8 @@ begin
     ltCustom: result := value_list[value];
     ltGame: result := GameLists.get_list_ref(game_list_type)[value];
     ltItem: case item_list_type of
-      ilSides: result := Structures.side_names[value];
-      ilSidesAny: if value < 8 then result := Structures.side_names[value] else result := 'Any';
+      ilSides: result := MissionIni.get_side_name(value);
+      ilSidesAny: if value < 8 then result := MissionIni.get_side_name(value) else result := 'Any';
       ilSounds: result := StringTable.get_sample(value);
       ilBuildings: result := Structures.get_building_name_str(value);
       ilBuildingGroups: result := Structures.get_building_group_str(value);
@@ -1851,7 +1851,7 @@ begin
   begin
     if (ai_segments[i, 1] = 1) and ((tech_level[i] = 0) or (starting_money[i] = 0)) then
     begin
-      result := format('Sides with active AI must have non-zero tech level and credits. Side ''%s'' does not meet this requirement.', [Structures.side_names[i]]);
+      result := format('Sides with active AI must have non-zero tech level and credits. Side ''%s'' does not meet this requirement.', [MissionIni.get_side_name(i)]);
       exit;
     end;
   end;
