@@ -202,6 +202,7 @@ type
     armour_types: array[0..max_tileset_tiles-1] of byte;
 
     extra_attribute_names: array[0..7, 0..31] of char;
+    tile_hint_custom_strings: array[0..31, 0..31] of char;
 
     minimap_color_rules_used: integer;
     minimap_color_rules: array[0..max_minimap_color_rules-1] of TMinimapColorRule;
@@ -470,6 +471,7 @@ begin
   FillChar(armour_types, sizeof(armour_types), 0);
   // Initialize configuration
   FillChar(extra_attribute_names, sizeof(extra_attribute_names), 0);
+  FillChar(tile_hint_custom_strings, sizeof(tile_hint_custom_strings), 0);
   minimap_color_rules_used := 1;
   FillChar(minimap_color_rules, sizeof(minimap_color_rules), 0);
   fill_area_rules_used := 1;
@@ -798,7 +800,7 @@ begin
   AssignFile(tileset_file, tmp_filename);
   Reset(tileset_file);
   file_size := filesize(tileset_file);
-  if not ((file_size = 89600) or (file_size = 93600)) then
+  if not ((file_size = 89600) or (file_size = 93600) or (file_size = 94624)) then
   begin
     Dispatcher.register_error('Error loading tileset file', 'The file ' + tmp_filename + ' has incorrect size (' + IntToStr(file_size) + ' bytes)');
     CloseFile(tileset_file);
@@ -810,10 +812,14 @@ begin
   BlockRead(tileset_file, tile_hint_text,             sizeof(tile_hint_text));
   BlockRead(tileset_file, restrictions,               sizeof(restrictions));
   if file_size > 89600 then
-    BlockRead(tileset_file, armour_types,               sizeof(armour_types))
+    BlockRead(tileset_file, armour_types,             sizeof(armour_types))
   else
     FillChar(armour_types, sizeof(armour_types), 0);
   BlockRead(tileset_file, extra_attribute_names,      sizeof(extra_attribute_names));
+  if file_size > 93600 then
+    BlockRead(tileset_file, tile_hint_custom_strings, sizeof(tile_hint_custom_strings))
+  else
+    FillChar(tile_hint_custom_strings, sizeof(tile_hint_custom_strings), 0);
   BlockRead(tileset_file, minimap_color_rules_used,   sizeof(minimap_color_rules_used));
   BlockRead(tileset_file, minimap_color_rules,        sizeof(minimap_color_rules));
   BlockRead(tileset_file, fill_area_rules_used,       sizeof(fill_area_rules_used));
@@ -859,6 +865,7 @@ begin
   BlockWrite(tileset_file, restrictions,              sizeof(restrictions));
   BlockWrite(tileset_file, armour_types,              sizeof(armour_types));
   BlockWrite(tileset_file, extra_attribute_names,     sizeof(extra_attribute_names));
+  BlockWrite(tileset_file, tile_hint_custom_strings,  sizeof(tile_hint_custom_strings));
   BlockWrite(tileset_file, minimap_color_rules_used,  sizeof(minimap_color_rules_used));
   BlockWrite(tileset_file, minimap_color_rules,       sizeof(minimap_color_rules));
   BlockWrite(tileset_file, fill_area_rules_used,      sizeof(fill_area_rules_used));
@@ -965,6 +972,7 @@ begin
   // Reset data not present in ini
   FillChar(restrictions, sizeof(restrictions), 0);
   FillChar(armour_types, sizeof(armour_types), 0);
+  FillChar(tile_hint_custom_strings, sizeof(tile_hint_custom_strings), 0);
   // Load extra attributes
   for i := 0 to max_tileset_tiles - 1 do
     attributes_extra[i] := 0;

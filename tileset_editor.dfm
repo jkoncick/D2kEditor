@@ -538,13 +538,13 @@ object TilesetEditor: TTilesetEditor
       ImageIndex = 2
       object lblPageHintsMouseActions: TLabel
         Left = 892
-        Top = 32
+        Top = 556
         Width = 197
-        Height = 65
+        Height = 53
         AutoSize = False
         Caption = 
-          'Mouse actions:'#13'Left = Modify tile'#13'Right = Select tile'#13'Middle = U' +
-          'nselect tile'#13'Hold Shift+Left to make a selection'
+          'Left = Set tile hint'#13'Right = Remove tile hint'#13'Middle = Select ti' +
+          'le'#13'Hold Shift+Left to make a selection'
       end
       object lbTileHintText: TListBox
         Left = 680
@@ -555,14 +555,24 @@ object TilesetEditor: TTilesetEditor
         TabOrder = 0
         OnClick = lbTileHintTextClick
       end
-      object btnTileHintTextClear: TButton
+      object vleTileHintCustomStrings: TValueListEditor
         Left = 892
         Top = 2
-        Width = 75
-        Height = 25
-        Caption = 'Clear'
+        Width = 201
+        Height = 547
+        DefaultColWidth = 20
+        DefaultRowHeight = 16
+        DisplayOptions = [doAutoColResize, doKeyColFixed]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goAlwaysShowEditor, goThumbTracking]
+        ScrollBars = ssHorizontal
         TabOrder = 1
-        OnClick = btnTileHintTextClearClick
+        OnMouseWheelDown = FormMouseWheelDown
+        OnMouseWheelUp = FormMouseWheelUp
+        OnSelectCell = vleTileHintCustomStringsSelectCell
+        OnSetEditText = vleTileHintCustomStringsSetEditText
+        ColWidths = (
+          20
+          175)
       end
     end
     object PageRestrictions: TTabSheet

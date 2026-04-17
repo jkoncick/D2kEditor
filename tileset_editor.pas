@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ComCtrls, Menus, StdCtrls, CheckLst, XPMan, Math,
-  Buttons, IniFiles, StrUtils, _tileset, Spin, Grids;
+  Buttons, IniFiles, StrUtils, _tileset, Spin, Grids, ValEdit;
 
 const num_tileatr_values = 8;
 const max_undo_steps = 4095;
@@ -170,7 +170,6 @@ type
     lblPageImageMouseActions: TLabel;
     lblPageAttributesMouseActions: TLabel;
     lblPageHintsMouseActions: TLabel;
-    btnTileHintTextClear: TButton;
     sgMinimapColorRules: TStringGrid;
     sgFillAreaRules: TStringGrid;
     PagePaint: TTabSheet;
@@ -248,6 +247,7 @@ type
     PageArmour: TTabSheet;
     lbArmourTypeList: TListBox;
     imgArmourTypeColors: TImage;
+    vleTileHintCustomStrings: TValueListEditor;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -296,7 +296,8 @@ type
     procedure edRuleChange(Sender: TObject);
     // Hints page actions
     procedure lbTileHintTextClick(Sender: TObject);
-    procedure btnTileHintTextClearClick(Sender: TObject);
+    procedure vleTileHintCustomStringsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure vleTileHintCustomStringsSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
     // Armour page actions
     procedure lbArmourTypeListClick(Sender: TObject);
     // Colors page actions
@@ -549,7 +550,7 @@ begin
     else if (PageControl.ActivePage = PagePresets) then
       btnBlockPresetGroupApplyClick(Sender);
   end;
-  if ActiveControl is TEdit then
+  if (ActiveControl is TEdit) or (ActiveControl is TValueListEditor) then
     exit;
   // Global shortcuts
   case key of
@@ -584,15 +585,13 @@ begin
   end;
 end;
 
-procedure TTilesetEditor.FormMouseWheelDown(Sender: TObject;
-  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+procedure TTilesetEditor.FormMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
   TilesetScrollBar.Position := Min(TilesetScrollBar.Position + 2, TilesetScrollBar.Max - TilesetScrollBar.PageSize + 1);
   Handled := true;
 end;
 
-procedure TTilesetEditor.FormMouseWheelUp(Sender: TObject; Shift: TShiftState;
-  MousePos: TPoint; var Handled: Boolean);
+procedure TTilesetEditor.FormMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
   TilesetScrollBar.Position := TilesetScrollBar.Position - 2;
   Handled := true;
@@ -716,7 +715,7 @@ begin
       active_tile := tile_index;
     end
     else if PageControl.ActivePage = PageHints then
-      lbTileHintText.ItemIndex := Tileset.tile_hint_text[tile_index]
+      Tileset.tile_hint_text[tile_index] := -1
     else if PageControl.ActivePage = PageRestrictions then
     begin
       if ssCtrl in Shift then
@@ -778,7 +777,12 @@ begin
       if PageControl.ActivePage = PageAttributes then
         set_tile_attributes(tile_index, true)
       else if PageControl.ActivePage = PageHints then
-        Tileset.tile_hint_text[tile_index] := lbTileHintText.ItemIndex
+      begin
+        if (lbTileHintText.ItemIndex <> -1) or (lbTileHintText.Focused) then
+          Tileset.tile_hint_text[tile_index] := lbTileHintText.ItemIndex
+        else
+          Tileset.tile_hint_text[tile_index] := vleTileHintCustomStrings.Row * -1 - 2;
+      end
       else if PageControl.ActivePage = PageRestrictions then
       begin
         restrictions := 0;
@@ -842,7 +846,23 @@ begin
     select_start_y := -1;
     select_end_x := -1;
     select_end_y := -1;
-    if PageControl.ActivePage = PagePaint then
+    if pagecontrol.ActivePage = PageHints then
+    begin
+      if Tileset.tile_hint_text[tile_index] >= -1 then
+      begin
+        lbTileHintText.ItemIndex := Tileset.tile_hint_text[tile_index];
+        lbTileHintText.SetFocus;
+        Inc(loading);
+        vleTileHintCustomStrings.Row := (vleTileHintCustomStrings.Row + 1) mod Length(Tileset.tile_hint_custom_strings);
+        Dec(loading);
+      end else
+      begin
+        vleTileHintCustomStrings.Row := Tileset.tile_hint_text[tile_index] * -1 - 2;
+        vleTileHintCustomStrings.SetFocus;
+        lbTileHintText.ItemIndex := -1;
+      end;
+    end
+    else if PageControl.ActivePage = PagePaint then
     begin
       Tileset.paint_tile_groups[sgPaintTileGroups.Row - 5].tile_index := tile_index;
       fill_paint_tile_group_ui;
@@ -915,7 +935,10 @@ begin
     tile_hint_text_id := Tileset.tile_hint_text[tile_index];
     if tile_hint_text_id <> -1 then
     begin
-      hint_str := StringTable.get_text(tile_hint_text_id, false, is_custom);
+      if tile_hint_text_id >= 0 then
+        hint_str := StringTable.get_text(tile_hint_text_id, false, is_custom)
+      else
+        hint_str := Tileset.tile_hint_custom_strings[tile_hint_text_id * -1 - 2];
       show_hint := true;
     end;
   end
@@ -1255,13 +1278,26 @@ end;
 
 procedure TTilesetEditor.lbTileHintTextClick(Sender: TObject);
 begin
+  Inc(loading);
+  vleTileHintCustomStrings.Row := (vleTileHintCustomStrings.Row + 1) mod Length(Tileset.tile_hint_custom_strings);
+  Dec(loading);
   if cbMarkSelectedItem.Checked then
     render_tileset;
 end;
 
-procedure TTilesetEditor.btnTileHintTextClearClick(Sender: TObject);
+procedure TTilesetEditor.vleTileHintCustomStringsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 begin
+  if (loading > 0) then
+    exit;
   lbTileHintText.ItemIndex := -1;
+  vleTileHintCustomStrings.Tag := ARow;
+  if cbMarkSelectedItem.Checked then
+    render_tileset;
+end;
+
+procedure TTilesetEditor.vleTileHintCustomStringsSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+begin
+  store_c_string(Value, Addr(Tileset.tile_hint_custom_strings[ARow]), sizeof(Tileset.tile_hint_custom_strings[ARow]));
 end;
 
 procedure TTilesetEditor.lbArmourTypeListClick(Sender: TObject);
@@ -1671,6 +1707,7 @@ end;
 procedure TTilesetEditor.update_contents;
 var
   i: integer;
+  tmp_strings: TStringList;
 begin
   if not Visible then
   begin
@@ -1697,6 +1734,14 @@ begin
   // Fill extra attribute names
   for i := 0 to 7 do
     clbTileAtrListEditor.Items[i] := Tileset.extra_attribute_names[i];
+  // Fill tile hint custom strings
+  tmp_strings := TStringList.Create;
+  for i := 0 to Length(Tileset.tile_hint_custom_strings) - 1 do
+    tmp_strings.Add(IntToStr(i * -1 - 1) + '=' + Tileset.tile_hint_custom_strings[i]);
+  vleTileHintCustomStrings.Strings := tmp_strings;
+  if vleTileHintCustomStrings.Col = 0 then
+    vleTileHintCustomStrings.Col := 1;
+  tmp_strings.Destroy;
   // Fill minimap color rules grid
   fill_minimap_color_rules_grid;
   fill_minimap_color_rule_ui;
@@ -2166,11 +2211,11 @@ begin
         begin
           mark_tile := Tileset.tile_hint_text[tile_index] <> -1;
           if cbMarkSelectedItem.Checked then
-            mark_tile := mark_tile and (Tileset.tile_hint_text[tile_index] = lbTileHintText.ItemIndex);
+            mark_tile := mark_tile and (Tileset.tile_hint_text[tile_index] = IfThen((lbTileHintText.ItemIndex >= 0) or lbTileHintText.Focused, lbTileHintText.ItemIndex, vleTileHintCustomStrings.Tag * -1 - 2));
           if mark_tile then
           begin
             color := Settings.GridColor;
-            tile_text := inttostr(Tileset.tile_hint_text[tile_index]);
+            tile_text := IntToStr(IfThen(Tileset.tile_hint_text[tile_index] >= 0, Tileset.tile_hint_text[tile_index], Tileset.tile_hint_text[tile_index] + 1));
           end;
         end
         else if PageControl.ActivePage = PageRestrictions then
