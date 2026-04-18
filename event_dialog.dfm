@@ -448,12 +448,12 @@ object EventDialog: TEventDialog
         object lblMusic: TLabel
           Left = 4
           Top = 8
-          Width = 31
+          Width = 47
           Height = 13
-          Caption = 'Music:'
+          Caption = 'Music file:'
         end
         object cbMusicName: TComboBox
-          Left = 64
+          Left = 72
           Top = 4
           Width = 145
           Height = 21
@@ -804,6 +804,30 @@ object EventDialog: TEventDialog
           Caption = '-'
           TabOrder = 1
           OnClick = btnCondExprMinusClick
+        end
+      end
+      object edpString: TPanel
+        Left = 0
+        Top = 0
+        Width = 288
+        Height = 241
+        BevelOuter = bvNone
+        TabOrder = 8
+        object lblEventString: TLabel
+          Left = 4
+          Top = 8
+          Width = 59
+          Height = 13
+          Caption = 'Block name:'
+        end
+        object edEventString: TEdit
+          Left = 72
+          Top = 4
+          Width = 145
+          Height = 21
+          MaxLength = 24
+          TabOrder = 0
+          OnChange = edEventStringChange
         end
       end
     end

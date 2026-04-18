@@ -235,6 +235,9 @@ type
     sbShowConditionHelp: TSpeedButton;
     Blockevents1: TMenuItem;
     Unblockevents1: TMenuItem;
+    edpString: TPanel;
+    edEventString: TEdit;
+    lblEventString: TLabel;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -283,6 +286,8 @@ type
     procedure btnCustomMsgTextClick(Sender: TObject);
     procedure cbxMessageVarDataTypeChange(Sender: TObject);
     procedure edMessageVariableClick(Sender: TObject);
+    // -- String
+    procedure edEventStringChange(Sender: TObject);
     // -- Music
     procedure cbMusicNameChange(Sender: TObject);
     // -- Tile block
@@ -1206,6 +1211,11 @@ var
 begin
   i := (Sender as TControl).Tag;
   start_variable_selection(vsEventMessageVar, i, tmp_event.data[13 + i], true);
+end;
+
+procedure TEventDialog.edEventStringChange(Sender: TObject);
+begin
+  store_c_string(edEventString.Text, Addr(tmp_event.data[0]), sizeof(tmp_event.data));
 end;
 
 procedure TEventDialog.cbMusicNameChange(Sender: TObject);
@@ -2439,6 +2449,7 @@ begin
   fill_event_data_panel(edpValueList,    (ed >= edUnitList) and (ed <= edAreaList), ord(ed));
   fill_event_data_panel(edpByteValues,   ed = edByteValues, 0);
   fill_event_data_panel(edpMessage,      ed = edMessage, 0);
+  fill_event_data_panel(edpString,       ed = edString, 0);
   fill_event_data_panel(edpMusic,        ed = edMusic, 0);
   fill_event_data_panel(edpTileBlock,    ed = edTileBlock, 0);
   fill_event_data_panel(edpTilePairs,    ed = edTilePairs, 0);
@@ -2579,6 +2590,11 @@ begin
         event_message_variable[i].Enabled := True;
       end;
     end;
+  end;
+  if panel = edpString then
+  begin
+    SetString(tmp, PChar(Addr(tmp_event.data[0])), StrLen(PChar(Addr(tmp_event.data[0]))));
+    edEventString.Text := tmp;
   end;
   if panel = edpMusic then
   begin

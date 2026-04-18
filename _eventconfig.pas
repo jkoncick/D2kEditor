@@ -19,8 +19,8 @@ const ItemListTypeStr: array[0..12] of String = ('None', 'Sides', 'SidesAny', 'S
 type  ReferenceType =                           (rtNone, rtEvent, rtCondition);
 const ReferenceTypeStr: array[0..2] of String = ('None', 'Event', 'Condition');
 
-type  EventData =                            (edNone, edUnitList, edValueList, edCoordList, edAreaList, edByteValues, edMessage, edMusic, edTileBlock, edTilePairs, edCondExpr, edUnitFilter, edBuildingFilter, edBulletFilter, edExplosionFilter, edCrateFilter, edTileFilter, edSideFilter, edUnitTypeFilter, edBuildingTypeFilter);
-const EventDataStr: array[0..19] of String = ('None', 'UnitList', 'ValueList', 'CoordList', 'AreaList', 'ByteValues', 'Message', 'Music', 'TileBlock', 'TilePairs', 'CondExpr', 'UnitFilter', 'BuildingFilter', 'BulletFilter', 'ExplosionFilter', 'CrateFilter', 'TileFilter', 'SideFilter', 'UnitTypeFilter', 'BuildingTypeFilter');
+type  EventData =                            (edNone, edUnitList, edValueList, edCoordList, edAreaList, edByteValues, edMessage, edString, edMusic, edTileBlock, edTilePairs, edCondExpr, edUnitFilter, edBuildingFilter, edBulletFilter, edExplosionFilter, edCrateFilter, edTileFilter, edSideFilter, edUnitTypeFilter, edBuildingTypeFilter);
+const EventDataStr: array[0..20] of String = ('None', 'UnitList', 'ValueList', 'CoordList', 'AreaList', 'ByteValues', 'Message', 'String', 'Music', 'TileBlock', 'TilePairs', 'CondExpr', 'UnitFilter', 'BuildingFilter', 'BulletFilter', 'ExplosionFilter', 'CrateFilter', 'TileFilter', 'SideFilter', 'UnitTypeFilter', 'BuildingTypeFilter');
 
 type  ConditionData =                           (cdNone, cdUnitFilter, cdBuildingFilter, cdBulletFilter, cdExplosionFilter, cdCrateFilter, cdTileFilter);
 const ConditionDataStr: array[0..6] of String = ('None', 'UnitFilter', 'BuildingFilter', 'BulletFilter', 'ExplosionFilter', 'CrateFilter', 'TileFilter');

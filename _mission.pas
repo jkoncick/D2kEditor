@@ -1056,6 +1056,8 @@ begin
         end;
     contents := contents + str;
   end;
+  if et.event_data = edString then
+    SetString(contents, PChar(Addr(event.data[0])), StrLen(PChar(Addr(event.data[0]))));
   if et.event_data = edMusic then
     SetString(contents, PChar(Addr(event.data[0])), StrLen(PChar(Addr(event.data[0]))));
   if et.event_data = edCondExpr then
@@ -1119,6 +1121,32 @@ begin
       end;
       contents := contents + get_object_filter_contents(Addr(event.data[1]), Ord(et.event_data) - Ord(edUnitFilter), event_id);
     end;
+  end;
+  // Hook block start
+  if event.event_type = 234 then
+  begin
+    contents := contents + '(';
+    for i := 0 to Length(EventConfig.hook_vars[event.amount].var_name) - 1 do
+    begin
+      if EventConfig.hook_vars[event.amount].var_name[i] = '' then
+        break;
+      if i > 0 then
+        contents := contents + ', ';
+      contents := contents + EventConfig.hook_vars[event.amount].var_name[i];
+    end;
+    contents := contents + ')';
+  end;
+  // Execute Block
+  if event.event_type = 235 then
+  begin
+    contents := contents + '(';
+    if EventConfig.event_types[event_data[event.value].event_type].event_data = edString then
+    begin
+      SetString(str, PChar(Addr(event_data[event.value].data[0])), StrLen(PChar(Addr(event_data[event.value].data[0]))));
+      contents := contents + str;
+    end else
+      contents := contents + 'INVALID';
+    contents := contents + ')';
   end;
   result := contents;
 end;
