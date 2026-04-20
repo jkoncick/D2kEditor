@@ -15,12 +15,12 @@ type
     PreserveGUISettings: boolean;
     HidePresetWindow: boolean;
     AlwaysAskOnQuit: boolean;
+    LoadLastOpenMapOnStart: boolean;
     TranslateStructureNames: boolean;
     EventGridShowEmptyLines: boolean;
     // Preferences - Editing Settings
     RestrictPainting: boolean;
     UseRandomPaintMap: boolean;
-    LoadCustomColoursBin: boolean;
     CheckMapErrorsOnSave: boolean;
     CheckMapErrorsOnTest: boolean;
     // Preferences - Other settings
@@ -98,12 +98,12 @@ begin
   PreserveGUISettings     := ini.ReadBool   ('Preferences', 'PreserveGUISettings',      true);
   HidePresetWindow        := ini.ReadBool   ('Preferences', 'HidePresetWindow',         true);
   AlwaysAskOnQuit         := ini.ReadBool   ('Preferences', 'AlwaysAskOnQuit',          true);
+  LoadLastOpenMapOnStart  := ini.ReadBool   ('Preferences', 'LoadLastOpenMapOnStart',   false);
   TranslateStructureNames := ini.ReadBool   ('Preferences', 'TranslateStructureNames',  false);
   EventGridShowEmptyLines := ini.ReadBool   ('Preferences', 'EventGridShowEmptyLines',  false);
   // Preferences - Editing Settings
   RestrictPainting        := ini.ReadBool   ('Preferences', 'RestrictPainting',         true);
   UseRandomPaintMap       := ini.ReadBool   ('Preferences', 'UseRandomPaintMap',        false);
-  LoadCustomColoursBin    := ini.ReadBool   ('Preferences', 'LoadCustomColoursBin',     true);
   CheckMapErrorsOnSave    := ini.ReadBool   ('Preferences', 'CheckMapErrorsOnSave',     true);
   CheckMapErrorsOnTest    := ini.ReadBool   ('Preferences', 'CheckMapErrorsOnTest',     true);
   // Preferences - Other settings
@@ -199,12 +199,12 @@ begin
   ini.WriteBool   ('Preferences', 'PreserveGUISettings', PreserveGUISettings);
   ini.WriteBool   ('Preferences', 'HidePresetWindow', HidePresetWindow);
   ini.WriteBool   ('Preferences', 'AlwaysAskOnQuit', AlwaysAskOnQuit);
+  ini.WriteBool   ('Preferences', 'LoadLastOpenMapOnStart', LoadLastOpenMapOnStart);
   ini.WriteBool   ('Preferences', 'TranslateStructureNames', TranslateStructureNames);
   ini.WriteBool   ('Preferences', 'EventGridShowEmptyLines', EventGridShowEmptyLines);
   // Preferences - Editing Settings
   ini.WriteBool   ('Preferences', 'RestrictPainting', RestrictPainting);
   ini.WriteBool   ('Preferences', 'UseRandomPaintMap', UseRandomPaintMap);
-  ini.WriteBool   ('Preferences', 'LoadCustomColoursBin', LoadCustomColoursBin);
   ini.WriteBool   ('Preferences', 'CheckMapErrorsOnSave', CheckMapErrorsOnSave);
   ini.WriteBool   ('Preferences', 'CheckMapErrorsOnTest', CheckMapErrorsOnTest);
   // Preferences - Other settings

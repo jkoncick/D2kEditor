@@ -21,7 +21,7 @@ object SettingsDialog: TSettingsDialog
     Left = 8
     Top = 4
     Width = 457
-    Height = 141
+    Height = 165
     Caption = 'User Interface Settings'
     TabOrder = 0
     object cbPreserveGUISettings: TCheckBox
@@ -47,12 +47,14 @@ object SettingsDialog: TSettingsDialog
       Top = 68
       Width = 441
       Height = 17
-      Caption = 'Ask for before program is closed when changes were made into map'
+      Caption = 
+        'Ask for confirmation before program is closed when changes were ' +
+        'made into map'
       TabOrder = 2
     end
     object cbTranslateStructureNames: TCheckBox
       Left = 8
-      Top = 92
+      Top = 116
       Width = 441
       Height = 17
       Caption = 'Translate building and unit names on Structures tab'
@@ -60,18 +62,26 @@ object SettingsDialog: TSettingsDialog
     end
     object cbEventGridShowEmptyLines: TCheckBox
       Left = 8
-      Top = 116
+      Top = 140
       Width = 441
       Height = 17
       Caption = 'Show empty lines after the last event in the events table'
       TabOrder = 4
     end
+    object cbLoadLastOpenMapOnStart: TCheckBox
+      Left = 8
+      Top = 92
+      Width = 441
+      Height = 17
+      Caption = 'Load last open map on start'
+      TabOrder = 5
+    end
   end
   object gbEditingSettings: TGroupBox
     Left = 8
-    Top = 152
+    Top = 176
     Width = 457
-    Height = 141
+    Height = 117
     Caption = 'Map Editing Settings'
     TabOrder = 1
     object cbRestrictPainting: TCheckBox
@@ -94,29 +104,21 @@ object SettingsDialog: TSettingsDialog
         '.. for better natural look'
       TabOrder = 1
     end
-    object cbLoadCustomColoursBin: TCheckBox
+    object cbCheckMapErrorsOnSave: TCheckBox
       Left = 8
       Top = 68
       Width = 441
       Height = 17
-      Caption = 'Use custom COLOURS.BIN for structures rendering'
+      Caption = 'Check map errors on save'
       TabOrder = 2
     end
-    object cbCheckMapErrorsOnSave: TCheckBox
+    object cbCheckMapErrorsOnTest: TCheckBox
       Left = 8
       Top = 92
       Width = 441
       Height = 17
-      Caption = 'Check map errors on save'
-      TabOrder = 3
-    end
-    object cbCheckMapErrorsOnTest: TCheckBox
-      Left = 8
-      Top = 116
-      Width = 441
-      Height = 17
       Caption = 'Check map errors on test'
-      TabOrder = 4
+      TabOrder = 3
     end
   end
   object gbDefaultValues: TGroupBox

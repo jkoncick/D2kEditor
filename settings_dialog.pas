@@ -12,12 +12,12 @@ type
     cbPreserveGUISettings: TCheckBox;
     cbHidePresetWindow: TCheckBox;
     cbAlwaysAskOnQuit: TCheckBox;
+    cbLoadLastOpenMapOnStart: TCheckBox;
     cbTranslateStructureNames: TCheckBox;
     cbEventGridShowEmptyLines: TCheckBox;
     gbEditingSettings: TGroupBox;
     cbRestrictPainting: TCheckBox;
     cbUseRandomPaintMap: TCheckBox;
-    cbLoadCustomColoursBin: TCheckBox;
     cbCheckMapErrorsOnSave: TCheckBox;
     cbCheckMapErrorsOnTest: TCheckBox;
     gbDefaultValues: TGroupBox;
@@ -76,7 +76,7 @@ begin
   cbCheckMapErrorsOnSave.Checked := Settings.CheckMapErrorsOnSave;
   cbCheckMapErrorsOnTest.Checked := Settings.CheckMapErrorsOnTest;
   cbAlwaysAskOnQuit.Checked := Settings.AlwaysAskOnQuit;
-  cbLoadCustomColoursBin.Checked := Settings.LoadCustomColoursBin;
+  cbLoadLastOpenMapOnStart.Checked := Settings.LoadLastOpenMapOnStart;
   cbUseRandomPaintMap.Checked := Settings.UseRandomPaintMap;
   cbTranslateStructureNames.Checked := Settings.TranslateStructureNames;
   cbEventGridShowEmptyLines.Checked := Settings.EventGridShowEmptyLines;
@@ -137,7 +137,7 @@ begin
   Settings.CheckMapErrorsOnSave := cbCheckMapErrorsOnSave.Checked;
   Settings.CheckMapErrorsOnTest := cbCheckMapErrorsOnTest.Checked;
   Settings.AlwaysAskOnQuit := cbAlwaysAskOnQuit.Checked;
-  Settings.LoadCustomColoursBin := cbLoadCustomColoursBin.Checked;
+  Settings.LoadLastOpenMapOnStart := cbLoadLastOpenMapOnStart.Checked;
   Settings.UseRandomPaintMap := cbUseRandomPaintMap.Checked;
   Settings.TranslateStructureNames := cbTranslateStructureNames.Checked;
   Settings.EventGridShowEmptyLines := cbEventGridShowEmptyLines.Checked;

@@ -102,7 +102,10 @@ begin
   EventConfig.init;
   // Load map given as first parameter
   if ParamCount > 0 then
-    Map.load_map(ParamStr(1));
+    Map.load_map(ParamStr(1))
+  // Load last open map
+  else if Settings.LoadLastOpenMapOnStart then
+    Map.load_map(Settings.RecentFiles[1]);
   // Main program loop
   repeat
     try

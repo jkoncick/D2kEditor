@@ -195,19 +195,12 @@ var
   color: Cardinal;
   i: integer;
 begin
-  // Step 1 - editor's internal file
-  tmp_filename := current_dir + 'config\COLOURS.BIN';
-  if Settings.LoadCustomColoursBin then
-  begin
-    // Step 2 - game's internal file
-    tmp_filename2 := Settings.GamePath + '\Data\bin\COLOURS.BIN';
-    if FileExists(tmp_filename2) then
-      tmp_filename := tmp_filename2;
-    // Step 3 - file under CustomCampaignData folder
-    tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\Colours\' + MissionIni.ColoursFile;
-    if FileExists(tmp_filename2) then
-      tmp_filename := tmp_filename2;
-  end;
+  // Step 1 - game's internal file
+  tmp_filename := Settings.GamePath + '\Data\bin\COLOURS.BIN';
+  // Step 2 - file under CustomCampaignData folder
+  tmp_filename2 := Settings.GamePath + '\CustomCampaignData\' + MissionIni.CampaignFolder + '\Colours\' + MissionIni.ColoursFile;
+  if FileExists(tmp_filename2) then
+    tmp_filename := tmp_filename2;
   // Check if file exists
   if not FileExists(tmp_filename) then
   begin
