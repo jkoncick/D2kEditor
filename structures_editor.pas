@@ -638,6 +638,8 @@ type
     lblExplosionAnimationDelay: TLabel;
     seExplosionAnimationDelay: TSpinEdit;
     cbWeaponFlagWF_SYNCHRONIZED_INACCURACY: TCheckBox;
+    cbBuildingUseName: TCheckBox;
+    cbUnitUseName: TCheckBox;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -2998,6 +3000,7 @@ begin
   bld := Addr(Structures.templates.BuildingDefinitions[index]);
   // Basic group box
   edBuildingName.Text := Structures.templates.BuildingNameStrings[index];
+  cbBuildingUseName.Checked := bld.UseName <> 0;
   cbxBuildingGroup.ItemIndex := bld.BuildingGroup;
   icon := StructGraphics.get_raw_structure_image(Structures.first_building_icon_image_index + index);
   if icon <> nil then
@@ -3103,6 +3106,7 @@ begin
   unt := Addr(Structures.templates.UnitDefinitions[index]);
   // Basic group box
   edUnitName.Text := Structures.templates.UnitNameStrings[index];
+  cbUnitUseName.Checked := unt.UseName <> 0;
   cbxUnitGroup.ItemIndex := unt.UnitGroup;
   icon := StructGraphics.get_raw_structure_image(Structures.first_unit_icon_image_index + index);
   if icon <> nil then
@@ -3413,6 +3417,7 @@ begin
     exit;
   bld := Addr(Structures.templates.BuildingDefinitions[index]);
   // Basic group box
+  bld.UseName := IfThen(cbBuildingUseName.Checked, 1, 0);
   bld.BuildingGroup := cbxBuildingGroup.ItemIndex;
   bld.OwnerHouse := get_owner_house_field_value(clbBuildingOwnerHouse);
   // Build requirements group box
@@ -3507,6 +3512,7 @@ begin
     exit;
   unt := Addr(Structures.templates.UnitDefinitions[index]);
   // Basic group box
+  unt.UseName := IfThen(cbUnitUseName.Checked, 1, 0);
   unt.UnitGroup := cbxUnitGroup.ItemIndex;
   unt.OwnerHouse := get_owner_house_field_value(clbUnitOwnerHouse);
   // Build requirements group box

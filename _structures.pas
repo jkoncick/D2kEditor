@@ -27,7 +27,7 @@ type
     BarrelRotationSpeed:        byte;
     SightRadius:                byte;
     IsInfantry:                 byte;
-    _ZeroPadding18:             byte;
+    UseName:                    byte;
     _ZeroPadding19:             byte;
     UnitArt:                    integer;
     BarrelArt:                  integer;
@@ -126,7 +126,7 @@ type
     Prereq1BuildingGroup:       integer;
     Prereq1OwnerHouse:          byte;
     Prereq1UpgradesNeeded:      byte;
-    _ZeroPadding70:             byte;
+    UseName:                    byte;
     _ZeroPadding71:             byte;
     Prereq2BuildingGroup:       integer;
     Prereq2OwnerHouse:          byte;

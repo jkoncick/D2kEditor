@@ -145,7 +145,7 @@ object StructuresEditor: TStructuresEditor
         object edBuildingName: TEdit
           Left = 48
           Top = 80
-          Width = 233
+          Width = 217
           Height = 21
           MaxLength = 499
           TabOrder = 1
@@ -158,6 +158,16 @@ object StructuresEditor: TStructuresEditor
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 2
+        end
+        object cbBuildingUseName: TCheckBox
+          Left = 267
+          Top = 80
+          Width = 17
+          Height = 17
+          Hint = 'Use building name instead of building group name in tooltip'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 3
         end
       end
       object gbBuildingBuildRequirements: TGroupBox
@@ -1661,7 +1671,7 @@ object StructuresEditor: TStructuresEditor
         object edUnitName: TEdit
           Left = 48
           Top = 80
-          Width = 233
+          Width = 217
           Height = 21
           MaxLength = 499
           TabOrder = 1
@@ -1675,6 +1685,16 @@ object StructuresEditor: TStructuresEditor
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 2
+        end
+        object cbUnitUseName: TCheckBox
+          Left = 267
+          Top = 80
+          Width = 17
+          Height = 17
+          Hint = 'Use unit name instead of unit group name in tooltip'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 3
         end
       end
       object gbUnitBuildRequirements: TGroupBox
