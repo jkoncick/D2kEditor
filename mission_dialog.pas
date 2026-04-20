@@ -115,8 +115,6 @@ type
     procedure cbColoursBinChange(Sender: TObject);
     procedure cbTextUibChange(Sender: TObject);
     procedure btnModsFolderOpenClick(Sender: TObject);
-    procedure MapBriefingEnter(Sender: TObject);
-    procedure MapBriefingExit(Sender: TObject);
   private
     // Dynamic controls
     side_name: array[0..CNT_SIDES-1] of TEdit;
@@ -267,8 +265,6 @@ procedure TMissionDialog.FormKeyDown(Sender: TObject; var Key: Word;
 begin
   if key = 27 then
     Close;
-  if key = 123 then
-    MainWindow.Show;
 end;
 
 procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
@@ -615,16 +611,6 @@ procedure TMissionDialog.btnModsFolderOpenClick(Sender: TObject);
 begin
   if (cbCampaignFolder.Text <> '') then
     ShellExecute(0, 'open', PChar(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\' + cbModsFolder.Text), nil, nil, SW_SHOWNORMAL);
-end;
-
-procedure TMissionDialog.MapBriefingEnter(Sender: TObject);
-begin
-  MainWindow.Structureseditor1.ShortCut := 0;
-end;
-
-procedure TMissionDialog.MapBriefingExit(Sender: TObject);
-begin
-  MainWindow.Structureseditor1.ShortCut := 16472;
 end;
 
 procedure TMissionDialog.update_side_list(side_list: TStringList);

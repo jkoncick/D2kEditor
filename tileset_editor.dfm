@@ -1268,11 +1268,13 @@ object TilesetEditor: TTilesetEditor
   object MainMenu: TMainMenu
     Left = 560
     object Newtileset1: TMenuItem
-      Caption = 'New tileset'
+      Caption = 'New tileset (Ctrl+N)'
+      ShortCut = 16462
       OnClick = Newtileset1Click
     end
     object Opentileset1: TMenuItem
-      Caption = 'Open tileset'
+      Caption = 'Open tileset (Ctrl+O)'
+      ShortCut = 16463
       OnClick = Opentileset1Click
     end
     object Applychanges1: TMenuItem
@@ -1285,15 +1287,15 @@ object TilesetEditor: TTilesetEditor
       ShortCut = 16467
       OnClick = Savechanges1Click
     end
-    object Saveandtest1: TMenuItem
-      Caption = 'Save and test'
-      ShortCut = 119
-      OnClick = Saveandtest1Click
-    end
     object Reloadfiles1: TMenuItem
       Caption = 'Reload files (Ctrl+R)'
       ShortCut = 16466
       OnClick = Reloadfiles1Click
+    end
+    object Saveandtest1: TMenuItem
+      Caption = 'Save and test (F8)'
+      ShortCut = 119
+      OnClick = Saveandtest1Click
     end
     object Edit1: TMenuItem
       Caption = 'Edit'

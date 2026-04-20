@@ -1230,6 +1230,7 @@ object MainWindow: TMainWindow
       end
       object Savemapas1: TMenuItem
         Caption = 'Save map as'
+        ShortCut = 24659
         OnClick = Savemapas1Click
       end
       object N8: TMenuItem
@@ -1242,6 +1243,7 @@ object MainWindow: TMainWindow
       end
       object Saveminimapimage1: TMenuItem
         Caption = 'Save minimap image'
+        ShortCut = 24656
         OnClick = Saveminimapimage1Click
       end
       object N2: TMenuItem
@@ -1249,7 +1251,7 @@ object MainWindow: TMainWindow
       end
       object Missionlauncher1: TMenuItem
         Caption = 'Mission browser'
-        ShortCut = 16460
+        ShortCut = 112
         OnClick = Missionlauncher1Click
       end
       object N13: TMenuItem
@@ -1288,8 +1290,8 @@ object MainWindow: TMainWindow
         OnClick = Paste1Click
       end
     end
-    object ileset1: TMenuItem
-      Caption = 'Tileset'
+    object Resources1: TMenuItem
+      Caption = 'Resources'
       object Changetileset1: TMenuItem
         Caption = 'Change tileset...'
         ShortCut = 16468
@@ -1300,25 +1302,17 @@ object MainWindow: TMainWindow
         ShortCut = 24660
         OnClick = Selectnext1Click
       end
-      object Reloadtileset1: TMenuItem
-        Caption = 'Reload tileset'
-        ShortCut = 24658
-        OnClick = Reloadtileset1Click
+      object Tileseteditor1: TMenuItem
+        Caption = 'Tileset editor...'
+        ShortCut = 113
+        OnClick = Tileseteditor1Click
       end
       object N6: TMenuItem
         Caption = '-'
       end
-      object Tileseteditor1: TMenuItem
-        Caption = 'Tileset editor...'
-        ShortCut = 16449
-        OnClick = Tileseteditor1Click
-      end
-    end
-    object Structures1: TMenuItem
-      Caption = 'Structures'
       object Structureseditor1: TMenuItem
         Caption = 'Structures editor...'
-        ShortCut = 16472
+        ShortCut = 114
         OnClick = Structureseditor1Click
       end
     end
@@ -1348,6 +1342,7 @@ object MainWindow: TMainWindow
       end
       object Preferences1: TMenuItem
         Caption = 'Preferences...'
+        ShortCut = 115
         OnClick = Preferences1Click
       end
     end
@@ -1380,6 +1375,7 @@ object MainWindow: TMainWindow
       end
       object Converttoadvanced1: TMenuItem
         Caption = 'Convert to advanced'
+        ShortCut = 16460
         OnClick = Converttoadvanced1Click
       end
       object N11: TMenuItem
@@ -1405,6 +1401,11 @@ object MainWindow: TMainWindow
         ShortCut = 122
         OnClick = EventsandConditions1Click
       end
+      object Showmap1: TMenuItem
+        Caption = 'Show map'
+        ShortCut = 123
+        OnClick = Showmap1Click
+      end
       object N9: TMenuItem
         Caption = '-'
       end
@@ -1428,9 +1429,6 @@ object MainWindow: TMainWindow
     end
     object Help1: TMenuItem
       Caption = 'Help'
-      object N12: TMenuItem
-        Caption = '-'
-      end
       object KeyShortcuts1: TMenuItem
         Caption = 'Key Shortcuts'
         OnClick = KeyShortcuts1Click

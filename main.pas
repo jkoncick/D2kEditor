@@ -37,7 +37,7 @@ type
     Openmap1: TMenuItem;
     MapOpenDialog: TOpenDialog;
     Savemap1: TMenuItem;
-    ileset1: TMenuItem;
+    Resources1: TMenuItem;
     MapSaveDialog: TSaveDialog;
     Changetileset1: TMenuItem;
     MiniMap: TImage;
@@ -119,7 +119,6 @@ type
     Preferences1: TMenuItem;
     Tileseteditor1: TMenuItem;
     Saveminimapimage1: TMenuItem;
-    Reloadtileset1: TMenuItem;
     cbSelectAreaType: TComboBox;
     lbSelectAreaType: TLabel;
     FindDune2000Dialog: TOpenDialog;
@@ -129,11 +128,9 @@ type
     RemapTilesOpenDialog: TOpenDialog;
     Remaptiles1: TMenuItem;
     lblStructureName: TLabel;
-    Structures1: TMenuItem;
     Structureseditor1: TMenuItem;
     N15: TMenuItem;
     Debugwindow1: TMenuItem;
-    N12: TMenuItem;
     StructPages: TPageControl;
     PageStructBasic: TTabSheet;
     PageStructAdvanced: TTabSheet;
@@ -214,6 +211,7 @@ type
     lbExplosionType: TListBox;
     cbxExplosionSide: TComboBox;
     cbExplosionTagged: TCheckBox;
+    Showmap1: TMenuItem;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -246,7 +244,6 @@ type
     procedure Paste1Click(Sender: TObject);
     procedure Changetileset1Click(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
-    procedure Reloadtileset1Click(Sender: TObject);
     procedure Tileseteditor1Click(Sender: TObject);
     procedure Structureseditor1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
@@ -260,10 +257,10 @@ type
     procedure Showmapstatistics1Click(Sender: TObject);
     procedure EventsandConditions1Click(Sender: TObject);
     procedure Missionsettings1Click(Sender: TObject);
+    procedure Showmap1Click(Sender: TObject);
     procedure Assignmisfile1Click(Sender: TObject);
     procedure Quicklaunch1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
-    procedure OpenHelpDoc(Sender: TObject);
     procedure KeyShortcuts1Click(Sender: TObject);
     procedure Mouseactions1Click(Sender: TObject);
     procedure Debugwindow1Click(Sender: TObject);
@@ -357,7 +354,6 @@ type
 
     // Dynamic menu items
     recent_files_menuitems: array[1..cnt_recent_files] of TMenuItem;
-    help_doc_filenames: TStringList;
 
     // Others
     special_value_changing: boolean;
@@ -421,8 +417,6 @@ procedure TMainWindow.FormCreate(Sender: TObject);
 var
   i: integer;
   btn: TSpeedButton;
-  SR: TSearchRec;
-  menuitem: TMenuItem;
 begin
   // Load GUI setings
   Settings.load_window_position(self);
@@ -517,20 +511,6 @@ begin
     Recentfiles1.Add(recent_files_menuitems[i]);
   end;
   refresh_recent_files_menu;
-  // Initialize documents in help menu
-  help_doc_filenames := TStringList.Create;
-  if FindFirst(current_dir + 'doc\*', 0, SR) = 0 then
-  begin
-    repeat
-      menuitem := TMenuItem.Create(Help1);
-      menuitem.Caption := ChangeFileExt(SR.Name, '');
-      menuitem.Tag := help_doc_filenames.Count;
-      menuitem.OnClick := OpenHelpDoc;
-      Help1.Insert(0, menuitem);
-      help_doc_filenames.Add(SR.Name);
-    until FindNext(SR) <> 0;
-    FindClose(SR);
-  end;
 end;
 
 procedure TMainWindow.FormDestroy(Sender: TObject);
@@ -636,10 +616,7 @@ begin
     inherited;
 end;
 
-procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
-var
-  index: integer;
+procedure TMainWindow.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   mouse_already_clicked := false;
   case key of
@@ -680,7 +657,7 @@ begin
         StructControlClick(nil);
       end;
     end;
-    // KP+: Change building/unit direction
+    // KP-: Change building/unit direction
     109: begin
       if (EditorPages.TabIndex = 0) and (StructPages.TabIndex = 1) then
       begin
@@ -768,17 +745,6 @@ begin
     // Select side
     set_side_comboboxes(key - 96);
     set_special_value;
-  end;
-  // F1-F4 - Select block preset group
-  if (key >= 112) and (key <= 115) then
-  begin
-    index := key - 112;
-    if block_preset_group = index then
-      index := index + 4;
-    if not block_preset_select[index].Enabled then
-      exit;
-    block_preset_select[index].Down := true;
-    BlockPresetGroupSelectClick(block_preset_select[index]);
   end;
   // Shift+key
   if ssShift in Shift then
@@ -1039,11 +1005,6 @@ begin
   Tileset.change_tileset_next;
 end;
 
-procedure TMainWindow.Reloadtileset1Click(Sender: TObject);
-begin
-  Tileset.load_tileset(true);
-end;
-
 procedure TMainWindow.Tileseteditor1Click(Sender: TObject);
 begin
   TilesetEditor.Show;
@@ -1149,6 +1110,11 @@ begin
   MissionDialog.Show;
 end;
 
+procedure TMainWindow.Showmap1Click(Sender: TObject);
+begin
+  Show;
+end;
+
 procedure TMainWindow.Assignmisfile1Click(Sender: TObject);
 var
   msg: string;
@@ -1187,15 +1153,11 @@ begin
     Launcher.launch_current_mission;
 end;
 
-procedure TMainWindow.OpenHelpDoc(Sender: TObject);
-begin
-  ShellExecuteA(0, 'open', PChar(current_dir + 'doc\' + help_doc_filenames[(Sender as TMenuItem).Tag]), '', PChar(current_dir), SW_SHOWNORMAL);
-end;
-
 procedure TMainWindow.KeyShortcuts1Click(Sender: TObject);
 begin
   ShowMessage('Key Shortcuts:'#13#13+
               'Arrow keys = Scroll map'#13+
+              'Shift + Arrow keys = Scroll to map edge'#13+
               'Space = Open tileset/preset window'#13+
               'Tab = Switch Structures / Terrain mode'#13+
               'Shift + Q = Thin spice'#13+
@@ -1209,7 +1171,6 @@ begin
               'In Terrain mode:'#13+
               '0-9, A-Z = Block preset'#13+
               '` (key under Esc) = Switch to paint mode'#13+
-              'F1 - F4 = Change block preset group'#13+
               'Shift + T = Toggle select structures'#13+
               'Num 2,4,6,8 = Move block on map'#13+
               'Num 5 = Place block'#13#13+
@@ -2625,8 +2586,7 @@ begin
   EditorPages.Visible := false;
   File1.Enabled := false;
   Edit1.Enabled := false;
-  ileset1.Enabled := false;
-  Structures1.Enabled := false;
+  Resources1.Enabled := false;
   Map1.Enabled := false;
   Mission1.Enabled := false;
   Launchgame1.Enabled := false;
@@ -2642,8 +2602,7 @@ begin
   EditorPages.Visible := true;
   File1.Enabled := true;
   Edit1.Enabled := true;
-  ileset1.Enabled := true;
-  Structures1.Enabled := true;
+  Resources1.Enabled := true;
   Map1.Enabled := true;
   Mission1.Enabled := true;
   Launchgame1.Enabled := true;

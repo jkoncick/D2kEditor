@@ -373,6 +373,7 @@ procedure TMission.assign_mission;
 begin
   mis_assigned := true;
   Dispatcher.register_event(evMisLoad);
+  MissionIni.assign_mission_ini;
 end;
 
 procedure TMission.new_mission;

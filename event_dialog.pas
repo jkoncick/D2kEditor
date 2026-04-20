@@ -612,8 +612,6 @@ begin
     else
       Close;
   end;
-  if key = 123 then // F2
-    MainWindow.Show;
   if (key = 107) and (ActiveControl <> edMessageText) then // Num +
     btnPlusConditionClick(nil);
 end;
