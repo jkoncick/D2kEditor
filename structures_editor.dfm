@@ -4260,6 +4260,64 @@ object StructuresEditor: TStructuresEditor
         OnChange = TechposPreviewChange
       end
     end
+    object PageTiledata: TTabSheet
+      Caption = 'Tiledata    '
+      ImageIndex = 12
+      object sgTiledataData: TStringGrid
+        Left = 0
+        Top = 0
+        Width = 456
+        Height = 637
+        Align = alLeft
+        DefaultRowHeight = 19
+        RowCount = 1001
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
+        TabOrder = 0
+        OnDrawCell = sgTiledataDataDrawCell
+        OnSelectCell = sgTiledataDataSelectCell
+      end
+      object lbTiledataBuildingGroup: TListBox
+        Left = 464
+        Top = 40
+        Width = 201
+        Height = 599
+        Enabled = False
+        ItemHeight = 13
+        TabOrder = 1
+        OnClick = lbTiledataBuildingGroupClick
+      end
+      object lbTiledataUnitGroup: TListBox
+        Left = 672
+        Top = 40
+        Width = 201
+        Height = 599
+        Enabled = False
+        ItemHeight = 13
+        TabOrder = 2
+        OnClick = lbTiledataUnitGroupClick
+      end
+      object cbxTiledataSide: TComboBox
+        Left = 464
+        Top = 8
+        Width = 169
+        Height = 21
+        Style = csDropDownList
+        Enabled = False
+        ItemHeight = 13
+        TabOrder = 3
+        OnChange = cbxTiledataSideChange
+      end
+      object btnTiledataClear: TButton
+        Left = 800
+        Top = 8
+        Width = 73
+        Height = 25
+        Caption = 'Clear'
+        Enabled = False
+        TabOrder = 4
+        OnClick = btnTiledataClearClick
+      end
+    end
     object PageSounds: TTabSheet
       Caption = 'Sounds     '
       ImageIndex = 11
@@ -4507,36 +4565,38 @@ object StructuresEditor: TStructuresEditor
     DefaultExt = 'WAV'
     Filter = 'Wave sound (*.WAV)|*.WAV'
     Title = 'Import Sound'
-    Left = 796
+    Left = 860
+    Top = 32
   end
   object SoundExportDialog: TSaveDialog
     DefaultExt = 'WAV'
     Filter = 'Wave sound (*.WAV)|*.WAV'
     Title = 'Export Sound'
-    Left = 764
+    Left = 828
+    Top = 32
   end
   object ImageImportDialog: TOpenDialog
     DefaultExt = 'png'
     Filter = 'Supported images (*.bmp, *.png)|*.bmp;*.png'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Title = 'Import Image'
-    Left = 876
-    Top = 16
+    Left = 924
+    Top = 32
   end
   object ImageExportDialog: TSaveDialog
     DefaultExt = 'png'
     Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
     FilterIndex = 2
     Title = 'Export Image'
-    Left = 844
-    Top = 16
+    Left = 892
+    Top = 32
   end
   object ImageRemapColorsOpenDialog: TOpenDialog
     DefaultExt = 'ini'
     Filter = 'Remap colors ini file (*.ini)|*.ini'
     Options = [ofEnableSizing]
     Title = 'Select remap colors ini file'
-    Left = 904
-    Top = 16
+    Left = 960
+    Top = 32
   end
 end

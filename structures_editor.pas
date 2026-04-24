@@ -640,6 +640,12 @@ type
     cbWeaponFlagWF_SYNCHRONIZED_INACCURACY: TCheckBox;
     cbBuildingUseName: TCheckBox;
     cbUnitUseName: TCheckBox;
+    PageTiledata: TTabSheet;
+    sgTiledataData: TStringGrid;
+    lbTiledataBuildingGroup: TListBox;
+    lbTiledataUnitGroup: TListBox;
+    cbxTiledataSide: TComboBox;
+    btnTiledataClear: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -719,6 +725,13 @@ type
     procedure cbxTechposUnitGroupChange(Sender: TObject);
     procedure TechposPreviewChange(Sender: TObject);
     procedure imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    // Tiledata tab events
+    procedure sgTiledataDataDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+    procedure sgTiledataDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure cbxTiledataSideChange(Sender: TObject);
+    procedure lbTiledataBuildingGroupClick(Sender: TObject);
+    procedure lbTiledataUnitGroupClick(Sender: TObject);
+    procedure btnTiledataClearClick(Sender: TObject);
     // Sounds tab events
     procedure sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure sgSamplesUibSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
@@ -795,6 +808,7 @@ type
     procedure update_sound_list;
     procedure update_contents;
     procedure update_tileset;
+    procedure update_side_list(side_list: TStringList);
   private
     // Fill data procedures
     procedure fill_data(action: TFillDataAction);
@@ -807,6 +821,7 @@ type
     procedure fill_weapon_data;
     procedure fill_explosion_data;
     procedure set_owner_house_field_value(control: TCheckListBox; value: byte);
+    procedure fill_tiledata_row(row: integer);
     // Store data procedures
     procedure store_data;
     procedure store_building_data;
@@ -845,7 +860,7 @@ var
 
 implementation
 
-uses Math, StrUtils, _settings, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, _gamelists, test_map_dialog;
+uses Math, StrUtils, _settings, _missionini, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, _gamelists, test_map_dialog;
 
 {$R *.dfm}
 
@@ -943,6 +958,18 @@ begin
   sgTechposData.ColWidths[3] := 133;
   sgTechposData.ColWidths[4] := 133;
   sgTechposData.ColWidths[5] := 133;
+  // Tiledata
+  sgTiledataData.Cells[0, 0] := '#';
+  sgTiledataData.Cells[1, 0] := 'T';
+  sgTiledataData.Cells[3, 0] := 'Side';
+  sgTiledataData.Cells[4, 0] := 'Building / Unit group';
+  sgTiledataData.ColWidths[0] := 32;
+  sgTiledataData.ColWidths[1] := 16;
+  sgTiledataData.ColWidths[2] := 16;
+  sgTiledataData.ColWidths[3] := 128;
+  sgTiledataData.ColWidths[4] := 256;
+  for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+    sgTiledataData.Cells[0, i+1] := IntToStr(i);
   // Sounds
   sgSamplesUib.Cells[0, 0] := '#';
   sgSamplesUib.Cells[1, 0] := 'Key';
@@ -1049,6 +1076,7 @@ begin
   Structures.load_builexp_bin(true);
   Structures.load_armour_bin(true);
   Structures.load_techpos_bin(true);
+  Structures.load_tiledata_bin(true);
   Structures.load_speed_bin(true);
   StructGraphics.load_data_r16(true);
   Sounds.load_sound_rs(true);
@@ -1872,6 +1900,96 @@ begin
   cbxTechposUnitGroup.SetFocus;
 end;
 
+procedure TStructuresEditor.sgTiledataDataDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+  if (sgTiledataData.Row = ARow) or (ACol = 0) or (ARow = 0) then
+    exit;
+  if (Structures.tiledata[ARow - 1].stype = ST_MISC_OBJECT) or (ARow - 1 <= 3) then
+  begin
+    sgTiledataData.Canvas.Brush.Color := $e0e0e0;
+    sgTiledataData.Canvas.TextRect(Rect, Rect.Left + 2, Rect.Top + 2, sgTiledataData.Cells[ACol, ARow]);
+  end
+  else if (Structures.tiledata[ARow - 1].stype <> ST_NOTHING) and (ACol = 2) then
+  begin
+    sgTiledataData.Canvas.Brush.Color := StructGraphics.house_colors[Structures.tiledata[ARow - 1].side];
+    sgTiledataData.Canvas.FillRect(Rect);
+  end;
+end;
+
+procedure TStructuresEditor.sgTiledataDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var
+  enable: boolean;
+begin
+  enable := (Structures.tiledata[ARow - 1].stype <> ST_MISC_OBJECT) and (ARow - 1 >= 4);
+  cbxTiledataSide.Enabled := enable;
+  lbTiledataBuildingGroup.Enabled := enable;
+  lbTiledataUnitGroup.Enabled := enable;
+  btnTiledataClear.Enabled := enable;
+  if Structures.tiledata[ARow - 1].stype = ST_BUILDING then
+  begin
+    cbxTiledataSide.ItemIndex := Structures.tiledata[ARow - 1].side;
+    lbTiledataBuildingGroup.ItemIndex := Structures.tiledata[ARow - 1].index;
+    lbTiledataUnitGroup.ItemIndex := -1;
+  end
+  else if Structures.tiledata[ARow - 1].stype = ST_UNIT then
+  begin
+    cbxTiledataSide.ItemIndex := Structures.tiledata[ARow - 1].side;
+    lbTiledataBuildingGroup.ItemIndex := -1;
+    lbTiledataUnitGroup.ItemIndex := Structures.tiledata[ARow - 1].index;
+  end else
+  begin
+    lbTiledataBuildingGroup.ItemIndex := -1;
+    lbTiledataUnitGroup.ItemIndex := -1;
+  end;
+end;
+
+procedure TStructuresEditor.cbxTiledataSideChange(Sender: TObject);
+begin
+  if Structures.tiledata[sgTiledataData.Row - 1].stype = ST_NOTHING then
+    exit;
+  Structures.tiledata[sgTiledataData.Row - 1].side := cbxTiledataSide.ItemIndex;
+  Structures.tiledata_bin_modified := true;
+  fill_status_bar;
+  fill_tiledata_row(sgTiledataData.Row - 1);
+end;
+
+procedure TStructuresEditor.lbTiledataBuildingGroupClick(Sender: TObject);
+begin
+  Structures.tiledata[sgTiledataData.Row - 1].stype := ST_BUILDING;
+  Structures.tiledata[sgTiledataData.Row - 1].side := cbxTiledataSide.ItemIndex;
+  Structures.tiledata[sgTiledataData.Row - 1].index := lbTiledataBuildingGroup.ItemIndex;
+  lbTiledataUnitGroup.ItemIndex := -1;
+  Structures.tiledata_bin_modified := true;
+  fill_status_bar;
+  fill_tiledata_row(sgTiledataData.Row - 1);
+end;
+
+procedure TStructuresEditor.lbTiledataUnitGroupClick(Sender: TObject);
+begin
+  Structures.tiledata[sgTiledataData.Row - 1].stype := ST_UNIT;
+  Structures.tiledata[sgTiledataData.Row - 1].side := cbxTiledataSide.ItemIndex;
+  Structures.tiledata[sgTiledataData.Row - 1].index := lbTiledataUnitGroup.ItemIndex;
+  lbTiledataBuildingGroup.ItemIndex := -1;
+  Structures.tiledata_bin_modified := true;
+  fill_status_bar;
+  fill_tiledata_row(sgTiledataData.Row - 1);
+end;
+
+procedure TStructuresEditor.btnTiledataClearClick(Sender: TObject);
+begin
+  if Structures.tiledata[sgTiledataData.Row - 1].stype = ST_NOTHING then
+    exit;
+  sgTiledataData.SetFocus;
+  Structures.tiledata[sgTiledataData.Row - 1].stype := ST_NOTHING;
+  Structures.tiledata[sgTiledataData.Row - 1].side := 0;
+  Structures.tiledata[sgTiledataData.Row - 1].index := 0;
+  lbTiledataBuildingGroup.ItemIndex := -1;
+  lbTiledataUnitGroup.ItemIndex := -1;
+  Structures.tiledata_bin_modified := true;
+  fill_status_bar;
+  fill_tiledata_row(sgTiledataData.Row - 1);
+end;
+
 procedure TStructuresEditor.sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 const
   Selection: TGridRect = (Left: 1; Top: 0; Right: 2; Bottom: 0);
@@ -2662,6 +2780,15 @@ begin
   draw_building_preview(true);
 end;
 
+procedure TStructuresEditor.update_side_list(side_list: TStringList);
+var
+  item_index: integer;
+begin
+  item_index := cbxTiledataSide.ItemIndex;
+  cbxTiledataSide.Items := side_list;
+  cbxTiledataSide.ItemIndex := item_index;
+end;
+
 procedure TStructuresEditor.fill_data(action: TFillDataAction);
 var
   tmp_strings: TStringList;
@@ -2672,9 +2799,10 @@ begin
 
   if (action = fdaBuildingGroupList) or (action = fdaAll) then
   begin
-    // Building type list
+    // Building group list
     fill_item_list(ITEM_BUILDING_GROUP, tmp_strings);
     cbxBuildingGroup.Items := tmp_strings;
+    lbTiledataBuildingGroup.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
     cbxBuildingPrereq1BuildingGroup.Items := tmp_strings;
     cbxBuildingPrereq2BuildingGroup.Items := tmp_strings;
@@ -2691,9 +2819,10 @@ begin
 
   if (action = fdaUnitGroupList) or (action = fdaAll) then
   begin
-    // Unit type list
+    // Unit group list
     fill_item_list(ITEM_UNIT_GROUP, tmp_strings);
     cbxUnitGroup.Items := tmp_strings;
+    lbTiledataUnitGroup.Items := tmp_strings;
     tmp_strings.Insert(0, '(none)');
     cbxTechposUnitGroup.Items := tmp_strings;
     lbUnitGroupListClick(nil);
@@ -2946,6 +3075,12 @@ begin
     // Techpos
     rgTechposTechLevelClick(nil);
   end else
+  if PageControl.ActivePage = PageTiledata then
+  begin
+    // Tiledata
+    for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+      fill_tiledata_row(i);
+  end else
   if PageControl.ActivePage = PageSounds then
   begin
     // Sounds
@@ -2975,6 +3110,8 @@ begin
     file1 := IfThen(Structures.speed_bin_modified, '*', '') + Structures.speed_bin_filename
   else if PageControl.ActivePage = PageTechpos then
     file1 := IfThen(Structures.techpos_bin_modified, '*', '') + Structures.techpos_bin_filename
+  else if PageControl.ActivePage = PageTiledata then
+    file1 := IfThen(Structures.tiledata_bin_modified, '*', '') + Structures.tiledata_bin_filename
   else if PageControl.ActivePage = PageSounds then
   begin
     file1 := IfThen(StringTable.samples_uib_modified or samples_uib_ui_modified, '*', '') + StringTable.samples_uib_filename;
@@ -3351,6 +3488,43 @@ var
 begin
   for i := 0 to CNT_SIDES - 1 do
     control.Checked[i] := (value and (1 shl i)) <> 0;
+end;
+
+procedure TStructuresEditor.fill_tiledata_row(row: integer);
+begin
+  if Structures.tiledata[row].stype = ST_BUILDING then
+  begin
+    sgTiledataData.Cells[1, row + 1] := 'B';
+    sgTiledataData.Cells[3, row + 1] := IntToStr(Structures.tiledata[row].side) + ' - ' + Missionini.get_side_name(Structures.tiledata[row].side);
+    sgTiledataData.Cells[4, row + 1] := IntToStr(Structures.tiledata[row].index) + ' - ' + Structures.templates.BuildingGroupStrings[Structures.tiledata[row].index];
+  end else
+  if Structures.tiledata[row].stype = ST_UNIT then
+  begin
+    sgTiledataData.Cells[1, row + 1] := 'U';
+    sgTiledataData.Cells[3, row + 1] := IntToStr(Structures.tiledata[row].side) + ' - ' + Missionini.get_side_name(Structures.tiledata[row].side);
+    sgTiledataData.Cells[4, row + 1] := IntToStr(Structures.tiledata[row].index) + ' - ' + Structures.templates.UnitGroupStrings[Structures.tiledata[row].index];
+  end else
+  if Structures.tiledata[row].stype = ST_MISC_OBJECT then
+  begin
+    sgTiledataData.Cells[1, row + 1] := 'M';
+    sgTiledataData.Cells[3, row + 1] := '';
+    sgTiledataData.Cells[4, row + 1] := Structures.misc_object_info[Structures.tiledata[row].index].name;
+  end else
+  if (row > 0) and (row <= 3) then
+  begin
+    sgTiledataData.Cells[1, row + 1] := 'M';
+    case row of
+      1: sgTiledataData.Cells[4, row + 1] := 'Thin Spice';
+      2: sgTiledataData.Cells[4, row + 1] := 'Thick Spice';
+      3: sgTiledataData.Cells[4, row + 1] := 'SuperDense Spice';
+    end;
+  end else
+  begin
+    sgTiledataData.Cells[1, row + 1] := '';
+    sgTiledataData.Cells[3, row + 1] := '';
+    sgTiledataData.Cells[4, row + 1] := '';
+  end;
+  sgTiledataData.Invalidate;
 end;
 
 procedure TStructuresEditor.store_data;
@@ -4484,6 +4658,7 @@ begin
   Structures.save_armour_bin;
   Structures.save_speed_bin;
   Structures.save_techpos_bin;
+  Structures.save_tiledata_bin;
   StructGraphics.save_data_r16;
   Sounds.save_sound_rs;
   StringTable.save_samples_uib;

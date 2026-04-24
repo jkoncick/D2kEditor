@@ -671,7 +671,7 @@ begin
   Structures.load_armour_bin(false);
   Structures.load_speed_bin(false);
   Structures.load_techpos_bin(false);
-  Structures.load_tiledata_bin;
+  Structures.load_tiledata_bin(false);
   Structures.load_misc_objects_ini;
   Structures.load_limits_ini;
   Structures.load_group_ids;

@@ -619,6 +619,7 @@ type
 
     // TILEDATA.BIN related data
     tiledata: TTileDataBinFile;
+    tiledata_bin_modified: boolean;
 
     // Misc. objects related data
     misc_object_info: array of TMiscObjectInfo;
@@ -677,7 +678,8 @@ type
     procedure load_techpos_bin(force: boolean);
     procedure save_techpos_bin;
     // TILEDATA.BIN related procedures
-    procedure load_tiledata_bin;
+    procedure load_tiledata_bin(force: boolean);
+    procedure save_tiledata_bin;
     function get_tiledata_entry(special: integer): TTileDataEntryPtr;
     // Misc. objects related procedures
     procedure load_misc_objects_ini;
@@ -774,7 +776,7 @@ begin
   load_armour_bin(false);
   load_speed_bin(false);
   load_techpos_bin(false);
-  load_tiledata_bin;
+  load_tiledata_bin(false);
   load_misc_objects_ini;
   load_limits_ini;
   load_group_ids;
@@ -1413,21 +1415,42 @@ begin
   techpos_bin_modified := false;
 end;
 
-procedure TStructures.load_tiledata_bin;
+procedure TStructures.load_tiledata_bin(force: boolean);
 var
   tmp_filename: String;
 begin
   tmp_filename := find_file('Data\bin\TILEDATA.BIN', 'game');
-  if (tmp_filename = '') or (tmp_filename = tiledata_bin_filename) then
+  if (tmp_filename = '') or ((tmp_filename = tiledata_bin_filename) and not force) then
     exit;
   tiledata_bin_filename := tmp_filename;
   // Read TILEDATA.BIN file
   load_binary_file(tmp_filename, tiledata, sizeof(tiledata));
-
+  tiledata_bin_modified := false;
   // Add misc objects into TILEDATA.BIN
   register_misc_objects_in_tiledata;
   // Register event in dispatcher
   Dispatcher.register_event(evFLTiledataBin);
+end;
+
+procedure TStructures.save_tiledata_bin;
+var
+  i: integer;
+begin
+  if (tiledata_bin_filename = '') or not tiledata_bin_modified then
+    exit;
+  if not manage_filesave(tiledata_bin_filename, 'Data\bin\TILEDATA.BIN', evStructuresFilenameChange) then
+    exit;
+  // Clear misc objects from tiledata
+  for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
+    if tiledata[i].stype = ST_MISC_OBJECT then
+    begin
+      tiledata[i].stype := ST_NOTHING;
+      tiledata[i].side := 0;
+      tiledata[i].index := 0;
+    end;
+  save_binary_file(tiledata_bin_filename, tiledata, sizeof(tiledata));
+  register_misc_objects_in_tiledata;
+  tiledata_bin_modified := false;
 end;
 
 function TStructures.get_tiledata_entry(special: integer): TTileDataEntryPtr;

@@ -170,7 +170,7 @@ begin
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
     // Mission ini events
     evMissionIniLoad:             pact := pact + [paUpdateSideList, paUpdateMissionIniData, paUpdateEventDialog, paUpdateVariableNames];
-    evMissionIniSideNameChange:   pact := pact + [paUpdateSideList, paUpdateEventDialog];
+    evMissionIniSideNameChange:   pact := pact + [paUpdateSideList, paUpdateEventDialog, paUpdateStructuresEditor];
     evMissionIniCustomTextChange: pact := pact + [paUpdateEventDialog];
     // Tileset events
     evFLLTilesetList:             pact := pact + [paUpdateTilesetList];
@@ -317,6 +317,7 @@ begin
   MapStatsDialog.update_side_list;
   MissionDialog.update_side_list(side_list);
   EventDialog.update_side_list(side_list);
+  StructuresEditor.update_side_list(side_list);
   side_list.Destroy;
 end;
 
