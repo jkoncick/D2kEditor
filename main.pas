@@ -1281,15 +1281,7 @@ begin
     if event_index <> -1 then
     begin
       event := Addr(Mission.event_data[event_index]);
-      tmp_hint := EventConfig.event_types[event.event_type].name + ': ';
-      if EventConfig.event_types[event.event_type].has_side then
-      begin
-        if (event.arg_var_flags and 1) <> 0 then
-          tmp_hint := tmp_hint + Mission.get_variable_name(event.side, 1, event_index) + ' '
-        else
-          tmp_hint := tmp_hint + IfThen(event.side < 8, MissionIni.get_side_name(event.side), 'Any') + ' ';
-      end;
-      tmp_hint := tmp_hint + Mission.get_event_contents(event_index);
+      tmp_hint := EventConfig.event_types[event.event_type].name + ': ' + Mission.get_event_contents(event_index);
     end;
     if condition_index <> -1 then
     begin
