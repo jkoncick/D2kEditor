@@ -1310,10 +1310,10 @@ object MainWindow: TMainWindow
       object N6: TMenuItem
         Caption = '-'
       end
-      object Structureseditor1: TMenuItem
-        Caption = 'Structures editor...'
+      object ResourcesEditor1: TMenuItem
+        Caption = 'Resources editor...'
         ShortCut = 114
-        OnClick = Structureseditor1Click
+        OnClick = ResourcesEditor1Click
       end
     end
     object Settings1: TMenuItem

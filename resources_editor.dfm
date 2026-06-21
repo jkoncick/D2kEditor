@@ -1,9 +1,9 @@
-object StructuresEditor: TStructuresEditor
+object ResourcesEditor: TResourcesEditor
   Left = 190
   Top = 0
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
-  Caption = 'Structures Editor'
+  Caption = 'Resources Editor'
   ClientHeight = 684
   ClientWidth = 1016
   Color = clBtnFace
@@ -4454,6 +4454,115 @@ object StructuresEditor: TStructuresEditor
         OnClick = btnSamplesUibAddClick
       end
     end
+    object PageUIMouse: TTabSheet
+      Caption = 'UI+Mouse'
+      ImageIndex = 13
+      object lblUIArtList: TLabel
+        Left = 0
+        Top = 0
+        Width = 56
+        Height = 13
+        Caption = 'UI Graphics'
+      end
+      object lblMouseArtList: TLabel
+        Left = 376
+        Top = 0
+        Width = 77
+        Height = 13
+        Caption = 'Mouse Graphics'
+      end
+      object lbUIArtList: TListBox
+        Tag = 6
+        Left = 0
+        Top = 16
+        Width = 161
+        Height = 537
+        ItemHeight = 13
+        Items.Strings = (
+          'Up arrow 1'
+          'Down arrow 1'
+          'Up arrow 2'
+          'Down arrow 2'
+          'Repair'
+          'Sell'
+          'Map toggle'
+          'Guard'
+          'Retreat'
+          'Upgrade'
+          'Starport'
+          'Options'
+          'Main 1'
+          'Main 2'
+          'Purchase'
+          'Power bars'
+          'Win/lose messages'
+          'House emblems')
+        TabOrder = 0
+        OnClick = lbUIArtListClick
+        OnKeyDown = AcgArtListKeyDown
+      end
+      object pnUIArtControlGroup: TPanel
+        Left = 176
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 1
+      end
+      object lbMouseArtList: TListBox
+        Tag = 6
+        Left = 376
+        Top = 16
+        Width = 161
+        Height = 537
+        ItemHeight = 13
+        Items.Strings = (
+          'Pointer'
+          'Move'
+          'Attack'
+          'Cant move'
+          'Enter'
+          'Over unit'
+          'Move radar'
+          'Cant sell'
+          'Cant repair'
+          'Special'
+          'Sell'
+          'Repair'
+          'Deploy'
+          'Cant deploy'
+          'Scroll N'
+          'Scroll NE'
+          'Scroll E'
+          'Scroll SE'
+          'Scroll S'
+          'Scroll SW'
+          'Scroll W'
+          'Scroll NW'
+          'Cant scroll N'
+          'Cant scroll NE'
+          'Cant scroll E'
+          'Cant scroll SE'
+          'Cant scroll S'
+          'Cant scroll SW'
+          'Cant scroll W'
+          'Cant scroll NW'
+          'Deathhand'
+          'Demolish'
+          'Move mountain')
+        TabOrder = 2
+        OnClick = lbMouseArtListClick
+        OnKeyDown = AcgArtListKeyDown
+      end
+      object pnMouseArtControlGroup: TPanel
+        Left = 552
+        Top = 0
+        Width = 169
+        Height = 637
+        BevelOuter = bvNone
+        TabOrder = 3
+      end
+    end
   end
   object pnImagePalette: TPanel
     Left = 1024
@@ -4536,44 +4645,50 @@ object StructuresEditor: TStructuresEditor
     Interval = 20
     OnTimer = tmBuildingBuildingAnimationTimer
     Left = 988
+    Top = 16
   end
   object tmBuildingBuildupArt: TTimer
     Enabled = False
     Interval = 50
     OnTimer = tmBuildingBuildupArtTimer
     Left = 956
+    Top = 16
   end
   object ItemExportDialog: TSaveDialog
     Left = 892
+    Top = 16
   end
   object ItemImportDialog: TOpenDialog
     Left = 924
+    Top = 16
   end
   object ArtImportDialog: TOpenDialog
     DefaultExt = 'R16'
     Filter = 'Dune 2000 graphics file (*.R16)|*.R16'
     Title = 'Import Art'
     Left = 860
+    Top = 16
   end
   object ArtExportDialog: TSaveDialog
     DefaultExt = 'R16'
     Filter = 'Dune 2000 graphics file (*.R16)|*.R16'
     Title = 'Export Art'
     Left = 828
+    Top = 16
   end
   object SoundImportDialog: TOpenDialog
     DefaultExt = 'WAV'
     Filter = 'Wave sound (*.WAV)|*.WAV'
     Title = 'Import Sound'
     Left = 860
-    Top = 32
+    Top = 48
   end
   object SoundExportDialog: TSaveDialog
     DefaultExt = 'WAV'
     Filter = 'Wave sound (*.WAV)|*.WAV'
     Title = 'Export Sound'
     Left = 828
-    Top = 32
+    Top = 48
   end
   object ImageImportDialog: TOpenDialog
     DefaultExt = 'png'
@@ -4581,7 +4696,7 @@ object StructuresEditor: TStructuresEditor
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Title = 'Import Image'
     Left = 924
-    Top = 32
+    Top = 48
   end
   object ImageExportDialog: TSaveDialog
     DefaultExt = 'png'
@@ -4589,7 +4704,7 @@ object StructuresEditor: TStructuresEditor
     FilterIndex = 2
     Title = 'Export Image'
     Left = 892
-    Top = 32
+    Top = 48
   end
   object ImageRemapColorsOpenDialog: TOpenDialog
     DefaultExt = 'ini'
@@ -4597,6 +4712,6 @@ object StructuresEditor: TStructuresEditor
     Options = [ofEnableSizing]
     Title = 'Select remap colors ini file'
     Left = 960
-    Top = 32
+    Top = 48
   end
 end

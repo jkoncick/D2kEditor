@@ -57,6 +57,6 @@ __history/
 *.stat
 
 *.zip
-tilesets/*.bmp
 graphics/Thumbs.db
 D2kEditor.ini
+remap*.ini

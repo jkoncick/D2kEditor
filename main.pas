@@ -128,7 +128,7 @@ type
     RemapTilesOpenDialog: TOpenDialog;
     Remaptiles1: TMenuItem;
     lblStructureName: TLabel;
-    Structureseditor1: TMenuItem;
+    ResourcesEditor1: TMenuItem;
     N15: TMenuItem;
     Debugwindow1: TMenuItem;
     StructPages: TPageControl;
@@ -245,7 +245,7 @@ type
     procedure Changetileset1Click(Sender: TObject);
     procedure Selectnext1Click(Sender: TObject);
     procedure Tileseteditor1Click(Sender: TObject);
-    procedure Structureseditor1Click(Sender: TObject);
+    procedure ResourcesEditor1Click(Sender: TObject);
     procedure SettingChange(Sender: TObject);
     procedure Preferences1Click(Sender: TObject);
     procedure Setmapsize1Click(Sender: TObject);
@@ -409,7 +409,7 @@ implementation
 
 uses
   // Dialogs
-  settings_dialog, set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileset_editor, structures_editor, debug_window;
+  settings_dialog, set_dialog, tileset_dialog, block_preset_dialog, test_map_dialog, event_dialog, mission_dialog, map_stats_dialog, mission_launcher, tileset_editor, resources_editor, debug_window;
 
 {$R *.dfm}
 
@@ -1010,9 +1010,9 @@ begin
   TilesetEditor.Show;
 end;
 
-procedure TMainWindow.Structureseditor1Click(Sender: TObject);
+procedure TMainWindow.ResourcesEditor1Click(Sender: TObject);
 begin
-  StructuresEditor.Show;
+  ResourcesEditor.Show;
 end;
 
 procedure TMainWindow.SettingChange(Sender: TObject);
@@ -2542,7 +2542,7 @@ begin
   result := result and not ((ForegroundWindow = EventDialog.Handle) and PtInRect(EventDialog.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = MissionLauncher.Handle) and PtInRect(MissionLauncher.BoundsRect, Mouse.CursorPos));
   result := result and not ((ForegroundWindow = TilesetEditor.Handle) and PtInRect(TilesetEditor.BoundsRect, Mouse.CursorPos));
-  result := result and not ((ForegroundWindow = StructuresEditor.Handle) and PtInRect(StructuresEditor.BoundsRect, Mouse.CursorPos));
+  result := result and not ((ForegroundWindow = ResourcesEditor.Handle) and PtInRect(ResourcesEditor.BoundsRect, Mouse.CursorPos));
   result := result and not (DebugWindow.Visible and PtInRect(DebugWindow.BoundsRect, Mouse.CursorPos));
   result := result or block_select_started;
 end;

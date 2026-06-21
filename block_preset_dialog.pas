@@ -38,7 +38,7 @@ var
 
 implementation
 
-uses _settings, _graphics, main, tileset_dialog;
+uses _settings, _resourcefile, _colours, main, tileset_dialog;
 
 {$R *.dfm}
 
@@ -238,7 +238,7 @@ begin
       if (tile_attr and $8800) = $8800 then
       begin
         side := (tile_attr shr 17) and 7;
-        BlockPresetImage.Canvas.Pen.Color := StructGraphics.house_colors_inv[side];
+        BlockPresetImage.Canvas.Pen.Color := Colours.house_colors_inv[side];
         BlockPresetImage.Canvas.Brush.Color := BlockPresetImage.Canvas.Pen.Color;
         BlockPresetImage.Canvas.Brush.Style := bsSolid;
         BlockPresetImage.Canvas.Ellipse(off_x + x*32 + 8, off_y + y*32 + 8, off_x + x*32 + 24, off_y + y*32 + 24);

@@ -85,7 +85,7 @@ implementation
 
 uses
   SysUtils, StdCtrls, main, settings_dialog, tileset_dialog, block_preset_dialog, set_dialog, test_map_dialog,
-  mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileset_editor, structures_editor, debug_window, _utils,
+  mission_dialog, event_dialog, map_stats_dialog, mission_launcher, tileset_editor, resources_editor, debug_window, _utils,
   Grids;
 
 procedure TSettings.load_precreate_editor_settings;
@@ -158,31 +158,31 @@ begin
   load_window_position(MissionLauncher);
   load_window_position(TilesetEditor);
   TilesetEditor.cbAlwaysOnTop.State := TCheckBoxState(load_control_property_int(TilesetEditor.cbAlwaysOnTop, 'State', Ord(TilesetEditor.cbAlwaysOnTop.State)));
-  load_window_position(StructuresEditor);
+  load_window_position(ResourcesEditor);
   load_window_position(DebugWindow);
   // Load file dialog paths
-  load_file_dialog_initial_dir(MainWindow.MapOpenDialog,              MissionsPath);
-  load_file_dialog_initial_dir(MainWindow.MapSaveDialog,              MissionsPath);
-  load_file_dialog_initial_dir(MainWindow.MapImageSaveDialog,         '');
-  load_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog,       current_dir);
-  load_file_dialog_initial_dir(MainWindow.RemapStructuresOpenDialog,  current_dir);
-  load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,          current_dir + 'AI_templates');
-  load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,          current_dir + 'AI_templates');
-  load_file_dialog_initial_dir(EventDialog.ExportEventsDialog,        '');
-  load_file_dialog_initial_dir(EventDialog.ImportEventsDialog,        '');
-  load_file_dialog_initial_dir(TilesetEditor.TilesetImageOpenDialog,  '');
-  load_file_dialog_initial_dir(TilesetEditor.TilesetImageSaveDialog,  '');
-  load_file_dialog_initial_dir(TilesetEditor.TilesetPortionOpenDialog,'');
-  load_file_dialog_initial_dir(TilesetEditor.TilesetPortionSaveDialog,'');
-  load_file_dialog_initial_dir(StructuresEditor.ItemExportDialog,     '');
-  load_file_dialog_initial_dir(StructuresEditor.ItemImportDialog,     '');
-  load_file_dialog_initial_dir(StructuresEditor.ArtExportDialog,      '');
-  load_file_dialog_initial_dir(StructuresEditor.ArtImportDialog,      '');
-  load_file_dialog_initial_dir(StructuresEditor.ImageExportDialog,    '');
-  load_file_dialog_initial_dir(StructuresEditor.ImageImportDialog,    '');
-  load_file_dialog_initial_dir(StructuresEditor.SoundExportDialog,    '');
-  load_file_dialog_initial_dir(StructuresEditor.SoundImportDialog,    '');
-  load_file_dialog_initial_dir(StructuresEditor.ImageRemapColorsOpenDialog, '');
+  load_file_dialog_initial_dir(MainWindow.MapOpenDialog,                    MissionsPath);
+  load_file_dialog_initial_dir(MainWindow.MapSaveDialog,                    MissionsPath);
+  load_file_dialog_initial_dir(MainWindow.MapImageSaveDialog,               '');
+  load_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog,             current_dir);
+  load_file_dialog_initial_dir(MainWindow.RemapStructuresOpenDialog,        current_dir);
+  load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,                current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,                current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(EventDialog.ExportEventsDialog,              '');
+  load_file_dialog_initial_dir(EventDialog.ImportEventsDialog,              '');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetImageOpenDialog,        '');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetImageSaveDialog,        '');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetPortionOpenDialog,      '');
+  load_file_dialog_initial_dir(TilesetEditor.TilesetPortionSaveDialog,      '');
+  load_file_dialog_initial_dir(ResourcesEditor.ItemExportDialog,            '');
+  load_file_dialog_initial_dir(ResourcesEditor.ItemImportDialog,            '');
+  load_file_dialog_initial_dir(ResourcesEditor.ArtExportDialog,             '');
+  load_file_dialog_initial_dir(ResourcesEditor.ArtImportDialog,             '');
+  load_file_dialog_initial_dir(ResourcesEditor.ImageExportDialog,           '');
+  load_file_dialog_initial_dir(ResourcesEditor.ImageImportDialog,           '');
+  load_file_dialog_initial_dir(ResourcesEditor.SoundExportDialog,           '');
+  load_file_dialog_initial_dir(ResourcesEditor.SoundImportDialog,           '');
+  load_file_dialog_initial_dir(ResourcesEditor.ImageRemapColorsOpenDialog,  '');
 
   ini.Destroy;
   ini := nil;
@@ -256,7 +256,7 @@ begin
   MissionLauncher.save_mission_grid_column_states;
   save_window_position(TilesetEditor);
   save_control_property_int(TilesetEditor.cbAlwaysOnTop, 'State', Ord(TilesetEditor.cbAlwaysOnTop.State));
-  save_window_position(StructuresEditor);
+  save_window_position(ResourcesEditor);
   save_window_position(DebugWindow);
   // Save file dialog paths
   save_file_dialog_initial_dir(MainWindow.MapOpenDialog);
@@ -272,15 +272,15 @@ begin
   save_file_dialog_initial_dir(TilesetEditor.TilesetImageSaveDialog);
   save_file_dialog_initial_dir(TilesetEditor.TilesetPortionOpenDialog);
   save_file_dialog_initial_dir(TilesetEditor.TilesetPortionSaveDialog);
-  save_file_dialog_initial_dir(StructuresEditor.ItemExportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.ItemImportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.ArtExportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.ArtImportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.ImageExportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.ImageImportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.SoundExportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.SoundImportDialog);
-  save_file_dialog_initial_dir(StructuresEditor.ImageRemapColorsOpenDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.ItemExportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.ItemImportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.ArtExportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.ArtImportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.ImageExportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.ImageImportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.SoundExportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.SoundImportDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.ImageRemapColorsOpenDialog);
 
   ini.UpdateFile;
   ini.Destroy;

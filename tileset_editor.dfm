@@ -1273,8 +1273,8 @@ object TilesetEditor: TTilesetEditor
       OnClick = Newtileset1Click
     end
     object Opentileset1: TMenuItem
-      Caption = 'Open tileset (Ctrl+O)'
-      ShortCut = 16463
+      Caption = 'Open tileset (Ctrl+T)'
+      ShortCut = 16468
       OnClick = Opentileset1Click
     end
     object Applychanges1: TMenuItem

@@ -34,7 +34,7 @@ var
 
 implementation
 
-uses _settings, _structures, _graphics, _sounds, _tileset, _stringtable;
+uses _settings, _structures, _resourcefile, _colours, _sounds, _tileset, _stringtable;
 
 {$R *.dfm}
 
@@ -89,13 +89,16 @@ begin
   add_debug_value(s, Structures, 'TECHPOS.BIN file', Structures.techpos_bin_filename);
   add_debug_value(s, Structures, 'TILEDATA.BIN file', Structures.tiledata_bin_filename);
   add_debug_value(s, Structures, 'misc_objects.ini file', Structures.misc_objects_ini_filename);
+  add_debug_value(s, Structures, 'misc_objects.bmp file', Structures.misc_objects_bmp_filename);
   add_debug_value(s, Structures, 'limits.ini file', Structures.limits_ini_filename);
 
-  add_debug_value(s, StructGraphics, 'COLOURS.BIN file', StructGraphics.colours_bin_filename);
-  add_debug_value(s, StructGraphics, 'DATA.R16 file', StructGraphics.data_r16_filename);
-  add_debug_value(s, StructGraphics, 'misc_objects.bmp file', StructGraphics.graphics_misc_objects_filename);
-  add_debug_value(s, StructGraphics, 'Structure images loaded', Format('%d / %d', [StructGraphics.structure_images_count, Length(StructGraphics.structure_images)]));
-  add_debug_value(s, StructGraphics, 'House color pixel count', Format('%d / %d', [StructGraphics.house_color_pixel_count_total, Length(StructGraphics.house_color_pixel_indexes)]));
+  add_debug_value(s, ResourceFile[R16FILE_DATA],  'DATA.R16 file', ResourceFile[R16FILE_DATA].r16_filename);
+  add_debug_value(s, ResourceFile[R16FILE_UI],    'UI_ENG.R16 file', ResourceFile[R16FILE_UI].r16_filename);
+  add_debug_value(s, ResourceFile[R16FILE_MOUSE], 'MOUSE.R16 file', ResourceFile[R16FILE_MOUSE].r16_filename);
+  add_debug_value(s, ResourceFile[R16FILE_DATA],  'Structure images loaded', Format('%d / %d', [ResourceFile[R16FILE_DATA].structure_images_count, Length(ResourceFile[R16FILE_DATA].structure_images)]));
+  add_debug_value(s, ResourceFile[R16FILE_DATA],  'House color pixel count', Format('%d / %d', [ResourceFile[R16FILE_DATA].house_color_pixel_count_total, Length(ResourceFile[R16FILE_DATA].house_color_pixel_indexes)]));
+
+  add_debug_value(s, Colours, 'COLOURS.BIN file', Colours.colours_bin_filename);
 
   add_debug_value(s, Sounds, 'SOUND.RS file', Sounds.sound_rs_filename);
 

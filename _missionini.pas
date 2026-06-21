@@ -94,7 +94,7 @@ var
 
 implementation
 
-uses Windows, SysUtils, StrUtils, Math, Forms, _dispatcher, _tileset, _structures, _graphics, _sounds, _stringtable, _launcher, _eventconfig;
+uses Windows, SysUtils, StrUtils, Math, Forms, _dispatcher, _tileset, _structures, _resourcefile, _colours, _sounds, _stringtable, _launcher, _eventconfig;
 
 { TMissionIni }
 
@@ -652,7 +652,7 @@ end;
 procedure TMissionIni.set_colours_file(value: string);
 begin
   ColoursFile := value;
-  StructGraphics.load_colours_bin;
+  Colours.load_colours_bin;
 end;
 
 procedure TMissionIni.set_text_uib(value: string);
@@ -662,6 +662,8 @@ begin
 end;
 
 procedure TMissionIni.load_custom_campaign_data_files(load_tilesets: boolean);
+var
+  filenum: integer;
 begin
   Tileset.load_tileset_list;
   if load_tilesets then
@@ -673,11 +675,12 @@ begin
   Structures.load_techpos_bin(false);
   Structures.load_tiledata_bin(false);
   Structures.load_misc_objects_ini;
+  Structures.load_misc_objects_resourcefile;
   Structures.load_limits_ini;
   Structures.load_group_ids;
-  StructGraphics.load_colours_bin;
-  StructGraphics.load_data_r16(false);
-  StructGraphics.load_graphics_misc_objects;
+  Colours.load_colours_bin;
+  for filenum := 0 to Length(ResourceFile) - 1 do
+    ResourceFile[filenum].load_r16(false);
   Sounds.load_sound_rs(false);
   StringTable.load_text_uib(TextUib);
   StringTable.load_samples_uib(false);

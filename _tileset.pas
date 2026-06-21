@@ -304,7 +304,7 @@ var
 
 implementation
 
-uses Forms, SysUtils, StrUtils, Math, _map, _settings, _graphics, _dispatcher, _missionini, pngimage;
+uses Forms, SysUtils, StrUtils, Math, _map, _settings, _resourcefile, _dispatcher, _missionini, pngimage;
 
 procedure TTileset.init;
 begin

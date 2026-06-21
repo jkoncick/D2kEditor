@@ -15,7 +15,7 @@ uses
   map_stats_dialog in 'map_stats_dialog.pas' {MapStatsDialog},
   mission_launcher in 'mission_launcher.pas' {MissionLauncher},
   tileset_editor in 'tileset_editor.pas' {TilesetEditor},
-  structures_editor in 'structures_editor.pas' {StructuresEditor},
+  resources_editor in 'resources_editor.pas' {ResourcesEditor},
   debug_window in 'debug_window.pas' {DebugWindow},
   _utils in '_utils.pas',
   _settings in '_settings.pas',
@@ -27,7 +27,8 @@ uses
   _missionini in '_missionini.pas',
   _tileset in '_tileset.pas',
   _structures in '_structures.pas',
-  _graphics in '_graphics.pas',
+  _resourcefile in '_resourcefile.pas',
+  _colours in '_colours.pas',
   _sounds in '_sounds.pas',
   _stringtable in '_stringtable.pas',
   _randomgen in '_randomgen.pas',
@@ -41,6 +42,8 @@ uses
 
 {$R *.res}
 
+var
+  filenum: integer;
 begin
   // Miscellaneous initializations
   randomize;
@@ -62,7 +65,9 @@ begin
   MissionIni := TMissionIni.Create;
   Tileset := TTileset.Create;
   Structures := TStructures.Create;
-  StructGraphics := TStructGraphics.Create;
+  for filenum := 0 to Length(ResourceFile) - 1 do
+    ResourceFile[filenum] := TResourceFile.Create;
+  Colours := TColours.Create;
   Sounds := TSounds.Create;
   StringTable := TStringTable.Create;
   //--RandomGen := TRandomGen.Create;
@@ -82,7 +87,7 @@ begin
   Application.CreateForm(TMapStatsDialog, MapStatsDialog);
   Application.CreateForm(TMissionLauncher, MissionLauncher);
   Application.CreateForm(TTilesetEditor, TilesetEditor);
-  Application.CreateForm(TStructuresEditor, StructuresEditor);
+  Application.CreateForm(TResourcesEditor, ResourcesEditor);
   Application.CreateForm(TDebugWindow, DebugWindow);
   // All GUI settings must be loaded after all dialogs are created.
   Settings.load_postcreate_editor_settings;
@@ -95,7 +100,9 @@ begin
   GameLists.init;
   GameStructs.init;
   Structures.init;
-  StructGraphics.init;
+  for filenum := 0 to Length(ResourceFile) - 1 do
+    ResourceFile[filenum].init(filenum);
+  Colours.init;
   Sounds.init;
   StringTable.init;
   Launcher.init;

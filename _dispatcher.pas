@@ -45,7 +45,7 @@ type
     evFLMiscObjectsIni,
     evStructuresFilenameChange,
     evStructuresImportItem,
-    // StructGraphics events
+    // ResourceFile events
     evFLColoursBin,
     evFLDataR16,
     evFLMiscObjectsBmp,
@@ -63,7 +63,7 @@ type
     // Setting change events
     evSCTranslateStructureNames,
     // Apply changes events
-    evACStructuresEditor
+    evACResourcesEditor
   );
   TDispatcherPendingAction = (
     // Update selection lists
@@ -101,7 +101,7 @@ type
     // Update whole dialog contents
     paUpdateEventDialog,
     paUpdateTilesetEditor,
-    paUpdateStructuresEditor,
+    paUpdateResourcesEditor,
     // Rendering
     paResetMapBlocksDrawn,
     paRenderMap,
@@ -148,7 +148,7 @@ uses
   Windows, Forms, Classes, SysUtils, _utils, _settings, _tileset, _structures, _gamestructs, _map, _mission, _missionini, _renderer, main, set_dialog,
   test_map_dialog, tileset_dialog, block_preset_dialog,
   mission_dialog, event_dialog, map_stats_dialog,
-  tileset_editor, structures_editor, debug_window;
+  tileset_editor, resources_editor, debug_window;
 
 { TDispatcher }
 
@@ -170,7 +170,7 @@ begin
     evMisDefenceAreaChange:       if Settings.MarkDefenceAreas then pact := pact + [paRenderMap];
     // Mission ini events
     evMissionIniLoad:             pact := pact + [paUpdateSideList, paUpdateMissionIniData, paUpdateEventDialog, paUpdateVariableNames];
-    evMissionIniSideNameChange:   pact := pact + [paUpdateSideList, paUpdateEventDialog, paUpdateStructuresEditor];
+    evMissionIniSideNameChange:   pact := pact + [paUpdateSideList, paUpdateEventDialog, paUpdateResourcesEditor];
     evMissionIniCustomTextChange: pact := pact + [paUpdateEventDialog];
     // Tileset events
     evFLLTilesetList:             pact := pact + [paUpdateTilesetList];
@@ -187,22 +187,22 @@ begin
     evTilesetPaintGroupsChange:   pact := pact + [paUpdatePaintGroups];
     evTilesetBlockPresetsChange:  pact := pact + [paUpdateBlockPresets, paUpdateDebugValues];
     // Structures events
-    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateEventDialog, paUpdateStructuresEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
-    evFLBuilexpBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
-    evFLArmourBin:                pact := pact + [paUpdateArmourList, paUpdateStructuresEditor, paUpdateDebugValues];
-    evFLSpeedBin:                 pact := pact + [paUpdateSpeedModifiers, paUpdateStructuresEditor, paUpdateDebugValues];
-    evFLTechposBin:               pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
+    evFLTemplatesBin:             pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateEventDialog, paUpdateResourcesEditor, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLBuilexpBin:               pact := pact + [paUpdateResourcesEditor, paUpdateDebugValues];
+    evFLArmourBin:                pact := pact + [paUpdateArmourList, paUpdateResourcesEditor, paUpdateDebugValues];
+    evFLSpeedBin:                 pact := pact + [paUpdateSpeedModifiers, paUpdateResourcesEditor, paUpdateDebugValues];
+    evFLTechposBin:               pact := pact + [paUpdateResourcesEditor, paUpdateDebugValues];
     evFLTiledataBin:              pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsIni:           pact := pact + [paUpdateMiscObjectList, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evStructuresFilenameChange:   pact := pact + [paUpdateDebugValues];
-    evStructuresImportItem:       pact := pact + [paUpdateStructuresEditor];
-    // StructGraphics events
+    evStructuresImportItem:       pact := pact + [paUpdateResourcesEditor];
+    // ResourceFile events
     evFLColoursBin:               pact := pact + [paUpdateSideColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
-    evFLDataR16:                  pact := pact + [paUpdateStructuresEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
+    evFLDataR16:                  pact := pact + [paUpdateResourcesEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsBmp:           pact := pact + [paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evLoadStructureImage:         pact := pact + [paUpdateDebugValues];
     // Sounds events
-    evFLSoundRs:                  pact := pact + [paUpdateStructuresEditor, paUpdateDebugValues];
+    evFLSoundRs:                  pact := pact + [paUpdateResourcesEditor, paUpdateDebugValues];
     // StringTable events
     evFLTextUib:
       begin
@@ -219,7 +219,7 @@ begin
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
-    evACStructuresEditor:         pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateArmourList, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evACResourcesEditor:          pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateArmourList, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
   end;
 end;
 
@@ -242,7 +242,7 @@ begin
   // Update selection lists
   if paUpdateTilesetList        in pact then SetDialog.update_tileset_list;
   if paUpdateTextList           in pact then TilesetEditor.update_text_list;
-  if paUpdateSoundList          in pact then begin EventDialog.update_sound_list; StructuresEditor.update_sound_list; end;
+  if paUpdateSoundList          in pact then begin EventDialog.update_sound_list; ResourcesEditor.update_sound_list; end;
   if paUpdateStructuresList     in pact then EventDialog.update_structures_list;
   if paUpdateStructuresListTranslated in pact then update_structures_list_translated;
   if paUpdateMiscObjectList     in pact then MainWindow.update_misc_object_list;
@@ -274,7 +274,7 @@ begin
   // Update whole dialog contents
   if paUpdateEventDialog        in pact then EventDialog.update_contents;
   if paUpdateTilesetEditor      in pact then TilesetEditor.update_contents;
-  if paUpdateStructuresEditor   in pact then StructuresEditor.update_contents;
+  if paUpdateResourcesEditor    in pact then ResourcesEditor.update_contents;
   // Rendering
   if paResetMapBlocksDrawn      in pact then Renderer.reset_map_blocks;
   if paRenderMap                in pact then MainWindow.render_map;
@@ -317,7 +317,7 @@ begin
   MapStatsDialog.update_side_list;
   MissionDialog.update_side_list(side_list);
   EventDialog.update_side_list(side_list);
-  StructuresEditor.update_side_list(side_list);
+  ResourcesEditor.update_side_list(side_list);
   side_list.Destroy;
 end;
 
@@ -335,7 +335,7 @@ begin
   BlockPresetDialog.update_tileset;
   MissionDialog.update_tileset;
   EventDialog.update_tileset;
-  StructuresEditor.update_tileset;
+  ResourcesEditor.update_tileset;
 end;
 
 procedure TDispatcher.update_map_name;
@@ -387,7 +387,7 @@ end;
 procedure TDispatcher.update_game_lists;
 begin
   MainWindow.update_game_lists;
-  StructuresEditor.update_game_lists;
+  ResourcesEditor.update_game_lists;
   TilesetEditor.update_game_lists;
 end;
 

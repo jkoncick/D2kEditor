@@ -2,7 +2,7 @@ unit _structures;
 
 interface
 
-uses Windows, Classes, SysUtils, Math, Types, _utils, _eventconfig;
+uses Windows, Graphics, Classes, SysUtils, Math, Types, _utils, _eventconfig;
 
 // *****************************************************************************
 // TEMPLATES.BIN file definitions
@@ -441,6 +441,8 @@ const ART_UNIT               = 3;
 const ART_PROJECTILE         = 4;
 const ART_ANIMATION          = 5;
 const ART_OTHER              = 6;
+const ART_UI                 = 7;
+const ART_MOUSE              = 8;
 
 const art_type_names: array[0..5] of string = ('Building', 'Building animation', 'Buildup', 'Unit', 'Projectile', 'Animation');
 const other_art_frames: array[0..15] of byte = (3, 1, 1, 4, 6, 2, 10, 11, 64, 4, 4, 4, 32, 32, 16, 12);
@@ -583,6 +585,7 @@ type
     techpos_bin_filename: String;
     tiledata_bin_filename: String;
     misc_objects_ini_filename: String;
+    misc_objects_bmp_filename: String;
     limits_ini_filename: String;
 
     // TEMPLATES.BIN related data
@@ -625,6 +628,10 @@ type
     misc_object_info: array of TMiscObjectInfo;
     adv_crate_misc_object_info: TMiscObjectInfo;
     cnt_misc_objects: integer;
+
+    // Misc. objects graphics related data
+    misc_objects_resourcefile: TBitmap;
+    misc_objects_resourcefile_mask: TBitmap;
 
     // Limits related data
     limit_sandworm_required: boolean;
@@ -685,6 +692,8 @@ type
     procedure load_misc_objects_ini;
     procedure register_misc_objects_in_tiledata;
     function get_misc_object_info_for_special(special: word): TMiscObjectInfoPtr;
+    // Misc. objects graphics related procedures
+    procedure load_misc_objects_resourcefile;
     // Limits related procedures
     procedure load_limits_ini;
     // Group IDs related procedures
@@ -763,13 +772,15 @@ var
 
 implementation
 
-uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _graphics, _sounds, _stringtable, _dispatcher, _gamelists;
+uses Forms, Clipbrd, IniFiles, _settings, _mission, _missionini, _resourcefile, _sounds, _stringtable, _dispatcher, _gamelists;
 
 procedure TStructures.init;
 var
   i: integer;
 begin
   group_ids := TStringList.Create;
+  misc_objects_resourcefile := TBitmap.Create;
+  misc_objects_resourcefile_mask := TBitmap.Create;
   // Load all files
   load_templates_bin(false);
   load_builexp_bin(false);
@@ -778,6 +789,7 @@ begin
   load_techpos_bin(false);
   load_tiledata_bin(false);
   load_misc_objects_ini;
+  load_misc_objects_resourcefile;
   load_limits_ini;
   load_group_ids;
   // Initialize item data pointers
@@ -1499,6 +1511,23 @@ begin
   Dispatcher.register_event(evFLMiscObjectsIni);
 end;
 
+procedure TStructures.load_misc_objects_resourcefile;
+var
+  tmp_filename: String;
+begin
+  tmp_filename := find_file('graphics\misc_objects.bmp', 'graphics');
+  if (tmp_filename = '') or (tmp_filename = misc_objects_bmp_filename) then
+    exit;
+  misc_objects_bmp_filename := tmp_filename;
+  // Load graphics from files
+  misc_objects_resourcefile.LoadFromFile(tmp_filename);
+  // Create mask
+  misc_objects_resourcefile_mask.Assign(misc_objects_resourcefile);
+  misc_objects_resourcefile_mask.Mask(clBlack);
+  // Register event in dispatcher
+  Dispatcher.register_event(evFLMiscObjectsBmp);
+end;
+
 procedure TStructures.register_misc_objects_in_tiledata;
 var
   i: integer;
@@ -1750,7 +1779,7 @@ begin
           MuzzleFlashExplosion := -1;
         end;
         // Add building icon
-        StructGraphics.add_empty_image_entries(first_building_icon_image_index + templates.BuildingCount, 1);
+        ResourceFile[R16FILE_DATA].add_empty_image_entries(first_building_icon_image_index + templates.BuildingCount, 1);
         need_compute_image_indexes := true;
       end;
     ITEM_UNIT:
@@ -1766,7 +1795,7 @@ begin
           MuzzleFlashExplosion := -1;
         end;
         // Add unit icon
-        StructGraphics.add_empty_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
+        ResourceFile[R16FILE_DATA].add_empty_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
         need_compute_image_indexes := true;
       end;
     ITEM_WEAPON:
@@ -1829,13 +1858,13 @@ begin
         // Remove animation art, buildup art and building icon
         remove_last_art(ART_BUILDING_ANIMATION);
         remove_last_art(ART_BUILDUP);
-        StructGraphics.remove_image_entries(first_building_icon_image_index + templates.BuildingCount, 1);
+        ResourceFile[R16FILE_DATA].remove_image_entries(first_building_icon_image_index + templates.BuildingCount, 1);
         compute_image_indexes;
       end;
     ITEM_UNIT:
       begin
         // Remove building icon
-        StructGraphics.remove_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
+        ResourceFile[R16FILE_DATA].remove_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
         compute_image_indexes;
       end;
     ITEM_WEAPON:
@@ -1882,11 +1911,11 @@ begin
         // Swap animation art, buildup art and building icon
         swap_arts(ART_BUILDING_ANIMATION, index1, index2);
         swap_arts(ART_BUILDUP, index1, index2);
-        StructGraphics.swap_image_entries(first_building_icon_image_index + index1, first_building_icon_image_index + index2, 1, 1);
+        ResourceFile[R16FILE_DATA].swap_image_entries(first_building_icon_image_index + index1, first_building_icon_image_index + index2, 1, 1);
        end;
     ITEM_UNIT:
       // Swap unit icon
-      StructGraphics.swap_image_entries(first_unit_icon_image_index + index1, first_unit_icon_image_index + index2, 1, 1);
+      ResourceFile[R16FILE_DATA].swap_image_entries(first_unit_icon_image_index + index1, first_unit_icon_image_index + index2, 1, 1);
     ITEM_WEAPON:
       // Swap projectile art
       swap_arts(ART_PROJECTILE, index1, index2);
@@ -1973,7 +2002,7 @@ begin
   directions := IfThen(ptrs.directions_list_ptr <> nil, directions, 1);
   frames := IfThen(ptrs.frames_list_ptr <> nil, frames, 1);
   num_images := IfThen(art_type = ART_BUILDING, directions * 2 + 1, directions * frames);
-  StructGraphics.add_empty_image_entries(ptrs.next_free_image_index_ptr^, num_images);
+  ResourceFile[R16FILE_DATA].add_empty_image_entries(ptrs.next_free_image_index_ptr^, num_images);
   // Store number of directions and frames
   if ptrs.directions_list_ptr <> nil then
     ptrs.directions_list_ptr[ptrs.art_count_byte_ptr^ * 4] := directions;
@@ -2018,7 +2047,7 @@ begin
   if use_art_count then
     Dec(ptrs.art_count_byte_ptr^);
   // Remove image entries
-  StructGraphics.remove_image_entries(ptrs.image_indexes_list_ptr[ptrs.art_count_byte_ptr^], get_art_num_images(art_type, ptrs.art_count_byte_ptr^));
+  ResourceFile[R16FILE_DATA].remove_image_entries(ptrs.image_indexes_list_ptr[ptrs.art_count_byte_ptr^], get_art_num_images(art_type, ptrs.art_count_byte_ptr^));
   // Reset number of directions and frames
   if ptrs.directions_list_ptr <> nil then
     ptrs.directions_list_ptr[ptrs.art_count_byte_ptr^ * 4] := 0;
@@ -2043,10 +2072,10 @@ begin
   // Modify number of image entries
   if art_type = ART_BUILDING then
   begin
-    StructGraphics.change_image_entry_count(building_art_image_indexes[index] + 1 + templates.BuildingArtDirections[index], templates.BuildingArtDirections[index], directions);
-    StructGraphics.change_image_entry_count(building_art_image_indexes[index] + 1, templates.BuildingArtDirections[index], directions);
+    ResourceFile[R16FILE_DATA].change_image_entry_count(building_art_image_indexes[index] + 1 + templates.BuildingArtDirections[index], templates.BuildingArtDirections[index], directions);
+    ResourceFile[R16FILE_DATA].change_image_entry_count(building_art_image_indexes[index] + 1, templates.BuildingArtDirections[index], directions);
   end else
-    StructGraphics.change_image_entry_count(ptrs.image_indexes_list_ptr[index], get_art_num_images(art_type, index), directions * frames);
+    ResourceFile[R16FILE_DATA].change_image_entry_count(ptrs.image_indexes_list_ptr[index], get_art_num_images(art_type, index), directions * frames);
   // Store new number of directions and frames
   if ptrs.directions_list_ptr <> nil then
     ptrs.directions_list_ptr[index * 4] := directions;
@@ -2061,7 +2090,7 @@ var
 begin
   ptrs := Addr(art_type_pointers[art_type]);
   // Swap image entries
-  StructGraphics.swap_image_entries(ptrs.image_indexes_list_ptr[index1], ptrs.image_indexes_list_ptr[index2], get_art_num_images(art_type, index1), get_art_num_images(art_type, index2));
+  ResourceFile[R16FILE_DATA].swap_image_entries(ptrs.image_indexes_list_ptr[index1], ptrs.image_indexes_list_ptr[index2], get_art_num_images(art_type, index1), get_art_num_images(art_type, index2));
   // Swap directions and frames count
   if ptrs.directions_list_ptr <> nil then
     swap_data(ptrs.directions_list_ptr, 4, index1, index2);
@@ -2156,8 +2185,8 @@ begin
     ref.directions := ptrs.directions_list_ptr[index * 4];
   if ptrs.frames_list_ptr <> nil then
     ref.frames := ptrs.frames_list_ptr[index * ptrs.frames_size];
-  ref.art_size := StructGraphics.get_image_entries_size(ptrs.image_indexes_list_ptr[index], get_art_num_images(art_type, index));
-  art_bytes := TByteArrayPtr(StructGraphics.get_structure_image_header(ptrs.image_indexes_list_ptr[index]));
+  ref.art_size := ResourceFile[R16FILE_DATA].get_image_entries_size(ptrs.image_indexes_list_ptr[index], get_art_num_images(art_type, index));
+  art_bytes := TByteArrayPtr(ResourceFile[R16FILE_DATA].get_structure_image_header(ptrs.image_indexes_list_ptr[index]));
   for i := 0 to ref.art_size - 1 do
     inc(ref.checksum, art_bytes[i]);
 end;
@@ -2227,7 +2256,7 @@ begin
       Application.MessageBox(PChar(Format('New %s art was added at position %d and it is being imported from file %s.', [art_type_names[art_type], result, import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK)
     else
       Application.MessageBox(PChar(Format('Replacing %s art by import from file %s.', [art_type_names[art_type], import_filename])), 'Import art', MB_ICONINFORMATION or MB_OK);
-    StructGraphics.import_image_entries(import_filename, ptrs.image_indexes_list_ptr[result], get_art_num_images(art_type, result));
+    ResourceFile[R16FILE_DATA].import_image_entries(import_filename, ptrs.image_indexes_list_ptr[result], get_art_num_images(art_type, result));
   end else
     Application.MessageBox(PChar(Format('New %s art was added at position %d but is empty. You should set it up or import it.', [art_type_names[art_type], result])), 'Import art', MB_ICONWARNING or MB_OK);
 end;
@@ -2289,7 +2318,7 @@ var
   i: integer;
 begin
   // Building icon
-  icon_ptr := StructGraphics.get_structure_image_header(first_building_icon_image_index + index);
+  icon_ptr := ResourceFile[R16FILE_DATA].get_structure_image_header(first_building_icon_image_index + index);
   if icon_ptr.EntryType <> 0 then
     Move(icon_ptr.EntryType, data.icon_data, sizeof(data.icon_data))
   else
@@ -2320,13 +2349,13 @@ var
 begin
   // Building icon
   if data.icon_data[0] <> 0 then
-    StructGraphics.modify_image_data(first_building_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
+    ResourceFile[R16FILE_DATA].modify_image_data(first_building_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
   else
-    StructGraphics.modify_image_data(first_building_icon_image_index + index, data.icon_data, 1);
+    ResourceFile[R16FILE_DATA].modify_image_data(first_building_icon_image_index + index, data.icon_data, 1);
   // Buildup art frames
   if templates.BuildupArtFrames[index] <> data.art_references[3].frames then
   begin
-    StructGraphics.change_image_entry_count(buildup_art_image_indexes[index], templates.BuildupArtFrames[index], data.art_references[3].frames);
+    ResourceFile[R16FILE_DATA].change_image_entry_count(buildup_art_image_indexes[index], templates.BuildupArtFrames[index], data.art_references[3].frames);
     templates.BuildupArtFrames[index] := data.art_references[3].frames;
     compute_image_indexes;
   end;
@@ -2358,7 +2387,7 @@ var
   i: integer;
 begin
   // Unit icon
-  icon_ptr := StructGraphics.get_structure_image_header(first_unit_icon_image_index + index);
+  icon_ptr := ResourceFile[R16FILE_DATA].get_structure_image_header(first_unit_icon_image_index + index);
   if icon_ptr.EntryType <> 0 then
     Move(icon_ptr.EntryType, data.icon_data, sizeof(data.icon_data))
   else
@@ -2388,9 +2417,9 @@ var
 begin
   // Unit icon
   if data.icon_data[0] <> 0 then
-    StructGraphics.modify_image_data(first_unit_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
+    ResourceFile[R16FILE_DATA].modify_image_data(first_unit_icon_image_index + index, data.icon_data, sizeof(data.icon_data))
   else
-    StructGraphics.modify_image_data(first_unit_icon_image_index + index, data.icon_data, 1);
+    ResourceFile[R16FILE_DATA].modify_image_data(first_unit_icon_image_index + index, data.icon_data, 1);
   // Item references
   data.unit_template.UnitGroup :=            restore_item_reference(data.item_references[0],  ITEM_UNIT_GROUP,     data.unit_template.UnitGroup,            import_path);
   data.unit_template.Prereq1BuildingGroup := restore_item_reference(data.item_references[1],  ITEM_BUILDING_GROUP, data.unit_template.Prereq1BuildingGroup, import_path);

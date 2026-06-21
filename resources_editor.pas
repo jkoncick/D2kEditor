@@ -1,4 +1,4 @@
-unit structures_editor;
+unit resources_editor;
 
 interface
 
@@ -10,6 +10,7 @@ uses
 const house_names: array[0..CNT_SIDES-1] of string = ('Atreides', 'Harkonnen', 'Ordos', 'Emperor', 'Fremen', 'Smugglers', 'Mercenaries', 'Sandworm');
 const unit_voices: array[0..8] of string = ('A1', 'A2', 'A3', 'H1', 'H2', 'H3', 'O1', 'O2', 'O3');
 const TECHPOS_PREVIEW_SIZE = 7;
+const ui_art_frames: array[0..17] of byte = (3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 2, 4);
 
 type
   TFillDataAction = (
@@ -122,8 +123,10 @@ type
 
 type
   TArtControlGroup = record
+    filenum: integer;
     first_image_index: integer;
     last_item_index: integer;
+    use_house_colors: boolean;
     is_unit: boolean;
     zoom: integer;
     // Referenced controls
@@ -165,11 +168,11 @@ type
   TArtControlGroupPtr = ^TArtControlGroup;
 
 // *****************************************************************************
-// TStructuresEditor class
+// TResourcesEditor class
 // *****************************************************************************
 
 type
-  TStructuresEditor = class(TForm)
+  TResourcesEditor = class(TForm)
     StatusBar: TStatusBar;
     MainMenu: TMainMenu;
     PageControl: TPageControl;
@@ -646,6 +649,13 @@ type
     lbTiledataUnitGroup: TListBox;
     cbxTiledataSide: TComboBox;
     btnTiledataClear: TButton;
+    PageUIMouse: TTabSheet;
+    lblUIArtList: TLabel;
+    lbUIArtList: TListBox;
+    pnUIArtControlGroup: TPanel;
+    lblMouseArtList: TLabel;
+    lbMouseArtList: TListBox;
+    pnMouseArtControlGroup: TPanel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -744,6 +754,9 @@ type
     procedure btnSoundRsAddClick(Sender: TObject);
     procedure btnSoundRsRemoveClick(Sender: TObject);
     procedure btnSoundRsRenameClick(Sender: TObject);
+    // UI+Mouse tab events
+    procedure lbUIArtListClick(Sender: TObject);
+    procedure lbMouseArtListClick(Sender: TObject);
     // Item control group events
     procedure IcgAddClick(Sender: TObject);
     procedure IcgRemoveClick(Sender: TObject);
@@ -784,7 +797,7 @@ type
     cbxBuilExpAnimExplosion: array[0..MAX_BUILEXP_ANIMATIONS-1] of TComboBox;
     seBuilExpAnimNumFrames: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
     item_control_groups: array[0..8] of TItemControlGroup;
-    art_control_groups: array[0..6] of TArtControlGroup;
+    art_control_groups: array[0..8] of TArtControlGroup;
     // Last indexes
     last_builexp_building_index: integer;
     last_speed_type_index: integer;
@@ -835,7 +848,7 @@ type
     // Item control group procedures
     procedure create_item_control_group(group_index: integer; fill_data_action: TFillDataAction; list_control: TListBox; edit_item_name: TEdit; layout: TItemControlGroupLayoutPtr; container: TPanel);
     // Art control group procedures
-    procedure create_art_control_group(group_index: integer; is_unit: boolean; list_control: TListBox; se_directions, se_frames: TSpinEdit; container, container2: TPanel);
+    procedure create_art_control_group(group_index: integer; filenum: integer; use_house_colors: boolean; is_unit: boolean; list_control: TListBox; se_directions, se_frames: TSpinEdit; container, container2: TPanel);
     procedure fill_art_control_group_frame_list(group_index: integer; first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
     procedure update_art_control_group_frame_list(group_index: integer);
     // Drawing procedures
@@ -847,8 +860,8 @@ type
     procedure draw_unit_preview;
     procedure draw_unit_frame(image_index, house: integer; is_stealth: boolean);
     procedure draw_builexp_preview;
-    procedure draw_building_art_frame(img_target: TImage; image_index, house, zoom: integer; raw, draw_background: boolean);
-    procedure draw_unit_art_frame(img_target: TImage; image_index, house, zoom: integer; raw: boolean);
+    procedure draw_building_art_frame(img_target: TImage; filenum, image_index, house, zoom: integer; raw, draw_background: boolean);
+    procedure draw_unit_art_frame(img_target: TImage; filenum, image_index, house, zoom: integer; raw: boolean);
     procedure draw_techpos_preview;
     // General procedures
     procedure apply_changes;
@@ -856,17 +869,17 @@ type
   end;
 
 var
-  StructuresEditor: TStructuresEditor;
+  ResourcesEditor: TResourcesEditor;
 
 implementation
 
-uses Math, StrUtils, _settings, _missionini, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _graphics, _sounds, _gamelists, test_map_dialog;
+uses Math, StrUtils, _settings, _missionini, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _resourcefile, _colours, _sounds, _gamelists, test_map_dialog;
 
 {$R *.dfm}
 
-{ TStructuresEditor }
+{ TResourcesEditor }
 
-procedure TStructuresEditor.FormCreate(Sender: TObject);
+procedure TResourcesEditor.FormCreate(Sender: TObject);
 var
   tmp_strings: TStringList;
   i: integer;
@@ -995,18 +1008,20 @@ begin
   item_control_groups[ITEM_UNIT_VOICES].list_control := lbUnitList;
   item_control_groups[ITEM_UNIT_VOICES].edit_item_name := edUnitName;
   // Art control groups
-  create_art_control_group(ART_BUILDING,           false, lbBuildingArtList,          seBuildingArtDirections,   nil,                       pnBuildingArtControlGroup,       pnBuildingArtList);
-  create_art_control_group(ART_BUILDING_ANIMATION, false, lbBuildingAnimationArtList, nil,                       seBuildingAnimationFrames, pnBuildingAnimationControlGroup, nil);
-  create_art_control_group(ART_BUILDUP,            false, lbBuildingAnimationArtList, nil,                       seBuildupArtFrames,        pnBuildupArtControlGroup,        nil);
-  create_art_control_group(ART_UNIT,               true,  lbUnitArtList,              seUnitArtDirectionFrames,  seUnitArtAnimationFrames,  pnUnitArtControlGroup,           pnUnitArtList);
-  create_art_control_group(ART_PROJECTILE,         true,  lbProjectileArtList,        seProjectileArtDirections, nil,                       pnProjectileArtControlGroup,     pnProjectileArtList);
-  create_art_control_group(ART_ANIMATION,          true,  lbAnimationArtList,         nil,                       seAnimationArtFrames,      pnAnimationArtControlGroup,      pnAnimationArtList);
-  create_art_control_group(ART_OTHER,              false, lbOtherArtList,             nil,                       nil,                       pnOtherArtControlGroup,          nil);
+  create_art_control_group(ART_BUILDING,           R16FILE_DATA,  true,  false, lbBuildingArtList,          seBuildingArtDirections,   nil,                       pnBuildingArtControlGroup,       pnBuildingArtList);
+  create_art_control_group(ART_BUILDING_ANIMATION, R16FILE_DATA,  true,  false, lbBuildingAnimationArtList, nil,                       seBuildingAnimationFrames, pnBuildingAnimationControlGroup, nil);
+  create_art_control_group(ART_BUILDUP,            R16FILE_DATA,  true,  false, lbBuildingAnimationArtList, nil,                       seBuildupArtFrames,        pnBuildupArtControlGroup,        nil);
+  create_art_control_group(ART_UNIT,               R16FILE_DATA,  true,  true,  lbUnitArtList,              seUnitArtDirectionFrames,  seUnitArtAnimationFrames,  pnUnitArtControlGroup,           pnUnitArtList);
+  create_art_control_group(ART_PROJECTILE,         R16FILE_DATA,  true,  true,  lbProjectileArtList,        seProjectileArtDirections, nil,                       pnProjectileArtControlGroup,     pnProjectileArtList);
+  create_art_control_group(ART_ANIMATION,          R16FILE_DATA,  true,  true,  lbAnimationArtList,         nil,                       seAnimationArtFrames,      pnAnimationArtControlGroup,      pnAnimationArtList);
+  create_art_control_group(ART_OTHER,              R16FILE_DATA,  false, false, lbOtherArtList,             nil,                       nil,                       pnOtherArtControlGroup,          nil);
+  create_art_control_group(ART_UI,                 R16FILE_UI,    false, false, lbUIArtList,                nil,                       nil,                       pnUIArtControlGroup,             nil);
+  create_art_control_group(ART_MOUSE,              R16FILE_MOUSE, false, true,  lbMouseArtList,             nil,                       nil,                       pnMouseArtControlGroup,          nil);
 
   tmp_strings.Destroy;
 end;
 
-procedure TStructuresEditor.FormShow(Sender: TObject);
+procedure TResourcesEditor.FormShow(Sender: TObject);
 begin
   if pending_update_sound_list then
     update_sound_list;
@@ -1016,18 +1031,18 @@ begin
     update_tileset;
 end;
 
-procedure TStructuresEditor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TResourcesEditor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if key = 27 then
     Close;
 end;
 
-procedure TStructuresEditor.Applychanges1Click(Sender: TObject);
+procedure TResourcesEditor.Applychanges1Click(Sender: TObject);
 begin
   apply_changes;
 end;
 
-procedure TStructuresEditor.Savetofiles1Click(Sender: TObject);
+procedure TResourcesEditor.Savetofiles1Click(Sender: TObject);
 begin
   apply_changes;
   if Launcher.check_game_is_running then
@@ -1036,7 +1051,7 @@ begin
   confirm_overwrite_original_file_last_answer := 0;
 end;
 
-procedure TStructuresEditor.Launchgame1Click(Sender: TObject);
+procedure TResourcesEditor.Launchgame1Click(Sender: TObject);
 begin
   apply_changes;
   if Launcher.check_game_is_running then
@@ -1047,7 +1062,7 @@ begin
   confirm_overwrite_original_file_last_answer := 0;
 end;
 
-procedure TStructuresEditor.Launchmission1Click(Sender: TObject);
+procedure TResourcesEditor.Launchmission1Click(Sender: TObject);
 begin
   apply_changes;
   if not Launcher.check_map_can_be_tested then
@@ -1058,7 +1073,7 @@ begin
   confirm_overwrite_original_file_last_answer := 0;
 end;
 
-procedure TStructuresEditor.Launchwithsettings1Click(Sender: TObject);
+procedure TResourcesEditor.Launchwithsettings1Click(Sender: TObject);
 begin
   apply_changes;
   if not Launcher.check_map_can_be_tested then
@@ -1070,7 +1085,9 @@ begin
   confirm_overwrite_original_file_last_answer := 0;
 end;
 
-procedure TStructuresEditor.Reloadfiles1Click(Sender: TObject);
+procedure TResourcesEditor.Reloadfiles1Click(Sender: TObject);
+var
+  filenum: integer;
 begin
   Structures.load_templates_bin(true);
   Structures.load_builexp_bin(true);
@@ -1078,38 +1095,39 @@ begin
   Structures.load_techpos_bin(true);
   Structures.load_tiledata_bin(true);
   Structures.load_speed_bin(true);
-  StructGraphics.load_data_r16(true);
+  for filenum := 0 to Length(ResourceFile) - 1 do
+    ResourceFile[filenum].load_r16(true);
   Sounds.load_sound_rs(true);
   if StringTable.samples_uib_modified or samples_uib_ui_modified then
     StringTable.load_samples_uib(true);
   pnImagePalette.Visible := false;
 end;
 
-procedure TStructuresEditor.PageControlChanging(Sender: TObject; var AllowChange: Boolean);
+procedure TResourcesEditor.PageControlChanging(Sender: TObject; var AllowChange: Boolean);
 begin
   store_data;
 end;
 
-procedure TStructuresEditor.PageControlChange(Sender: TObject);
+procedure TResourcesEditor.PageControlChange(Sender: TObject);
 begin
   pnImagePalette.Visible := false;
   fill_page_data;
   fill_status_bar;
 end;
 
-procedure TStructuresEditor.lbBuildingGroupListClick(Sender: TObject);
+procedure TResourcesEditor.lbBuildingGroupListClick(Sender: TObject);
 begin
   item_control_groups[ITEM_BUILDING_GROUP].last_item_index := lbBuildingGroupList.ItemIndex;
   item_control_groups[ITEM_BUILDING_GROUP].edit_item_name.Text := Structures.templates.BuildingGroupStrings[lbBuildingGroupList.ItemIndex];
 end;
 
-procedure TStructuresEditor.lbBuildingListClick(Sender: TObject);
+procedure TResourcesEditor.lbBuildingListClick(Sender: TObject);
 begin
   store_building_data;
   fill_building_data;
 end;
 
-procedure TStructuresEditor.imgBuildingIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.imgBuildingIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   image_index: integer;
 begin
@@ -1120,7 +1138,7 @@ begin
   begin
     if ImageImportDialog.Execute then
     begin
-      if StructGraphics.import_single_image(ImageImportDialog.FileName, image_index, true) then
+      if ResourceFile[R16FILE_DATA].import_single_image(ImageImportDialog.FileName, image_index, true) then
       begin
         store_building_data;
         fill_building_data;
@@ -1134,11 +1152,11 @@ begin
   begin
     ImageExportDialog.FileName := Structures.templates.BuildingNameStrings[lbBuildingList.ItemIndex];
     if ImageExportDialog.Execute then
-      StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+      ResourceFile[R16FILE_DATA].export_single_image(ImageExportDialog.FileName, image_index);
   end;
 end;
 
-procedure TStructuresEditor.imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.imgBuildingTilesOccupiedAllMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   X := X div 16;
   Y := Y div 16;
@@ -1150,7 +1168,7 @@ begin
   draw_building_preview(true);
 end;
 
-procedure TStructuresEditor.imgBuildingTilesOccupiedSolidMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.imgBuildingTilesOccupiedSolidMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   X := X div 16;
   Y := Y div 16;
@@ -1161,7 +1179,7 @@ begin
   draw_building_tile_map(imgBuildingTilesOccupiedSolid, tmp_building_tiles_occupied_solid);
 end;
 
-procedure TStructuresEditor.edBuildingFlagsChange(Sender: TObject);
+procedure TResourcesEditor.edBuildingFlagsChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1184,7 +1202,7 @@ begin
   draw_building_preview(true);
 end;
 
-procedure TStructuresEditor.BuildingFlagCheckboxChange(Sender: TObject);
+procedure TResourcesEditor.BuildingFlagCheckboxChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1201,7 +1219,7 @@ begin
   draw_building_preview(true);
 end;
 
-procedure TStructuresEditor.btnBuildingDirectionFramesClick(Sender: TObject);
+procedure TResourcesEditor.btnBuildingDirectionFramesClick(Sender: TObject);
 var
   i: integer;
   count: integer;
@@ -1221,14 +1239,14 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.RedrawBuildingPreview(Sender: TObject);
+procedure TResourcesEditor.RedrawBuildingPreview(Sender: TObject);
 begin
   if loading then
     exit;
   draw_building_preview(true);
 end;
 
-procedure TStructuresEditor.btnBuildingBuildingAnimationPlayClick(Sender: TObject);
+procedure TResourcesEditor.btnBuildingBuildingAnimationPlayClick(Sender: TObject);
 begin
   if tmBuildingBuildingAnimation.Enabled then
   begin
@@ -1243,7 +1261,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.tmBuildingBuildingAnimationTimer(Sender: TObject);
+procedure TResourcesEditor.tmBuildingBuildingAnimationTimer(Sender: TObject);
 var
   num_frames: integer;
   anim_speed: integer;
@@ -1264,13 +1282,13 @@ begin
   tmBuildingBuildingAnimation.Tag := tmBuildingBuildingAnimation.Tag + 1;
 end;
 
-procedure TStructuresEditor.btnBuildingBuildupArtPlayClick(Sender: TObject);
+procedure TResourcesEditor.btnBuildingBuildupArtPlayClick(Sender: TObject);
 begin
   tmBuildingBuildupArt.Enabled := true;
   tmBuildingBuildupArt.Tag := 0;
 end;
 
-procedure TStructuresEditor.tmBuildingBuildupArtTimer(Sender: TObject);
+procedure TResourcesEditor.tmBuildingBuildupArtTimer(Sender: TObject);
 var
   num_frames: integer;
   buildup_frames_to_show: integer;
@@ -1289,19 +1307,19 @@ begin
   tmBuildingBuildupArt.Tag := tmBuildingBuildupArt.Tag + 1;
 end;
 
-procedure TStructuresEditor.lbUnitGroupListClick(Sender: TObject);
+procedure TResourcesEditor.lbUnitGroupListClick(Sender: TObject);
 begin
   item_control_groups[ITEM_UNIT_GROUP].last_item_index := lbUnitGroupList.ItemIndex;
   item_control_groups[ITEM_UNIT_GROUP].edit_item_name.Text := Structures.templates.UnitGroupStrings[lbUnitGroupList.ItemIndex];
 end;
 
-procedure TStructuresEditor.lbUnitListClick(Sender: TObject);
+procedure TResourcesEditor.lbUnitListClick(Sender: TObject);
 begin
   store_unit_data;
   fill_unit_data;
 end;
 
-procedure TStructuresEditor.imgUnitIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.imgUnitIconMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   image_index: integer;
 begin
@@ -1312,7 +1330,7 @@ begin
   begin
     if ImageImportDialog.Execute then
     begin
-      if StructGraphics.import_single_image(ImageImportDialog.FileName, image_index, true) then
+      if ResourceFile[R16FILE_DATA].import_single_image(ImageImportDialog.FileName, image_index, true) then
       begin
         store_unit_data;
         fill_unit_data;
@@ -1326,11 +1344,11 @@ begin
   begin
     ImageExportDialog.FileName := Structures.templates.UnitNameStrings[lbUnitList.ItemIndex];
     if ImageExportDialog.Execute then
-      StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+      ResourceFile[R16FILE_DATA].export_single_image(ImageExportDialog.FileName, image_index);
   end;
 end;
 
-procedure TStructuresEditor.sgUnitVoicesSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+procedure TResourcesEditor.sgUnitVoicesSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
   unt: TUnitTemplatePtr;
 begin
@@ -1344,7 +1362,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.cbxUnitVoiceChange(Sender: TObject);
+procedure TResourcesEditor.cbxUnitVoiceChange(Sender: TObject);
 var
   unt: TUnitTemplatePtr;
 begin
@@ -1356,7 +1374,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.edUnitFlagsChange(Sender: TObject);
+procedure TResourcesEditor.edUnitFlagsChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1372,7 +1390,7 @@ begin
   draw_unit_preview;
 end;
 
-procedure TStructuresEditor.UnitFlagCheckboxChange(Sender: TObject);
+procedure TResourcesEditor.UnitFlagCheckboxChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1389,7 +1407,7 @@ begin
   draw_unit_preview;
 end;
 
-procedure TStructuresEditor.btnUnitDirectionFramesClick(Sender: TObject);
+procedure TResourcesEditor.btnUnitDirectionFramesClick(Sender: TObject);
 var
   i: integer;
   count: integer;
@@ -1409,14 +1427,14 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.RedrawUnitPreview(Sender: TObject);
+procedure TResourcesEditor.RedrawUnitPreview(Sender: TObject);
 begin
   if loading then
     exit;
   draw_unit_preview;
 end;
 
-procedure TStructuresEditor.lbBuildingArtListClick(Sender: TObject);
+procedure TResourcesEditor.lbBuildingArtListClick(Sender: TObject);
 var
   index: integer;
   i: integer;
@@ -1447,7 +1465,7 @@ begin
   end;
 
   selected_frame := 1;
-  header := StructGraphics.get_structure_image_header(first_image_index + 1);
+  header := ResourceFile[R16FILE_DATA].get_structure_image_header(first_image_index + 1);
   if (header = nil) or (header.EntryType = 0) then
     selected_frame := 0;
   fill_art_control_group_frame_list(ART_BUILDING, first_image_index, directions * 2 + 1, tmp_strings, IfThen(sender <> nil, selected_frame, art_control_groups[ART_BUILDING].frame_list.ItemIndex));
@@ -1455,7 +1473,7 @@ begin
   seBuildingArtDirections.Value := directions;
 end;
 
-procedure TStructuresEditor.lbBuildingAnimationArtListClick(Sender: TObject);
+procedure TResourcesEditor.lbBuildingAnimationArtListClick(Sender: TObject);
 var
   index: integer;
   first_image_index: integer;
@@ -1477,20 +1495,20 @@ begin
   seBuildupArtFrames.Value := num_frames;
 end;
 
-procedure TStructuresEditor.btnBuildingAnimationArtModifyClick(Sender: TObject);
+procedure TResourcesEditor.btnBuildingAnimationArtModifyClick(Sender: TObject);
 begin
   Structures.modify_art(ART_BUILDING_ANIMATION, lbBuildingAnimationArtList.ItemIndex, 0, seBuildingAnimationFrames.Value);
   Structures.modify_art(ART_BUILDUP,            lbBuildingAnimationArtList.ItemIndex, 0, seBuildupArtFrames.Value);
   fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.lbBuilExpBuildingListClick(Sender: TObject);
+procedure TResourcesEditor.lbBuilExpBuildingListClick(Sender: TObject);
 begin
   store_builexp_data;
   fill_builexp_data;
 end;
 
-procedure TStructuresEditor.seBuilExpNumAnimationsChange(Sender: TObject);
+procedure TResourcesEditor.seBuilExpNumAnimationsChange(Sender: TObject);
 var
   i: integer;
   value: integer;
@@ -1512,7 +1530,7 @@ begin
   RedrawBuilExpPreview(nil);
 end;
 
-procedure TStructuresEditor.RedrawBuilExpPreview(Sender: TObject);
+procedure TResourcesEditor.RedrawBuilExpPreview(Sender: TObject);
 var
   i: integer;
 begin
@@ -1530,7 +1548,7 @@ begin
   draw_builexp_preview;
 end;
 
-procedure TStructuresEditor.lbUnitArtListClick(Sender: TObject);
+procedure TResourcesEditor.lbUnitArtListClick(Sender: TObject);
 var
   index: integer;
   i, j: integer;
@@ -1557,13 +1575,13 @@ begin
   seUnitArtDirectionFrames.Value := directions;
 end;
 
-procedure TStructuresEditor.lbWeaponListClick(Sender: TObject);
+procedure TResourcesEditor.lbWeaponListClick(Sender: TObject);
 begin
   store_weapon_data;
   fill_weapon_data;
 end;
 
-procedure TStructuresEditor.edWeaponFlagsChange(Sender: TObject);
+procedure TResourcesEditor.edWeaponFlagsChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1585,7 +1603,7 @@ begin
   loading := false;
 end;
 
-procedure TStructuresEditor.WeaponFlagCheckboxChange(Sender: TObject);
+procedure TResourcesEditor.WeaponFlagCheckboxChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1601,7 +1619,7 @@ begin
   loading := false;
 end;
 
-procedure TStructuresEditor.cbxWeaponProjectileArtChange(Sender: TObject);
+procedure TResourcesEditor.cbxWeaponProjectileArtChange(Sender: TObject);
 begin
   if lbProjectileArtList.ItemIndex = cbxWeaponProjectileArt.ItemIndex then
     exit;
@@ -1609,13 +1627,13 @@ begin
   lbProjectileArtListClick(nil);
 end;
 
-procedure TStructuresEditor.btnWeaponFiringSoundPlayClick(Sender: TObject);
+procedure TResourcesEditor.btnWeaponFiringSoundPlayClick(Sender: TObject);
 begin
   if cbxWeaponFiringSound.ItemIndex > 0 then
     Sounds.play_sound(Sounds.find_sound(StringTable.samples_uib.ValueFromIndex[cbxWeaponFiringSound.ItemIndex - 1]));
 end;
 
-procedure TStructuresEditor.lbProjectileArtListClick(Sender: TObject);
+procedure TResourcesEditor.lbProjectileArtListClick(Sender: TObject);
 var
   index: integer;
 begin
@@ -1628,13 +1646,13 @@ begin
   seProjectileArtDirections.Value := Structures.templates.ProjectileArtDirections[index];
 end;
 
-procedure TStructuresEditor.lbExplosionListClick(Sender: TObject);
+procedure TResourcesEditor.lbExplosionListClick(Sender: TObject);
 begin
   store_explosion_data;
   fill_explosion_data;
 end;
 
-procedure TStructuresEditor.edExplosionFlagsChange(Sender: TObject);
+procedure TResourcesEditor.edExplosionFlagsChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1651,7 +1669,7 @@ begin
   loading := false;
 end;
 
-procedure TStructuresEditor.ExplosionFlagCheckboxChange(Sender: TObject);
+procedure TResourcesEditor.ExplosionFlagCheckboxChange(Sender: TObject);
 var
   value: cardinal;
 begin
@@ -1667,13 +1685,13 @@ begin
   loading := false;
 end;
 
-procedure TStructuresEditor.btnExplosionSoundPlayClick(Sender: TObject);
+procedure TResourcesEditor.btnExplosionSoundPlayClick(Sender: TObject);
 begin
   if cbxExplosionSound.ItemIndex > 0 then
     Sounds.play_sound(Sounds.find_sound(StringTable.samples_uib.ValueFromIndex[cbxExplosionSound.ItemIndex - 1]));
 end;
 
-procedure TStructuresEditor.lbAnimationArtListClick(Sender: TObject);
+procedure TResourcesEditor.lbAnimationArtListClick(Sender: TObject);
 var
   index: integer;
 begin
@@ -1686,7 +1704,7 @@ begin
   seAnimationArtFrames.Value := Structures.templates.AnimationArtFrames[index];
 end;
 
-procedure TStructuresEditor.lbArmourTypeListClick(Sender: TObject);
+procedure TResourcesEditor.lbArmourTypeListClick(Sender: TObject);
 var
   index: integer;
   i: integer;
@@ -1705,7 +1723,7 @@ begin
   lblArmourTypeUsedBy.Caption := str;
 end;
 
-procedure TStructuresEditor.lbWarheadListClick(Sender: TObject);
+procedure TResourcesEditor.lbWarheadListClick(Sender: TObject);
 var
   index: integer;
   i: integer;
@@ -1721,7 +1739,7 @@ begin
   lblWarheadUsedBy.Caption := str;
 end;
 
-procedure TStructuresEditor.lbSpeedTypeListClick(Sender: TObject);
+procedure TResourcesEditor.lbSpeedTypeListClick(Sender: TObject);
 var
   index: integer;
   i: integer;
@@ -1737,7 +1755,7 @@ begin
   lblSpeedTypeUsedBy.Caption := str;
 end;
 
-procedure TStructuresEditor.btnSpeedTypeRenameClick(Sender: TObject);
+procedure TResourcesEditor.btnSpeedTypeRenameClick(Sender: TObject);
 begin
   store_data;
   store_c_string(edSpeedTypeName.Text, Addr(Structures.speed.SpeedNameStrings[lbSpeedTypeList.ItemIndex]), Length(Structures.speed.SpeedNameStrings[0]));
@@ -1745,7 +1763,7 @@ begin
   fill_data(fdaSpeedTypeList);
 end;
 
-procedure TStructuresEditor.vleGroupIDsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+procedure TResourcesEditor.vleGroupIDsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
   index: integer;
   item_name_list_combo: TComboBox;
@@ -1768,19 +1786,19 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.vleGroupIDsTopLeftChanged(Sender: TObject);
+procedure TResourcesEditor.vleGroupIDsTopLeftChanged(Sender: TObject);
 begin
   cbxGroupIDsSelect.Visible := (Structures.group_ids_byte_types[cbxGroupIDsSelect.Tag] <> gibtNone) and (vleGroupIDs.Row >= vleGroupIDs.TopRow) and (vleGroupIDs.Row < vleGroupIDs.TopRow + vleGroupIDs.VisibleRowCount);
   cbxGroupIDsSelect.Top := (vleGroupIDs.Row - vleGroupIDs.TopRow + 1) * 20 + 17;
 end;
 
-procedure TStructuresEditor.cbxGroupIDsSelectChange(Sender: TObject);
+procedure TResourcesEditor.cbxGroupIDsSelectChange(Sender: TObject);
 begin
   Structures.templates.GroupIDs[cbxGroupIDsSelect.Tag] := cbxGroupIDsSelect.ItemIndex - 1;
   vleGroupIDs.Cells[1, cbxGroupIDsSelect.Tag + 1] := get_group_ids_cell_text(cbxGroupIDsSelect.Tag, cbxGroupIDsSelect.ItemIndex - 1);
 end;
 
-procedure TStructuresEditor.lbOtherArtListClick(Sender: TObject);
+procedure TResourcesEditor.lbOtherArtListClick(Sender: TObject);
 var
   index: integer;
   i: integer;
@@ -1799,7 +1817,7 @@ begin
   fill_art_control_group_frame_list(ART_OTHER, frame_index, other_art_frames[index], nil, IfThen(sender <> nil, 0, art_control_groups[ART_OTHER].frame_list.ItemIndex));
 end;
 
-procedure TStructuresEditor.rgTechposTechLevelClick(Sender: TObject);
+procedure TResourcesEditor.rgTechposTechLevelClick(Sender: TObject);
 var
   tech: integer;
   i: integer;
@@ -1818,7 +1836,7 @@ begin
   draw_techpos_preview;
 end;
 
-procedure TStructuresEditor.sgTechposDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+procedure TResourcesEditor.sgTechposDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
   house, unitnum, tech: integer;
 begin
@@ -1834,7 +1852,7 @@ begin
   cbxTechposUnitGroup.Tag := house * 10 + unitnum;
 end;
 
-procedure TStructuresEditor.sgTechposDataSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+procedure TResourcesEditor.sgTechposDataSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
 var
   tech, unitnum: integer;
   int_value: Shortint;
@@ -1853,7 +1871,7 @@ begin
   draw_techpos_preview;
 end;
 
-procedure TStructuresEditor.cbxTechposUnitGroupChange(Sender: TObject);
+procedure TResourcesEditor.cbxTechposUnitGroupChange(Sender: TObject);
 var
   house, unitnum, tech: integer;
 begin
@@ -1867,13 +1885,13 @@ begin
   draw_techpos_preview;
 end;
 
-procedure TStructuresEditor.TechposPreviewChange(Sender: TObject);
+procedure TResourcesEditor.TechposPreviewChange(Sender: TObject);
 begin
   lblTechposNumUnits.Caption := 'Number of units to show: ' + inttostr(tbTechposNumUnits.Position);
   draw_techpos_preview;
 end;
 
-procedure TStructuresEditor.imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.imgTechposPreviewMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   pos_x, pos_y: integer;
   i: integer;
@@ -1900,7 +1918,7 @@ begin
   cbxTechposUnitGroup.SetFocus;
 end;
 
-procedure TStructuresEditor.sgTiledataDataDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+procedure TResourcesEditor.sgTiledataDataDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 begin
   if (sgTiledataData.Row = ARow) or (ACol = 0) or (ARow = 0) then
     exit;
@@ -1911,12 +1929,12 @@ begin
   end
   else if (Structures.tiledata[ARow - 1].stype <> ST_NOTHING) and (ACol = 2) then
   begin
-    sgTiledataData.Canvas.Brush.Color := StructGraphics.house_colors[Structures.tiledata[ARow - 1].side];
+    sgTiledataData.Canvas.Brush.Color := Colours.house_colors[Structures.tiledata[ARow - 1].side];
     sgTiledataData.Canvas.FillRect(Rect);
   end;
 end;
 
-procedure TStructuresEditor.sgTiledataDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+procedure TResourcesEditor.sgTiledataDataSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 var
   enable: boolean;
 begin
@@ -1943,7 +1961,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.cbxTiledataSideChange(Sender: TObject);
+procedure TResourcesEditor.cbxTiledataSideChange(Sender: TObject);
 begin
   if Structures.tiledata[sgTiledataData.Row - 1].stype = ST_NOTHING then
     exit;
@@ -1953,7 +1971,7 @@ begin
   fill_tiledata_row(sgTiledataData.Row - 1);
 end;
 
-procedure TStructuresEditor.lbTiledataBuildingGroupClick(Sender: TObject);
+procedure TResourcesEditor.lbTiledataBuildingGroupClick(Sender: TObject);
 begin
   Structures.tiledata[sgTiledataData.Row - 1].stype := ST_BUILDING;
   Structures.tiledata[sgTiledataData.Row - 1].side := cbxTiledataSide.ItemIndex;
@@ -1964,7 +1982,7 @@ begin
   fill_tiledata_row(sgTiledataData.Row - 1);
 end;
 
-procedure TStructuresEditor.lbTiledataUnitGroupClick(Sender: TObject);
+procedure TResourcesEditor.lbTiledataUnitGroupClick(Sender: TObject);
 begin
   Structures.tiledata[sgTiledataData.Row - 1].stype := ST_UNIT;
   Structures.tiledata[sgTiledataData.Row - 1].side := cbxTiledataSide.ItemIndex;
@@ -1975,7 +1993,7 @@ begin
   fill_tiledata_row(sgTiledataData.Row - 1);
 end;
 
-procedure TStructuresEditor.btnTiledataClearClick(Sender: TObject);
+procedure TResourcesEditor.btnTiledataClearClick(Sender: TObject);
 begin
   if Structures.tiledata[sgTiledataData.Row - 1].stype = ST_NOTHING then
     exit;
@@ -1990,7 +2008,7 @@ begin
   fill_tiledata_row(sgTiledataData.Row - 1);
 end;
 
-procedure TStructuresEditor.sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+procedure TResourcesEditor.sgSamplesUibSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 const
   Selection: TGridRect = (Left: 1; Top: 0; Right: 2; Bottom: 0);
   NoSelection: TGridRect = (Left: -1; Top: -1; Right: -1; Bottom: -1);
@@ -2009,7 +2027,7 @@ begin
     sgSoundRs.Selection := NoSelection;
 end;
 
-procedure TStructuresEditor.sgSamplesUibSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
+procedure TResourcesEditor.sgSamplesUibSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: String);
 var
   cmp_value: string;
   dummy: boolean;
@@ -2032,7 +2050,7 @@ begin
   sgSamplesUibSelectCell(sender, ACol, ARow, dummy);
 end;
 
-procedure TStructuresEditor.btnSamplesUibAddClick(Sender: TObject);
+procedure TResourcesEditor.btnSamplesUibAddClick(Sender: TObject);
 begin
   sgSamplesUib.RowCount := sgSamplesUib.RowCount + 1;
   sgSamplesUib.Cells[0, sgSamplesUib.RowCount - 1] := IntToStr(sgSamplesUib.RowCount - 2);
@@ -2041,7 +2059,7 @@ begin
   fill_status_bar;
 end;
 
-procedure TStructuresEditor.btnSamplesUibRemoveClick(Sender: TObject);
+procedure TResourcesEditor.btnSamplesUibRemoveClick(Sender: TObject);
 begin
   if sgSamplesUib.Row = sgSamplesUib.RowCount - 1 then
     sgSamplesUib.Row := sgSamplesUib.RowCount - 2;
@@ -2052,7 +2070,7 @@ begin
   fill_status_bar;
 end;
 
-procedure TStructuresEditor.sgSoundRsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+procedure TResourcesEditor.sgSoundRsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
 begin
   if ARow > 0 then
     edSoundRsName.Text := Sounds.sound_rs_directory[ARow-1].name
@@ -2060,13 +2078,13 @@ begin
     edSoundRsName.Text := '';
 end;
 
-procedure TStructuresEditor.btnSoundRsPlayClick(Sender: TObject);
+procedure TResourcesEditor.btnSoundRsPlayClick(Sender: TObject);
 begin
   if sgSoundRs.Row > 0 then
     Sounds.play_sound(sgSoundRs.Row - 1);
 end;
 
-procedure TStructuresEditor.btnSoundRsExportClick(Sender: TObject);
+procedure TResourcesEditor.btnSoundRsExportClick(Sender: TObject);
 begin
   if sgSoundRs.Row <= 0 then
     exit;
@@ -2075,7 +2093,7 @@ begin
     Sounds.export_sound(sgSoundRs.Row - 1, SoundExportDialog.FileName);
 end;
 
-procedure TStructuresEditor.brnSoundRsReplaceClick(Sender: TObject);
+procedure TResourcesEditor.brnSoundRsReplaceClick(Sender: TObject);
 begin
   if sgSoundRs.Row <= 0 then
     exit;
@@ -2086,7 +2104,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.btnSoundRsAddClick(Sender: TObject);
+procedure TResourcesEditor.btnSoundRsAddClick(Sender: TObject);
 begin
   if SoundImportDialog.Execute then
   begin
@@ -2096,13 +2114,13 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.btnSoundRsRemoveClick(Sender: TObject);
+procedure TResourcesEditor.btnSoundRsRemoveClick(Sender: TObject);
 begin
   Sounds.remove_last_sound;
   fill_data(fdaNone);
 end;
 
-procedure TStructuresEditor.btnSoundRsRenameClick(Sender: TObject);
+procedure TResourcesEditor.btnSoundRsRenameClick(Sender: TObject);
 begin
   if sgSoundRs.Row <= 0 then
     exit;
@@ -2110,7 +2128,45 @@ begin
   fill_data(fdaNone);
 end;
 
-procedure TStructuresEditor.IcgAddClick(Sender: TObject);
+procedure TResourcesEditor.lbUIArtListClick(Sender: TObject);
+var
+  index: integer;
+  i: integer;
+  frame_index: integer;
+begin
+  index := lbUIArtList.ItemIndex;
+  if index = -1 then
+  begin
+    lbUIArtList.ItemIndex := 0;
+    lbUIArtListClick(lbUIArtList);
+    exit;
+  end;
+  frame_index := 0;
+  for i := 0 to index - 1 do
+    inc(frame_index, ui_art_frames[i]);
+  fill_art_control_group_frame_list(ART_UI, frame_index, ui_art_frames[index], nil, IfThen(sender <> nil, 0, art_control_groups[ART_UI].frame_list.ItemIndex));
+end;
+
+procedure TResourcesEditor.lbMouseArtListClick(Sender: TObject);
+var
+  index: integer;
+  i: integer;
+  frame_index: integer;
+begin
+  index := lbMouseArtList.ItemIndex;
+  if index = -1 then
+  begin
+    lbMouseArtList.ItemIndex := 0;
+    lbMouseArtListClick(lbOtherArtList);
+    exit;
+  end;
+  frame_index := 0;
+  for i := 0 to index - 1 do
+    inc(frame_index, 8);
+  fill_art_control_group_frame_list(ART_MOUSE, frame_index, 8, nil, IfThen(sender <> nil, 0, art_control_groups[ART_MOUSE].frame_list.ItemIndex));
+end;
+
+procedure TResourcesEditor.IcgAddClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2122,7 +2178,7 @@ begin
     fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.IcgRemoveClick(Sender: TObject);
+procedure TResourcesEditor.IcgRemoveClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2134,7 +2190,7 @@ begin
     fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.IcgRenameClick(Sender: TObject);
+procedure TResourcesEditor.IcgRenameClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2149,7 +2205,7 @@ begin
   fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.IcgExportClick(Sender: TObject);
+procedure TResourcesEditor.IcgExportClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2169,7 +2225,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.IcgImportClick(Sender: TObject);
+procedure TResourcesEditor.IcgImportClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2189,7 +2245,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.IcgCopyClick(Sender: TObject);
+procedure TResourcesEditor.IcgCopyClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2202,7 +2258,7 @@ begin
   Structures.copy_item(group_index, icg.list_control.ItemIndex);
 end;
 
-procedure TStructuresEditor.IcgPasteClick(Sender: TObject);
+procedure TResourcesEditor.IcgPasteClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2215,7 +2271,7 @@ begin
   Structures.paste_item(group_index, icg.list_control.ItemIndex);
 end;
 
-procedure TStructuresEditor.IcgMoveUpClick(Sender: TObject);
+procedure TResourcesEditor.IcgMoveUpClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2230,7 +2286,7 @@ begin
   fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.IcgMoveDownClick(Sender: TObject);
+procedure TResourcesEditor.IcgMoveDownClick(Sender: TObject);
 var
   group_index: integer;
   icg: TItemControlGroupPtr;
@@ -2245,7 +2301,7 @@ begin
   fill_data(icg.fill_data_action);
 end;
 
-procedure TStructuresEditor.IcgListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TResourcesEditor.IcgListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   group_index: integer;
   can_export_import: boolean;
@@ -2269,9 +2325,10 @@ begin
     key := 0;
 end;
 
-procedure TStructuresEditor.AcgFrameListClick(Sender: TObject);
+procedure TResourcesEditor.AcgFrameListClick(Sender: TObject);
 var
   group_index: integer;
+  house: integer;
   acg: TArtControlGroupPtr;
   image_index: integer;
   header: TR16EntryHeaderPtr;
@@ -2285,15 +2342,19 @@ begin
   if acg.frame_list.ItemIndex <> -1 then
   begin
     image_index := acg.first_image_index + acg.frame_list.ItemIndex;
-    header := StructGraphics.get_structure_image_header(image_index);
+    header := ResourceFile[acg.filenum].get_structure_image_header(image_index);
   end;
   image_not_empty := (header <> nil) and (header.EntryType <> 0);
   if image_not_empty then
   begin
-    if acg.is_unit then
-      draw_unit_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.zoom, acg.cb_raw_image.Checked)
+    if acg.use_house_colors then
+      house := acg.se_house_color.Value
     else
-      draw_building_art_frame(acg.view_image, image_index, acg.se_house_color.Value, acg.zoom, acg.cb_raw_image.Checked, true);
+      house := -1;
+    if acg.is_unit then
+      draw_unit_art_frame(acg.view_image, acg.filenum, image_index, house, acg.zoom, acg.cb_raw_image.Checked)
+    else
+      draw_building_art_frame(acg.view_image, acg.filenum, image_index, house, acg.zoom, acg.cb_raw_image.Checked, true);
     acg.edit_frame_width.Text := inttostr(header.FrameWidth);
     acg.edit_frame_height.Text := inttostr(header.FrameHeight);
     acg.edit_image_width.Text := inttostr(header.ImageWidth);
@@ -2319,7 +2380,7 @@ begin
   loading := false;
 end;
 
-procedure TStructuresEditor.AcgViewPaletteClick(Sender: TObject);
+procedure TResourcesEditor.AcgViewPaletteClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2331,7 +2392,7 @@ begin
   draw_palette(acg.first_image_index + acg.frame_list.ItemIndex, acg);
 end;
 
-procedure TStructuresEditor.AcgImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.AcgImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2345,7 +2406,7 @@ begin
   AcgFrameListClick(acg.frame_list);
 end;
 
-procedure TStructuresEditor.AcgImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.AcgImageMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2358,8 +2419,8 @@ begin
   acg := Addr(art_control_groups[group_index]);
   if viewpal_acg <> acg then
     exit;
-  header := Addr(StructGraphics.data_r16_file_contents[StructGraphics.data_r16_file_entry_positions[viewpal_image_index]]);
-  image_data_8bpp := Addr(StructGraphics.data_r16_file_contents[StructGraphics.data_r16_file_entry_positions[viewpal_image_index] + sizeof(TR16EntryHeader)]);
+  header := Addr(ResourceFile[acg.filenum].r16_file_contents[ResourceFile[acg.filenum].r16_file_entry_positions[viewpal_image_index]]);
+  image_data_8bpp := Addr(ResourceFile[acg.filenum].r16_file_contents[ResourceFile[acg.filenum].r16_file_entry_positions[viewpal_image_index] + sizeof(TR16EntryHeader)]);
   width := header.ImageWidth;
   height := header.ImageHeight;
   if acg.is_unit then
@@ -2381,7 +2442,7 @@ begin
     lblImagePaletteColorIndex.Caption := 'Index:';
 end;
 
-procedure TStructuresEditor.AcgImagePropertyChange(Sender: TObject);
+procedure TResourcesEditor.AcgImagePropertyChange(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2393,19 +2454,19 @@ begin
   acg := Addr(art_control_groups[group_index]);
   if acg.frame_list.ItemIndex = -1 then
     exit;
-  header := StructGraphics.get_structure_image_header(acg.first_image_index + acg.frame_list.ItemIndex);
+  header := ResourceFile[acg.filenum].get_structure_image_header(acg.first_image_index + acg.frame_list.ItemIndex);
   if (header = nil) or (header.EntryType = 0) then
     exit;
   header.FrameWidth := strtointdef(acg.edit_frame_width.Text, 0);
   header.FrameHeight := strtointdef(acg.edit_frame_height.Text, 0);
   header.ImageOffsetX := IfThen(acg.is_unit, acg.se_image_offset_x.Value, acg.se_image_offset_x.Value * -1);
   header.ImageOffsetY := acg.se_image_offset_y.Value;
-  StructGraphics.data_r16_modified := true;
+  ResourceFile[acg.filenum].r16_modified := true;
   AcgFrameListClick(Sender);
   fill_status_bar;
 end;
 
-procedure TStructuresEditor.AcgExportImageClick(Sender: TObject);
+procedure TResourcesEditor.AcgExportImageClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2423,7 +2484,7 @@ begin
     image_index := acg.first_image_index + acg.frame_list.ItemIndex;
     ImageExportDialog.FileName := 'Image_' + inttostr(image_index);
     if ImageExportDialog.Execute then
-      StructGraphics.export_single_image(ImageExportDialog.FileName, image_index);
+      ResourceFile[acg.filenum].export_single_image(ImageExportDialog.FileName, image_index);
   end else
   begin
     ImageExportDialog.Title := 'Export All Images';
@@ -2433,13 +2494,13 @@ begin
       begin
         ext := ExtractFileExt(ImageExportDialog.FileName);
         prefix := ChangeFileExt(ImageExportDialog.FileName, '');
-        StructGraphics.export_single_image(prefix + '_' + IntToStr(i) + ext, acg.first_image_index + i);
+        ResourceFile[acg.filenum].export_single_image(prefix + '_' + IntToStr(i) + ext, acg.first_image_index + i);
       end;
   end;
   acg.frame_list.SetFocus;
 end;
 
-procedure TStructuresEditor.AcgEraseImageClick(Sender: TObject);
+procedure TResourcesEditor.AcgEraseImageClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2450,15 +2511,15 @@ begin
   if acg.frame_list.ItemIndex = -1 then
     exit;
   if GetKeyState(VK_SHIFT) >= 0 then
-    StructGraphics.erase_single_image(acg.first_image_index + acg.frame_list.ItemIndex)
+    ResourceFile[acg.filenum].erase_single_image(acg.first_image_index + acg.frame_list.ItemIndex)
   else
     for i := 0 to acg.frame_list.Items.Count - 1 do
-      StructGraphics.erase_single_image(acg.first_image_index + i);
+      ResourceFile[acg.filenum].erase_single_image(acg.first_image_index + i);
   update_art_control_group_frame_list(group_index);
   fill_status_bar;
 end;
 
-procedure TStructuresEditor.AcgImportImageClick(Sender: TObject);
+procedure TResourcesEditor.AcgImportImageClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2474,7 +2535,7 @@ begin
     anything_imported := false;
     for i := 0 to ImageImportDialog.Files.Count - 1 do
       if (acg.frame_list.ItemIndex + i) < acg.frame_list.Items.Count then
-        anything_imported := StructGraphics.import_single_image(ImageImportDialog.Files[i], acg.first_image_index + acg.frame_list.ItemIndex + i, false) or anything_imported;
+        anything_imported := ResourceFile[acg.filenum].import_single_image(ImageImportDialog.Files[i], acg.first_image_index + acg.frame_list.ItemIndex + i, false) or anything_imported;
     if anything_imported then
     begin
       update_art_control_group_frame_list(group_index);
@@ -2483,7 +2544,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.AcgAddArtClick(Sender: TObject);
+procedure TResourcesEditor.AcgAddArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2501,7 +2562,7 @@ begin
     fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.AcgRemoveArtClick(Sender: TObject);
+procedure TResourcesEditor.AcgRemoveArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2512,7 +2573,7 @@ begin
     fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.AcgModifyArtClick(Sender: TObject);
+procedure TResourcesEditor.AcgModifyArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2530,7 +2591,7 @@ begin
   fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.AcgExportArtClick(Sender: TObject);
+procedure TResourcesEditor.AcgExportArtClick(Sender: TObject);
 var
   group_index: integer;
   i: integer;
@@ -2577,13 +2638,17 @@ begin
       filename := Structures.templates.ExplosionStrings[lbAnimationArtList.ItemIndex];
     ART_OTHER:
       filename := lbOtherArtList.Items[lbOtherArtList.ItemIndex];
+    ART_UI:
+      filename := lbUIArtList.Items[lbUIArtList.ItemIndex];
+    ART_MOUSE:
+      filename := lbMouseArtList.Items[lbMouseArtList.ItemIndex];
   end;
   ArtExportDialog.FileName := filename;
   if ArtExportDialog.Execute then
-    StructGraphics.export_image_entries(ArtExportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count);
+    ResourceFile[art_control_groups[group_index].filenum].export_image_entries(ArtExportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count);
 end;
 
-procedure TStructuresEditor.AcgImportArtClick(Sender: TObject);
+procedure TResourcesEditor.AcgImportArtClick(Sender: TObject);
 var
   group_index: integer;
 begin
@@ -2591,7 +2656,7 @@ begin
   ArtImportDialog.FileName := '';
   if ArtImportDialog.Execute then
   begin
-    if StructGraphics.import_image_entries(ArtImportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count) then
+    if ResourceFile[art_control_groups[group_index].filenum].import_image_entries(ArtImportDialog.FileName, art_control_groups[group_index].first_image_index, art_control_groups[group_index].frame_list.Count) then
     begin
       update_art_control_group_frame_list(group_index);
       fill_status_bar;
@@ -2599,7 +2664,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.AcgMoveUpArtClick(Sender: TObject);
+procedure TResourcesEditor.AcgMoveUpArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2613,7 +2678,7 @@ begin
   fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.AcgMoveDownArtClick(Sender: TObject);
+procedure TResourcesEditor.AcgMoveDownArtClick(Sender: TObject);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2627,7 +2692,7 @@ begin
   fill_data(fdaAllArt);
 end;
 
-procedure TStructuresEditor.AcgArtListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TResourcesEditor.AcgArtListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   group_index: integer;
   acg: TArtControlGroupPtr;
@@ -2649,12 +2714,12 @@ begin
     key := 0;
 end;
 
-procedure TStructuresEditor.imgImagePaletteClick(Sender: TObject);
+procedure TResourcesEditor.imgImagePaletteClick(Sender: TObject);
 begin
   pnImagePalette.Visible := false;
 end;
 
-procedure TStructuresEditor.imgImagePaletteMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure TResourcesEditor.imgImagePaletteMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   index: integer;
 begin
@@ -2664,36 +2729,36 @@ begin
   lblImagePaletteColorIndex.Caption := 'Index: ' + IntToStr(index);
 end;
 
-procedure TStructuresEditor.btnImagePaletteSetDefaultColorsClick(Sender: TObject);
+procedure TResourcesEditor.btnImagePaletteSetDefaultColorsClick(Sender: TObject);
 begin
-  StructGraphics.set_default_palette_colors(viewpal_image_index);
+  ResourceFile[viewpal_acg.filenum].set_default_palette_colors(viewpal_image_index);
   draw_palette(viewpal_image_index, viewpal_acg);
   if viewpal_acg.cb_raw_image.Checked then
   begin
     if viewpal_acg.is_unit then
-      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, true)
+      draw_unit_art_frame(viewpal_acg.view_image, viewpal_acg.filenum, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, true)
     else
-      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, true, true);
+      draw_building_art_frame(viewpal_acg.view_image, viewpal_acg.filenum, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, true, true);
   end;
 end;
 
-procedure TStructuresEditor.btnImagePaletteRemapColorsClick(Sender: TObject);
+procedure TResourcesEditor.btnImagePaletteRemapColorsClick(Sender: TObject);
 begin
   if ImageRemapColorsOpenDialog.Execute then
   begin
-    if not StructGraphics.remap_image_colors(viewpal_image_index, ImageRemapColorsOpenDialog.FileName) then
+    if not ResourceFile[viewpal_acg.filenum].remap_image_colors(viewpal_image_index, ImageRemapColorsOpenDialog.FileName) then
     begin
       Application.MessageBox('The ini file must contain [Remap_Colors] section'#13'with key-value pairs in the form'#13'from_index=to_index'#13'where key and value is a color index.', 'Invalid remap colors ini file', MB_OK or MB_ICONERROR);
       exit;
     end;
     if viewpal_acg.is_unit then
-      draw_unit_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, viewpal_acg.cb_raw_image.Checked)
+      draw_unit_art_frame(viewpal_acg.view_image, viewpal_acg.filenum, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, viewpal_acg.cb_raw_image.Checked)
     else
-      draw_building_art_frame(viewpal_acg.view_image, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, viewpal_acg.cb_raw_image.Checked, true);
+      draw_building_art_frame(viewpal_acg.view_image, viewpal_acg.filenum, viewpal_image_index, viewpal_acg.se_house_color.Value, viewpal_acg.zoom, viewpal_acg.cb_raw_image.Checked, true);
   end;
 end;
 
-procedure TStructuresEditor.update_game_lists;
+procedure TResourcesEditor.update_game_lists;
 var
   list: TStringList;
 begin
@@ -2708,7 +2773,7 @@ begin
   list.Destroy;
 end;
 
-procedure TStructuresEditor.update_sound_list;
+procedure TResourcesEditor.update_sound_list;
 var
   tmp_strings: TStringList;
   i: integer;
@@ -2758,7 +2823,7 @@ begin
   tmp_strings.Destroy;
 end;
 
-procedure TStructuresEditor.update_contents;
+procedure TResourcesEditor.update_contents;
 begin
   if not Visible then
   begin
@@ -2769,7 +2834,7 @@ begin
   fill_data(fdaAll);
 end;
 
-procedure TStructuresEditor.update_tileset;
+procedure TResourcesEditor.update_tileset;
 begin
   if not Visible then
   begin
@@ -2780,16 +2845,16 @@ begin
   draw_building_preview(true);
 end;
 
-procedure TStructuresEditor.update_side_list(side_list: TStringList);
+procedure TResourcesEditor.update_side_list(side_list: TStringList);
 var
   item_index: integer;
 begin
   item_index := cbxTiledataSide.ItemIndex;
   cbxTiledataSide.Items := side_list;
-  cbxTiledataSide.ItemIndex := item_index;
+  cbxTiledataSide.ItemIndex := Max(item_index, 0);
 end;
 
-procedure TStructuresEditor.fill_data(action: TFillDataAction);
+procedure TResourcesEditor.fill_data(action: TFillDataAction);
 var
   tmp_strings: TStringList;
   i: integer;
@@ -2992,7 +3057,7 @@ begin
   fill_status_bar;
 end;
 
-procedure TStructuresEditor.fill_item_list(item_type: integer; tmp_strings: TStringList);
+procedure TResourcesEditor.fill_item_list(item_type: integer; tmp_strings: TStringList);
 var
   i: integer;
   ptrs: TItemTypePointersPtr;
@@ -3015,7 +3080,7 @@ begin
   icg.lbl_header.Caption := Format('%ss (%d of %d)', [item_type_names[item_type], ptrs.item_count_byte_ptr^, ptrs.max_item_count]);
 end;
 
-procedure TStructuresEditor.fill_page_data;
+procedure TResourcesEditor.fill_page_data;
 var
   tmp_strings: TStringList;
   i, j: integer;
@@ -3080,6 +3145,7 @@ begin
     // Tiledata
     for i := 0 to CNT_TILEDATA_ENTRIES - 1 do
       fill_tiledata_row(i);
+    sgTiledataData.Invalidate;
   end else
   if PageControl.ActivePage = PageSounds then
   begin
@@ -3091,16 +3157,21 @@ begin
       sgSoundRs.Cells[1, i+1] := Sounds.sound_rs_directory[i].name;
       sgSoundRs.Cells[2, i+1] := IntToStr(Sounds.sound_rs_directory[i].size) + ' bytes';
     end;
+  end else
+  if PageControl.ActivePage = PageUIMouse then
+  begin
+    lbUIArtListClick(nil);
+    lbMouseArtListClick(nil);
   end;
 end;
 
-procedure TStructuresEditor.fill_status_bar;
+procedure TResourcesEditor.fill_status_bar;
 var
   file1, file2: string;
 begin
   // Set default file names
   file1 := Structures.templates_bin_filename;
-  file2 := IfThen(StructGraphics.data_r16_modified, '*', '') + StructGraphics.data_r16_filename;
+  file2 := IfThen(ResourceFile[R16FILE_DATA].r16_modified, '*', '') + ResourceFile[R16FILE_DATA].r16_filename;
   // Override file names per specific tab
   if PageControl.ActivePage = PageBuilExp then
     file1 := Structures.builexp_bin_filename
@@ -3116,13 +3187,18 @@ begin
   begin
     file1 := IfThen(StringTable.samples_uib_modified or samples_uib_ui_modified, '*', '') + StringTable.samples_uib_filename;
     file2 := IfThen(Sounds.sound_rs_modified, '*', '') + Sounds.sound_rs_filename;
+  end
+  else if PageControl.ActivePage = PageUIMouse then
+  begin
+    file1 := IfThen(ResourceFile[R16FILE_UI].r16_modified, '*', '') + ResourceFile[R16FILE_UI].r16_filename;
+    file2 := IfThen(ResourceFile[R16FILE_MOUSE].r16_modified, '*', '') + ResourceFile[R16FILE_MOUSE].r16_filename;
   end;
   // Fill status bar
   StatusBar.Panels[0].Text := file1;
   StatusBar.Panels[1].Text := file2;
 end;
 
-procedure TStructuresEditor.fill_building_data;
+procedure TResourcesEditor.fill_building_data;
 var
   index: integer;
   i: integer;
@@ -3139,7 +3215,7 @@ begin
   edBuildingName.Text := Structures.templates.BuildingNameStrings[index];
   cbBuildingUseName.Checked := bld.UseName <> 0;
   cbxBuildingGroup.ItemIndex := bld.BuildingGroup;
-  icon := StructGraphics.get_raw_structure_image(Structures.first_building_icon_image_index + index);
+  icon := ResourceFile[R16FILE_DATA].get_raw_structure_image(Structures.first_building_icon_image_index + index);
   if icon <> nil then
   begin
     imgBuildingIcon.Picture.Bitmap.Assign(icon);
@@ -3228,7 +3304,7 @@ begin
   edBuildingFlagsChange(nil);
 end;
 
-procedure TStructuresEditor.fill_unit_data;
+procedure TResourcesEditor.fill_unit_data;
 var
   index: integer;
   i: integer;
@@ -3245,7 +3321,7 @@ begin
   edUnitName.Text := Structures.templates.UnitNameStrings[index];
   cbUnitUseName.Checked := unt.UseName <> 0;
   cbxUnitGroup.ItemIndex := unt.UnitGroup;
-  icon := StructGraphics.get_raw_structure_image(Structures.first_unit_icon_image_index + index);
+  icon := ResourceFile[R16FILE_DATA].get_raw_structure_image(Structures.first_unit_icon_image_index + index);
   if icon <> nil then
   begin
     imgUnitIcon.Picture.Bitmap.Assign(icon);
@@ -3332,7 +3408,7 @@ begin
   edUnitFlagsChange(nil);
 end;
 
-procedure TStructuresEditor.fill_builexp_data;
+procedure TResourcesEditor.fill_builexp_data;
 var
   index: integer;
   i: integer;
@@ -3358,7 +3434,7 @@ begin
   draw_builexp_preview;
 end;
 
-procedure TStructuresEditor.fill_weapon_data;
+procedure TResourcesEditor.fill_weapon_data;
 var
   index: integer;
   wpn: TWeaponTemplatePtr;
@@ -3416,7 +3492,7 @@ begin
   edWeaponFlagsChange(nil);
 end;
 
-procedure TStructuresEditor.fill_explosion_data;
+procedure TResourcesEditor.fill_explosion_data;
 var
   index: integer;
   exp: TExplosionTemplatePtr;
@@ -3482,7 +3558,7 @@ begin
   lbAnimationArtListClick(nil);
 end;
 
-procedure TStructuresEditor.set_owner_house_field_value(control: TCheckListBox; value: byte);
+procedure TResourcesEditor.set_owner_house_field_value(control: TCheckListBox; value: byte);
 var
   i: integer;
 begin
@@ -3490,7 +3566,7 @@ begin
     control.Checked[i] := (value and (1 shl i)) <> 0;
 end;
 
-procedure TStructuresEditor.fill_tiledata_row(row: integer);
+procedure TResourcesEditor.fill_tiledata_row(row: integer);
 begin
   if Structures.tiledata[row].stype = ST_BUILDING then
   begin
@@ -3524,10 +3600,9 @@ begin
     sgTiledataData.Cells[3, row + 1] := '';
     sgTiledataData.Cells[4, row + 1] := '';
   end;
-  sgTiledataData.Invalidate;
 end;
 
-procedure TStructuresEditor.store_data;
+procedure TResourcesEditor.store_data;
 var
   i, j: integer;
   sp: single;
@@ -3580,7 +3655,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.store_building_data;
+procedure TResourcesEditor.store_building_data;
 var
   index: integer;
   i: integer;
@@ -3675,7 +3750,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.store_unit_data;
+procedure TResourcesEditor.store_unit_data;
 var
   index: integer;
   i: integer;
@@ -3764,7 +3839,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.store_builexp_data;
+procedure TResourcesEditor.store_builexp_data;
 var
   index: integer;
   i: integer;
@@ -3789,7 +3864,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.store_weapon_data;
+procedure TResourcesEditor.store_weapon_data;
 var
   index: integer;
   wpn: TWeaponTemplatePtr;
@@ -3825,7 +3900,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.store_explosion_data;
+procedure TResourcesEditor.store_explosion_data;
 var
   index: integer;
   exp: TExplosionTemplatePtr;
@@ -3850,7 +3925,7 @@ begin
   end;
 end;
 
-function TStructuresEditor.get_owner_house_field_value(control: TCheckListBox): byte;
+function TResourcesEditor.get_owner_house_field_value(control: TCheckListBox): byte;
 var
   i: integer;
 begin
@@ -3860,7 +3935,7 @@ begin
       result := result or (1 shl i);
 end;
 
-function TStructuresEditor.get_group_ids_cell_text(index: integer; value: shortint): string;
+function TResourcesEditor.get_group_ids_cell_text(index: integer; value: shortint): string;
 var
   item_name_list_combo: TComboBox;
 begin
@@ -3877,7 +3952,7 @@ begin
     result := inttostr(value);
 end;
 
-procedure TStructuresEditor.create_item_control_group(group_index: integer; fill_data_action: TFillDataAction; list_control: TListBox; edit_item_name: TEdit; layout: TItemControlGroupLayoutPtr; container: TPanel);
+procedure TResourcesEditor.create_item_control_group(group_index: integer; fill_data_action: TFillDataAction; list_control: TListBox; edit_item_name: TEdit; layout: TItemControlGroupLayoutPtr; container: TPanel);
 var
   icg: TItemControlGroupPtr;
   base_top: integer;
@@ -3932,11 +4007,13 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.create_art_control_group(group_index: integer; is_unit: boolean; list_control: TListBox; se_directions, se_frames: TSpinEdit; container, container2: TPanel);
+procedure TResourcesEditor.create_art_control_group(group_index: integer; filenum: integer; use_house_colors: boolean; is_unit: boolean; list_control: TListBox; se_directions, se_frames: TSpinEdit; container, container2: TPanel);
 var
   acg: TArtControlGroupPtr;
 begin
   acg := Addr(art_control_groups[group_index]);
+  acg.filenum := filenum;
+  acg.use_house_colors := use_house_colors;
   acg.is_unit := is_unit;
   acg.zoom := IfThen(is_unit, 2, 1);
   // Store references to referenced controls
@@ -3961,20 +4038,23 @@ begin
   acg.btn_view_palette.Tag := group_index;
   acg.btn_view_palette.OnClick := AcgViewPaletteClick;
   acg.btn_view_palette.Parent := container;
-  acg.lbl_house_color := TLabel.Create(self);
-  acg.lbl_house_color.Left := 58;
-  acg.lbl_house_color.Top := 184;
-  acg.lbl_house_color.Caption := 'Side:';
-  acg.lbl_house_color.Parent := container;
-  acg.se_house_color := TSpinEdit.Create(self);
-  acg.se_house_color.Left := 86;
-  acg.se_house_color.Top := 180;
-  acg.se_house_color.MinValue := 0;
-  acg.se_house_color.MaxValue := 7;
-  acg.se_house_color.Width := 37;
-  acg.se_house_color.Tag := group_index;
-  acg.se_house_color.Parent := container;
-  acg.se_house_color.OnChange := AcgFrameListClick;
+  if use_house_colors then
+  begin
+    acg.lbl_house_color := TLabel.Create(self);
+    acg.lbl_house_color.Left := 58;
+    acg.lbl_house_color.Top := 184;
+    acg.lbl_house_color.Caption := 'Side:';
+    acg.lbl_house_color.Parent := container;
+    acg.se_house_color := TSpinEdit.Create(self);
+    acg.se_house_color.Left := 86;
+    acg.se_house_color.Top := 180;
+    acg.se_house_color.MinValue := 0;
+    acg.se_house_color.MaxValue := 7;
+    acg.se_house_color.Width := 37;
+    acg.se_house_color.Tag := group_index;
+    acg.se_house_color.Parent := container;
+    acg.se_house_color.OnChange := AcgFrameListClick;
+  end;
   acg.cb_raw_image := TCheckBox.Create(self);
   acg.cb_raw_image.Left := 130;
   acg.cb_raw_image.Top := 182;
@@ -4148,7 +4228,7 @@ begin
   acg.btn_art_move_down.Parent := container2;
 end;
 
-procedure TStructuresEditor.fill_art_control_group_frame_list(group_index, first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
+procedure TResourcesEditor.fill_art_control_group_frame_list(group_index, first_image_index, num_frames: integer; frame_names: TStrings; selected_frame: integer);
 var
   acg: TArtControlGroupPtr;
   i: integer;
@@ -4167,7 +4247,7 @@ begin
       frame_name := frame_names[i]
     else
       frame_name := 'Frame ' + inttostr(i);
-    header := StructGraphics.get_structure_image_header(first_image_index + i);
+    header := ResourceFile[acg.filenum].get_structure_image_header(first_image_index + i);
     if (header = nil) or (header.EntryType = 0) then
       frame_size := 'empty'
     else
@@ -4177,7 +4257,7 @@ begin
   top_index := acg.frame_list.TopIndex;
   acg.frame_list.Items := tmp_strings;
   tmp_strings.Destroy;
-  acg.lbl_art_size.Caption := Format('Art size: %d bytes', [StructGraphics.get_image_entries_size(first_image_index, num_frames)]);
+  acg.lbl_art_size.Caption := Format('Art size: %d bytes', [ResourceFile[acg.filenum].get_image_entries_size(first_image_index, num_frames)]);
   acg.frame_list.ItemIndex := selected_frame;
   if selected_frame <> 0 then
     acg.frame_list.TopIndex := top_index;
@@ -4186,7 +4266,7 @@ begin
   AcgFrameListClick(acg.frame_list);
 end;
 
-procedure TStructuresEditor.update_art_control_group_frame_list(group_index: integer);
+procedure TResourcesEditor.update_art_control_group_frame_list(group_index: integer);
 begin
   case group_index of
     ART_BUILDING: lbBuildingArtListClick(nil);
@@ -4196,10 +4276,12 @@ begin
     ART_PROJECTILE: lbProjectileArtListClick(nil);
     ART_ANIMATION: lbAnimationArtListClick(nil);
     ART_OTHER: lbOtherArtListClick(nil);
+    ART_UI: lbUIArtListClick(nil);
+    ART_MOUSE: lbUIArtListClick(nil);
   end;
 end;
 
-procedure TStructuresEditor.draw_no_image_sign(img_target: TImage);
+procedure TResourcesEditor.draw_no_image_sign(img_target: TImage);
 var
   sign: string;
 begin
@@ -4213,13 +4295,13 @@ begin
   img_target.Canvas.Font.Color := clBlack;
 end;
 
-procedure TStructuresEditor.draw_palette(image_index: integer; acg: TArtControlGroupPtr);
+procedure TResourcesEditor.draw_palette(image_index: integer; acg: TArtControlGroupPtr);
 var
   palette: TR16PalettePtr;
   color: Cardinal;
   i, j: integer;
 begin
-  palette := StructGraphics.get_structure_image_palette(image_index);
+  palette := ResourceFile[acg.filenum].get_structure_image_palette(image_index);
   viewpal_image_index := image_index;
   viewpal_acg := acg;
   imgImagePalette.Canvas.Pen.Color := clBlack;
@@ -4233,7 +4315,7 @@ begin
   for j := 0 to 15 do
     for i := 0 to 15 do
       begin
-        color := StructGraphics.colour_16bto32b(palette.Colors[j * 16 + i]);
+        color := Colours.colour_16bto32b(palette.Colors[j * 16 + i]);
         imgImagePalette.Canvas.Brush.Color := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
         imgImagePalette.Canvas.Rectangle(i * 16, j * 16, i * 16 + 17, j * 16 + 17);
       end;
@@ -4243,7 +4325,7 @@ begin
   btnImagePaletteSetDefaultColors.Visible := acg <> nil;
 end;
 
-procedure TStructuresEditor.draw_building_tile_map(img_target: TImage; value: cardinal);
+procedure TResourcesEditor.draw_building_tile_map(img_target: TImage; value: cardinal);
 var
   x, y: integer;
 begin
@@ -4260,7 +4342,7 @@ begin
     end;
 end;
 
-procedure TStructuresEditor.draw_building_preview(draw_building: boolean);
+procedure TResourcesEditor.draw_building_preview(draw_building: boolean);
 var
   art_width, art_height: integer;
   i, x, y: integer;
@@ -4353,7 +4435,7 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.draw_building_frame(image_index: integer; alpha, animation: boolean);
+procedure TResourcesEditor.draw_building_frame(image_index: integer; alpha, animation: boolean);
 var
   house: integer;
   i: integer;
@@ -4370,7 +4452,7 @@ begin
       house := i;
       break;
     end;
-  structure_image := StructGraphics.get_structure_image(image_index, house, false, false, was_already_loaded);
+  structure_image := ResourceFile[R16FILE_DATA].get_structure_image(image_index, house, false, false, was_already_loaded);
   if structure_image <> nil then
   begin
     art_height := strtointdef(edBuildingArtHeight.Text, 0);
@@ -4387,11 +4469,11 @@ begin
     imgBuildingImage.Canvas.CopyMode := cmSrcPaint;
     imgBuildingImage.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
     if not was_already_loaded then
-      StructGraphics.clear_last_structure_image(image_index, false);
+      ResourceFile[R16FILE_DATA].clear_last_structure_image(image_index, false);
   end;
 end;
 
-procedure TStructuresEditor.draw_unit_preview;
+procedure TResourcesEditor.draw_unit_preview;
 var
   i: integer;
   house: integer;
@@ -4426,13 +4508,13 @@ begin
   end;
 end;
 
-procedure TStructuresEditor.draw_unit_frame(image_index, house: integer; is_stealth: boolean);
+procedure TResourcesEditor.draw_unit_frame(image_index, house: integer; is_stealth: boolean);
 var
   structure_image: TStructureImagePtr;
   was_already_loaded: boolean;
   src_rect, dest_rect: TRect;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, house, true, is_stealth, was_already_loaded);
+  structure_image := ResourceFile[R16FILE_DATA].get_structure_image(image_index, house, true, is_stealth, was_already_loaded);
   if structure_image <> nil then
   begin
     src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
@@ -4442,11 +4524,11 @@ begin
     imgUnitImage.Canvas.CopyMode := cmSrcPaint;
     imgUnitImage.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
     if not was_already_loaded then
-      StructGraphics.clear_last_structure_image(image_index, is_stealth);
+      ResourceFile[R16FILE_DATA].clear_last_structure_image(image_index, is_stealth);
   end;
 end;
 
-procedure TStructuresEditor.draw_builexp_preview;
+procedure TResourcesEditor.draw_builexp_preview;
 var
   building_template: TBuildingTemplatePtr;
   structure_image: TStructureImagePtr;
@@ -4468,27 +4550,27 @@ begin
   begin
     // Base frame
     image_index := Structures.building_art_image_indexes[building_template.BuildingArt];
-    draw_building_art_frame(imgBuilExpImage, image_index, 0, 1, false, false);
+    draw_building_art_frame(imgBuilExpImage, R16FILE_DATA, image_index, 0, 1, false, false);
     // Damaged frame
     image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + Structures.templates.BuildingArtDirections[building_template.BuildingArt] + 1;
-    header := StructGraphics.get_structure_image_header(image_index);
+    header := ResourceFile[R16FILE_DATA].get_structure_image_header(image_index);
     if (header = nil) or (header.EntryType = 0) then
       // If damaged frame does not exist, use healthy frame
       image_index := Structures.building_art_image_indexes[building_template.BuildingArt] + 1;
-    draw_building_art_frame(imgBuilExpImage, image_index, 0, 1, false, false);
+    draw_building_art_frame(imgBuilExpImage, R16FILE_DATA, image_index, 0, 1, false, false);
   end;
   if building_template.BarrelArt <> -1 then
   begin
-    draw_building_art_frame(imgBuilExpImage, Structures.building_art_image_indexes[building_template.BarrelArt] + 1, 0, 1, false, false);
+    draw_building_art_frame(imgBuilExpImage, R16FILE_DATA, Structures.building_art_image_indexes[building_template.BarrelArt] + 1, 0, 1, false, false);
   end;
   // Draw animations
   for i := 0 to seBuilExpNumAnimations.Value - 1 do
   begin
     image_index := Structures.animation_art_image_indexes[cbxBuilExpAnimExplosion[i].ItemIndex] + seBuilExpAnimNumFrames[i].Value;
-    structure_image := StructGraphics.get_structure_image(image_index, 0, false, false, was_already_loaded);
+    structure_image := ResourceFile[R16FILE_DATA].get_structure_image(image_index, 0, false, false, was_already_loaded);
     if structure_image <> nil then
     begin
-      header := StructGraphics.get_structure_image_header(image_index);
+      header := ResourceFile[R16FILE_DATA].get_structure_image_header(image_index);
       src_rect := Rect(0, 0, structure_image.bitmap.Width, structure_image.bitmap.Height);
       off_x := seBuilExpAnimOffsetX[i].Value - header.ImageOffsetX;
       off_y := seBuilExpAnimOffsetY[i].Value - header.ImageOffsetY;
@@ -4498,12 +4580,12 @@ begin
       imgBuilExpImage.Canvas.CopyMode := cmSrcPaint;
       imgBuilExpImage.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
       if not was_already_loaded then
-        StructGraphics.clear_last_structure_image(image_index, false);
+        ResourceFile[R16FILE_DATA].clear_last_structure_image(image_index, false);
     end;
   end;
 end;
 
-procedure TStructuresEditor.draw_building_art_frame(img_target: TImage; image_index, house, zoom: integer; raw, draw_background: boolean);
+procedure TResourcesEditor.draw_building_art_frame(img_target: TImage; filenum, image_index, house, zoom: integer; raw, draw_background: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
@@ -4511,10 +4593,10 @@ var
   src_rect, dest_rect: TRect;
   raw_image: TBitmap;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, house, false, false, was_already_loaded);
+  structure_image := ResourceFile[filenum].get_structure_image(image_index, house, false, false, was_already_loaded);
   if structure_image = nil then
     exit;
-  header := StructGraphics.get_structure_image_header(image_index);
+  header := ResourceFile[filenum].get_structure_image_header(image_index);
   if draw_background then
   begin
     img_target.Canvas.Pen.Color := clAqua;
@@ -4536,16 +4618,16 @@ begin
     img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
   end else
   begin
-    raw_image := StructGraphics.get_raw_structure_image(image_index);
+    raw_image := ResourceFile[filenum].get_raw_structure_image(image_index);
     img_target.Canvas.CopyMode := cmSrcCopy;
     img_target.Canvas.CopyRect(dest_rect, raw_image.Canvas, src_rect);
     raw_image.Destroy;
   end;
   if not was_already_loaded then
-    StructGraphics.clear_last_structure_image(image_index, false);
+    ResourceFile[filenum].clear_last_structure_image(image_index, false);
 end;
 
-procedure TStructuresEditor.draw_unit_art_frame(img_target: TImage; image_index, house, zoom: integer; raw: boolean);
+procedure TResourcesEditor.draw_unit_art_frame(img_target: TImage; filenum, image_index, house, zoom: integer; raw: boolean);
 var
   structure_image: TStructureImagePtr;
   header: TR16EntryHeaderPtr;
@@ -4554,10 +4636,10 @@ var
   raw_image: TBitmap;
   offset_begin, offset_end: integer;
 begin
-  structure_image := StructGraphics.get_structure_image(image_index, house, true, false, was_already_loaded);
+  structure_image := ResourceFile[filenum].get_structure_image(image_index, house, true, false, was_already_loaded);
   if structure_image = nil then
     exit;
-  header := StructGraphics.get_structure_image_header(image_index);
+  header := ResourceFile[filenum].get_structure_image_header(image_index);
   offset_begin := 80 - zoom * 16;
   offset_end := 80 + zoom * 16;
   img_target.Canvas.Pen.Color := clAqua;
@@ -4581,16 +4663,16 @@ begin
     img_target.Canvas.CopyRect(dest_rect, structure_image.bitmap.Canvas, src_rect);
   end else
   begin
-    raw_image := StructGraphics.get_raw_structure_image(image_index);
+    raw_image := ResourceFile[filenum].get_raw_structure_image(image_index);
     img_target.Canvas.CopyMode := cmSrcCopy;
     img_target.Canvas.CopyRect(dest_rect, raw_image.Canvas, src_rect);
     raw_image.Destroy;
   end;
   if not was_already_loaded then
-    StructGraphics.clear_last_structure_image(image_index, false);
+    ResourceFile[filenum].clear_last_structure_image(image_index, false);
 end;
 
-procedure TStructuresEditor.draw_techpos_preview;
+procedure TResourcesEditor.draw_techpos_preview;
 var
   i: integer;
   tech, house: integer;
@@ -4629,29 +4711,31 @@ begin
     // Draw unit
     if unit_template.UnitArt <> -1 then
     begin
-      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], house, true, is_stealth, was_already_loaded);
+      structure_image := ResourceFile[R16FILE_DATA].get_structure_image(Structures.unit_art_image_indexes[unit_template.UnitArt], house, true, is_stealth, was_already_loaded);
       if structure_image <> nil then
         Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
     end;
     // Draw barrel
     if unit_template.BarrelArt <> -1 then
     begin
-      structure_image := StructGraphics.get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], house, true, is_stealth, was_already_loaded);
+      structure_image := ResourceFile[R16FILE_DATA].get_structure_image(Structures.unit_art_image_indexes[unit_template.BarrelArt], house, true, is_stealth, was_already_loaded);
       if structure_image <> nil then
         Renderer.draw_structure_image(imgTechposPreview.Canvas, pos_x + structure_image.offset_x, pos_y + structure_image.offset_y, 0, 0, imgTechposPreview.Width, imgTechposPreview.Height, structure_image);
     end;
   end;
 end;
 
-procedure TStructuresEditor.apply_changes;
+procedure TResourcesEditor.apply_changes;
 begin
   store_data;
   Structures.compute_building_and_unit_house_versions;
   Structures.compute_building_group_mapping;
-  Dispatcher.register_event(evACStructuresEditor);
+  Dispatcher.register_event(evACResourcesEditor);
 end;
 
-procedure TStructuresEditor.save_to_files;
+procedure TResourcesEditor.save_to_files;
+var
+  filenum: integer;
 begin
   Structures.save_templates_bin;
   Structures.save_builexp_bin;
@@ -4659,7 +4743,8 @@ begin
   Structures.save_speed_bin;
   Structures.save_techpos_bin;
   Structures.save_tiledata_bin;
-  StructGraphics.save_data_r16;
+  for filenum := 0 to Length(ResourceFile) - 1 do
+    ResourceFile[filenum].save_r16;
   Sounds.save_sound_rs;
   StringTable.save_samples_uib;
   fill_status_bar;

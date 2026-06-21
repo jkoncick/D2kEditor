@@ -146,7 +146,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, ShellApi, _missionini, _graphics, _stringtable, _settings, _tileset, _launcher, event_dialog, main, _dispatcher, _gamestructs;
+  Math, StrUtils, ShellApi, _missionini, _resourcefile, _stringtable, _settings, _tileset, _colours, _launcher, event_dialog, main, _dispatcher, _gamestructs;
 
 {$R *.dfm}
 
@@ -335,7 +335,7 @@ begin
   if loading then
     exit;
   Mission.house_id[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
-  color_marker[(Sender as TSpinEdit).Tag].Color := StructGraphics.house_colors_inv[Mission.house_id[(Sender as TSpinEdit).Tag]];
+  color_marker[(Sender as TSpinEdit).Tag].Color := Colours.house_colors_inv[Mission.house_id[(Sender as TSpinEdit).Tag]];
   Dispatcher.register_event(evMisHouseIDChange);
 end;
 
@@ -638,7 +638,7 @@ var
   i: integer;
 begin
   for i := 0 to CNT_SIDES-1 do
-    color_marker[i].Color := StructGraphics.house_colors_inv[Mission.house_id[i]];
+    color_marker[i].Color := Colours.house_colors_inv[Mission.house_id[i]];
 end;
 
 procedure TMissionDialog.update_tileset;
