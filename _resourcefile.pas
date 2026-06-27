@@ -321,6 +321,7 @@ var
   tmp_house_color_pixel_count: integer;
   x, y, image_pos, bitmap_pos: integer;
   pixel: byte;
+  has_actual_pixels: boolean;
 begin
   // Check if this entry is already loaded
   if not is_stealth then
@@ -354,6 +355,15 @@ begin
   tmp_bitmap.Height := height;
   tmp_bitmap.PixelFormat := pf15bit;
   tmp_bitmap_data := tmp_bitmap.ScanLine[height - 1];
+  // Check if image has any actual pixels other than transparent and shadow
+  has_actual_pixels := false;
+  if header.BitsPerPixel = 8 then
+    for image_pos := 0 to (height * width) - 1 do
+      if image_data_8bpp[image_pos] > 1 then
+      begin
+        has_actual_pixels := true;
+        break;
+      end;
   // Load image pixels
   tmp_house_color_pixel_count := 0;
   image_pos := 0;
@@ -364,9 +374,14 @@ begin
       if header.BitsPerPixel = 8 then
       begin
         pixel := image_data_8bpp[image_pos];
-        // Elliminate shadows
+        // Deal with shadows
         if pixel = 1 then
-          pixel := 0;
+        begin
+          if has_actual_pixels then
+            pixel := 0 // Elliminate shadows
+          else
+            pixel := 244; // Use dark house color in place of shadow
+        end;
         // If unit is stealth then whole shape will be drawn in house color
         if is_stealth and (pixel <> 0) then
           pixel := 248;
@@ -401,7 +416,7 @@ begin
     for y := 0 to height - 1 do
       for x := 0 to width - 1 do
       begin
-        if image_data_8bpp[image_pos] <= 1 then
+        if image_data_8bpp[image_pos] <= IfThen(has_actual_pixels, 1, 0) then
           tmp_bitmap_data[(height - y - 1) * padded_width + x] := 0;
         inc(image_pos);
       end;
