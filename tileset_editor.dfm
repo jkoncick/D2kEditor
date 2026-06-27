@@ -581,12 +581,13 @@ object TilesetEditor: TTilesetEditor
       object lblPageRestrictionsMouseActions: TLabel
         Left = 680
         Top = 120
-        Width = 197
+        Width = 233
         Height = 65
         AutoSize = False
         Caption = 
           'Mouse actions:'#13'Left = Modify restrictions'#13'Right = Clear restrict' +
-          'ions'#13'Hold Ctrl to modify all directions'
+          'ions'#13'Middle = (Un)select tile to copy restrictions from'#13'Hold Ctr' +
+          'l to modify all directions'
       end
       object clbRestrictions: TCheckListBox
         Left = 680

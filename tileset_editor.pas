@@ -344,7 +344,8 @@ type
 
     // Status variables
     loading: integer;
-    active_tile: integer;
+    active_tile_on_attributes: integer;
+    active_tile_on_restrictions: integer;
     tileset_top: integer;
     tileset_height: integer;
     rule: TTileAtrRule;
@@ -712,7 +713,7 @@ begin
       set_tile_attribute_value(tile_value, 0);
       set_tile_attribute_list(tile_value, 0);
       set_tile_attribute_rule(tile_value, 0);
-      active_tile := tile_index;
+      active_tile_on_attributes := tile_index;
     end
     else if PageControl.ActivePage = PageHints then
       Tileset.tile_hint_text[tile_index] := -1
@@ -785,33 +786,38 @@ begin
       end
       else if PageControl.ActivePage = PageRestrictions then
       begin
-        restrictions := 0;
-        for i := 0 to 3 do
-          if clbRestrictions.Checked[i] then
-            restrictions := restrictions or (1 shl i);
-        if ssCtrl in Shift then
+        if active_tile_on_restrictions <> -1 then
+          Tileset.restrictions[tile_index] := Tileset.restrictions[active_tile_on_restrictions]
+        else
         begin
-          for i := 0 to 7 do
-            case SetOperation(rgRestrictionsOperation.ItemIndex) of
-              opSet: Tileset.restrictions[tile_index] := (Tileset.restrictions[tile_index] and (not (15 shl (4 * i))) or (restrictions shl (4 * i)));
-              opAdd: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] or (restrictions shl (4 * i));
-              opRemove: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] and (not (restrictions shl (4 * i)));
-            end;
-        end else
-        begin
-          subtile := -1;
-          for i := 0 to 7 do
-            if PtInRect(restriction_rects[i], Point(X mod 32, Y mod 32)) then
-            begin
-              subtile := i;
-              break;
-            end;
-          if subtile > -1 then
-            case SetOperation(rgRestrictionsOperation.ItemIndex) of
-              opSet: Tileset.restrictions[tile_index] := (Tileset.restrictions[tile_index] and (not (15 shl (4 * subtile)))) or (restrictions shl (4 * i));
-              opAdd: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] or (restrictions shl (4 * subtile));
-              opRemove: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] and (not (restrictions shl (4 * subtile)));
-            end;
+          restrictions := 0;
+          for i := 0 to 3 do
+            if clbRestrictions.Checked[i] then
+              restrictions := restrictions or (1 shl i);
+          if ssCtrl in Shift then
+          begin
+            for i := 0 to 7 do
+              case SetOperation(rgRestrictionsOperation.ItemIndex) of
+                opSet: Tileset.restrictions[tile_index] := (Tileset.restrictions[tile_index] and (not (15 shl (4 * i))) or (restrictions shl (4 * i)));
+                opAdd: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] or (restrictions shl (4 * i));
+                opRemove: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] and (not (restrictions shl (4 * i)));
+              end;
+          end else
+          begin
+            subtile := -1;
+            for i := 0 to 7 do
+              if PtInRect(restriction_rects[i], Point(X mod 32, Y mod 32)) then
+              begin
+                subtile := i;
+                break;
+              end;
+            if subtile > -1 then
+              case SetOperation(rgRestrictionsOperation.ItemIndex) of
+                opSet: Tileset.restrictions[tile_index] := (Tileset.restrictions[tile_index] and (not (15 shl (4 * subtile)))) or (restrictions shl (4 * i));
+                opAdd: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] or (restrictions shl (4 * subtile));
+                opRemove: Tileset.restrictions[tile_index] := Tileset.restrictions[tile_index] and (not (restrictions shl (4 * subtile)));
+              end;
+          end;
         end;
       end
       else if PageControl.ActivePage = PageArmour then
@@ -841,7 +847,7 @@ begin
   // Middle button
   else if Button = mbMiddle then
   begin
-    active_tile := -1;
+    active_tile_on_attributes := -1;
     select_start_x := -1;
     select_start_y := -1;
     select_end_x := -1;
@@ -861,6 +867,13 @@ begin
         vleTileHintCustomStrings.SetFocus;
         lbTileHintText.ItemIndex := -1;
       end;
+    end
+    else if PageControl.ActivePage = PageRestrictions then
+    begin
+      if active_tile_on_restrictions <> tile_index then
+        active_tile_on_restrictions := tile_index
+      else
+        active_tile_on_restrictions := -1;
     end
     else if PageControl.ActivePage = PagePaint then
     begin
@@ -1182,7 +1195,7 @@ begin
   set_tile_attribute_value(value, not_value);
   set_tile_attribute_rule(value, not_value);
   if sender <> nil then
-    active_tile := -1;
+    active_tile_on_attributes := -1;
   render_tileset;
 end;
 
@@ -1755,7 +1768,8 @@ begin
   fill_block_preset_groups_grid;
   fill_block_preset_group_ui;
   // Final actions
-  active_tile := -1;
+  active_tile_on_attributes := -1;
+  active_tile_on_restrictions := -1;
   reset_undo_history;
   compute_block_preset_coverage;
   render_tileset;
@@ -2296,6 +2310,15 @@ begin
               color := color or $0000D0;
           end;
         end;
+        // Highlight selected tile
+        if (PageControl.ActivePage = PageRestrictions) and (active_tile_on_restrictions = tile_index) then
+        begin
+          TilesetImage.Canvas.Brush.Style := bsClear;
+          TilesetImage.Canvas.Pen.Width := 2;
+          TilesetImage.Canvas.Pen.Color := $FF0000;
+          TilesetImage.Canvas.Rectangle(x*32+1, y*32+1, x*32+32, y*32+32);
+          TilesetImage.Canvas.Pen.Width := 1;
+        end;
         // Mark tile with color
         if mark_tile then
         begin
@@ -2355,7 +2378,7 @@ begin
           TilesetImage.Canvas.Brush.Style := bsClear;
         end;
         // Highlight selected tile
-        if (PageControl.ActivePage = PageAttributes) and (active_tile = tile_index) and cbMarkSelection.Checked then
+        if (PageControl.ActivePage = PageAttributes) and (active_tile_on_attributes = tile_index) and cbMarkSelection.Checked then
         begin
           TilesetImage.Canvas.Brush.Style := bsClear;
           TilesetImage.Canvas.Pen.Width := 2;
