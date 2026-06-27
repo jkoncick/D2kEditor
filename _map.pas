@@ -702,6 +702,7 @@ end;
 procedure TMap.cache_map_stats;
 var
   output, need: array[0..CNT_SIDES-1] of integer;
+  any_building: array[0..CNT_SIDES-1] of boolean;
   i, x, y: integer;
   special: word;
   structure_type: byte;
@@ -720,6 +721,7 @@ begin
   begin
     output[x] := 0;
     need[x] := 0;
+    any_building[x] := false;
     map_stats.sides[x].num_structures := 0;
     map_stats.sides[x].num_new_harv_deliveries := 0;
   end;
@@ -739,6 +741,7 @@ begin
       end else
       if structure_type = ST_BUILDING then
       begin
+        any_building[side] := true;
         building_template := Structures.get_building_template_for_special(special);
         if building_template = nil then
           continue;
@@ -771,14 +774,19 @@ begin
   // Calculate power value from output/need for each side
   for x := 0 to CNT_SIDES - 1 do
   begin
-    if (output[x] > 0) and (need[x] = 0) then
-      map_stats.sides[x].power_percent := output[x] div 2 + 100
-    else if (output[x] = 0) then
-      map_stats.sides[x].power_percent := 0
-    else
-      map_stats.sides[x].power_percent := round((ln(output[x] / need[x] + 1) / ln(2)) * 100);
     map_stats.sides[x].power_output := output[x];
     map_stats.sides[x].power_need := need[x];
+    if output[x] > 0 then
+    begin
+      Inc(output[x], 200);
+      Inc(need[x], 200);
+    end;
+    if need[x] > 0 then
+      map_stats.sides[x].power_percent := (100 * output[x]) div need[x]
+    else if any_building[x] then
+      map_stats.sides[x].power_percent := 200
+    else
+      map_stats.sides[x].power_percent := 0;
   end;
 end;
 
