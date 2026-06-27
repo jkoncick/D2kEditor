@@ -383,7 +383,7 @@ begin
           house_color_pixel_indexes[house_color_pixel_count_total + tmp_house_color_pixel_count] := bitmap_pos;
           house_color_pixel_shades[house_color_pixel_count_total + tmp_house_color_pixel_count] := pixel;
           inc(tmp_house_color_pixel_count);
-          tmp_bitmap_data[bitmap_pos] := Colours.colours[house_index, pixel];
+          tmp_bitmap_data[bitmap_pos] := Colours.colours_data[house_index, pixel];
         end else
           tmp_bitmap_data[bitmap_pos] := IfThen(pixel > 0, palette.colors[pixel], 31775); // If pixel is 0, forcefully use magenta color
       end else
@@ -449,7 +449,7 @@ begin
     if current_house_color = house_index then
       exit;
     for i := 0 to house_color_pixel_count - 1 do
-      bitmap_data[house_color_pixel_indexes[house_color_pixel_first_index + i]] := Colours.colours[house_index, house_color_pixel_shades[house_color_pixel_first_index + i]];
+      bitmap_data[house_color_pixel_indexes[house_color_pixel_first_index + i]] := Colours.colours_data[house_index, house_color_pixel_shades[house_color_pixel_first_index + i]];
     current_house_color := house_index;
   end;
 end;

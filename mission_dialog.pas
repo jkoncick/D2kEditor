@@ -130,6 +130,7 @@ type
   public
     // Dispatcher procedures
     procedure update_side_list(side_list: TStringList);
+    procedure update_colours_file_list;
     procedure update_side_colors;
     procedure update_tileset;
     procedure update_mission_data;
@@ -577,15 +578,7 @@ begin
   end;
   cbModsFolder.Items := tmp_strings;
   // Load list of Colours.bin files
-  tmp_strings.Clear;
-  if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\Colours\*.BIN', 0, SR) = 0 then
-  begin
-    repeat
-      tmp_strings.Add(SR.Name);
-    until FindNext(SR) <> 0;
-      FindClose(SR);
-  end;
-  cbColoursBin.Items := tmp_strings;
+  update_colours_file_list;
   tmp_strings.Destroy;
 
   if not loading then
@@ -631,6 +624,23 @@ begin
     AITabControl.Tabs[i] := MissionIni.get_side_name_short(i);
   end;
   loading := false;
+end;
+
+procedure TMissionDialog.update_colours_file_list;
+var
+  tmp_strings: TStringList;
+  SR: TSearchRec;
+begin
+  tmp_strings := TStringList.Create;
+  if FindFirst(Settings.GamePath + '\CustomCampaignData\' + cbCampaignFolder.Text + '\Colours\*.BIN', 0, SR) = 0 then
+  begin
+    repeat
+      tmp_strings.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbColoursBin.Items := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 procedure TMissionDialog.update_side_colors;

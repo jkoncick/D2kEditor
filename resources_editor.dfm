@@ -4563,6 +4563,140 @@ object ResourcesEditor: TResourcesEditor
         TabOrder = 3
       end
     end
+    object PageColours: TTabSheet
+      Caption = 'Colours     '
+      ImageIndex = 14
+      object imgColours: TImage
+        Left = 329
+        Top = 16
+        Width = 513
+        Height = 257
+        OnDblClick = imgColoursDblClick
+        OnMouseDown = imgColoursMouseDown
+      end
+      object lblColoursHexCode: TLabel
+        Left = 328
+        Top = 280
+        Width = 74
+        Height = 13
+        Caption = 'Color hex code:'
+      end
+      object lblColoursMainColor: TLabel
+        Left = 588
+        Top = 0
+        Width = 27
+        Height = 13
+        Caption = 'MAIN'
+      end
+      object lblColoursFileList: TLabel
+        Left = 0
+        Top = 0
+        Width = 94
+        Height = 13
+        Caption = 'COLOURS.BIN files'
+      end
+      object lblColoursCampaignFolder: TLabel
+        Left = 240
+        Top = 520
+        Width = 112
+        Height = 13
+        Caption = 'Target campaign folder:'
+      end
+      object lblColoursColoursBinFile: TLabel
+        Left = 240
+        Top = 544
+        Width = 104
+        Height = 13
+        Caption = 'Target colours.bin file:'
+      end
+      object edColoursHexCode: TEdit
+        Left = 408
+        Top = 280
+        Width = 81
+        Height = 21
+        MaxLength = 6
+        TabOrder = 0
+        OnKeyDown = edColoursHexCodeKeyDown
+      end
+      object btnColoursHexCodeApply: TButton
+        Left = 496
+        Top = 280
+        Width = 33
+        Height = 21
+        Caption = 'OK'
+        TabOrder = 1
+        OnClick = btnColoursHexCodeApplyClick
+      end
+      object btnColoursCopyRow: TButton
+        Left = 688
+        Top = 280
+        Width = 75
+        Height = 25
+        Caption = 'Copy row'
+        TabOrder = 2
+        OnClick = btnColoursCopyRowClick
+      end
+      object btnColoursPasteRow: TButton
+        Left = 768
+        Top = 280
+        Width = 75
+        Height = 25
+        Caption = 'Paste row'
+        TabOrder = 3
+        OnClick = btnColoursPasteRowClick
+      end
+      object btnColoursSetRowFromGradient: TButton
+        Left = 536
+        Top = 280
+        Width = 145
+        Height = 25
+        Caption = 'Set row from gradient'
+        TabOrder = 4
+        OnClick = btnColoursSetRowFromGradientClick
+      end
+      object lbColoursFileList: TListBox
+        Left = 0
+        Top = 16
+        Width = 233
+        Height = 617
+        ItemHeight = 13
+        TabOrder = 5
+        OnClick = lbColoursFileListClick
+      end
+      object edColoursCampaignFolder: TEdit
+        Left = 360
+        Top = 520
+        Width = 121
+        Height = 21
+        TabOrder = 6
+      end
+      object edColoursColoursBinFile: TEdit
+        Left = 360
+        Top = 544
+        Width = 121
+        Height = 21
+        TabOrder = 7
+      end
+      object btnColoursSaveCopy: TButton
+        Left = 360
+        Top = 568
+        Width = 105
+        Height = 25
+        Caption = 'Save a copy'
+        TabOrder = 8
+        OnClick = btnColoursSaveCopyClick
+      end
+      object btnColoursDeleteCurrentFile: TButton
+        Left = 360
+        Top = 600
+        Width = 105
+        Height = 25
+        Caption = 'Delete current file'
+        Enabled = False
+        TabOrder = 9
+        OnClick = btnColoursDeleteCurrentFileClick
+      end
+    end
   end
   object pnImagePalette: TPanel
     Left = 1024
@@ -4712,6 +4846,11 @@ object ResourcesEditor: TResourcesEditor
     Options = [ofEnableSizing]
     Title = 'Select remap colors ini file'
     Left = 960
+    Top = 48
+  end
+  object colorDialog: TColorDialog
+    Options = [cdFullOpen]
+    Left = 988
     Top = 48
   end
 end

@@ -656,6 +656,24 @@ type
     lblMouseArtList: TLabel;
     lbMouseArtList: TListBox;
     pnMouseArtControlGroup: TPanel;
+    PageColours: TTabSheet;
+    imgColours: TImage;
+    edColoursHexCode: TEdit;
+    lblColoursHexCode: TLabel;
+    colorDialog: TColorDialog;
+    btnColoursHexCodeApply: TButton;
+    btnColoursCopyRow: TButton;
+    btnColoursPasteRow: TButton;
+    btnColoursSetRowFromGradient: TButton;
+    lblColoursMainColor: TLabel;
+    lbColoursFileList: TListBox;
+    lblColoursFileList: TLabel;
+    edColoursCampaignFolder: TEdit;
+    edColoursColoursBinFile: TEdit;
+    lblColoursCampaignFolder: TLabel;
+    lblColoursColoursBinFile: TLabel;
+    btnColoursSaveCopy: TButton;
+    btnColoursDeleteCurrentFile: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -757,6 +775,17 @@ type
     // UI+Mouse tab events
     procedure lbUIArtListClick(Sender: TObject);
     procedure lbMouseArtListClick(Sender: TObject);
+    // Colours tab events
+    procedure lbColoursFileListClick(Sender: TObject);
+    procedure imgColoursMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure imgColoursDblClick(Sender: TObject);
+    procedure edColoursHexCodeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure btnColoursHexCodeApplyClick(Sender: TObject);
+    procedure btnColoursSetRowFromGradientClick(Sender: TObject);
+    procedure btnColoursCopyRowClick(Sender: TObject);
+    procedure btnColoursPasteRowClick(Sender: TObject);
+    procedure btnColoursSaveCopyClick(Sender: TObject);
+    procedure btnColoursDeleteCurrentFileClick(Sender: TObject);
     // Item control group events
     procedure IcgAddClick(Sender: TObject);
     procedure IcgRemoveClick(Sender: TObject);
@@ -796,6 +825,7 @@ type
     seBuilExpAnimOffsetY: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
     cbxBuilExpAnimExplosion: array[0..MAX_BUILEXP_ANIMATIONS-1] of TComboBox;
     seBuilExpAnimNumFrames: array[0..MAX_BUILEXP_ANIMATIONS-1] of TSpinEdit;
+    lblColoursSideNames: array[0..CNT_SIDES-1] of TLabel;
     item_control_groups: array[0..8] of TItemControlGroup;
     art_control_groups: array[0..8] of TArtControlGroup;
     // Last indexes
@@ -809,6 +839,9 @@ type
     // View palette variables
     viewpal_image_index: integer;
     viewpal_acg: TArtControlGroupPtr;
+    // Colour tab variables
+    selected_colour_house: integer;
+    selected_colour_index: integer;
     // Loading flag
     loading: boolean;
     // Pending action flags
@@ -822,6 +855,8 @@ type
     procedure update_contents;
     procedure update_tileset;
     procedure update_side_list(side_list: TStringList);
+    procedure update_colours_file_list;
+    procedure update_colours;
   private
     // Fill data procedures
     procedure fill_data(action: TFillDataAction);
@@ -863,6 +898,7 @@ type
     procedure draw_building_art_frame(img_target: TImage; filenum, image_index, house, zoom: integer; raw, draw_background: boolean);
     procedure draw_unit_art_frame(img_target: TImage; filenum, image_index, house, zoom: integer; raw: boolean);
     procedure draw_techpos_preview;
+    procedure draw_colours_image;
     // General procedures
     procedure apply_changes;
     procedure save_to_files;
@@ -996,6 +1032,14 @@ begin
   sgSoundRs.ColWidths[0] := 32;
   sgSoundRs.ColWidths[1] := 132;
   sgSoundRs.ColWidths[2] := 132;
+  // Colours
+  for i := 0 to CNT_SIDES do
+  begin
+    lblColoursSideNames[i] := TLabel.Create(self);
+    lblColoursSideNames[i].Top := 24 + i * 32;
+    lblColoursSideNames[i].Left := 240;
+    lblColoursSideNames[i].Parent := PageColours;
+  end;
   // List control groups
   create_item_control_group(ITEM_BUILDING,       fdaBuildingList,      lbBuildingList,      edBuildingName,  Addr(ICG_LAYOUT_BLD_UNT),       pnBuildingList);
   create_item_control_group(ITEM_UNIT,           fdaUnitList,          lbUnitList,          edUnitName,      Addr(ICG_LAYOUT_BLD_UNT),       pnUnitList);
@@ -1101,6 +1145,7 @@ begin
   if StringTable.samples_uib_modified or samples_uib_ui_modified then
     StringTable.load_samples_uib(true);
   pnImagePalette.Visible := false;
+  Colours.load_colours_bin(MissionIni.CampaignFolder, MissionIni.ColoursFile);
 end;
 
 procedure TResourcesEditor.PageControlChanging(Sender: TObject; var AllowChange: Boolean);
@@ -2166,6 +2211,84 @@ begin
   fill_art_control_group_frame_list(ART_MOUSE, frame_index, 8, nil, IfThen(sender <> nil, 0, art_control_groups[ART_MOUSE].frame_list.ItemIndex));
 end;
 
+procedure TResourcesEditor.lbColoursFileListClick(Sender: TObject);
+begin
+  Colours.load_colours_bin_by_index(lbColoursFileList.ItemIndex);
+end;
+
+procedure TResourcesEditor.imgColoursMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  selected_colour_house := Y div 32;
+  selected_colour_index := x div 32;
+  draw_colours_image;
+end;
+
+procedure TResourcesEditor.imgColoursDblClick(Sender: TObject);
+begin
+  colorDialog.Color := Colours.colour_swap_bytes(Colours.get_colour_32bit(selected_colour_house, selected_colour_index));
+  if colorDialog.Execute then
+  begin
+    Colours.set_colour_32bit(selected_colour_house, selected_colour_index, Colours.colour_swap_bytes(colorDialog.Color));
+    draw_colours_image;
+    fill_status_bar;
+  end;
+end;
+
+procedure TResourcesEditor.edColoursHexCodeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if key = 13 then
+    btnColoursHexCodeApplyClick(Sender);
+end;
+
+procedure TResourcesEditor.btnColoursHexCodeApplyClick(Sender: TObject);
+begin
+  Colours.set_colour_32bit(selected_colour_house, selected_colour_index, StrToIntDef('$' + edColoursHexCode.Text, 0));
+  draw_colours_image;
+  fill_status_bar;
+end;
+
+procedure TResourcesEditor.btnColoursSetRowFromGradientClick(Sender: TObject);
+var
+  color1, color2: Cardinal;
+begin
+  if colorDialog.Execute then
+    color1 := Colours.colour_swap_bytes(colorDialog.Color)
+  else
+    exit;
+  if colorDialog.Execute then
+    color2 := Colours.colour_swap_bytes(colorDialog.Color)
+  else
+    exit;
+  Colours.set_row_from_gradient(selected_colour_house, color1, color2);
+  draw_colours_image;
+  fill_status_bar;
+end;
+
+procedure TResourcesEditor.btnColoursCopyRowClick(Sender: TObject);
+begin
+  Colours.copy_row(selected_colour_house);
+end;
+
+procedure TResourcesEditor.btnColoursPasteRowClick(Sender: TObject);
+begin
+  Colours.paste_row(selected_colour_house);
+  draw_colours_image;
+  fill_status_bar;
+end;
+
+procedure TResourcesEditor.btnColoursSaveCopyClick(Sender: TObject);
+begin
+  Colours.save_colours_bin_as(edColoursCampaignFolder.Text, edColoursColoursBinFile.Text);
+  lbColoursFileList.ItemIndex := colours.colours_bin_file_index;
+  fill_status_bar;
+end;
+
+procedure TResourcesEditor.btnColoursDeleteCurrentFileClick(Sender: TObject);
+begin
+  if Application.MessageBox(PChar('Really delete the file ' + Colours.colours_bin_filename + '?'), 'Delete current file', MB_YESNO or MB_ICONQUESTION) = IDYES then
+    Colours.delete_current_file;
+end;
+
 procedure TResourcesEditor.IcgAddClick(Sender: TObject);
 var
   group_index: integer;
@@ -2848,10 +2971,36 @@ end;
 procedure TResourcesEditor.update_side_list(side_list: TStringList);
 var
   item_index: integer;
+  i: integer;
 begin
   item_index := cbxTiledataSide.ItemIndex;
   cbxTiledataSide.Items := side_list;
   cbxTiledataSide.ItemIndex := Max(item_index, 0);
+  for i := 0 to CNT_SIDES - 1 do
+    lblColoursSideNames[i].Caption := side_list[i];
+end;
+
+procedure TResourcesEditor.update_colours_file_list;
+begin
+  lbColoursFileList.Items := Colours.colours_file_list;
+  lbColoursFileList.ItemIndex := Colours.colours_bin_file_index;
+end;
+
+procedure TResourcesEditor.update_colours;
+var
+  campaign_folder, colours_bin_file: string;
+begin
+  draw_colours_image;
+  lbColoursFileList.ItemIndex := Colours.colours_bin_file_index;
+  btnColoursDeleteCurrentFile.Enabled := lbColoursFileList.ItemIndex > 0;
+  if lbColoursFileList.ItemIndex > 0 then
+  begin
+    split_string_by_delimiter(Colours.colours_file_list[lbColoursFileList.ItemIndex], '/', campaign_folder, colours_bin_file);
+    edColoursCampaignFolder.Text := campaign_folder;
+    edColoursColoursBinFile.Text := colours_bin_file;
+  end;
+  if PageControl.ActivePage = PageColours then
+    fill_status_bar;
 end;
 
 procedure TResourcesEditor.fill_data(action: TFillDataAction);
@@ -3192,7 +3341,9 @@ begin
   begin
     file1 := IfThen(ResourceFile[R16FILE_UI].r16_modified, '*', '') + ResourceFile[R16FILE_UI].r16_filename;
     file2 := IfThen(ResourceFile[R16FILE_MOUSE].r16_modified, '*', '') + ResourceFile[R16FILE_MOUSE].r16_filename;
-  end;
+  end
+  else if PageControl.ActivePage = PageColours then
+    file1 := IfThen(Colours.colours_bin_modified, '*', '') + Colours.colours_bin_filename;
   // Fill status bar
   StatusBar.Panels[0].Text := file1;
   StatusBar.Panels[1].Text := file2;
@@ -4725,11 +4876,33 @@ begin
   end;
 end;
 
+procedure TResourcesEditor.draw_colours_image;
+var
+  i, j: integer;
+begin
+  imgColours.Canvas.Pen.Color := clBlack;
+  imgColours.Canvas.Pen.Width := 1;
+  imgColours.Canvas.Brush.Style := bsSolid;
+  for i := 0 to Length(Colours.colours_data) - 1 do
+    for j := 0 to Length(Colours.colours_data[i]) - 1 do
+    begin
+      imgColours.Canvas.Brush.Color := Colours.colour_swap_bytes(Colours.get_colour_32bit(i, j));
+      imgColours.Canvas.Rectangle(j*32, i*32, j*32+33, i*32+33);
+    end;
+  imgColours.Canvas.Pen.Color := clBlue;
+  imgColours.Canvas.Pen.Width := 2;
+  imgColours.Canvas.Brush.Style := bsClear;
+  imgColours.Canvas.Rectangle(selected_colour_index*32+1, selected_colour_house*32+1, selected_colour_index*32+33, selected_colour_house*32+33);
+  edColoursHexCode.Text := IntToHex(Colours.get_colour_32bit(selected_colour_house, selected_colour_index), 6);
+end;
+
 procedure TResourcesEditor.apply_changes;
 begin
   store_data;
   Structures.compute_building_and_unit_house_versions;
   Structures.compute_building_group_mapping;
+  if Colours.colours_bin_modified then
+    ResourceFile[R16FILE_DATA].invalidate_colors;
   Dispatcher.register_event(evACResourcesEditor);
 end;
 
@@ -4745,6 +4918,7 @@ begin
   Structures.save_tiledata_bin;
   for filenum := 0 to Length(ResourceFile) - 1 do
     ResourceFile[filenum].save_r16;
+  Colours.save_colours_bin;
   Sounds.save_sound_rs;
   StringTable.save_samples_uib;
   fill_status_bar;

@@ -652,7 +652,7 @@ end;
 procedure TMissionIni.set_colours_file(value: string);
 begin
   ColoursFile := value;
-  Colours.load_colours_bin;
+  Colours.load_colours_bin(CampaignFolder, ColoursFile);
 end;
 
 procedure TMissionIni.set_text_uib(value: string);
@@ -678,7 +678,7 @@ begin
   Structures.load_misc_objects_resourcefile;
   Structures.load_limits_ini;
   Structures.load_group_ids;
-  Colours.load_colours_bin;
+  Colours.load_colours_bin(CampaignFolder, ColoursFile);
   for filenum := 0 to Length(ResourceFile) - 1 do
     ResourceFile[filenum].load_r16(false);
   Sounds.load_sound_rs(false);

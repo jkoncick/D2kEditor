@@ -43,6 +43,7 @@ procedure set_integer_struct_member(ptr: Pointer; structdef: TStructDefinitionPt
 procedure set_float_struct_member  (ptr: Pointer; structdef: TStructDefinitionPtr; member: integer; value: single);
 procedure store_c_string(source: String; target_ptr: TByteArrayPtr; target_size: integer);
 procedure swap_byte(byte1, byte2: PByte);
+procedure split_string_by_delimiter(source, delimiter: string; var result1, result2: string);
 
 function IntToBin(val: integer; width: integer): string;
 function BinToInt(bin: string): integer;
@@ -144,6 +145,15 @@ begin
   tmp_byte := byte1^;
   byte1^ := byte2^;
   byte2^ := tmp_byte;
+end;
+
+procedure split_string_by_delimiter(source, delimiter: string; var result1, result2: string);
+var
+  delimiter_pos: integer;
+begin
+  delimiter_pos := Pos(delimiter, source);
+  result1 := Copy(source, 1, delimiter_pos - 1);
+  result2 := Copy(source, delimiter_pos + 1, Length(source));
 end;
 
 function IntToBin(val: integer; width: integer): string;

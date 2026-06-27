@@ -46,6 +46,7 @@ type
     evStructuresFilenameChange,
     evStructuresImportItem,
     // ResourceFile events
+    evFLLColoursBinFileList,
     evFLColoursBin,
     evFLDataR16,
     evFLMiscObjectsBmp,
@@ -68,6 +69,7 @@ type
   TDispatcherPendingAction = (
     // Update selection lists
     paUpdateTilesetList,
+    paUpdateColoursFileList,
     paUpdateTextList,
     paUpdateSoundList,
     paUpdateStructuresList,
@@ -88,7 +90,7 @@ type
     paUpdateMapStats,
     paUpdateEventMarkers,
     paUpdateEventAreas,
-    paUpdateSideColours,
+    paUpdateColours,
     paUpdateArmourList,
     paUpdateSpeedModifiers,
     paUpdateVariableNames,
@@ -197,7 +199,8 @@ begin
     evStructuresFilenameChange:   pact := pact + [paUpdateDebugValues];
     evStructuresImportItem:       pact := pact + [paUpdateResourcesEditor];
     // ResourceFile events
-    evFLColoursBin:               pact := pact + [paUpdateSideColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
+    evFLLColoursBinFileList:      pact := pact + [paUpdateColoursFileList];
+    evFLColoursBin:               pact := pact + [paUpdateColours, paRenderMap, paRenderMinimap, paRenderCursorImage, paUpdateDebugValues];
     evFLDataR16:                  pact := pact + [paUpdateResourcesEditor, paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evFLMiscObjectsBmp:           pact := pact + [paRenderMap, paRenderCursorImage, paUpdateDebugValues];
     evLoadStructureImage:         pact := pact + [paUpdateDebugValues];
@@ -219,7 +222,7 @@ begin
     // "Translate structure names" setting changed
     evSCTranslateStructureNames:  pact := pact + [paUpdateStructuresListTranslated];
     // Apply changes events
-    evACResourcesEditor:          pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateArmourList, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
+    evACResourcesEditor:          pact := pact + [paUpdateStructuresList, paUpdateStructuresListTranslated, paUpdateStructureControls, paUpdateGameStructMembers, paUpdateMapStats, paUpdateColours, paUpdateArmourList, paUpdateSpeedModifiers, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
   end;
 end;
 
@@ -241,6 +244,7 @@ begin
     exit;
   // Update selection lists
   if paUpdateTilesetList        in pact then SetDialog.update_tileset_list;
+  if paUpdateColoursFileList    in pact then begin ResourcesEditor.update_colours_file_list; MissionDialog.update_colours_file_list; end;
   if paUpdateTextList           in pact then TilesetEditor.update_text_list;
   if paUpdateSoundList          in pact then begin EventDialog.update_sound_list; ResourcesEditor.update_sound_list; end;
   if paUpdateStructuresList     in pact then EventDialog.update_structures_list;
@@ -261,7 +265,7 @@ begin
   if paUpdateMapStats           in pact then update_map_stats;
   if paUpdateEventMarkers       in pact then update_event_markers;
   if paUpdateEventAreas         in pact then update_event_areas;
-  if paUpdateSideColours        in pact then MissionDialog.update_side_colors;
+  if paUpdateColours            in pact then begin MissionDialog.update_side_colors; ResourcesEditor.update_colours; end;
   if paUpdateArmourList         in pact then TilesetEditor.update_armour_list;
   if paUpdateSpeedModifiers     in pact then TilesetEditor.update_speed_modifiers;
   if paUpdateVariableNames      in pact then EventDialog.update_variable_names;
