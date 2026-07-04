@@ -1942,7 +1942,7 @@ end;
 
 procedure TMission.remap_structures(remap_structures_data: TRemapStructuresDataPtr);
 var
-  i, j: integer;
+  side, i, j: integer;
   event: ^TEvent;
   condition: ^TCondition;
   et: TEventTypeDefinitionPtr;
@@ -1950,6 +1950,9 @@ var
   struct_type: integer;
   filter: TObjectFilterPtr;
   filter_criteria: TFilterCriteriaDefinitionPtr;
+  tmp_ai: TMisAISegment;
+  prop: TGameStructMemberPtr;
+  bytes: integer;
 begin
   // Remap structures on events
   for i := 0 to num_events - 1 do
@@ -2026,6 +2029,40 @@ begin
         if (filter_criteria.list_type = ltItem) and ((filter.pos_and_var_flags and (1 shl (j + 8))) = 0) then
           filter.criteria_value[j] := Structures.remap_structure(remap_structures_data, filter_criteria.item_list_type, filter.criteria_value[j]);
       end;
+    end;
+  end;
+  // Remap AI values
+  for side := 0 to CNT_SIDES - 1 do
+  begin
+    Move(ai_segments[side,0], tmp_ai[0], sizeof(tmp_ai));
+    i := 0;
+    while i < Length(GameStructs.struct_members[GameStructs.ai_struct_index]) do
+    begin
+      prop := Addr(GameStructs.struct_members[GameStructs.ai_struct_index, i]);
+      bytes := game_struct_data_type_size[Ord(prop.data_type)];
+      if Pos('B2#0', prop.name_template) > 0 then
+      begin
+        for j := 0 to MAX_BUILDING_TYPES - 1 do
+          if j <> remap_structures_data.remap_buildings[j] then
+            set_integer_value(Addr(ai_segments[side,0]), prop.offset + bytes * remap_structures_data.remap_buildings[j], bytes, get_integer_value(Addr(tmp_ai[0]), prop.offset + bytes * j, bytes));
+        inc(i, MAX_BUILDING_TYPES);
+      end
+      else if Pos('B#0', prop.name_template) > 0 then
+      begin
+        for j := 0 to MAX_BUILDING_TYPES - 1 do
+          if j <> remap_structures_data.remap_buildinggroups[j] then
+            set_integer_value(Addr(ai_segments[side,0]), prop.offset + bytes * remap_structures_data.remap_buildinggroups[j], bytes, get_integer_value(Addr(tmp_ai[0]), prop.offset + bytes * j, bytes));
+        inc(i, MAX_BUILDING_TYPES);
+      end
+      else if Pos('U#0', prop.name_template) > 0 then
+      begin
+        for j := 0 to MAX_UNIT_TYPES - 1 do
+          if j <> remap_structures_data.remap_units[j] then
+            set_integer_value(Addr(ai_segments[side,0]), prop.offset + bytes * remap_structures_data.remap_units[j], bytes, get_integer_value(Addr(tmp_ai[0]), prop.offset + bytes * j, bytes));
+        inc(i, MAX_UNIT_TYPES);
+      end
+      else
+        inc(i, 1);
     end;
   end;
   // Finalize

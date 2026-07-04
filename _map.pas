@@ -1176,7 +1176,7 @@ function TMap.remap_structures(ini_filename: String): String;
 var
   remap_structures_data: TRemapStructuresData;
   i, x, y: integer;
-  special, new_special, struct_type: integer;
+  special, new_special, struct_type, crate_type: integer;
   tiledata_entry: TTileDataEntryPtr;
 begin
   result := Structures.load_remap_structures_ini_file(ini_filename, Addr(remap_structures_data));
@@ -1188,14 +1188,44 @@ begin
     begin
       special := map_data[x, y].special;
       // Remap advanced structures
-      if (special and $C000) = $4000 then
+      if (special and $8000) = $8000 then
       begin
+        // Crate
+        if (special and $FF) = 0 then
+          continue;
+        crate_type := (special shr 11) and 15;
+        if crate_type = 1 then
+        begin
+          // Explosion crate
+          struct_type := remap_structures_data.remap_weapons[special and $003F];
+          modify_map_tile(x, y, map_data[x,y].tile, (special and $FFC0) or struct_type);
+        end
+        else if crate_type = 4 then
+        begin
+          // Unit crate
+          if (special and $80) = $80 then
+            struct_type := remap_structures_data.remap_unitgroups[special and $003F]
+          else
+            struct_type := remap_structures_data.remap_units[special and $003F];
+          modify_map_tile(x, y, map_data[x,y].tile, (special and $FFC0) or struct_type);
+        end
+      end
+      else if (special and $C000) = $4000 then
+      begin
+        // Unit
         struct_type := remap_structures_data.remap_units[special and $003F];
         modify_map_tile(x, y, map_data[x,y].tile, (special and $FFC0) or struct_type);
       end
       else if (special and $E000) = $2000 then
       begin
+        // Building
         struct_type := remap_structures_data.remap_buildings[special and $007F];
+        modify_map_tile(x, y, map_data[x,y].tile, (special and $FF80) or struct_type);
+      end
+      else if (special and $F000) = $1000 then
+      begin
+        // Explosion
+        struct_type := remap_structures_data.remap_explosions[special and $007F];
         modify_map_tile(x, y, map_data[x,y].tile, (special and $FF80) or struct_type);
       end
       // Remap basic structures
