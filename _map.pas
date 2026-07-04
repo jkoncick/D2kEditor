@@ -92,14 +92,14 @@ type
     procedure paint_tile(x,y: integer; paint_tile_group, side: integer);
   public
     procedure set_special_value(x,y: integer; special: word);
-    procedure paint_rect(x,y, width, height: integer; paint_tile_group, side: integer);
+    procedure paint_rect(x, y, size, mirror_mode, paint_tile_group, side: integer);
     procedure copy_block(x,y, width, height: integer; block: TMapDataPtr; copy_terrain, copy_structures: boolean; area_type: integer; erase: boolean);
     procedure put_block(x,y, width, height: integer; block: TMapDataPtr);
     function check_structure_can_be_placed(x,y: integer; special: word): boolean;
 
     // Fill area procedures
   public
-    procedure fill_area_start(x,y: integer; paint_tile_group, side: integer);
+    procedure fill_area_start(x, y, mirror_mode, paint_tile_group, side: integer);
   private
     procedure fill_area_step(x,y: integer; paint_tile_group, side, area_type: integer);
 
@@ -348,18 +348,23 @@ begin
   modify_map_tile(x, y, map_data[x,y].tile, special);
 end;
 
-procedure TMap.paint_rect(x, y, width, height: integer; paint_tile_group, side: integer);
+procedure TMap.paint_rect(x, y, size, mirror_mode, paint_tile_group, side: integer);
 var
   xx, yy: integer;
 begin
   undo_block_start := true;
   Renderer.invalidate_init;
-  for xx := x to x + width - 1 do
-    for yy := y to y + height - 1 do
+  for xx := x to x + size - 1 do
+    for yy := y to y + size - 1 do
     begin
       if (xx >= map_width) or (xx < 0) or (yy >= map_height) or (yy < 0) then
         continue;
       paint_tile(xx, yy, paint_tile_group, side);
+      case mirror_mode of
+        1: paint_tile(map_width - 1 - xx, yy, paint_tile_group, side);
+        2: paint_tile(xx, map_height - 1 - yy, paint_tile_group, side);
+        3: paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
+      end;
     end;
 end;
 
@@ -427,9 +432,10 @@ begin
 end;
 
 
-procedure TMap.fill_area_start(x, y: integer; paint_tile_group, side: integer);
+procedure TMap.fill_area_start(x, y, mirror_mode, paint_tile_group, side: integer);
 var
   tmp_pos: integer;
+  xx, yy: integer;
 begin
   // Undo the action which was made by first click
   tmp_pos := undo_pos;
@@ -444,6 +450,23 @@ begin
   undo_block_start := true;
   Renderer.invalidate_init;
   fill_area_step(x, y, paint_tile_group, side, Tileset.get_fill_area_type(map_data[x, y].tile, map_data[x, y].special));
+  case mirror_mode of
+    1: begin
+        xx := map_width - 1 - x;
+        yy := y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    2: begin
+        xx := x;
+        yy := map_height - 1 - y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    3: begin
+        xx := map_width - 1 - x;
+        yy := map_height - 1 - y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+  end;
 end;
 
 procedure TMap.fill_area_step(x, y: integer; paint_tile_group, side, area_type: integer);

@@ -110,7 +110,7 @@ object MainWindow: TMainWindow
     Left = 512
     Top = 0
     Width = 168
-    Height = 575
+    Height = 633
     TabOrder = 3
     object MiniMapFrame: TBevel
       Left = 18
@@ -241,9 +241,9 @@ object MainWindow: TMainWindow
     end
     object EditorPages: TPageControl
       Left = 1
-      Top = 188
+      Top = 192
       Width = 166
-      Height = 386
+      Height = 440
       ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
@@ -281,9 +281,9 @@ object MainWindow: TMainWindow
         end
         object StructPages: TPageControl
           Left = 0
-          Top = 24
+          Top = 32
           Width = 158
-          Height = 334
+          Height = 380
           ActivePage = PageStructBasic
           Align = alBottom
           TabOrder = 2
@@ -377,7 +377,7 @@ object MainWindow: TMainWindow
               Left = 0
               Top = 0
               Width = 150
-              Height = 306
+              Height = 352
               ActivePage = PageStructBuildings
               Align = alClient
               MultiLine = True
@@ -1067,7 +1067,7 @@ object MainWindow: TMainWindow
         end
         object BlockFrame: TBevel
           Left = 14
-          Top = 258
+          Top = 290
           Width = 132
           Height = 132
           Shape = bsFrame
@@ -1075,21 +1075,21 @@ object MainWindow: TMainWindow
         end
         object BlockImage: TImage
           Left = 16
-          Top = 260
+          Top = 292
           Width = 128
           Height = 128
           OnClick = BlockImageClick
         end
         object Bevel1: TBevel
           Left = 2
-          Top = 164
+          Top = 196
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
         object Bevel2: TBevel
           Left = 2
-          Top = 220
+          Top = 252
           Width = 152
           Height = 4
           Shape = bsBottomLine
@@ -1102,14 +1102,21 @@ object MainWindow: TMainWindow
         end
         object lbSelectAreaType: TLabel
           Left = 4
-          Top = 200
+          Top = 232
           Width = 25
           Height = 13
           Caption = 'Area:'
         end
+        object lblMirrorMode: TLabel
+          Left = 4
+          Top = 32
+          Width = 58
+          Height = 13
+          Caption = 'Mirror mode:'
+        end
         object RbBlockMode: TRadioButton
           Left = 4
-          Top = 232
+          Top = 264
           Width = 77
           Height = 17
           Caption = 'Block mode'
@@ -1120,7 +1127,7 @@ object MainWindow: TMainWindow
         end
         object RbPaintMode: TRadioButton
           Left = 4
-          Top = 28
+          Top = 60
           Width = 77
           Height = 17
           Caption = 'Paint mode'
@@ -1129,7 +1136,7 @@ object MainWindow: TMainWindow
         end
         object OpenTileset: TButton
           Left = 88
-          Top = 228
+          Top = 260
           Width = 65
           Height = 25
           Caption = 'Open tileset'
@@ -1138,7 +1145,7 @@ object MainWindow: TMainWindow
         end
         object RbSelectMode: TRadioButton
           Left = 4
-          Top = 174
+          Top = 206
           Width = 81
           Height = 17
           Caption = 'Select mode'
@@ -1147,7 +1154,7 @@ object MainWindow: TMainWindow
         end
         object CbSelectStructures: TCheckBox
           Left = 90
-          Top = 174
+          Top = 206
           Width = 97
           Height = 17
           Hint = 
@@ -1163,7 +1170,7 @@ object MainWindow: TMainWindow
         end
         object cbSelectAreaType: TComboBox
           Left = 32
-          Top = 196
+          Top = 228
           Width = 121
           Height = 21
           Style = csDropDownList
@@ -1172,7 +1179,7 @@ object MainWindow: TMainWindow
         end
         object cbxConcreteSide: TComboBox
           Left = 48
-          Top = 26
+          Top = 58
           Width = 105
           Height = 21
           Style = csDropDownList
@@ -1192,6 +1199,22 @@ object MainWindow: TMainWindow
           Position = 1
           TabOrder = 7
           ThumbLength = 16
+        end
+        object cbxMirrorMode: TComboBox
+          Left = 80
+          Top = 28
+          Width = 73
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          ItemIndex = 0
+          TabOrder = 8
+          Text = 'None'
+          Items.Strings = (
+            'None'
+            'Horizontal'
+            'Vertical'
+            'Both')
         end
       end
     end

@@ -212,6 +212,8 @@ type
     cbxExplosionSide: TComboBox;
     cbExplosionTagged: TCheckBox;
     Showmap1: TMenuItem;
+    lblMirrorMode: TLabel;
+    cbxMirrorMode: TComboBox;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -434,7 +436,7 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 1;
-    btn.Top := 48 + ((i+4) div 4) * 38;
+    btn.Top := 80 + ((i+4) div 4) * 38;
     btn.Left := 2 + ((i+4) mod 4) * 38;
     btn.Width := 38;
     btn.Height := 38;
@@ -451,7 +453,7 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 2;
-    btn.Top := 396 + 20 * (i mod (cnt_block_preset_groups div 2));
+    btn.Top := 428 + 20 * (i mod (cnt_block_preset_groups div 2));
     btn.Left := 2 + 76 * (i div (cnt_block_preset_groups div 2));
     btn.Width := 76;
     btn.Height := 20;
@@ -1503,7 +1505,7 @@ begin
       else if mode(mPaintMode) then
       begin
         // Paint
-        Map.paint_rect(map_x, map_y, tbBrushSize.Position, tbBrushSize.Position, paint_tile_group, cbxConcreteSide.ItemIndex);
+        Map.paint_rect(map_x, map_y, tbBrushSize.Position, cbxMirrorMode.ItemIndex, paint_tile_group, cbxConcreteSide.ItemIndex);
       end;
     end
     else if button = mbMiddle then
@@ -1555,7 +1557,7 @@ begin
   end;
   // Double click for filling area
   if mode(mPaintMode) then
-    Map.fill_area_start(mouse_old_x, mouse_old_y, paint_tile_group, cbxConcreteSide.ItemIndex);
+    Map.fill_area_start(mouse_old_x, mouse_old_y, cbxMirrorMode.ItemIndex, paint_tile_group, cbxConcreteSide.ItemIndex);
 end;
 
 procedure TMainWindow.MapCanvasMouseUp(Sender: TObject;
