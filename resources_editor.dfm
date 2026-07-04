@@ -4773,6 +4773,10 @@ object ResourcesEditor: TResourcesEditor
       ShortCut = 16466
       OnClick = Reloadfiles1Click
     end
+    object Saveremapinifile1: TMenuItem
+      Caption = 'Save remap ini file'
+      OnClick = Saveremapinifile1Click
+    end
   end
   object tmBuildingBuildingAnimation: TTimer
     Enabled = False
@@ -4852,5 +4856,12 @@ object ResourcesEditor: TResourcesEditor
     Options = [cdFullOpen]
     Left = 988
     Top = 48
+  end
+  object RemapStructuresSaveDialog: TSaveDialog
+    DefaultExt = 'ini'
+    Filter = 'Remap structures ini file (*.ini)|*.ini'
+    Title = 'Save remap structures ini file'
+    Left = 828
+    Top = 80
   end
 end

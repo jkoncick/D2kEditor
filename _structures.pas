@@ -648,6 +648,10 @@ type
     item_data_pointers: array[0..6 + MAX_WARHEADS] of TItemDataPointers;
     item_type_pointers: array[0..8] of TItemTypePointers;
     art_type_pointers: array[0..5] of TArtTypePointers;
+
+    // Remap structures data
+    current_remap_structures_data: TRemapStructuresData;
+
   public
     // General procedures
     procedure init;
@@ -764,6 +768,7 @@ type
 
     // Remap structures functions
     function load_remap_structures_ini_file(ini_filename: String; remap_structures_data: TRemapStructuresDataPtr): String;
+    procedure save_remap_structures_ini_file(ini_filename: String);
     function remap_structure(remap_structures_data: TRemapStructuresDataPtr; list_type: ItemListType; struct_type: integer): integer;
   end;
 
@@ -825,6 +830,7 @@ procedure TStructures.load_templates_bin(force: boolean);
 var
   tmp_filename: String;
   f: file of byte;
+  i: integer;
 begin
   tmp_filename := find_file('Data\bin\Templates.bin', 'game');
   if (tmp_filename = '') or ((tmp_filename = templates_bin_filename) and not force) then
@@ -881,6 +887,20 @@ begin
   compute_image_indexes;
   compute_building_and_unit_house_versions;
   compute_building_group_mapping;
+
+  // Reset remap structures data
+  for i := 0 to Length(current_remap_structures_data.remap_units) - 1 do
+    current_remap_structures_data.remap_units[i] := i;
+  for i := 0 to Length(current_remap_structures_data.remap_unitgroups) - 1 do
+    current_remap_structures_data.remap_unitgroups[i] := i;
+  for i := 0 to Length(current_remap_structures_data.remap_buildings) - 1 do
+    current_remap_structures_data.remap_buildings[i] := i;
+  for i := 0 to Length(current_remap_structures_data.remap_buildinggroups) - 1 do
+    current_remap_structures_data.remap_buildinggroups[i] := i;
+  for i := 0 to Length(current_remap_structures_data.remap_weapons) - 1 do
+    current_remap_structures_data.remap_weapons[i] := i;
+  for i := 0 to Length(current_remap_structures_data.remap_explosions) - 1 do
+    current_remap_structures_data.remap_explosions[i] := i;
 
   // Register event in dispatcher
   Dispatcher.register_event(evFLTemplatesBin);
@@ -1855,6 +1875,7 @@ begin
   case item_type of
     ITEM_BUILDING:
       begin
+        current_remap_structures_data.remap_buildings[ptrs.item_count_byte_ptr^] := ptrs.item_count_byte_ptr^;
         // Remove animation art, buildup art and building icon
         remove_last_art(ART_BUILDING_ANIMATION);
         remove_last_art(ART_BUILDUP);
@@ -1863,16 +1884,27 @@ begin
       end;
     ITEM_UNIT:
       begin
+        current_remap_structures_data.remap_units[ptrs.item_count_byte_ptr^] := ptrs.item_count_byte_ptr^;
         // Remove building icon
         ResourceFile[R16FILE_DATA].remove_image_entries(first_unit_icon_image_index + templates.UnitCount, 1);
         compute_image_indexes;
       end;
+    ITEM_BUILDING_GROUP:
+      current_remap_structures_data.remap_buildinggroups[ptrs.item_count_byte_ptr^] := ptrs.item_count_byte_ptr^;
+    ITEM_UNIT_GROUP:
+      current_remap_structures_data.remap_unitgroups[ptrs.item_count_byte_ptr^] := ptrs.item_count_byte_ptr^;
     ITEM_WEAPON:
-      // Remove projectile art
-      remove_last_art(ART_PROJECTILE);
+      begin
+        current_remap_structures_data.remap_weapons[ptrs.item_count_byte_ptr^] := ptrs.item_count_byte_ptr^;
+        // Remove projectile art
+        remove_last_art(ART_PROJECTILE);
+      end;
     ITEM_EXPLOSION:
-      // Remove animation art
-      remove_last_art(ART_ANIMATION);
+      begin
+        current_remap_structures_data.remap_explosions[ptrs.item_count_byte_ptr^] := ptrs.item_count_byte_ptr^;
+        // Remove animation art
+        remove_last_art(ART_ANIMATION);
+      end;
   end;
   // Fix item references
   fix_item_references(item_type, ptrs.item_count_byte_ptr^, -1, false);
@@ -1894,6 +1926,7 @@ var
   ptrs: TItemTypePointersPtr;
   data_ptrs: TItemDataPointersPtr;
   i: integer;
+  tmp: integer;
 begin
   ptrs := Addr(item_type_pointers[item_type]);
   // Swap item name
@@ -1908,20 +1941,50 @@ begin
   case item_type of
     ITEM_BUILDING:
       begin
+        tmp := current_remap_structures_data.remap_buildings[index1];
+        current_remap_structures_data.remap_buildings[index1] := current_remap_structures_data.remap_buildings[index2];
+        current_remap_structures_data.remap_buildings[index2] := tmp;
         // Swap animation art, buildup art and building icon
         swap_arts(ART_BUILDING_ANIMATION, index1, index2);
         swap_arts(ART_BUILDUP, index1, index2);
         ResourceFile[R16FILE_DATA].swap_image_entries(first_building_icon_image_index + index1, first_building_icon_image_index + index2, 1, 1);
        end;
     ITEM_UNIT:
-      // Swap unit icon
-      ResourceFile[R16FILE_DATA].swap_image_entries(first_unit_icon_image_index + index1, first_unit_icon_image_index + index2, 1, 1);
+      begin
+        tmp := current_remap_structures_data.remap_units[index1];
+        current_remap_structures_data.remap_units[index1] := current_remap_structures_data.remap_units[index2];
+        current_remap_structures_data.remap_units[index2] := tmp;
+        // Swap unit icon
+        ResourceFile[R16FILE_DATA].swap_image_entries(first_unit_icon_image_index + index1, first_unit_icon_image_index + index2, 1, 1);
+      end;
+    ITEM_BUILDING_GROUP:
+      begin
+        tmp := current_remap_structures_data.remap_buildinggroups[index1];
+        current_remap_structures_data.remap_buildinggroups[index1] := current_remap_structures_data.remap_buildinggroups[index2];
+        current_remap_structures_data.remap_buildinggroups[index2] := tmp;
+      end;
+    ITEM_UNIT_GROUP:
+      begin
+        tmp := current_remap_structures_data.remap_unitgroups[index1];
+        current_remap_structures_data.remap_unitgroups[index1] := current_remap_structures_data.remap_unitgroups[index2];
+        current_remap_structures_data.remap_unitgroups[index2] := tmp;
+      end;
     ITEM_WEAPON:
-      // Swap projectile art
-      swap_arts(ART_PROJECTILE, index1, index2);
+      begin
+        tmp := current_remap_structures_data.remap_weapons[index1];
+        current_remap_structures_data.remap_weapons[index1] := current_remap_structures_data.remap_weapons[index2];
+        current_remap_structures_data.remap_weapons[index2] := tmp;
+        // Swap projectile art
+        swap_arts(ART_PROJECTILE, index1, index2);
+      end;
     ITEM_EXPLOSION:
-      // Swap animation art
-      swap_arts(ART_ANIMATION, index1, index2);
+      begin
+        tmp := current_remap_structures_data.remap_explosions[index1];
+        current_remap_structures_data.remap_explosions[index1] := current_remap_structures_data.remap_explosions[index2];
+        current_remap_structures_data.remap_explosions[index2] := tmp;
+        // Swap animation art
+        swap_arts(ART_ANIMATION, index1, index2);
+      end;
   end;
   // Fix item references
   fix_item_references(item_type, index1, index2, true);
@@ -2749,6 +2812,37 @@ begin
       exit;
     end;
   end;
+  ini.Destroy;
+end;
+
+procedure TStructures.save_remap_structures_ini_file(ini_filename: String);
+var
+  ini: TMemIniFile;
+  i: integer;
+begin
+  ini := TMemIniFile.Create(ini_filename);
+  ini.Clear;
+  for i := 0 to MAX_UNIT_TYPES-1 do
+  begin
+    if current_remap_structures_data.remap_units[i] <> i then
+      ini.WriteInteger('Remap_Units', IntToStr(current_remap_structures_data.remap_units[i]), i);
+    if current_remap_structures_data.remap_unitgroups[i] <> i then
+      ini.WriteInteger('Remap_UnitGroups', IntToStr(current_remap_structures_data.remap_unitgroups[i]), i);
+  end;
+  for i := 0 to MAX_BUILDING_TYPES-1 do
+  begin
+    if current_remap_structures_data.remap_buildings[i] <> i then
+      ini.WriteInteger('Remap_Buildings', IntToStr(current_remap_structures_data.remap_buildings[i]), i);
+    if current_remap_structures_data.remap_buildinggroups[i] <> i then
+      ini.WriteInteger('Remap_BuildingGroups', IntToStr(current_remap_structures_data.remap_buildinggroups[i]), i);
+  end;
+  for i := 0 to MAX_WEAPONS-1 do
+    if current_remap_structures_data.remap_weapons[i] <> i then
+      ini.WriteInteger('Remap_Weapons', IntToStr(current_remap_structures_data.remap_weapons[i]), i);
+  for i := 0 to MAX_EXPLOSIONS-1 do
+    if current_remap_structures_data.remap_explosions[i] <> i then
+      ini.WriteInteger('Remap_Explosions', IntToStr(current_remap_structures_data.remap_explosions[i]), i);
+  ini.UpdateFile;
   ini.Destroy;
 end;
 

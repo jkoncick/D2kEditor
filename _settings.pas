@@ -183,6 +183,7 @@ begin
   load_file_dialog_initial_dir(ResourcesEditor.SoundExportDialog,           '');
   load_file_dialog_initial_dir(ResourcesEditor.SoundImportDialog,           '');
   load_file_dialog_initial_dir(ResourcesEditor.ImageRemapColorsOpenDialog,  '');
+  load_file_dialog_initial_dir(ResourcesEditor.RemapStructuresSaveDialog,   '');
 
   ini.Destroy;
   ini := nil;
@@ -281,6 +282,7 @@ begin
   save_file_dialog_initial_dir(ResourcesEditor.SoundExportDialog);
   save_file_dialog_initial_dir(ResourcesEditor.SoundImportDialog);
   save_file_dialog_initial_dir(ResourcesEditor.ImageRemapColorsOpenDialog);
+  save_file_dialog_initial_dir(ResourcesEditor.RemapStructuresSaveDialog);
 
   ini.UpdateFile;
   ini.Destroy;

@@ -674,6 +674,8 @@ type
     lblColoursColoursBinFile: TLabel;
     btnColoursSaveCopy: TButton;
     btnColoursDeleteCurrentFile: TButton;
+    Saveremapinifile1: TMenuItem;
+    RemapStructuresSaveDialog: TSaveDialog;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -685,6 +687,7 @@ type
     procedure Launchmission1Click(Sender: TObject);
     procedure Launchwithsettings1Click(Sender: TObject);
     procedure Reloadfiles1Click(Sender: TObject);
+    procedure Saveremapinifile1Click(Sender: TObject);
     // Page control events
     procedure PageControlChanging(Sender: TObject; var AllowChange: Boolean);
     procedure PageControlChange(Sender: TObject);
@@ -1146,6 +1149,12 @@ begin
     StringTable.load_samples_uib(true);
   pnImagePalette.Visible := false;
   Colours.load_colours_bin(MissionIni.CampaignFolder, MissionIni.ColoursFile);
+end;
+
+procedure TResourcesEditor.Saveremapinifile1Click(Sender: TObject);
+begin
+  if RemapStructuresSaveDialog.Execute then
+    Structures.save_remap_structures_ini_file(RemapStructuresSaveDialog.FileName);
 end;
 
 procedure TResourcesEditor.PageControlChanging(Sender: TObject; var AllowChange: Boolean);
