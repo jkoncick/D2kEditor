@@ -8,6 +8,9 @@ uses
   ValEdit, IniFiles, _map, _mission, _structures, _misai, _utils;
 
 type
+  TValueListEditorCracker = class(TValueListEditor);
+
+type
   TMissionDialog = class(TForm)
     lblTechLevel: TLabel;
     lblStartingMoney: TLabel;
@@ -34,7 +37,7 @@ type
     cbUseINI: TCheckBox;
     btnRefreshStrings: TButton;
     Bevel1: TBevel;
-    btnResetToDefaults: TButton;
+    btnImportRules: TButton;
     lblMapName: TLabel;
     lblMapAuthor: TLabel;
     lblMapMusic: TLabel;
@@ -52,7 +55,6 @@ type
     ExportAIDialog: TSaveDialog;
     ImportAIDialog: TOpenDialog;
     lblTimeLimitHelp: TLabel;
-    cbDiffMode: TCheckBox;
     cbMapMusic: TComboBox;
     edTilesetName: TEdit;
     edTileatrName: TEdit;
@@ -75,6 +77,7 @@ type
     pnAIHelp: TPanel;
     lblAIHelp: TLabel;
     lblSideName: TLabel;
+    ImportRulesDialog: TOpenDialog;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -92,20 +95,25 @@ type
     procedure time_limit_change(Sender: TObject);
     procedure edTilesetNameChange(Sender: TObject);
     procedure edTileatrNameChange(Sender: TObject);
+    procedure RuleValueListDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+    procedure RuleValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure RuleValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure RuleValueListStringsChange(Sender: TObject);
     // AI value editor events
     procedure sbShowAIHelpClick(Sender: TObject);
     procedure AITabControlChange(Sender: TObject);
-    procedure AIValueListStringsChange(Sender: TObject);
+    procedure AIValueListDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+    procedure AIValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+    procedure AIValueListStringsChange(Sender: TObject);
     procedure btnExportAIClick(Sender: TObject);
     procedure btnImportAIClick(Sender: TObject);
     procedure btnCopyAIClick(Sender: TObject);
     procedure btnPasteAIClick(Sender: TObject);
-    procedure cbDiffModeClick(Sender: TObject);
     procedure btnSelectDefenceAreaFromMapClick(Sender: TObject);
     // Mission ini data editor events
     procedure cbUseINIClick(Sender: TObject);
-    procedure btnResetToDefaultsClick(Sender: TObject);
+    procedure btnImportRulesClick(Sender: TObject);
     procedure btnRefreshStringsClick(Sender: TObject);
     procedure MissionIniPropertyChange(Sender: TObject);
     procedure cbMapSideIdChange(Sender: TObject);
@@ -261,11 +269,13 @@ begin
   tmp_strings.Destroy;
 end;
 
-procedure TMissionDialog.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TMissionDialog.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if key = 27 then
+  begin
+    key := 0;
     Close;
+  end;
 end;
 
 procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
@@ -376,6 +386,42 @@ begin
     store_c_string(edTileatrName.Text, Addr(Mission.tileatr_name), Length(Mission.tileatr_name));
 end;
 
+procedure TMissionDialog.RuleValueListDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+  if (ARow = 0) or (ACol = 0) or (gdSelected in State) then
+    exit;
+  if MissionIni.rules[ARow - 1].default_value <> RuleValueList.Cells[ACol, ARow] then
+  begin
+    RuleValueList.Canvas.Brush.Color := clYellow;
+    RuleValueList.Canvas.FillRect(Rect);
+    RuleValueList.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,RuleValueList.Cells[ACol,ARow]);
+  end;
+end;
+
+procedure TMissionDialog.RuleValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (key = 8) and (RuleValueList.Cells[RuleValueList.Col, RuleValueList.Row] = '') then
+  begin
+    RuleValueList.Cells[RuleValueList.Col, RuleValueList.Row] := MissionIni.rules[RuleValueList.Row - 1].default_value;
+    TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).SelStart := 0;
+    TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).SelLength := 0;
+    TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := clWhite;
+  end;
+end;
+
+procedure TMissionDialog.RuleValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+begin
+  if (ARow = 0) or (ACol = 0) or (TValueListEditorCracker(RuleValueList).InplaceEditor = nil) then
+    exit;
+  TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := IfThen(MissionIni.rules[ARow - 1].default_value <> RuleValueList.Cells[ACol, ARow], clYellow, clWhite);
+end;
+
+procedure TMissionDialog.RuleValueListStringsChange(Sender: TObject);
+begin
+  if TValueListEditorCracker(RuleValueList).InplaceEditor <> nil then
+    TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := IfThen(MissionIni.rules[RuleValueList.Row - 1].default_value <> RuleValueList.Cells[1, RuleValueList.Row], clYellow, clWhite);
+end;
+
 procedure TMissionDialog.sbShowAIHelpClick(Sender: TObject);
 var
   i: integer;
@@ -395,6 +441,59 @@ begin
   update_mis_ai_values;
 end;
 
+procedure TMissionDialog.AIValueListDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+  if (ARow <= 1) or (ACol = 0) or (gdSelected in State) then
+    exit;
+  if GameStructs.get_misai_property_default_value(ARow - 1) <> AIValueList.Cells[ACol, ARow] then
+  begin
+    AIValueList.Canvas.Brush.Color := clYellow;
+    AIValueList.Canvas.FillRect(Rect);
+    AIValueList.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,AIValueList.Cells[ACol,ARow]);
+  end;
+end;
+
+procedure TMissionDialog.AIValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (key = 8) and (AIValueList.Cells[AIValueList.Col, AIValueList.Row] = '') then
+  begin
+    AIValueList.Cells[AIValueList.Col, AIValueList.Row] := GameStructs.get_misai_property_default_value(AIValueList.Row - 1);
+    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).SelStart := 0;
+    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).SelLength := 0;
+    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := clWhite;
+  end;
+end;
+
+procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
+var
+  prop: TGameStructMemberPtr;
+  help_text: string;
+  i: integer;
+begin
+  if (ARow = 0) or (ACol = 0) then
+    exit;
+  if TValueListEditorCracker(AIValueList).InplaceEditor <> nil then
+    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(ARow - 1) <> AIValueList.Cells[ACol, ARow]) and (ARow > 1), clYellow, clWhite);
+
+  prop := GameStructs.get_misai_property(ARow-1);
+  help_text := AIValueList.Cells[0, ARow] + #13;
+  for i := 0 to Length(MisAI.ai_hint_entries) - 1 do
+    if (prop.offset >= MisAI.ai_hint_entries[i].min_offset) and (prop.offset <= MisAI.ai_hint_entries[i].max_offset) then
+    begin
+      help_text := help_text + MisAI.ai_hint_entries[i].hint;
+      break;
+    end;
+  lblAIHelp.Caption := help_text;
+  if (prop.offset < DEFENCE_AREAS_START_BYTE) or (prop.offset > DEFENCE_AREAS_END_BYTE) then
+  begin
+    pnSelectDefenceAreaFromMap.Visible := false;
+    exit;
+  end;
+  defence_area_num := (prop.offset - DEFENCE_AREAS_START_BYTE) div DEFENCE_AREA_SIZE;
+  pnSelectDefenceAreaFromMap.Visible := true;
+  btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
+end;
+
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
 var
   i: integer;
@@ -406,6 +505,8 @@ begin
   if loading then
     exit;
   loading := true;
+  if TValueListEditorCracker(AIValueList).InplaceEditor <> nil then
+    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(AIValueList.Row - 1) <> AIValueList.Cells[1, AIValueList.Row]) and (AIValueList.Row > 1), clYellow, clWhite);
   // Range selection (if one value selected, loop goes only once)
   for i := AIValueList.Selection.Top to AIValueList.Selection.Bottom do
   begin
@@ -428,31 +529,6 @@ begin
     set_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset, bytes, i_val);
   end;
   loading := false;
-end;
-
-procedure TMissionDialog.AIValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
-var
-  prop: TGameStructMemberPtr;
-  help_text: string;
-  i: integer;
-begin
-  prop := GameStructs.get_misai_property(ARow-1);
-  help_text := AIValueList.Cells[0, ARow] + #13;
-  for i := 0 to Length(MisAI.ai_hint_entries) - 1 do
-    if (prop.offset >= MisAI.ai_hint_entries[i].min_offset) and (prop.offset <= MisAI.ai_hint_entries[i].max_offset) then
-    begin
-      help_text := help_text + MisAI.ai_hint_entries[i].hint;
-      break;
-    end;
-  lblAIHelp.Caption := help_text;
-  if (prop.offset < DEFENCE_AREAS_START_BYTE) or (prop.offset > DEFENCE_AREAS_END_BYTE) then
-  begin
-    pnSelectDefenceAreaFromMap.Visible := false;
-    exit;
-  end;
-  defence_area_num := (prop.offset - DEFENCE_AREAS_START_BYTE) div DEFENCE_AREA_SIZE;
-  pnSelectDefenceAreaFromMap.Visible := true;
-  btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
 end;
 
 procedure TMissionDialog.btnExportAIClick(Sender: TObject);
@@ -479,11 +555,6 @@ procedure TMissionDialog.btnPasteAIClick(Sender: TObject);
 begin
   if MisAI.paste_misai_segment_from_clipboard(Mission.ai_segments[AITabControl.TabIndex]) then
     update_mis_ai_values;
-end;
-
-procedure TMissionDialog.cbDiffModeClick(Sender: TObject);
-begin
-  update_mis_ai_values;
 end;
 
 procedure TMissionDialog.btnSelectDefenceAreaFromMapClick(Sender: TObject);
@@ -529,9 +600,15 @@ begin
   end;
 end;
 
-procedure TMissionDialog.btnResetToDefaultsClick(Sender: TObject);
+procedure TMissionDialog.btnImportRulesClick(Sender: TObject);
+var
+  dummy: boolean;
 begin
-  MissionIni.reset_rules_to_defaults;
+  if ImportRulesDialog.Execute then
+  begin
+    MissionIni.import_rules(ImportRulesDialog.FileName);
+    RuleValueListSelectCell(Sender, RuleValueList.Col, RuleValueList.Row, dummy);
+  end;
 end;
 
 procedure TMissionDialog.btnRefreshStringsClick(Sender: TObject);
@@ -689,6 +766,7 @@ var
   prop: TGameStructMemberPtr;
   prop_name: string;
   tmp_strings: TStringList;
+  dummy: boolean;
 begin
   if not Mission.mis_assigned then
     exit;
@@ -704,27 +782,23 @@ begin
     if prop.data_type = dtFloat then
     begin
       f_val := get_float_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset);
-      if cbDiffMode.Checked and (f_val = get_float_value(Addr(MisAI.default_ai), prop.offset)) then
-        tmp_strings.Add(prop_name + '=')
-      else
-        tmp_strings.Add(prop_name + '=' + floattostrf(f_val, ffFixed, 8, 3));
+      tmp_strings.Add(prop_name + '=' + floattostrf(f_val, ffFixed, 8, 3));
       continue;
     end;
     i_val := get_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset, bytes);
-    if cbDiffMode.Checked and (i_val = get_integer_value(Addr(MisAI.default_ai), prop.offset, bytes)) then
-      tmp_strings.Add(prop_name + '=')
-    else
-      tmp_strings.Add(prop_name + '=' + inttostr(i_val));
+    tmp_strings.Add(prop_name + '=' + inttostr(i_val));
   end;
   AIValueList.Strings := tmp_strings;
   tmp_strings.Destroy;
   loading := false;
+  AIValueListSelectCell(self, AIValueList.Col, AIValueList.Row, dummy);
 end;
 
 procedure TMissionDialog.update_mission_ini_data;
 var
   status: boolean;
   i: integer;
+  dummy: boolean;
 begin
   loading := true;
   status := MissionIni.mission_ini_assigned;
@@ -732,7 +806,7 @@ begin
   cbUseINI.Checked := status;
   for i := 0 to CNT_SIDES - 1 do
     side_name[i].ReadOnly := not status;
-  btnResetToDefaults.Enabled := status;
+  btnImportRules.Enabled := status;
   btnRefreshStrings.Enabled := status;
   edMapName.Enabled := status;
   edMapName.Text := MissionIni.Name;
@@ -757,6 +831,7 @@ begin
   edMapIntelId.Enabled := status;
   edMapIntelId.Text := MissionIni.IntelId;
   RuleValueList.Enabled := status;
+  RuleValueListSelectCell(self, RuleValueList.Col, RuleValueList.Row, dummy);
   StringValueList.Enabled := status;
 
   loading := false;

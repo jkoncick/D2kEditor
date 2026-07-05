@@ -168,6 +168,7 @@ begin
   load_file_dialog_initial_dir(MainWindow.RemapStructuresOpenDialog,        current_dir);
   load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,                current_dir + 'AI_templates');
   load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,                current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(MissionDialog.ImportRulesDialog,             MissionsPath);
   load_file_dialog_initial_dir(EventDialog.ExportEventsDialog,              '');
   load_file_dialog_initial_dir(EventDialog.ImportEventsDialog,              '');
   load_file_dialog_initial_dir(TilesetEditor.TilesetImageOpenDialog,        '');
@@ -267,6 +268,7 @@ begin
   save_file_dialog_initial_dir(MainWindow.RemapStructuresOpenDialog);
   save_file_dialog_initial_dir(MissionDialog.ExportAIDialog);
   save_file_dialog_initial_dir(MissionDialog.ImportAIDialog);
+  save_file_dialog_initial_dir(MissionDialog.ImportRulesDialog);
   save_file_dialog_initial_dir(EventDialog.ExportEventsDialog);
   save_file_dialog_initial_dir(EventDialog.ImportEventsDialog);
   save_file_dialog_initial_dir(TilesetEditor.TilesetImageOpenDialog);

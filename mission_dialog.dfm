@@ -259,15 +259,15 @@ object MissionDialog: TMissionDialog
         TabOrder = 7
         OnClick = btnRefreshStringsClick
       end
-      object btnResetToDefaults: TButton
+      object btnImportRules: TButton
         Left = 8
         Top = 390
         Width = 125
         Height = 22
-        Caption = 'Reset values to defaults'
+        Caption = 'Import rules'
         Enabled = False
         TabOrder = 8
-        OnClick = btnResetToDefaultsClick
+        OnClick = btnImportRulesClick
       end
       object edMapName: TEdit
         Left = 64
@@ -433,6 +433,10 @@ object MissionDialog: TMissionDialog
         TitleCaptions.Strings = (
           'Rule'
           'Value')
+        OnDrawCell = RuleValueListDrawCell
+        OnKeyDown = RuleValueListKeyDown
+        OnSelectCell = RuleValueListSelectCell
+        OnStringsChange = RuleValueListStringsChange
         ColWidths = (
           180
           86)
@@ -520,6 +524,8 @@ object MissionDialog: TMissionDialog
       TitleCaptions.Strings = (
         'Property'
         'Value')
+      OnDrawCell = AIValueListDrawCell
+      OnKeyDown = AIValueListKeyDown
       OnSelectCell = AIValueListSelectCell
       OnStringsChange = AIValueListStringsChange
       ColWidths = (
@@ -534,24 +540,23 @@ object MissionDialog: TMissionDialog
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 1
-      object pnSelectDefenceAreaFromMap: TPanel
-        Left = 0
+      object btnPasteAI: TButton
+        Left = 248
         Top = 0
-        Width = 312
+        Width = 64
         Height = 24
-        Align = alClient
-        BevelOuter = bvNone
-        TabOrder = 5
-        Visible = False
-        object btnSelectDefenceAreaFromMap: TButton
-          Left = 64
-          Top = 0
-          Width = 185
-          Height = 25
-          Caption = 'Select defence area # from map'
-          TabOrder = 0
-          OnClick = btnSelectDefenceAreaFromMapClick
-        end
+        Caption = 'Paste AI'
+        TabOrder = 3
+        OnClick = btnPasteAIClick
+      end
+      object btnCopyAI: TButton
+        Left = 184
+        Top = 0
+        Width = 64
+        Height = 24
+        Caption = 'Copy AI'
+        TabOrder = 2
+        OnClick = btnCopyAIClick
       end
       object btnImportAI: TButton
         Left = 64
@@ -571,32 +576,24 @@ object MissionDialog: TMissionDialog
         TabOrder = 1
         OnClick = btnExportAIClick
       end
-      object btnCopyAI: TButton
-        Left = 136
+      object pnSelectDefenceAreaFromMap: TPanel
+        Left = 0
         Top = 0
-        Width = 64
+        Width = 312
         Height = 24
-        Caption = 'Copy AI'
-        TabOrder = 2
-        OnClick = btnCopyAIClick
-      end
-      object btnPasteAI: TButton
-        Left = 200
-        Top = 0
-        Width = 64
-        Height = 24
-        Caption = 'Paste AI'
-        TabOrder = 3
-        OnClick = btnPasteAIClick
-      end
-      object cbDiffMode: TCheckBox
-        Left = 272
-        Top = 4
-        Width = 41
-        Height = 17
-        Caption = 'Diff'
+        Align = alClient
+        BevelOuter = bvNone
         TabOrder = 4
-        OnClick = cbDiffModeClick
+        Visible = False
+        object btnSelectDefenceAreaFromMap: TButton
+          Left = 64
+          Top = 0
+          Width = 185
+          Height = 25
+          Caption = 'Select defence area # from map'
+          TabOrder = 0
+          OnClick = btnSelectDefenceAreaFromMapClick
+        end
       end
     end
   end
@@ -610,5 +607,11 @@ object MissionDialog: TMissionDialog
     Filter = 'Mission file AI segment (*.misai)|*.misai'
     Title = 'Import AI segment'
     Left = 32
+  end
+  object ImportRulesDialog: TOpenDialog
+    DefaultExt = 'ini'
+    Filter = 'Mission ini file (*.ini)|*.ini'
+    Title = 'Import rules from a different mission'
+    Left = 64
   end
 end

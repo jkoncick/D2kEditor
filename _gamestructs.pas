@@ -36,6 +36,7 @@ type
     procedure load_game_structs_ini;
     procedure cache_struct_member_names;
     function get_misai_property(index: integer): TGameStructMemberPtr;
+    function get_misai_property_default_value(index: integer): string;
     function struct_name_to_index(name: string): integer;
     function get_struct_member_name_list(struct_index: integer): TStringList;
     function get_struct_member(struct_index: integer; member_index: integer): TGameStructMemberPtr; overload;
@@ -49,7 +50,7 @@ var
 
 implementation
 
-uses SysUtils, IniFiles, _utils, _structures, _gamelists;
+uses SysUtils, IniFiles, _utils, _misai, _structures, _gamelists;
 
 procedure TGameStructs.init;
 begin
@@ -197,6 +198,19 @@ end;
 function TGameStructs.get_misai_property(index: integer): TGameStructMemberPtr;
 begin
   result := Addr(struct_members[ai_struct_index, struct_member_mapping[ai_struct_index, index]]);
+end;
+
+function TGameStructs.get_misai_property_default_value(index: integer): string;
+var
+  prop: TGameStructMemberPtr;
+  bytes: integer;
+begin
+  prop := get_misai_property(index);
+  bytes := game_struct_data_type_size[Ord(prop.data_type)];
+  if prop.data_type = dtFloat then
+    result := floattostrf(get_float_value(Addr(MisAI.default_ai), prop.offset), ffFixed, 8, 3)
+  else
+    result := inttostr(get_integer_value(Addr(MisAI.default_ai), prop.offset, bytes));
 end;
 
 function TGameStructs.struct_name_to_index(name: string): integer;

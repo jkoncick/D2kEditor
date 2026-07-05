@@ -66,6 +66,7 @@ type
     // Export and import
     procedure export_events(first_event, last_event: integer; filename: string);
     procedure import_events(first_event: integer; filename: string);
+    procedure import_rules(filename: string);
     // Custom text related procedures
     function get_custom_text(index: integer; var text: String): boolean;
     procedure set_custom_text(index: integer; text: String);
@@ -536,6 +537,21 @@ begin
 
   // Do needed actions
   Dispatcher.register_event(evMissionIniLoad);
+end;
+
+procedure TMissionIni.import_rules(filename: string);
+var
+  i: integer;
+  ini: TMemIniFile;
+  tmp_strings: TStringList;
+begin
+  ini := TMemIniFile.Create(filename);
+  tmp_strings := TStringList.Create;
+  for i := 0 to Length(rules) - 1 do
+    tmp_strings.Add(rules[i].name+'='+ini.ReadString('Vars', rules[i].name, rules[i].default_value));
+  RuleValueList.Strings := tmp_strings;
+  ini.Destroy;
+  tmp_strings.Destroy;
 end;
 
 function TMissionIni.get_custom_text(index: integer; var text: String): boolean;
