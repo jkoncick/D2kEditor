@@ -233,7 +233,7 @@ type
     lblEventHelp: TLabel;
     sbShowEventHelp: TSpeedButton;
     sbShowConditionHelp: TSpeedButton;
-    Blockevents1: TMenuItem;
+    Unautoblockevents1: TMenuItem;
     Unblockevents1: TMenuItem;
     edpString: TPanel;
     edEventString: TEdit;
@@ -260,7 +260,7 @@ type
     procedure Deleteselectedevent1Click(Sender: TObject);
     procedure MoveUp1Click(Sender: TObject);
     procedure MoveDown1Click(Sender: TObject);
-    procedure Blockevents1Click(Sender: TObject);
+    procedure Unautoblockevents1Click(Sender: TObject);
     procedure Unblockevents1Click(Sender: TObject);
     procedure Exportevents1Click(Sender: TObject);
     procedure Importevents1Click(Sender: TObject);
@@ -869,17 +869,22 @@ begin
   fill_grids;
 end;
 
-procedure TEventDialog.Blockevents1Click(Sender: TObject);
+procedure TEventDialog.Unautoblockevents1Click(Sender: TObject);
 var
   first_event, last_event: integer;
   i: integer;
+  is_blocked: boolean;
 begin
   first_event := EventGrid.Selection.Top - 1;
   last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
   if (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
+  is_blocked := (Mission.event_data[first_event].event_flags and 1) = 1;
   for i := first_event to last_event do
-    Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or 2;
+    if is_blocked then
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not 1)
+    else
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or 1;
   fill_grids;
   select_event(selected_event);
 end;
@@ -888,13 +893,18 @@ procedure TEventDialog.Unblockevents1Click(Sender: TObject);
 var
   first_event, last_event: integer;
   i: integer;
+  is_blocked: boolean;
 begin
   first_event := EventGrid.Selection.Top - 1;
   last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
   if (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
+  is_blocked := (Mission.event_data[first_event].event_flags and 2) = 2;
   for i := first_event to last_event do
-    Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not 2);
+    if is_blocked then
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not 2)
+    else
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or 2;
   fill_grids;
   select_event(selected_event);
 end;

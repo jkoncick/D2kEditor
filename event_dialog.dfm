@@ -1310,14 +1310,14 @@ object EventDialog: TEventDialog
       ShortCut = 34
       OnClick = MoveDown1Click
     end
-    object Blockevents1: TMenuItem
-      Caption = 'Block event(s)'
-      ShortCut = 16450
-      OnClick = Blockevents1Click
+    object Unautoblockevents1: TMenuItem
+      Caption = '(Un)auto-block event(s)'
+      ShortCut = 16449
+      OnClick = Unautoblockevents1Click
     end
     object Unblockevents1: TMenuItem
-      Caption = 'Unblock event(s)'
-      ShortCut = 16469
+      Caption = '(Un)block event(s)'
+      ShortCut = 16450
       OnClick = Unblockevents1Click
     end
     object Exportevents1: TMenuItem
