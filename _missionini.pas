@@ -11,6 +11,7 @@ type
   TRuleDefinition = record
     name: String;
     default_value: String;
+    help_text: String;
   end;
 
 type
@@ -19,6 +20,7 @@ type
   public
     // Rules
     rules_ini_filename: string;
+    rules_help_ini_filename: string;
     rules: array of TRuleDefinition;
     // Side names
     side_names_ini_filename: String;
@@ -132,6 +134,16 @@ begin
   end;
   ini.Destroy;
   tmp_strings.Destroy;
+  // Find rules_help.ini file
+  tmp_filename := find_file('config\rules_help.ini', 'configuration');
+  if (tmp_filename = '') or (tmp_filename = rules_help_ini_filename) then
+    exit;
+  rules_help_ini_filename := tmp_filename;
+  // Load rules_help.ini file
+  ini := TMemIniFile.Create(tmp_filename);
+  for i := 0 to Length(rules) - 1 do
+    rules[i].help_text := ini.ReadString('Vars_Help',rules[i].name,'');
+  ini.Destroy;
 end;
 
 procedure TMissionIni.load_side_names_ini;

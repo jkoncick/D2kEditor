@@ -486,6 +486,44 @@ object MissionDialog: TMissionDialog
           TabOrder = 1
         end
       end
+      object pnRulesHelp: TPanel
+        Left = 272
+        Top = 0
+        Width = 424
+        Height = 113
+        TabOrder = 2
+        Visible = False
+        object lblRulesHelp: TLabel
+          Left = 8
+          Top = 8
+          Width = 409
+          Height = 97
+          AutoSize = False
+          WordWrap = True
+        end
+      end
+      object pnShowRulesHelp: TPanel
+        Left = 160
+        Top = 2
+        Width = 23
+        Height = 19
+        BevelOuter = bvNone
+        TabOrder = 3
+        object sbShowRulesHelp: TSpeedButton
+          Left = 0
+          Top = 0
+          Width = 23
+          Height = 19
+          Hint = 'Show help for rule'
+          AllowAllUp = True
+          GroupIndex = 1
+          Caption = '?'
+          ParentShowHint = False
+          ShowHint = True
+          Spacing = 0
+          OnClick = sbShowRulesHelpClick
+        end
+      end
     end
   end
   object AITabControl: TTabControl

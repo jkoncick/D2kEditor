@@ -78,6 +78,10 @@ type
     lblAIHelp: TLabel;
     lblSideName: TLabel;
     ImportRulesDialog: TOpenDialog;
+    pnRulesHelp: TPanel;
+    lblRulesHelp: TLabel;
+    sbShowRulesHelp: TSpeedButton;
+    pnShowRulesHelp: TPanel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -95,6 +99,7 @@ type
     procedure time_limit_change(Sender: TObject);
     procedure edTilesetNameChange(Sender: TObject);
     procedure edTileatrNameChange(Sender: TObject);
+    procedure sbShowRulesHelpClick(Sender: TObject);
     procedure RuleValueListDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
     procedure RuleValueListKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure RuleValueListSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -386,6 +391,11 @@ begin
     store_c_string(edTileatrName.Text, Addr(Mission.tileatr_name), Length(Mission.tileatr_name));
 end;
 
+procedure TMissionDialog.sbShowRulesHelpClick(Sender: TObject);
+begin
+  pnRulesHelp.Visible := sbShowRulesHelp.Down;
+end;
+
 procedure TMissionDialog.RuleValueListDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 begin
   if (ARow = 0) or (ACol = 0) or (gdSelected in State) then
@@ -414,6 +424,8 @@ begin
   if (ARow = 0) or (ACol = 0) or (TValueListEditorCracker(RuleValueList).InplaceEditor = nil) then
     exit;
   TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := IfThen(MissionIni.rules[ARow - 1].default_value <> RuleValueList.Cells[ACol, ARow], clYellow, clWhite);
+
+  lblRulesHelp.Caption := RuleValueList.Cells[0, ARow] + #13 + MissionIni.rules[ARow - 1].help_text;
 end;
 
 procedure TMissionDialog.RuleValueListStringsChange(Sender: TObject);
