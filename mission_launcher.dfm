@@ -24,7 +24,7 @@ object MissionLauncher: TMissionLauncher
     Left = 0
     Top = 0
     Width = 680
-    Height = 574
+    Height = 581
     Align = alClient
     ColCount = 1
     DefaultRowHeight = 18
@@ -42,15 +42,15 @@ object MissionLauncher: TMissionLauncher
     Left = 680
     Top = 0
     Width = 512
-    Height = 574
+    Height = 581
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 1
     object mMissionBriefing: TMemo
       Left = 0
-      Top = 0
+      Top = 136
       Width = 512
-      Height = 521
+      Height = 392
       Align = alClient
       ReadOnly = True
       ScrollBars = ssVertical
@@ -58,7 +58,7 @@ object MissionLauncher: TMissionLauncher
     end
     object pnMissionDetailsControls: TPanel
       Left = 0
-      Top = 521
+      Top = 528
       Width = 512
       Height = 53
       Align = alBottom
@@ -118,6 +118,64 @@ object MissionLauncher: TMissionLauncher
         Height = 21
         ReadOnly = True
         TabOrder = 3
+      end
+      object cbShowMissionPreview: TCheckBox
+        Left = 4
+        Top = 4
+        Width = 133
+        Height = 17
+        Caption = 'Show mission preview'
+        TabOrder = 4
+        OnClick = cbShowMissionPreviewClick
+      end
+    end
+    object pnMissionPreview: TPanel
+      Left = 0
+      Top = 0
+      Width = 512
+      Height = 136
+      Align = alTop
+      BevelOuter = bvNone
+      TabOrder = 2
+      Visible = False
+      object bvMissionPreviewFrame: TBevel
+        Left = 2
+        Top = 2
+        Width = 132
+        Height = 132
+        Shape = bsFrame
+      end
+      object imgMissionPreview: TImage
+        Left = 4
+        Top = 4
+        Width = 128
+        Height = 128
+      end
+      object btnGenerateMissionPreviews: TButton
+        Left = 140
+        Top = 2
+        Width = 153
+        Height = 25
+        Caption = 'Generate all mission previews'
+        TabOrder = 0
+        OnClick = btnGenerateMissionPreviewsClick
+      end
+      object pbGenerateMissionPreviews: TProgressBar
+        Left = 140
+        Top = 40
+        Width = 369
+        Height = 16
+        TabOrder = 1
+        Visible = False
+      end
+      object stGenerateMissionPreviews: TStaticText
+        Left = 140
+        Top = 64
+        Width = 150
+        Height = 20
+        AutoSize = False
+        TabOrder = 2
+        Visible = False
       end
     end
   end

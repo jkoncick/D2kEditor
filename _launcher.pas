@@ -3,7 +3,7 @@ unit _launcher;
 interface
 
 uses
-  Classes;
+  Classes, StdCtrls, ComCtrls;
 
 type
   TMissionInfo = record
@@ -19,6 +19,7 @@ type
     colours_file: String;
     intel_id: String;
     tileset: String;
+    map_size: String;
   end;
 
 type
@@ -52,6 +53,7 @@ type
   public
     procedure init;
     procedure load_all_missions;
+    procedure generate_mission_previews(progress_bar: TProgressBar; progress_label: TStaticText);
     procedure launch_mission(mission_index: integer; difficulty_level: integer);
     procedure launch_current_mission;
     procedure launch_game;
@@ -69,7 +71,7 @@ var
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, IniFiles, ShellApi, Dialogs, Forms, _settings, _map, _mission, _missionini, _dispatcher, _utils;
+  Windows, SysUtils, StrUtils, IniFiles, ShellApi, Dialogs, Forms, Graphics, _settings, _renderer, _map, _mission, _missionini, _dispatcher, _utils, pngimage;
 
 { TLauncher }
 
@@ -93,9 +95,11 @@ var
   ini: TMemIniFile;
   SR: TSearchRec;
   mis_filename: string;
-  mis_file: file of byte;
+  map_filename: string;
+  binary_file: file of byte;
   tileset_name_buffer: array[0..199] of char;
   i: integer;
+  map_width, map_height: word;
 begin
   if missions_loaded then
     exit;
@@ -131,12 +135,23 @@ begin
     mis_filename := Settings.MissionsPath + '\_' + mission_data[i].filename + '.MIS';
     if FileExists(mis_filename) then
     begin
-      AssignFile(mis_file, mis_filename);
-      Reset(mis_file);
-      Seek(mis_file, $10598);
-      BlockRead(mis_file, tileset_name_buffer[0], Length(tileset_name_buffer));
+      AssignFile(binary_file, mis_filename);
+      Reset(binary_file);
+      Seek(binary_file, $10598);
+      BlockRead(binary_file, tileset_name_buffer[0], Length(tileset_name_buffer));
       mission_data[i].tileset := tileset_name_buffer;
-      Close(mis_file);
+      Close(binary_file);
+    end;
+    // Load map size from MAP file
+    map_filename := Settings.MissionsPath + '\' + mission_data[i].filename + '.MAP';
+    if FileExists(map_filename) then
+    begin
+      AssignFile(binary_file, map_filename);
+      Reset(binary_file);
+      BlockRead(binary_file, map_width, 2);
+      BlockRead(binary_file, map_height, 2);
+      mission_data[i].map_size := IntToStr(map_width) + ' x ' + IntToStr(map_height);
+      Close(binary_file);
     end;
     // Add this mission into list
     mission_list.Add(mission_data[i].mission_name + '=' + inttostr(i));
@@ -144,6 +159,47 @@ begin
   mission_list.Sort;
   tmp_strings.Destroy;
   missions_loaded := true;
+end;
+
+procedure TLauncher.generate_mission_previews(progress_bar: TProgressBar; progress_label: TStaticText);
+var
+  current_map: string;
+  i: integer;
+  minimap_buffer: TBitmap;
+  PNG: TPNGObject;
+  map_filename, png_filename: string;
+begin
+  minimap_buffer := TBitmap.Create;
+  minimap_buffer.PixelFormat := pf32bit;
+  minimap_buffer.Width := max_map_width;
+  minimap_buffer.Height := max_map_height;
+  PNG := TPNGObject.Create;
+  progress_bar.Visible := true;
+  progress_bar.Max := Length(mission_data);
+  progress_label.Visible := true;
+  current_map := Map.filename;
+  for i := 0 to Length(mission_data) - 1 do
+  begin
+    progress_bar.Position := i;
+    progress_label.Caption := IntToStr(i) + ' of ' + IntToStr(Length(mission_data));
+    map_filename := Settings.MissionsPath + '\' + mission_data[i].filename + '.MAP';
+    png_filename := current_dir + 'mission_previews\' + mission_data[i].filename + '.png';
+    if FileExists(png_filename) and (FileAge(png_filename) >= FileAge(map_filename)) then
+      continue;
+    Map.load_map(map_filename);
+    if Map.filename <> map_filename then
+      continue;
+    Renderer.render_minimap_contents(minimap_buffer, Addr(Map.data), Map.width, Map.height, false);
+    PNG.Assign(minimap_buffer);
+    ForceDirectories(current_dir + 'mission_previews');
+    PNG.SaveToFile(png_filename);
+  end;
+  minimap_buffer.Destroy;
+  PNG.Destroy;
+  progress_bar.Visible := false;
+  progress_label.Visible := false;
+  if current_map <> '' then
+    Map.load_map(current_map);
 end;
 
 procedure TLauncher.launch_mission(mission_index, difficulty_level: integer);

@@ -156,6 +156,7 @@ begin
     EventDialog.EventGrid.ColWidths[i] := load_control_property_int(EventDialog.EventGrid, Format('ColWidths[%d]', [i]), EventDialog.EventGrid.ColWidths[i]);
   load_window_position(MapStatsDialog);
   load_window_position(MissionLauncher);
+  MissionLauncher.cbShowMissionPreview.State := TCheckBoxState(load_control_property_int(MissionLauncher.cbShowMissionPreview, 'State', Ord(MissionLauncher.cbShowMissionPreview.State)));
   load_window_position(TilesetEditor);
   TilesetEditor.cbAlwaysOnTop.State := TCheckBoxState(load_control_property_int(TilesetEditor.cbAlwaysOnTop, 'State', Ord(TilesetEditor.cbAlwaysOnTop.State)));
   load_window_position(ResourcesEditor);
@@ -256,6 +257,7 @@ begin
   save_window_position(MapStatsDialog);
   save_window_position(MissionLauncher);
   MissionLauncher.save_mission_grid_column_states;
+  save_control_property_int(MissionLauncher.cbShowMissionPreview, 'State', Ord(MissionLauncher.cbShowMissionPreview.State));
   save_window_position(TilesetEditor);
   save_control_property_int(TilesetEditor.cbAlwaysOnTop, 'State', Ord(TilesetEditor.cbAlwaysOnTop.State));
   save_window_position(ResourcesEditor);

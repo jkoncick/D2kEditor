@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Grids, ExtCtrls, Menus;
+  Dialogs, StdCtrls, Grids, ExtCtrls, Menus, ComCtrls;
 
 type
   TMissionGridColumnDefinition = record
@@ -14,7 +14,7 @@ type
     shown: boolean;
   end;
 
-const mission_grid_column_definitions: array[0..10] of TMissionGridColumnDefinition =
+const mission_grid_column_definitions: array[0..11] of TMissionGridColumnDefinition =
   (
     (name: 'File name';       short: '';   width: 160; shown: false),
     (name: 'Mission name';    short: '';   width: 256; shown: true),
@@ -26,7 +26,8 @@ const mission_grid_column_definitions: array[0..10] of TMissionGridColumnDefinit
     (name: 'Colours.bin';     short: '';   width: 80;  shown: false),
     (name: 'Text.uib';        short: '';   width: 80;  shown: true),
     (name: 'Intel ID';        short: '';   width: 80;  shown: false),
-    (name: 'Tileset';         short: '';   width: 64;  shown: true)
+    (name: 'Tileset';         short: '';   width: 64;  shown: true),
+    (name: 'Map size';        short: '';   width: 64;  shown: true)
   );
 
 type
@@ -48,6 +49,13 @@ type
     pnMissionDetails: TPanel;
     pnMissionDetailsControls: TPanel;
     pmMissionList: TPopupMenu;
+    pnMissionPreview: TPanel;
+    imgMissionPreview: TImage;
+    bvMissionPreviewFrame: TBevel;
+    cbShowMissionPreview: TCheckBox;
+    btnGenerateMissionPreviews: TButton;
+    pbGenerateMissionPreviews: TProgressBar;
+    stGenerateMissionPreviews: TStaticText;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -56,6 +64,8 @@ type
     procedure sgMissionListDblClick(Sender: TObject);
     procedure sgMissionListMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure sgMissionListMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure btnGenerateMissionPreviewsClick(Sender: TObject);
+    procedure cbShowMissionPreviewClick(Sender: TObject);
     procedure btnLaunchGameClick(Sender: TObject);
     procedure btnOpenMissionInEditorClick(Sender: TObject);
   public
@@ -80,7 +90,7 @@ var
 implementation
 
 uses
-  ShellApi, Math, StrUtils, _map, _launcher, _settings, _stringtable;
+  ShellApi, Math, StrUtils, _utils, _map, _launcher, _settings, _stringtable, pngimage;
 
 {$R *.dfm}
 
@@ -154,6 +164,19 @@ begin
   handled := true;
 end;
 
+procedure TMissionLauncher.btnGenerateMissionPreviewsClick(Sender: TObject);
+begin
+  if (Map.filename <> '') and (Application.MessageBox('This operation will lose all changes made into currently open map. Continue?', 'Warning', MB_ICONWARNING or MB_YESNO) = IDNO) then
+    exit;
+  Launcher.generate_mission_previews(pbGenerateMissionPreviews, stGenerateMissionPreviews);
+  fill_mission_details(sgMissionList.Row - 1);
+end;
+
+procedure TMissionLauncher.cbShowMissionPreviewClick(Sender: TObject);
+begin
+  pnMissionPreview.Visible := cbShowMissionPreview.Checked;
+end;
+
 procedure TMissionLauncher.btnLaunchGameClick(Sender: TObject);
 begin
   if (mission_index <> -1) and not Launcher.check_game_is_running then
@@ -218,6 +241,7 @@ begin
           8: sgMissionList.Cells[col, i + 1] := text_uib;
           9: sgMissionList.Cells[col, i + 1] := intel_id;
           10: sgMissionList.Cells[col, i + 1] := tileset;
+          11: sgMissionList.Cells[col, i + 1] := map_size;
         end;
       inc(col);
     end;
@@ -227,6 +251,8 @@ end;
 procedure TMissionLauncher.fill_mission_details(index: integer);
 var
   side_letter: char;
+  preview_image_filename: string;
+  PNG: TPNGObject;
 begin
   if index < 0 then
     exit;
@@ -234,6 +260,20 @@ begin
   with (Launcher.mission_data[mission_index]) do
   begin
     edMissionFileName.Text := filename;
+    preview_image_filename := current_dir + 'mission_previews\' + filename + '.png';
+    if FileExists(preview_image_filename) then
+    begin
+      PNG := TPNGObject.Create;
+      PNG.LoadFromFile(preview_image_filename);
+      imgMissionPreview.Picture.Assign(PNG);
+      PNG.Destroy;
+      imgMissionPreview.Visible := true;
+      btnGenerateMissionPreviews.Visible := false;
+    end else
+    begin
+      imgMissionPreview.Visible := false;
+      btnGenerateMissionPreviews.Visible := true;
+    end;
     if (briefing = '') and (mission_number > 0) and (side_id < 3) then
     begin
       // In-game briefing from text.uib

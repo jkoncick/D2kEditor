@@ -141,7 +141,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, Math, IniFiles, Classes, _renderer, _mission, _missionini, _settings, main, _launcher, _dispatcher, _eventconfig;
+uses Windows, Forms, SysUtils, Math, IniFiles, Classes, Graphics, _renderer, _mission, _missionini, _settings, main, _launcher, _dispatcher, _eventconfig, pngimage;
 
 procedure TMap.load_map(filename: String);
 var
@@ -175,7 +175,7 @@ begin
   // Check for validity of map format
   if (tmp_map_width > max_map_width) or (tmp_map_height > max_map_height) or (map_file_size <> (tmp_map_width * tmp_map_height * 2 + 2)) then
   begin
-    Application.MessageBox('The file has invalid format.', 'Error loading map', MB_ICONERROR or MB_OK);
+    Application.MessageBox(PChar('The file ' + filename + ' has invalid format.'), 'Error loading map', MB_ICONERROR or MB_OK);
     SetLength(buffer, 0);
     exit;
   end;
@@ -223,6 +223,8 @@ var
   pos: integer;
   x, y: integer;
   can_save: boolean;
+  minimap_buffer: TBitmap;
+  PNG: TPNGObject;
 begin
   can_save := true;
   can_save := can_save and confirm_overwrite_original_file(filename, Settings.GamePath + '\Missions\' + ExtractFileName(filename), false);
@@ -267,6 +269,20 @@ begin
   end;
   // Save mission
   Mission.save_mission(filename, is_testmap);
+  // Save preview image
+  if DirectoryExists(current_dir + 'mission_previews') then
+  begin
+    minimap_buffer := TBitmap.Create;
+    minimap_buffer.PixelFormat := pf32bit;
+    minimap_buffer.Width := max_map_width;
+    minimap_buffer.Height := max_map_height;
+    PNG := TPNGObject.Create;
+    Renderer.render_minimap_contents(minimap_buffer, Addr(data), width, height, false);
+    PNG.Assign(minimap_buffer);
+    PNG.SaveToFile(current_dir + 'mission_previews\' + ChangeFileExt(ExtractFileName(filename), '') + '.png');
+    minimap_buffer.Destroy;
+    PNG.Destroy;
+  end;
 end;
 
 procedure TMap.new_map(new_width, new_height: integer);
@@ -364,6 +380,18 @@ begin
         1: paint_tile(map_width - 1 - xx, yy, paint_tile_group, side);
         2: paint_tile(xx, map_height - 1 - yy, paint_tile_group, side);
         3: paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
+        4: begin
+          paint_tile(map_width - 1 - xx, yy, paint_tile_group, side);
+          paint_tile(xx, map_height - 1 - yy, paint_tile_group, side);
+          paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
+        end;
+        5: paint_tile(yy, xx, paint_tile_group, side);
+        6: paint_tile(map_height - 1 - yy, map_width - 1 - xx, paint_tile_group, side);
+        7: begin
+          paint_tile(yy, xx, paint_tile_group, side);
+          paint_tile(map_height - 1 - yy, map_width - 1 - xx, paint_tile_group, side);
+          paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
+        end;
       end;
     end;
 end;
@@ -462,6 +490,38 @@ begin
         fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
       end;
     3: begin
+        xx := map_width - 1 - x;
+        yy := map_height - 1 - y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    4: begin
+        xx := map_width - 1 - x;
+        yy := y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+        xx := x;
+        yy := map_height - 1 - y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+        xx := map_width - 1 - x;
+        yy := map_height - 1 - y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    5: begin
+        xx := y;
+        yy := x;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    6: begin
+        xx := map_height - 1 - y;
+        yy := map_width - 1 - x;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    7: begin
+        xx := y;
+        yy := x;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+        xx := map_height - 1 - y;
+        yy := map_width - 1 - x;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
         xx := map_width - 1 - x;
         yy := map_height - 1 - y;
         fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));

@@ -1214,7 +1214,11 @@ object MainWindow: TMainWindow
             'None'
             'Horizontal'
             'Vertical'
-            'Both')
+            'Both'
+            '4 times'
+            'Flipped 1'
+            'Flipped 2'
+            '4 times flipped')
         end
       end
     end
