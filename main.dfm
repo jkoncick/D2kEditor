@@ -1214,11 +1214,11 @@ object MainWindow: TMainWindow
             'None'
             'Horizontal'
             'Vertical'
-            'Both'
+            'Inverse'
             '4 times'
-            'Flipped 1'
-            'Flipped 2'
-            '4 times flipped')
+            'Diagonal 1'
+            'Diagonal 2'
+            '4 times diag.')
         end
       end
     end

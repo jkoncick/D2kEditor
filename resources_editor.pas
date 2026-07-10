@@ -676,6 +676,9 @@ type
     btnColoursDeleteCurrentFile: TButton;
     Saveremapinifile1: TMenuItem;
     RemapStructuresSaveDialog: TSaveDialog;
+    pnArmourLeftPanel: TPanel;
+    pnArmourRightPanel: TPanel;
+    pnArmourUsedLabels: TPanel;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);

@@ -5,7 +5,6 @@ object MissionDialog: TMissionDialog
   Height = 658
   Caption = 'Mission settings'
   Color = clBtnFace
-  Constraints.MaxWidth = 1024
   Constraints.MinHeight = 560
   Constraints.MinWidth = 1024
   Font.Charset = DEFAULT_CHARSET

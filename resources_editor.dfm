@@ -1,15 +1,12 @@
 object ResourcesEditor: TResourcesEditor
   Left = 190
   Top = 0
+  Width = 1024
+  Height = 738
   BorderIcons = [biSystemMenu]
-  BorderStyle = bsSingle
   Caption = 'Resources Editor'
-  ClientHeight = 684
-  ClientWidth = 1016
   Color = clBtnFace
-  Constraints.MaxHeight = 738
-  Constraints.MaxWidth = 1024
-  Constraints.MinHeight = 730
+  Constraints.MinHeight = 738
   Constraints.MinWidth = 1024
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -27,7 +24,7 @@ object ResourcesEditor: TResourcesEditor
   TextHeight = 13
   object StatusBar: TStatusBar
     Left = 0
-    Top = 665
+    Top = 673
     Width = 1016
     Height = 19
     Panels = <
@@ -43,7 +40,7 @@ object ResourcesEditor: TResourcesEditor
     Left = 0
     Top = 0
     Width = 1016
-    Height = 665
+    Height = 673
     ActivePage = PageBuildings
     Align = alClient
     TabOrder = 1
@@ -3956,69 +3953,97 @@ object ResourcesEditor: TResourcesEditor
     object PageArmour: TTabSheet
       Caption = 'Armour       '
       ImageIndex = 4
-      object lblWarheadUsedBy: TLabel
-        Left = 152
-        Top = 620
-        Width = 849
-        Height = 13
-        AutoSize = False
-      end
-      object lblArmourTypeUsedBy: TLabel
-        Left = 151
-        Top = 564
-        Width = 850
-        Height = 53
-        AutoSize = False
-        WordWrap = True
-      end
-      object sgArmourValues: TStringGrid
-        Left = 152
-        Top = 0
-        Width = 849
-        Height = 561
-        ColCount = 15
-        DefaultColWidth = 39
-        DefaultRowHeight = 20
-        RowCount = 2
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goAlwaysShowEditor, goThumbTracking]
-        TabOrder = 2
-      end
-      object pnArmourTypeList: TPanel
+      object pnArmourLeftPanel: TPanel
         Left = 0
         Top = 0
-        Width = 146
-        Height = 284
+        Width = 152
+        Height = 645
+        Align = alLeft
         BevelOuter = bvNone
         TabOrder = 0
-        object lbArmourTypeList: TListBox
-          Tag = 6
+        object pnArmourTypeList: TPanel
           Left = 0
-          Top = 16
+          Top = 0
           Width = 146
-          Height = 160
-          ItemHeight = 13
+          Height = 284
+          BevelOuter = bvNone
           TabOrder = 0
-          OnClick = lbArmourTypeListClick
-          OnKeyDown = IcgListKeyDown
+          object lbArmourTypeList: TListBox
+            Tag = 6
+            Left = 0
+            Top = 16
+            Width = 146
+            Height = 160
+            ItemHeight = 13
+            TabOrder = 0
+            OnClick = lbArmourTypeListClick
+            OnKeyDown = IcgListKeyDown
+          end
+        end
+        object pnWarheadList: TPanel
+          Left = 0
+          Top = 287
+          Width = 146
+          Height = 350
+          BevelOuter = bvNone
+          TabOrder = 1
+          object lbWarheadList: TListBox
+            Tag = 7
+            Left = 0
+            Top = 16
+            Width = 146
+            Height = 225
+            ItemHeight = 13
+            TabOrder = 0
+            OnClick = lbWarheadListClick
+            OnKeyDown = IcgListKeyDown
+          end
         end
       end
-      object pnWarheadList: TPanel
-        Left = 0
-        Top = 287
-        Width = 146
-        Height = 350
+      object pnArmourRightPanel: TPanel
+        Left = 152
+        Top = 0
+        Width = 856
+        Height = 645
+        Align = alClient
         BevelOuter = bvNone
         TabOrder = 1
-        object lbWarheadList: TListBox
-          Tag = 7
+        object sgArmourValues: TStringGrid
           Left = 0
-          Top = 16
-          Width = 146
-          Height = 225
-          ItemHeight = 13
+          Top = 0
+          Width = 856
+          Height = 570
+          Align = alClient
+          ColCount = 15
+          DefaultColWidth = 39
+          DefaultRowHeight = 20
+          RowCount = 2
+          Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goAlwaysShowEditor, goThumbTracking]
           TabOrder = 0
-          OnClick = lbWarheadListClick
-          OnKeyDown = IcgListKeyDown
+        end
+        object pnArmourUsedLabels: TPanel
+          Left = 0
+          Top = 570
+          Width = 856
+          Height = 75
+          Align = alBottom
+          BevelOuter = bvNone
+          TabOrder = 1
+          object lblWarheadUsedBy: TLabel
+            Left = 0
+            Top = 60
+            Width = 850
+            Height = 13
+            AutoSize = False
+          end
+          object lblArmourTypeUsedBy: TLabel
+            Left = 0
+            Top = 4
+            Width = 850
+            Height = 53
+            AutoSize = False
+            WordWrap = True
+          end
         end
       end
     end
@@ -4266,8 +4291,8 @@ object ResourcesEditor: TResourcesEditor
       object sgTiledataData: TStringGrid
         Left = 0
         Top = 0
-        Width = 456
-        Height = 637
+        Width = 473
+        Height = 645
         Align = alLeft
         DefaultRowHeight = 19
         RowCount = 1001
@@ -4277,7 +4302,7 @@ object ResourcesEditor: TResourcesEditor
         OnSelectCell = sgTiledataDataSelectCell
       end
       object lbTiledataBuildingGroup: TListBox
-        Left = 464
+        Left = 480
         Top = 40
         Width = 201
         Height = 599
@@ -4287,7 +4312,7 @@ object ResourcesEditor: TResourcesEditor
         OnClick = lbTiledataBuildingGroupClick
       end
       object lbTiledataUnitGroup: TListBox
-        Left = 672
+        Left = 688
         Top = 40
         Width = 201
         Height = 599
@@ -4297,7 +4322,7 @@ object ResourcesEditor: TResourcesEditor
         OnClick = lbTiledataUnitGroupClick
       end
       object cbxTiledataSide: TComboBox
-        Left = 464
+        Left = 480
         Top = 8
         Width = 169
         Height = 21
@@ -4308,7 +4333,7 @@ object ResourcesEditor: TResourcesEditor
         OnChange = cbxTiledataSideChange
       end
       object btnTiledataClear: TButton
-        Left = 800
+        Left = 816
         Top = 8
         Width = 73
         Height = 25
