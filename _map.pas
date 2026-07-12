@@ -676,6 +676,8 @@ begin
       // because it would interfere with checks for tiles around following tile.
       // Instead, we exploit undo feature for this purpose: we store all changes
       // into history and in the end we apply the changes (like doing redo)
+      if Tileset.block_preset_tiles[Tileset.block_preset_first_tile_indexes[preset_index] + x + y * block_preset.width] = 65535 then
+        continue;
       undo_history[undo_max].x := x + xpos + blockoff_x;
       undo_history[undo_max].y := y + ypos + blockoff_y;
       undo_history[undo_max].data.tile := Tileset.block_preset_tiles[Tileset.block_preset_first_tile_indexes[preset_index] + x + y * block_preset.width];

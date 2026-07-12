@@ -1096,7 +1096,7 @@ object MainWindow: TMainWindow
         end
         object LbPaintTileGroupName: TLabel
           Left = 80
-          Top = 30
+          Top = 61
           Width = 3
           Height = 13
         end
