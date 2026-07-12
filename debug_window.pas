@@ -34,7 +34,7 @@ var
 
 implementation
 
-uses _settings, _structures, _resourcefile, _colours, _sounds, _tileset, _stringtable;
+uses _settings, _misai, _structures, _resourcefile, _colours, _sounds, _tileset, _stringtable;
 
 {$R *.dfm}
 
@@ -104,6 +104,8 @@ begin
 
   add_debug_value(s, StringTable, 'text.uib file', StringTable.text_uib_filename);
   add_debug_value(s, StringTable, 'samples.uib file', StringTable.samples_uib_filename);
+
+  add_debug_value(s, Misai, 'Default AI file', Misai.default_ai_filename);
 
   vleDebugValueList.Strings := s;
   s.Destroy;

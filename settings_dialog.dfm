@@ -163,6 +163,13 @@ object SettingsDialog: TSettingsDialog
       Height = 13
       Caption = 'Tileset'
     end
+    object lblDefaultAITemplate: TLabel
+      Left = 160
+      Top = 48
+      Width = 57
+      Height = 13
+      Caption = 'AI Template'
+    end
     object seDefaultMapWidth: TSpinEdit
       Left = 72
       Top = 20
@@ -210,6 +217,14 @@ object SettingsDialog: TSettingsDialog
       Height = 21
       MaxLength = 200
       TabOrder = 4
+    end
+    object cbxDefaultAITemplate: TComboBox
+      Left = 224
+      Top = 48
+      Width = 225
+      Height = 21
+      ItemHeight = 13
+      TabOrder = 5
     end
   end
   object gbPaths: TGroupBox

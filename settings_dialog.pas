@@ -44,6 +44,8 @@ type
     OpenDialog: TOpenDialog;
     btnSave: TButton;
     btnCancel: TButton;
+    lblDefaultAITemplate: TLabel;
+    cbxDefaultAITemplate: TComboBox;
     procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnGamePathClick(Sender: TObject);
@@ -66,9 +68,12 @@ implementation
 
 {$WARN UNIT_PLATFORM OFF}
 
-uses FileCtrl, _settings;
+uses FileCtrl, _utils, _settings, _misai;
 
 procedure TSettingsDialog.FormShow(Sender: TObject);
+var
+  tmp_strings: TStringList;
+  SR: TSearchRec;
 begin
   cbPreserveGUISettings.Checked := Settings.PreserveGUISettings;
   cbRestrictPainting.Checked := Settings.RestrictPainting;
@@ -85,9 +90,21 @@ begin
   seDefaultMisTechLevel.Value := Settings.DefaultMisTechLevel;
   edDefaultMisStartingMoney.Text := IntToStr(Settings.DefaultMisStartingMoney);
   edDefaultTilesetName.Text := Settings.DefaultTilesetName;
+  cbxDefaultAITemplate.Text := Settings.DefaultAITemplate;
   edGamePath.Text := Settings.GamePath;
   edGameExecutable.Text := Settings.GameExecutable;
   edMissionsPath.Text := Settings.MissionsPath;
+  // Initialize list of default AI files
+  tmp_strings := TStringList.Create;
+  if FindFirst(current_dir + '\ai_templates\*.misai', 0, SR) = 0 then
+  begin
+    repeat
+      tmp_strings.Add(SR.Name);
+    until FindNext(SR) <> 0;
+      FindClose(SR);
+  end;
+  cbxDefaultAITemplate.Items := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 procedure TSettingsDialog.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -146,10 +163,12 @@ begin
   Settings.DefaultMisTechLevel := seDefaultMisTechLevel.Value;
   Settings.DefaultMisStartingMoney := StrToInt(edDefaultMisStartingMoney.Text);
   Settings.DefaultTilesetName := edDefaultTilesetName.Text;
+  Settings.DefaultAITemplate := cbxDefaultAITemplate.Text;
   Settings.GamePath := edGamePath.Text;
   Settings.GameExecutable := edGameExecutable.Text;
   Settings.MissionsPath := edMissionsPath.Text;
   Close;
+  Misai.load_default_ai;
 end;
 
 procedure TSettingsDialog.btnCancelClick(Sender: TObject);

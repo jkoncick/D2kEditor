@@ -10,6 +10,8 @@ type
     evMapShift,
     evMapTilesModify,
     evMapFilenameChange,
+    // Misai events
+    evFLDefaultAI,
     // Mission events
     evMisLoad,
     evMisEventsImport,
@@ -163,6 +165,8 @@ begin
     evMapShift:                   pact := pact + [paUpdateMapStats, paUpdateEventMarkers, paUpdateEventAreas, paUpdateEventDialog, paRenderMap, paRenderMinimap];
     evMapTilesModify:             pact := pact + [paUpdateMapStats, paRenderMap, paRenderMinimap];
     evMapFilenameChange:          pact := pact + [paUpdateMapName];
+    // Misai events
+    evFLDefaultAI:                pact := pact + [paUpdateMisAiValues, paUpdateDebugValues];
     // Mission events
     evMisLoad:                    pact := pact + [paUpdateStructureControls, paUpdateMissionLoadStatus, paUpdateEventMarkers, paUpdateEventAreas, paUpdateMissionData, paUpdateMisAiValues, paUpdateEventDialog, paRenderMap, paRenderMinimap, paRenderCursorImage];
     evMisEventsImport:            pact := pact + [paUpdateEventMarkers, paUpdateEventAreas, paUpdateEventDialog];

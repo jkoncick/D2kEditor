@@ -1215,10 +1215,11 @@ object MainWindow: TMainWindow
             'Horizontal'
             'Vertical'
             'Inverse'
-            '4 times'
             'Diagonal 1'
             'Diagonal 2'
-            '4 times diag.')
+            '4x normal'
+            '4x inverse'
+            '4x diagonal')
         end
       end
     end

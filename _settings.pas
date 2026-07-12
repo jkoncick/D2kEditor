@@ -45,6 +45,7 @@ type
     DefaultMisTechLevel: integer;
     DefaultMisStartingMoney: integer;
     DefaultTilesetName: String;
+    DefaultAITemplate: String;
     AssignMisFileToNewMap: boolean;
 
     // File paths
@@ -127,6 +128,7 @@ begin
   DefaultMisTechLevel     := ini.ReadInteger('Defaults',    'DefaultMisTechLevel',      1);
   DefaultMisStartingMoney := ini.ReadInteger('Defaults',    'DefaultMisStartingMoney',  3000);
   DefaultTilesetName      := ini.ReadString ('Defaults',    'DefaultTilesetName',       'BLOXBGBS');
+  DefaultAITemplate       := ini.ReadString ('Defaults',    'DefaultAITemplate',        'default_ai.misai');
   AssignMisFileToNewMap   := ini.ReadBool   ('Defaults',    'AssignMisFileToNewMap',    true);
   // Load file paths
   GamePath                := ini.ReadString ('Paths',       'GamePath',                 '');
@@ -167,8 +169,8 @@ begin
   load_file_dialog_initial_dir(MainWindow.MapImageSaveDialog,               '');
   load_file_dialog_initial_dir(MainWindow.RemapTilesOpenDialog,             current_dir);
   load_file_dialog_initial_dir(MainWindow.RemapStructuresOpenDialog,        current_dir);
-  load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,                current_dir + 'AI_templates');
-  load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,                current_dir + 'AI_templates');
+  load_file_dialog_initial_dir(MissionDialog.ExportAIDialog,                current_dir + 'ai_templates');
+  load_file_dialog_initial_dir(MissionDialog.ImportAIDialog,                current_dir + 'ai_templates');
   load_file_dialog_initial_dir(MissionDialog.ImportRulesDialog,             MissionsPath);
   load_file_dialog_initial_dir(EventDialog.ExportEventsDialog,              '');
   load_file_dialog_initial_dir(EventDialog.ImportEventsDialog,              '');
@@ -231,6 +233,7 @@ begin
   ini.WriteInteger('Defaults',    'DefaultMisTechLevel', DefaultMisTechLevel);
   ini.WriteInteger('Defaults',    'DefaultMisStartingMoney', DefaultMisStartingMoney);
   ini.WriteString ('Defaults',    'DefaultTilesetName', DefaultTilesetName);
+  ini.WriteString ('Defaults',    'DefaultAITemplate', DefaultAITemplate);
   ini.WriteBool   ('Defaults',    'AssignMisFileToNewMap', AssignMisFileToNewMap);
   // Save file paths
   ini.WriteString ('Paths',       'GamePath',GamePath);

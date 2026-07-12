@@ -223,6 +223,7 @@ var
   pos: integer;
   x, y: integer;
   can_save: boolean;
+  map_name: string;
   minimap_buffer: TBitmap;
   PNG: TPNGObject;
 begin
@@ -270,7 +271,8 @@ begin
   // Save mission
   Mission.save_mission(filename, is_testmap);
   // Save preview image
-  if DirectoryExists(current_dir + 'mission_previews') then
+  map_name := ChangeFileExt(ExtractFileName(filename), '');
+  if DirectoryExists(current_dir + 'mission_previews') and (AnsiCompareText(map_name, 'TESTMAP') <> 0) then
   begin
     minimap_buffer := TBitmap.Create;
     minimap_buffer.PixelFormat := pf32bit;
@@ -279,7 +281,7 @@ begin
     PNG := TPNGObject.Create;
     Renderer.render_minimap_contents(minimap_buffer, Addr(data), width, height, false);
     PNG.Assign(minimap_buffer);
-    PNG.SaveToFile(current_dir + 'mission_previews\' + ChangeFileExt(ExtractFileName(filename), '') + '.png');
+    PNG.SaveToFile(current_dir + 'mission_previews\' + map_name + '.png');
     minimap_buffer.Destroy;
     PNG.Destroy;
   end;
@@ -380,14 +382,19 @@ begin
         1: paint_tile(map_width - 1 - xx, yy, paint_tile_group, side);
         2: paint_tile(xx, map_height - 1 - yy, paint_tile_group, side);
         3: paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
-        4: begin
+        4: paint_tile(yy, xx, paint_tile_group, side);
+        5: paint_tile(map_height - 1 - yy, map_width - 1 - xx, paint_tile_group, side);
+        6: begin
           paint_tile(map_width - 1 - xx, yy, paint_tile_group, side);
           paint_tile(xx, map_height - 1 - yy, paint_tile_group, side);
           paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
         end;
-        5: paint_tile(yy, xx, paint_tile_group, side);
-        6: paint_tile(map_height - 1 - yy, map_width - 1 - xx, paint_tile_group, side);
         7: begin
+          paint_tile(yy, map_width - 1 - xx, paint_tile_group, side);
+          paint_tile(map_height - 1 - yy, xx, paint_tile_group, side);
+          paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
+        end;
+        8: begin
           paint_tile(yy, xx, paint_tile_group, side);
           paint_tile(map_height - 1 - yy, map_width - 1 - xx, paint_tile_group, side);
           paint_tile(map_width - 1 - xx, map_height - 1 - yy, paint_tile_group, side);
@@ -495,6 +502,16 @@ begin
         fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
       end;
     4: begin
+        xx := y;
+        yy := x;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    5: begin
+        xx := map_height - 1 - y;
+        yy := map_width - 1 - x;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+      end;
+    6: begin
         xx := map_width - 1 - x;
         yy := y;
         fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
@@ -505,17 +522,18 @@ begin
         yy := map_height - 1 - y;
         fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
       end;
-    5: begin
+    7: begin
         xx := y;
-        yy := x;
-        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
-      end;
-    6: begin
-        xx := map_height - 1 - y;
         yy := map_width - 1 - x;
         fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+        xx := map_height - 1 - y;
+        yy := x;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
+        xx := map_width - 1 - x;
+        yy := map_height - 1 - y;
+        fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));
       end;
-    7: begin
+    8: begin
         xx := y;
         yy := x;
         fill_area_step(xx, yy, paint_tile_group, side, Tileset.get_fill_area_type(map_data[xx, yy].tile, map_data[xx, yy].special));

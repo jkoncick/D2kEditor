@@ -37,6 +37,7 @@ type
   TMisAI = class
 
   public
+    default_ai_filename: String;
     default_ai: TMisAISegment;
     ai_hint_entries: array of TAIHintEntry;
   private
@@ -60,7 +61,7 @@ var
 
 implementation
 
-uses Windows, Forms, SysUtils, Classes, IniFiles, Clipbrd, _utils, _structures;
+uses Windows, Forms, SysUtils, Classes, IniFiles, Clipbrd, _utils, _structures, _settings, _dispatcher;
 
 procedure TMisAI.init;
 begin
@@ -74,10 +75,12 @@ procedure TMisAI.load_default_ai;
 var
   tmp_filename: String;
 begin
-  tmp_filename := find_file('config\default_ai.misai', 'default mission AI');
-  if tmp_filename = '' then
+  tmp_filename := find_file('ai_templates\' + Settings.DefaultAITemplate, 'default mission AI');
+  if (tmp_filename = '') or (tmp_filename = default_ai_filename) then
     exit;
+  default_ai_filename := tmp_filename;
   load_misai_segment(tmp_filename, default_ai);
+  Dispatcher.register_event(evFLDefaultAI);
 end;
 
 procedure TMisAI.load_ai_help_ini;
