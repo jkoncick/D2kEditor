@@ -627,7 +627,7 @@ object MissionDialog: TMissionDialog
           Left = 64
           Top = 0
           Width = 185
-          Height = 25
+          Height = 24
           Caption = 'Select defence area # from map'
           TabOrder = 0
           OnClick = btnSelectDefenceAreaFromMapClick
@@ -643,13 +643,22 @@ object MissionDialog: TMissionDialog
         TabOrder = 5
         Visible = False
         object btnShowAIBuildingBuildOrder: TButton
-          Left = 64
+          Left = 0
           Top = 0
-          Width = 185
-          Height = 25
-          Caption = 'Show/Hide building build order'
+          Width = 156
+          Height = 24
+          Caption = 'Show/Hide build order'
           TabOrder = 0
           OnClick = btnShowAIBuildingBuildOrderClick
+        end
+        object btnSyncAIBuildingCountFromMap: TButton
+          Left = 156
+          Top = 0
+          Width = 156
+          Height = 24
+          Caption = 'Sync building count from map'
+          TabOrder = 1
+          OnClick = btnSyncAIBuildingCountFromMapClick
         end
       end
     end

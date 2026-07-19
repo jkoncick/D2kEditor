@@ -234,6 +234,7 @@ type
     procedure remap_filter_criteria_for_object_type(ini: TMemIniFile; obj_name: string; ed: EventData; cd: ConditionData);
     procedure remap_structures(remap_structures_data: TRemapStructuresDataPtr);
     procedure compute_ai_building_build_order(side: integer; tmp_strings: TStringList);
+    procedure sync_ai_building_count_from_map(side: integer);
   end;
 
 var
@@ -2160,6 +2161,34 @@ begin
       tmp_strings.Add(Format('%.3f (%d) %s (%d/%d; %d)', [max_value, buildings_built[next_building], Structures.get_building_group_str(next_building), power_output, power_need, credits_spent]));
     end;
   until next_building = -1;
+end;
+
+procedure TMission.sync_ai_building_count_from_map(side: integer);
+var
+  i,j: integer;
+  special: word;
+  structure_type: byte;
+  structure_side: integer;
+  building_template: TBuildingTemplatePtr;
+  building_count: array[0..MAX_BUILDING_TYPES-1] of integer;
+begin
+  FillChar(building_count, sizeof(building_count), 0);
+  for i := 0 to Map.width-1 do
+    for j := 0 to Map.height-1 do
+    begin
+      special := Map.data[i,j].special;
+      structure_type := Structures.get_special_value_type(special);
+      structure_side := Structures.get_special_value_side(special);
+      if (structure_type = ST_BUILDING) and (structure_side = side) then
+      begin
+        building_template := Structures.get_building_template_for_special(special);
+        if building_template = nil then
+          continue;
+        Inc(building_count[building_template.BuildingGroup]);
+      end;
+    end;
+  for i := 0 to MAX_BUILDING_TYPES - 1 do
+    set_integer_value(Addr(ai_segments[side]), MAX_BUILDINGS_START_BYTE + i * 4, 4, building_count[i]);
 end;
 
 end.

@@ -85,6 +85,7 @@ type
     mAIBuildingBuildOrder: TMemo;
     pnShowAIBuildingBuildOrder: TPanel;
     btnShowAIBuildingBuildOrder: TButton;
+    btnSyncAIBuildingCountFromMap: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -121,6 +122,7 @@ type
     procedure btnPasteAIClick(Sender: TObject);
     procedure btnSelectDefenceAreaFromMapClick(Sender: TObject);
     procedure btnShowAIBuildingBuildOrderClick(Sender: TObject);
+    procedure btnSyncAIBuildingCountFromMapClick(Sender: TObject);
     // Mission ini data editor events
     procedure cbUseINIClick(Sender: TObject);
     procedure btnImportRulesClick(Sender: TObject);
@@ -420,7 +422,7 @@ begin
     exit;
   if MissionIni.rules[ARow - 1].default_value <> RuleValueList.Cells[ACol, ARow] then
   begin
-    RuleValueList.Canvas.Brush.Color := clYellow;
+    RuleValueList.Canvas.Brush.Color := $cafffe;
     RuleValueList.Canvas.FillRect(Rect);
     RuleValueList.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,RuleValueList.Cells[ACol,ARow]);
   end;
@@ -441,7 +443,7 @@ procedure TMissionDialog.RuleValueListSelectCell(Sender: TObject; ACol, ARow: In
 begin
   if (ARow = 0) or (ACol = 0) or (TValueListEditorCracker(RuleValueList).InplaceEditor = nil) then
     exit;
-  TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := IfThen(MissionIni.rules[ARow - 1].default_value <> RuleValueList.Cells[ACol, ARow], clYellow, clWhite);
+  TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := IfThen(MissionIni.rules[ARow - 1].default_value <> RuleValueList.Cells[ACol, ARow], $cafffe, clWhite);
 
   lblRulesHelp.Caption := RuleValueList.Cells[0, ARow] + #13 + MissionIni.rules[ARow - 1].help_text;
 end;
@@ -449,7 +451,7 @@ end;
 procedure TMissionDialog.RuleValueListStringsChange(Sender: TObject);
 begin
   if TValueListEditorCracker(RuleValueList).InplaceEditor <> nil then
-    TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := IfThen(MissionIni.rules[RuleValueList.Row - 1].default_value <> RuleValueList.Cells[1, RuleValueList.Row], clYellow, clWhite);
+    TEdit(TValueListEditorCracker(RuleValueList).InplaceEditor).Color := IfThen(MissionIni.rules[RuleValueList.Row - 1].default_value <> RuleValueList.Cells[1, RuleValueList.Row], $cafffe, clWhite);
 end;
 
 procedure TMissionDialog.sbShowAIHelpClick(Sender: TObject);
@@ -479,7 +481,7 @@ begin
     exit;
   if GameStructs.get_misai_property_default_value(ARow - 1) <> AIValueList.Cells[ACol, ARow] then
   begin
-    AIValueList.Canvas.Brush.Color := clYellow;
+    AIValueList.Canvas.Brush.Color := $cafffe;
     AIValueList.Canvas.FillRect(Rect);
     AIValueList.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,AIValueList.Cells[ACol,ARow]);
   end;
@@ -506,7 +508,7 @@ begin
     exit;
   // Highlight property different from default
   if TValueListEditorCracker(AIValueList).InplaceEditor <> nil then
-    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(ARow - 1) <> AIValueList.Cells[ACol, ARow]) and (ARow > 1), clYellow, clWhite);
+    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(ARow - 1) <> AIValueList.Cells[ACol, ARow]) and (ARow > 1), $cafffe, clWhite);
   // Handle help text
   prop := GameStructs.get_misai_property(ARow-1);
   help_text := AIValueList.Cells[0, ARow] + #13;
@@ -544,7 +546,7 @@ begin
   loading := true;
   // Highlight property different from default
   if TValueListEditorCracker(AIValueList).InplaceEditor <> nil then
-    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(AIValueList.Row - 1) <> AIValueList.Cells[1, AIValueList.Row]) and (AIValueList.Row > 1), clYellow, clWhite);
+    TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(AIValueList.Row - 1) <> AIValueList.Cells[1, AIValueList.Row]) and (AIValueList.Row > 1), $cafffe, clWhite);
   // Range selection (if one value selected, loop goes only once)
   for i := AIValueList.Selection.Top to AIValueList.Selection.Bottom do
   begin
@@ -623,6 +625,12 @@ begin
     mAIBuildingBuildOrder.Visible := true;
   end else
     mAIBuildingBuildOrder.Visible := false;
+end;
+
+procedure TMissionDialog.btnSyncAIBuildingCountFromMapClick(Sender: TObject);
+begin
+  Mission.sync_ai_building_count_from_map(AITabControl.TabIndex);
+  update_mis_ai_values;
 end;
 
 procedure TMissionDialog.cbUseINIClick(Sender: TObject);
