@@ -1,51 +1,159 @@
-Campaign Generic AI
-------------------- 
-All the default numbers. But won't build non-lethal units (engineers, harversters, MCV, thumpers).
-Will upgrade, will buy from the starport, will repair units/buildings... more or less, all the stuff the AI does normally.
-The priority to attack is the default too, since that's not necesary to make the AI attack the player (and the AI usually target first the closes enemy/building).
+01) Campaign Generic AI
+-----------------------
+All the default values you'd see in Westwood's campaign missions' unused AI slots, AKA the "default AI," but won't build unarmed units like Engineers.
+This AI is not particularly competent and will behave strangely due to having unusual values for active AIs, like low AttackBuildingPriorities.
+Still, it will upgrade, buy from the starport, repair units/buildings... more or less, all the stuff the AI does normally.
 
 
-Practice Generic AI
--------------------
-Practice/skirmish/online type of AI. Has set the order of building, 4 turrets, 3 refs, 15 windtraps... so is based in a tech of 7. fast unit build rate, engineer as the original game, etc...
+02) Practice Generic AI
+-----------------------
+Generic practice/skirmish/online type of AI.
+Has a set order of building things suitable for tech level 7.
+Will temporarily take its own power down when the Research Center is built.
+Otherwise, is decently competent. Fast unit build rate, trains Engineers, etc.
 
 
-Agressive Generic AI
+03) Aggressive Generic AI
+-------------------------
+This AI has a low first-time attack delay and even shorter delays before follow-up attacks.
+It will not defend itself well. By dedicating most units to attack, its base will be left largely vulnerable.
+It has as fast a unit build rate as some of the most competent original campaign AIs (one of the mission 9s).
+
+
+04) Defensive Generic AI
+------------------------
+This AI will take a long time to gather itself for its first attack, and will attack sparsely after that. Not many units will be used to attack.
+It will focus its forces on defense and protection efforts. Attacking its Harvesters will provoke a severe response.
+Its unit build rate is low to ensure it can't group a troublesome amount of units or rebuild losses too quickly.
+This AI is suitable for hyperdefensive enemies, or if you have an ally you want to focus on its own survival.
+
+
+05) Balanced Generic AI
+-----------------------
+This is a balanced type of AI, something between aggressive and defensive.
+Its values are roughly nearby the average of the aggressive/defensive presets.
+It will be fairly competent at attacking and defending itself, but won't excel anywhere either.
+
+
+06) Anti-Infantry AI
 --------------------
-This AI has short-time first attack, and then even shorter next attacks. The quantity/quality of units defending the base is low, so this AI will have quick attacks but not to many units around the base. The unit build rate is as fast as the fastests unit build rate from the original campaign (one of the missions 9).
+An average type of AI similar to the balanced generic AI.
+This AI only produces anti-infantry units: Light Infantry, Trikes/Raiders, and Siege Tanks.
 
 
-Defensive Generic AI
---------------------
-This AI needs a very long time before the first attack and not so long (But still long) from every next attack. The quantity/quality of units defending the base is High, so this AI is to use in case you want one enemy being much more defensive, or in case you have a map with an ally that you want it to survive, since is not going to attack too much often. The unit build rate is also low (to avoid grouping too many units or rebuilding losses too quickly).
-
-
-Balanced Generic AI
--------------------
-This is an balanced type of AI, something in the middle of the agresive an defensive. The first attack and the time bewteen attacks are more or less in the middle of the Agr/def cases. The units guarding the base and the unit build rate are also in the middle of those 2 AIs.
-
-
-Anti Infantry AI
+07) Raw Power AI
 ----------------
-This is another average type of AI, in fact, has the same values as the balanced version. I change this AI to build only anti infantry type of units: light infantry, Trike/raider and siege tanks.
+Same as above, but this AI focuses on the opposite, the units with raw power.
+This includes Troopers, Sardaukar, Quads, Combat Tanks, Missile Tanks and special tanks.
 
 
-Raw Power AI
-------------
-Same as above, but this one builds the opposite, the units with Raw power. This includes: Trooper, Sardaukar, Quad, Combat tank, Missile tank, Sonic/Dev/Deva.
+08) Practice Tech 4-5 AI
+------------------------
+This is a practice/skirmish type of AI better-optimized for a lower tech level, like 4 or 5.
+If given the appropriate tech level, this AI will prove a bit better than the generic practice mode AI.
+It will build a maximum of 10 Wind Traps, needing less room overall for its base. It will also double up on Gun Turrets.
+If lower than tech 4-5, this version of the practice mode AI can still help control the maximum Wind Traps it'll construct.
+If tech level is higher, it won't build Rocket Turrets and will not have much excess power, so it's not recommended.
 
 
-Practice Tech 4-5 AI
---------------------
-This is a practice/skirmish type of AI. If the Tech used to the map is 4 or 5, this AI will be a bit better than the generic: Will build at maximun of 10 windtraps (so don't need as many room as the 15 that needs the generic) and will have 8 gun-turrets, that's 4 extra more turrets around the base.
-Even if the tech is lower than 4-5, this AI still can help the CPU to control the maximum windtraps that will build.
-If tech is higher, isn't going to build rocket turrets; also the energy will be more near to the limit; so is not recommended.
+09) Practice High Production AI
+-------------------------------
+This type of AI has the same values, in general, as the generic practice one.
+However, this AI will max out its production speed and build more Wind Traps to compensate.
+Like the generic practice mode AI, this AI will temporarily take its own power down when it builds the Research Center due to its build order.
 
 
-Practice High Production AI
----------------------------
-This type of AI has in general the same values as the generic one, but this one will make the AI to deploy more buildings: 3 barracks, 3 light fac, 3 heavy fac, 1 more ref (4), 2 more gun/rocket turrets (6 and 6) and 3 extra windtraps (18).
-Other values remains the same as the generic version.
+10) Tech 1 Advanced AI
+----------------------
+This AI is optimized for tech level 1 and uses some v2.3+ features.
+Designed to build up from scratch, but will not build much at all. It's for tech 1, after all.
+Though it has a defensive build order, placing a Barracks before Refineries, it will focus on attacking.
+You can give it a starting base, but AIs like this will only re/build whatever its max buildings are set to.
+With a respectable build order/rate and a tiny maximum base size, it will be a competent minimum-tech opponent.
+It has better-rounded AttackBuildingPriorities, so it's less likely to predictably go after enemy Construction Yards.
+Its units will not automatically face away from the ConYard, so you can set their directions with Advanced placement.
+Unlike regular skirmish AIs, this one will not berserk automatically when it cannot put up a fight anymore.
+Will respond quickly to damage to its structures, keeping them in good health.
+Will dedicate only a modest amount of units to protecting its Harvesters.
 
 
-The Agresivve/defensive/Balanced trio should be the ones recommended to use. The anty-infantry/raw could be treated as advance type of AI just to show that is possible to make the AI building what you want. 
+11) Tech 2 Advanced AI
+----------------------
+This AI is optimized for tech level 2 and uses some v2.3+ features.
+Weighted slightly towards Troopers over Light Infantry, and Quads over Trikes or Raiders.
+Will build a slightly larger base than the T1AAI: A 3rd Refinery, a 4th Wind Trap, and 2 more Silos.
+Because the Barracks can be upgraded at tech 2, be sure to give it a little more starting cash.
+Maintains a slightly larger defense force around its base.
+
+
+12) Tech 3 Advanced AI
+----------------------
+This AI is optimized for tech level 3 and uses some v2.3+ features.
+To compensate for the added Heavy Factory unit queue, its build rate is superior to prior advanced AIs.
+Is slightly less aggressive than prior advanced AIs; will take longer to prepare attacks against enemies.
+Weighted even more heavily towards Troopers over Light Infantry. Quads:Trikes/Raiders ratio remains the same.
+Its build order is geared more towards economy. Be sure to give it some starting units so it can defend itself.
+Unlike the generic practice/skirmish mode AIs, these will not train Engineers.
+
+
+13) Tech 4 Advanced AI
+----------------------
+This AI is optimized for tech level 4 and uses some v2.3+ features.
+It will place some Gun Turrets, and a couple of Wind Traps are added to compensate.
+Note that prioritizing units for early defense and adding turrets later uses build space best.
+Atreides and Harkonnen using this AI build fewer Combat Tanks and mix in some Missile Tanks.
+Ordos using this AI will have excess power thanks to their Research Center being tech 6.
+It will commit slightly more forces to defending its base than prior advanced AIs.
+
+
+14) Tech 5 Advanced AI
+----------------------
+This AI is optimized for tech level 5 and uses some v2.3+ features.
+Expecting access to the Starport, the Outpost is placed sooner in its build order.
+Two additional Wind Traps and a Refinery were added to compensate for greater expenditures.
+Two more Gun Turrets and two more Silos were also added. Siege Tanks will be built as well.
+
+
+15) Tech 6 Advanced AI
+----------------------
+This AI is optimized for tech level 6 and uses some v2.3+ features.
+It will build special tanks like Sonic Tanks, Devastators or Deviators.
+Combat Tank and Missile Tank ratios were adjusted to make room for them.
+The build ratios do not account for multiplayer-only units like Stealth Raiders.
+Due to the addition of Rocket Turrets, even more Wind Traps were added to support them.
+Be sure to give an AI of this size plentiful space to build its base structures.
+Ornithopters will be delayed until at least the first 15 minutes have passed.
+If building up from scratch, this specials delay is not really a factor.
+Will dedicate some more units to defending its base than prior AIs.
+Will take slightly longer to prepare its attacks than prior AIs.
+
+
+16) Tech 7 Advanced AI
+----------------------
+This AI is optimized for tech level 7 and uses some v2.3+ features.
+Will build excessive Wind Traps and the most turrets of any advanced AI.
+As with Ornithopters, other specials cannot fire in the first 15 minutes.
+Otherwise, this one is rather similar to the T6AAI.
+
+
+17) Tech 7 Advanced Max AI
+--------------------------
+Will max out production speed, building three of each production structure.
+Due to the adjustments to its build order, this AI needs ample starting cash.
+A massive amount of build space is required for this AI to build up completely.
+Is actually impractically large. Can easily be locked into building Harvesters.
+Will place some Gun Turrets early to defend itself, then Rocket Turrets later.
+Will first spam production structures and Refineries, then tech up afterwards.
+The HTF goes up late in this build order, so, starting Carryalls are helpful.
+Attacks are infrequent, but strong. Higher build rate than the T7AAI.
+
+
+18) Tech 7 Advanced Min AI
+--------------------------
+Minimalist tech 7 AI. Will build a modest base with only 10 Wind Traps.
+This AI goes for early economy, so it doesn't need so much starting cash.
+It is, however, more likely to need some starting units to help it survive.
+Demands less build space than similar advanced AIs, but it's still a tech 7.
+Builds units less frequently and attacks more often than similar advanced AIs.
+Is slightly less defensive than similar advanced AIs. Builds less turrets too.
+Due to its low Wind Trap count, it maxes out with closer power/drain levels.
