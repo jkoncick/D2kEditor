@@ -17,6 +17,7 @@ object MissionDialog: TMissionDialog
   Scaled = False
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
+  OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
   object SettingsPanel: TPanel
@@ -632,7 +633,36 @@ object MissionDialog: TMissionDialog
           OnClick = btnSelectDefenceAreaFromMapClick
         end
       end
+      object pnShowAIBuildingBuildOrder: TPanel
+        Left = 0
+        Top = 0
+        Width = 312
+        Height = 24
+        Align = alClient
+        BevelOuter = bvNone
+        TabOrder = 5
+        Visible = False
+        object btnShowAIBuildingBuildOrder: TButton
+          Left = 64
+          Top = 0
+          Width = 185
+          Height = 25
+          Caption = 'Show/Hide building build order'
+          TabOrder = 0
+          OnClick = btnShowAIBuildingBuildOrderClick
+        end
+      end
     end
+  end
+  object mAIBuildingBuildOrder: TMemo
+    Left = 440
+    Top = 0
+    Width = 249
+    Height = 89
+    ReadOnly = True
+    TabOrder = 2
+    Visible = False
+    WordWrap = False
   end
   object ExportAIDialog: TSaveDialog
     DefaultExt = 'misai'

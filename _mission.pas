@@ -233,6 +233,7 @@ type
     procedure remap_filter_criteria(filename: string);
     procedure remap_filter_criteria_for_object_type(ini: TMemIniFile; obj_name: string; ed: EventData; cd: ConditionData);
     procedure remap_structures(remap_structures_data: TRemapStructuresDataPtr);
+    procedure compute_ai_building_build_order(side: integer; tmp_strings: TStringList);
   end;
 
 var
@@ -2068,6 +2069,97 @@ begin
   // Finalize
   mis_modified := true;
   Dispatcher.register_event(evMisLoad);
+end;
+
+procedure TMission.compute_ai_building_build_order(side: integer; tmp_strings: TStringList);
+var
+  buildings_built: array[0..MAX_BUILDING_TYPES-1] of integer;
+  house: integer;
+  current_value, max_value: single;
+  next_building: integer;
+  i, j: integer;
+  building_template, building_template2: TBuildingTemplatePtr;
+  prerequisites_available: boolean;
+  power_output, power_need, credits_spent: integer;
+begin
+  house := IfThen(house_id[side] < CNT_SIDES, house_id[side], 0);
+  FillChar(buildings_built, sizeof(buildings_built), 0);
+  power_output := 0;
+  power_need := 0;
+  credits_spent := 0;
+  // First find a construction yard and mark it as we have it
+  for i := 0 to Structures.templates.BuildingGroupCount - 1 do
+  begin
+    building_template := Structures.get_building_template(i, house, true);
+    if building_template.SpecialBehavior = 2 then
+    begin
+      Inc(buildings_built[i]);
+      if (building_template.PowerConsumption < 0) then
+        Dec(power_output, building_template.PowerConsumption)
+      else
+        Inc(power_need, building_template.PowerConsumption);
+      break;
+    end;
+  end;
+  repeat
+    max_value := 0.0;
+    next_building := -1;
+    // Find next building
+    for i := 0 to Structures.templates.BuildingGroupCount - 1 do
+    begin
+      building_template := Structures.get_building_template(i, house, true);
+      // No building in this group
+      if building_template = nil then
+        continue;
+      // Building is concrete
+      if building_template.SpecialBehavior = 15 then
+        continue;
+      // Maximum number of buildings was built
+      if buildings_built[i] >= get_integer_value(Addr(ai_segments[side]), MAX_BUILDINGS_START_BYTE + i * 4, 4) then
+        continue;
+      // Not enough tech level
+      if (Shortint(tech_level[side]) < building_template.TechLevelBuild) or (building_template.TechLevelBuild = -1) then
+        continue;
+      // Not all prerequisites available
+      prerequisites_available :=
+        ((building_template.Prereq1BuildingGroup = -1) or ((buildings_built[building_template.Prereq1BuildingGroup] <> 0) and ((building_template.Prereq1OwnerHouse and Structures.get_building_template(building_template.Prereq1BuildingGroup, house, true).OwnerHouse) <> 0))) and
+        ((building_template.Prereq2BuildingGroup = -1) or ((buildings_built[building_template.Prereq2BuildingGroup] <> 0) and ((building_template.Prereq2OwnerHouse and Structures.get_building_template(building_template.Prereq2BuildingGroup, house, true).OwnerHouse) <> 0)));
+      // Check if there are other variants of building where prerequisites are available
+      for j := 0 to Structures.templates.BuildingCount - 1 do
+      begin
+        building_template2 := Addr(Structures.templates.BuildingDefinitions[j]);
+        if building_template2.BuildingGroup = i then
+        begin
+          prerequisites_available :=
+            ((building_template2.Prereq1BuildingGroup = -1) or ((buildings_built[building_template2.Prereq1BuildingGroup] <> 0) and ((building_template2.Prereq1OwnerHouse and Structures.get_building_template(building_template2.Prereq1BuildingGroup, house, true).OwnerHouse) <> 0))) and
+            ((building_template2.Prereq2BuildingGroup = -1) or ((buildings_built[building_template2.Prereq2BuildingGroup] <> 0) and ((building_template2.Prereq2OwnerHouse and Structures.get_building_template(building_template2.Prereq2BuildingGroup, house, true).OwnerHouse) <> 0)));
+          if prerequisites_available then
+            break;
+        end;
+      end;
+      if not prerequisites_available then
+        continue;
+      // Compute ratio
+      current_value := get_float_value(Addr(ai_segments[side]), BUILD_RATIO_START_BYTE + i * 4) / (buildings_built[i] + 1);
+      if current_value > max_value then
+      begin
+        max_value := current_value;
+        next_building := i;
+      end;
+    end;
+    // Record next building
+    if (next_building <> -1) then
+    begin
+      Inc(buildings_built[next_building]);
+      building_template := Structures.get_building_template(next_building, house, true);
+      if (building_template.PowerConsumption < 0) then
+        Dec(power_output, building_template.PowerConsumption)
+      else
+        Inc(power_need, building_template.PowerConsumption);
+      Inc(credits_spent, building_template.CostBuild);
+      tmp_strings.Add(Format('%.3f (%d) %s (%d/%d; %d)', [max_value, buildings_built[next_building], Structures.get_building_group_str(next_building), power_output, power_need, credits_spent]));
+    end;
+  until next_building = -1;
 end;
 
 end.

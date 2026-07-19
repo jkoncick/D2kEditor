@@ -82,9 +82,13 @@ type
     lblRulesHelp: TLabel;
     sbShowRulesHelp: TSpeedButton;
     pnShowRulesHelp: TPanel;
+    mAIBuildingBuildOrder: TMemo;
+    pnShowAIBuildingBuildOrder: TPanel;
+    btnShowAIBuildingBuildOrder: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormResize(Sender: TObject);
     // Mission data editor events
     procedure seTechLevelAllChange(Sender: TObject);
     procedure edStartingMoneyAllChange(Sender: TObject);
@@ -116,6 +120,7 @@ type
     procedure btnCopyAIClick(Sender: TObject);
     procedure btnPasteAIClick(Sender: TObject);
     procedure btnSelectDefenceAreaFromMapClick(Sender: TObject);
+    procedure btnShowAIBuildingBuildOrderClick(Sender: TObject);
     // Mission ini data editor events
     procedure cbUseINIClick(Sender: TObject);
     procedure btnImportRulesClick(Sender: TObject);
@@ -152,6 +157,9 @@ type
 
     // Procedures called from different forms
     procedure finish_defence_area_position_selection(min_x, max_x, min_y, max_y: integer);
+
+    // Other procedures
+    procedure fill_ai_building_build_order;
   end;
 
 var
@@ -283,6 +291,12 @@ begin
   end;
 end;
 
+procedure TMissionDialog.FormResize(Sender: TObject);
+begin
+  mAIBuildingBuildOrder.Height := ClientHeight;
+  mAIBuildingBuildOrder.Left := ClientWidth - AITabControl.Width - mAIBuildingBuildOrder.Width;
+end;
+
 procedure TMissionDialog.seTechLevelAllChange(Sender: TObject);
 var
   i: integer;
@@ -339,6 +353,8 @@ end;
 procedure TMissionDialog.tech_level_change(Sender: TObject);
 begin
   Mission.tech_level[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
+  if mAIBuildingBuildOrder.Visible then
+    fill_ai_building_build_order;
 end;
 
 procedure TMissionDialog.starting_money_change(Sender: TObject);
@@ -352,6 +368,8 @@ begin
     exit;
   Mission.house_id[(Sender as TSpinEdit).Tag] := StrToIntDef((Sender as TSpinEdit).Text, 0);
   color_marker[(Sender as TSpinEdit).Tag].Color := Colours.house_colors_inv[Mission.house_id[(Sender as TSpinEdit).Tag]];
+  if mAIBuildingBuildOrder.Visible then
+    fill_ai_building_build_order;
   Dispatcher.register_event(evMisHouseIDChange);
 end;
 
@@ -451,6 +469,8 @@ end;
 procedure TMissionDialog.AITabControlChange(Sender: TObject);
 begin
   update_mis_ai_values;
+  if mAIBuildingBuildOrder.Visible then
+    fill_ai_building_build_order;
 end;
 
 procedure TMissionDialog.AIValueListDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
@@ -484,9 +504,10 @@ var
 begin
   if (ARow = 0) or (ACol = 0) then
     exit;
+  // Highlight property different from default
   if TValueListEditorCracker(AIValueList).InplaceEditor <> nil then
     TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(ARow - 1) <> AIValueList.Cells[ACol, ARow]) and (ARow > 1), clYellow, clWhite);
-
+  // Handle help text
   prop := GameStructs.get_misai_property(ARow-1);
   help_text := AIValueList.Cells[0, ARow] + #13;
   for i := 0 to Length(MisAI.ai_hint_entries) - 1 do
@@ -496,14 +517,18 @@ begin
       break;
     end;
   lblAIHelp.Caption := help_text;
-  if (prop.offset < DEFENCE_AREAS_START_BYTE) or (prop.offset > DEFENCE_AREAS_END_BYTE) then
+  // Handle defence areas
+  if (prop.offset >= DEFENCE_AREAS_START_BYTE) and (prop.offset < DEFENCE_AREAS_END_BYTE) then
   begin
+    defence_area_num := (prop.offset - DEFENCE_AREAS_START_BYTE) div DEFENCE_AREA_SIZE;
+    pnSelectDefenceAreaFromMap.Visible := true;
+    btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
+  end else
     pnSelectDefenceAreaFromMap.Visible := false;
-    exit;
-  end;
-  defence_area_num := (prop.offset - DEFENCE_AREAS_START_BYTE) div DEFENCE_AREA_SIZE;
-  pnSelectDefenceAreaFromMap.Visible := true;
-  btnSelectDefenceAreaFromMap.Caption := 'Select defence area '+ inttostr(defence_area_num+1) +' from map';
+  // Handle building build order
+  pnShowAIBuildingBuildOrder.Visible := (prop.offset >= BUILD_RATIO_START_BYTE) and (prop.offset < BUILD_RATIO_MAX_BUILDINGS_END_BYTE);
+  if not pnShowAIBuildingBuildOrder.Visible then
+    mAIBuildingBuildOrder.Visible := false;
 end;
 
 procedure TMissionDialog.AIValueListStringsChange(Sender: TObject);
@@ -517,6 +542,7 @@ begin
   if loading then
     exit;
   loading := true;
+  // Highlight property different from default
   if TValueListEditorCracker(AIValueList).InplaceEditor <> nil then
     TEdit(TValueListEditorCracker(AIValueList).InplaceEditor).Color := IfThen((GameStructs.get_misai_property_default_value(AIValueList.Row - 1) <> AIValueList.Cells[1, AIValueList.Row]) and (AIValueList.Row > 1), clYellow, clWhite);
   // Range selection (if one value selected, loop goes only once)
@@ -527,7 +553,7 @@ begin
       AIValueList.Cells[1,i] := AIValueList.Cells[1,AIValueList.Row];
     prop := GameStructs.get_misai_property(i-1);
     // Check if defence area was affected
-    if (prop.offset >= DEFENCE_AREAS_COUNT_BYTE) and (prop.offset <= DEFENCE_AREAS_END_BYTE) then
+    if (prop.offset >= DEFENCE_AREAS_COUNT_BYTE) and (prop.offset < DEFENCE_AREAS_END_BYTE) then
       Dispatcher.register_event(evMisDefenceAreaChange);
     // Determine data type
     bytes := game_struct_data_type_size[Ord(prop.data_type)];
@@ -540,6 +566,9 @@ begin
     i_val := strtointdef(AIValueList.Cells[1,AIValueList.Row], get_integer_value(Addr(MisAI.default_ai), prop.offset, bytes));
     set_integer_value(Addr(Mission.ai_segments[AITabControl.TabIndex]), prop.offset, bytes, i_val);
   end;
+  // Handle building build order
+  if mAIBuildingBuildOrder.Visible then
+    fill_ai_building_build_order;
   loading := false;
 end;
 
@@ -584,6 +613,16 @@ begin
   y := defence_area.MinY;
   MainWindow.start_position_selection(x, y, psmDefenceArea);
   close;
+end;
+
+procedure TMissionDialog.btnShowAIBuildingBuildOrderClick(Sender: TObject);
+begin
+  if not mAIBuildingBuildOrder.Visible then
+  begin
+    fill_ai_building_build_order;
+    mAIBuildingBuildOrder.Visible := true;
+  end else
+    mAIBuildingBuildOrder.Visible := false;
 end;
 
 procedure TMissionDialog.cbUseINIClick(Sender: TObject);
@@ -863,6 +902,16 @@ begin
   defence_area.MaxY := max_y;
   update_mis_ai_values;
   Dispatcher.register_event(evMisDefenceAreaChange);
+end;
+
+procedure TMissionDialog.fill_ai_building_build_order;
+var
+  tmp_strings: TStringList;
+begin
+  tmp_strings := TStringList.Create;
+  Mission.compute_ai_building_build_order(AITabControl.TabIndex, tmp_strings);
+  mAIBuildingBuildOrder.Lines := tmp_strings;
+  tmp_strings.Destroy;
 end;
 
 end.
