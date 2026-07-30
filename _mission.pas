@@ -126,7 +126,7 @@ const cond_expr_operator_str: array[0..7] of string = ('=', '!=', '>=', '>', '<=
 // Mis file definitions
 // *****************************************************************************
 
-const MAX_EVENTS = 1024;
+const MAX_EVENTS = 16384;
 const MAX_CONDITIONS = 256;
 
 const MAX_ORIG_EVENTS = 64;
@@ -301,7 +301,9 @@ begin
     BlockRead(f, num_events, 2);
     BlockRead(f, num_conditions, 2);
     BlockRead(f, condition_data[MAX_ORIG_CONDITIONS], sizeof(TCondition) * (MAX_CONDITIONS - MAX_ORIG_CONDITIONS));
-    BlockRead(f, event_data[MAX_ORIG_EVENTS], sizeof(TEvent) * (MAX_EVENTS - MAX_ORIG_EVENTS));
+    if num_events > MAX_ORIG_EVENTS then
+      BlockRead(f, event_data[MAX_ORIG_EVENTS], sizeof(TEvent) * (num_events - MAX_ORIG_EVENTS));
+    FillChar(event_data[num_events], sizeof(TEvent) * (MAX_EVENTS - num_events), 0);
   end else
   begin
     num_events := num_events and 255;
@@ -364,7 +366,8 @@ begin
     BlockWrite(f, num_events, 2);
     BlockWrite(f, num_conditions, 2);
     BlockWrite(f, condition_data[MAX_ORIG_CONDITIONS], sizeof(TCondition) * (MAX_CONDITIONS - MAX_ORIG_CONDITIONS));
-    BlockWrite(f, event_data[MAX_ORIG_EVENTS], sizeof(TEvent) * (MAX_EVENTS - MAX_ORIG_EVENTS));
+    if num_events > MAX_ORIG_EVENTS then
+      BlockWrite(f, event_data[MAX_ORIG_EVENTS], sizeof(TEvent) * (num_events - MAX_ORIG_EVENTS));
   end;
   CloseFile(f);
   // Save mission ini file
@@ -1568,7 +1571,7 @@ end;
 
 procedure TMission.export_events(first_event, last_event: integer; filename: string);
 var
-  event_buffer: array[0..MAX_EVENTS-1] of TEvent;
+  event_buffer: array of TEvent;
   condition_buffer: array[0..MAX_CONDITIONS-1] of TCondition;
   condition_used: array[0..MAX_CONDITIONS-1] of boolean;
   condition_mapping: array[0..MAX_CONDITIONS-1] of byte;
@@ -1578,6 +1581,7 @@ var
   f: file of byte;
 begin
   // Step 1: Process all events and find which conditions are used
+  SetLength(event_buffer, last_event - first_event + 1);
   exp_num_events := 0;
   FillChar(condition_used[0], MAX_CONDITIONS, 0);
   for i := first_event to last_event do
@@ -1625,17 +1629,19 @@ begin
   Rewrite(f);
   BlockWrite(f, exp_num_events, 4);
   BlockWrite(f, exp_num_conditions, 4);
-  BlockWrite(f, event_buffer, exp_num_events * sizeof(TEvent));
+  BlockWrite(f, event_buffer[0], exp_num_events * sizeof(TEvent));
   BlockWrite(f, condition_buffer, exp_num_conditions * sizeof(TCondition));
   CloseFile(f);
+  // Clean up
+  SetLength(event_buffer, 0);
   // Process extra data in mission ini file
   MissionIni.export_events(first_event, last_event, filename);
 end;
 
 procedure TMission.import_events(filename: string);
 var
-  event_buffer: array[0..MAX_EVENTS-1] of TEvent;
-  condition_buffer: array[0..MAX_CONDITIONS-1] of TCondition;
+  event_buffer: array of TEvent;
+  condition_buffer: array of TCondition;
   exp_num_events, exp_num_conditions: integer;
   i, j: integer;
   f: file of byte;
@@ -1652,8 +1658,10 @@ begin
     CloseFile(f);
     exit;
   end;
-  BlockRead(f, event_buffer, exp_num_events * sizeof(TEvent));
-  BlockRead(f, condition_buffer, exp_num_conditions * sizeof(TCondition));
+  SetLength(event_buffer, exp_num_events);
+  SetLength(condition_buffer, exp_num_conditions);
+  BlockRead(f, event_buffer[0], exp_num_events * sizeof(TEvent));
+  BlockRead(f, condition_buffer[0], exp_num_conditions * sizeof(TCondition));
   CloseFile(f);
   // Add imported events
   for i := 0 to exp_num_events - 1 do
@@ -1690,6 +1698,9 @@ begin
   num_conditions := Min(num_conditions + exp_num_conditions, MAX_CONDITIONS);
   // Compute event indentation
   compute_event_indentation;
+  // Clean up
+  SetLength(event_buffer, 0);
+  SetLength(condition_buffer, 0);
   // Register events in dispatcher
   Dispatcher.register_event(evMisEventsImport);
   // Process extra data in mission ini file

@@ -501,7 +501,7 @@ begin
   Height := 720;
   // Initialize event grid
   EventGrid.Cells[0,0] := '#';
-  EventGrid.ColWidths[0] := 30;
+  EventGrid.ColWidths[0] := 36;
   EventGrid.Cells[1,0] := 'Bl.';
   EventGrid.ColWidths[1] := 20;
   EventGrid.Cells[2,0] := 'Event type';
@@ -787,22 +787,31 @@ var
   num_events : integer;
   i: integer;
   r: TGridRect;
+  num_added: integer;
 begin
   first_event := EventGrid.Selection.Top - 1;
   last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
   if (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
   num_events := last_event - first_event + 1;
+  num_added := 0;
   for i := 0 to num_events - 1 do
-    Mission.add_event(last_event + i + 1, 0, first_event + i);
+  begin
+    if Mission.add_event(last_event + i + 1, 0, first_event + i) <> -1 then
+      Inc(num_added);
+  end;
+  if num_added = 0 then
+    exit;
   Inc(selected_event, num_events);
   select_event(selected_event);
+  if eventgrid.RowCount <= selected_event + 1 then
+    EventGrid.RowCount := Min(Mission.num_events + IfThen(Settings.EventGridShowEmptyLines, EventGrid.Height div EventGrid.RowHeights[1], 2), MAX_EVENTS + 1);
   EventGrid.Row := selected_event + 1;
   fill_grids;
   r.Left := 1;
   r.Right := EventGrid.ColCount - 1;
   r.Top := first_event + num_events + 1;
-  r.Bottom := last_event + num_events + 1;
+  r.Bottom := last_event + num_added + 1;
   EventGrid.Selection := r;
 end;
 
