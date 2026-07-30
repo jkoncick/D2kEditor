@@ -679,6 +679,10 @@ type
     pnArmourLeftPanel: TPanel;
     pnArmourRightPanel: TPanel;
     pnArmourUsedLabels: TPanel;
+    PageUIBB: TTabSheet;
+    imgUIBBImage: TImage;
+    btnUIBBExport: TButton;
+    btnUIBBImport: TButton;
     // Form events
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -781,6 +785,9 @@ type
     // UI+Mouse tab events
     procedure lbUIArtListClick(Sender: TObject);
     procedure lbMouseArtListClick(Sender: TObject);
+    // UIBB tab events
+    procedure btnUIBBExportClick(Sender: TObject);
+    procedure btnUIBBImportClick(Sender: TObject);
     // Colours tab events
     procedure lbColoursFileListClick(Sender: TObject);
     procedure imgColoursMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -845,7 +852,10 @@ type
     // View palette variables
     viewpal_image_index: integer;
     viewpal_acg: TArtControlGroupPtr;
-    // Colour tab variables
+    // UIBB tab variables
+    uibb_r16_filename: string;
+    uibb_r16_modified: boolean;
+    // Colours tab variables
     selected_colour_house: integer;
     selected_colour_index: integer;
     // Loading flag
@@ -905,6 +915,9 @@ type
     procedure draw_unit_art_frame(img_target: TImage; filenum, image_index, house, zoom: integer; raw: boolean);
     procedure draw_techpos_preview;
     procedure draw_colours_image;
+    // UIBB procedures
+    procedure load_uibb_r16(force: boolean);
+    procedure save_uibb_r16;
     // General procedures
     procedure apply_changes;
     procedure save_to_files;
@@ -915,7 +928,7 @@ var
 
 implementation
 
-uses Math, StrUtils, _settings, _missionini, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _resourcefile, _colours, _sounds, _gamelists, test_map_dialog;
+uses Math, StrUtils, _settings, _missionini, _tileset, _stringtable, _dispatcher, _launcher, _renderer, _resourcefile, _colours, _sounds, _gamelists, test_map_dialog, pngimage;
 
 {$R *.dfm}
 
@@ -1038,6 +1051,10 @@ begin
   sgSoundRs.ColWidths[0] := 32;
   sgSoundRs.ColWidths[1] := 132;
   sgSoundRs.ColWidths[2] := 132;
+  // UIBB
+  imgUIBBImage.Picture.Bitmap.PixelFormat := pf15bit;
+  imgUIBBImage.Picture.Bitmap.Width := 640;
+  imgUIBBImage.Picture.Bitmap.Height := 400;
   // Colours
   for i := 0 to CNT_SIDES do
   begin
@@ -1151,6 +1168,8 @@ begin
   if StringTable.samples_uib_modified or samples_uib_ui_modified then
     StringTable.load_samples_uib(true);
   pnImagePalette.Visible := false;
+  if uibb_r16_modified then
+    load_uibb_r16(true);
   Colours.load_colours_bin(MissionIni.CampaignFolder, MissionIni.ColoursFile);
 end;
 
@@ -2221,6 +2240,53 @@ begin
   for i := 0 to index - 1 do
     inc(frame_index, 8);
   fill_art_control_group_frame_list(ART_MOUSE, frame_index, 8, nil, IfThen(sender <> nil, 0, art_control_groups[ART_MOUSE].frame_list.ItemIndex));
+end;
+
+procedure TResourcesEditor.btnUIBBExportClick(Sender: TObject);
+var
+  PNG: TPNGObject;
+begin
+  if ImageExportDialog.Execute then
+  begin
+    if CompareText(ExtractFileExt(ImageExportDialog.FileName), '.PNG') = 0 then
+    begin
+      PNG := TPNGObject.Create;
+      PNG.Assign(imgUIBBImage.Picture.Bitmap);
+      PNG.SaveToFile(ImageExportDialog.FileName);
+      PNG.Destroy;
+    end else
+      imgUIBBImage.Picture.Bitmap.SaveToFile(ImageExportDialog.FileName);
+  end;
+end;
+
+procedure TResourcesEditor.btnUIBBImportClick(Sender: TObject);
+var
+  tmp_bitmap: TBitmap;
+  PNG: TPNGObject;
+begin
+  if ImageImportDialog.Execute then
+  begin
+    tmp_bitmap := TBitmap.Create;
+    if CompareText(ExtractFileExt(ImageImportDialog.FileName), '.PNG') = 0 then
+    begin
+      PNG := TPNGObject.Create;
+      PNG.LoadFromFile(ImageImportDialog.FileName);
+      tmp_bitmap.Assign(PNG);
+      PNG.Destroy;
+    end else
+      tmp_bitmap.LoadFromFile(ImageImportDialog.FileName);
+    if (tmp_bitmap.Width <> imgUIBBImage.Picture.Bitmap.Width) or (tmp_bitmap.Height <> imgUIBBImage.Picture.Bitmap.Height) then
+    begin
+      Application.MessageBox(PChar(Format('The image resolution must be exactly %d x %d pixels.', [imgUIBBImage.Picture.Bitmap.Width, imgUIBBImage.Picture.Bitmap.Height])), 'Import UIBB image', MB_ICONERROR or MB_OK);
+      tmp_bitmap.Destroy;
+      exit;
+    end;
+    tmp_bitmap.PixelFormat := pf15bit;
+    imgUIBBImage.Picture.Bitmap.Assign(tmp_bitmap);
+    uibb_r16_modified := true;
+    fill_status_bar;
+    tmp_bitmap.Destroy;
+  end;
 end;
 
 procedure TResourcesEditor.lbColoursFileListClick(Sender: TObject);
@@ -3321,8 +3387,14 @@ begin
   end else
   if PageControl.ActivePage = PageUIMouse then
   begin
+    // UI+Mouse
     lbUIArtListClick(nil);
     lbMouseArtListClick(nil);
+  end else
+  if PageControl.ActivePage = PageUIBB then
+  begin
+    // UIBB
+    load_uibb_r16(false);
   end;
 end;
 
@@ -3354,6 +3426,8 @@ begin
     file1 := IfThen(ResourceFile[R16FILE_UI].r16_modified, '*', '') + ResourceFile[R16FILE_UI].r16_filename;
     file2 := IfThen(ResourceFile[R16FILE_MOUSE].r16_modified, '*', '') + ResourceFile[R16FILE_MOUSE].r16_filename;
   end
+  else if PageControl.ActivePage = PageUIBB then
+    file1 := IfThen(uibb_r16_modified, '*', '') + uibb_r16_filename
   else if PageControl.ActivePage = PageColours then
     file1 := IfThen(Colours.colours_bin_modified, '*', '') + Colours.colours_bin_filename;
   // Fill status bar
@@ -4908,6 +4982,50 @@ begin
   edColoursHexCode.Text := IntToHex(Colours.get_colour_32bit(selected_colour_house, selected_colour_index), 6);
 end;
 
+procedure TResourcesEditor.load_uibb_r16(force: boolean);
+var
+  tmp_filename: String;
+  buffer: array of word;
+  image_ptr: TWordArrayPtr;
+  x, y: integer;
+begin
+  tmp_filename := find_file('Data\UIBB.R16', 'graphics');
+  if (tmp_filename = '') or ((tmp_filename = uibb_r16_filename) and not force) then
+    exit;
+  uibb_r16_filename := tmp_filename;
+  // Read UIBB.R16 file
+  SetLength(buffer, imgUIBBImage.Picture.Bitmap.Width * imgUIBBImage.Picture.Bitmap.Height);
+  load_binary_file(tmp_filename, buffer[0], Length(buffer) * sizeof(buffer[0]));
+  image_ptr := imgUIBBImage.Picture.Bitmap.ScanLine[imgUIBBImage.Picture.Bitmap.Height - 1];
+  for y := 0 to imgUIBBImage.Picture.Bitmap.Height - 1 do
+    for x := 0 to imgUIBBImage.Picture.Bitmap.Width - 1 do
+      image_ptr[(imgUIBBImage.Picture.Bitmap.Height - y - 1) * imgUIBBImage.Picture.Bitmap.Width + x] := buffer[y * imgUIBBImage.Picture.Bitmap.Width + x];
+  SetLength(buffer, 0);
+  imgUIBBImage.Invalidate;
+  uibb_r16_modified := false;
+end;
+
+procedure TResourcesEditor.save_uibb_r16;
+var
+  buffer: array of word;
+  image_ptr: TWordArrayPtr;
+  x, y: integer;
+begin
+  if (uibb_r16_filename = '') or not uibb_r16_modified then
+    exit;
+  if not manage_filesave(uibb_r16_filename, 'Data\UIBB.R16', evStructuresFilenameChange) then
+    exit;
+  SetLength(buffer, imgUIBBImage.Picture.Bitmap.Width * imgUIBBImage.Picture.Bitmap.Height);
+  image_ptr := imgUIBBImage.Picture.Bitmap.ScanLine[imgUIBBImage.Picture.Bitmap.Height - 1];
+  for y := 0 to imgUIBBImage.Picture.Bitmap.Height - 1 do
+    for x := 0 to imgUIBBImage.Picture.Bitmap.Width - 1 do
+      buffer[y * imgUIBBImage.Picture.Bitmap.Width + x] := image_ptr[(imgUIBBImage.Picture.Bitmap.Height - y - 1) * imgUIBBImage.Picture.Bitmap.Width + x];
+  save_binary_file(uibb_r16_filename, buffer[0], Length(buffer) * sizeof(buffer[0]));
+  SetLength(buffer, 0);
+  uibb_r16_modified := false;
+  fill_status_bar;
+end;
+
 procedure TResourcesEditor.apply_changes;
 begin
   store_data;
@@ -4930,8 +5048,9 @@ begin
   Structures.save_tiledata_bin;
   for filenum := 0 to Length(ResourceFile) - 1 do
     ResourceFile[filenum].save_r16;
-  Colours.save_colours_bin;
   Sounds.save_sound_rs;
+  save_uibb_r16;
+  Colours.save_colours_bin;
   StringTable.save_samples_uib;
   fill_status_bar;
 end;

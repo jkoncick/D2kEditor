@@ -4588,8 +4588,36 @@ object ResourcesEditor: TResourcesEditor
         TabOrder = 3
       end
     end
+    object PageUIBB: TTabSheet
+      Caption = 'UIBB       '
+      ImageIndex = 15
+      object imgUIBBImage: TImage
+        Left = 0
+        Top = 0
+        Width = 640
+        Height = 400
+      end
+      object btnUIBBExport: TButton
+        Left = 0
+        Top = 408
+        Width = 105
+        Height = 25
+        Caption = 'Export image'
+        TabOrder = 0
+        OnClick = btnUIBBExportClick
+      end
+      object btnUIBBImport: TButton
+        Left = 112
+        Top = 408
+        Width = 105
+        Height = 25
+        Caption = 'Import image'
+        TabOrder = 1
+        OnClick = btnUIBBImportClick
+      end
+    end
     object PageColours: TTabSheet
-      Caption = 'Colours     '
+      Caption = 'Colours    '
       ImageIndex = 14
       object imgColours: TImage
         Left = 329
