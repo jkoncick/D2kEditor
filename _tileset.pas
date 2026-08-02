@@ -1233,7 +1233,7 @@ begin
     SetLength(paint_tile_random_maps[i], 0);
     if StrLen(paint_tile_groups[i].random_map_name) > 0 then
     begin
-      map_filename := current_dir + 'tilesets\' + paint_tile_groups[i].random_map_name + '.map';
+      map_filename := current_dir + 'random_maps\' + paint_tile_groups[i].random_map_name + '.map';
       if FileExists(map_filename) then
       begin
         AssignFile(map_file, map_filename);

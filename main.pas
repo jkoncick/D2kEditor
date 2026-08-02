@@ -471,7 +471,7 @@ begin
       'This program requires original Dune 2000 graphics files to work.'#13+
       'It needs to know where Dune 2000 is located on your computer and will load graphics from that location.'#13+
       'Press YES button if you want to navigate to your Dune 2000 game location and configure it now.'#13+
-      'Press NO button if you want to configure it later. Program will fail with errors and will not be usable!',
+      'Press NO button if you want to configure it later. Program will close.',
       'First time run', MB_YESNO or MB_ICONINFORMATION) = IDYES then
     begin
       if FindDune2000Dialog.Execute then
@@ -479,8 +479,10 @@ begin
         Settings.determine_game_paths_from_path(FindDune2000Dialog.FileName);
         if Settings.GamePath <> '' then
           Application.MessageBox('Game path configured.', 'First time run', MB_OK or MB_ICONINFORMATION);
-      end;
-    end;
+      end else
+        Application.Terminate;
+    end else
+      Application.Terminate;
   end;
   // Initialize minimap buffer
   minimap_buffer := TBitmap.Create;
