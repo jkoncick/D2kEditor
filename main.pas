@@ -1218,14 +1218,15 @@ begin
   ShowMessage('Dune 2000 Map and Mission Editor'#13#13+
               'Part of D2K+ Editing tools'#13#13+
               'Made by Klofkac (kozten@seznam.cz)'#13+
-              'Version 2.3'#13+
-              'Date: 2025-06-16'#13#13+
+              'Version 3.0'#13+
+              'Date: 2026-08-03'#13#13+
               'http://github.com/jkoncick/D2kEditor'#13#13+
               'Special thanks to:'#13+
               'mvi - for making the original Mission editor'#13+
               'FunkyFr3sh - for patching Dune 2000'#13+
               'tomsons26 - for decompiling Dune 2000'#13+
-              'FED2k community - for their support');
+              'Fey - for support and help with testing'#13+
+              'FED2k and Discord community - for their support');
 end;
 
 procedure TMainWindow.MapScrollChange(Sender: TObject);

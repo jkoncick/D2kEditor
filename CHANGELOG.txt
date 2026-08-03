@@ -1,5 +1,51 @@
 D2kEditor changelog
 
+Version 3.0 (Released 2026-08-03)
+---------------------------------
+Added: PNG image format support for loading and saving images
+Added: Randomization to Remap tiles feature. If multiple target values are specified, a random one will be used.
+Added: Complete Tileset editor (previously Tile attributes editor). Allows editing of all tileset settings, 
+       no need to manually edit tileset ini file anymore.
+       Tileset settings are now saved into a .TLS file (instead of .ini file), which is loaded also by the game and
+       is put into game's data\Tilesets folder. Ini files can be still read for compatibility with older tilesets.
+       Added tile restrictions and tile armour type support. Custom tile hints directly in TLS file.
+Added: Major event editor changes and improvements. Removed Position and Side columns, all event contents is now
+       more unified to be better readable and organized. Added multiselect of events, multiple events can be moved,
+       duplicated, deleted, blocked or auto-blocked at once (with a keyboard shortcut). Added names for callable 
+       blocks, hook vars are shown in hook event content. Extended number of events limit to 16384.
+Removed: Create events and Add run-once flag options in event editor
+Added: Extended Remap structures feature to support all structure types, remapping crates, remapping AI values
+Added: Support for many new in-game features: Event profiling debug feature, Handle Building Placement hook type, 
+       Railgun weapon behavior, building and unit storage capacity, new building and unit shooting features, 
+       build queues and more new rules, new event types, extended number of explosion, warhead and armour types,
+       pre-placing explosions on map, and some others...
+Added: Improved Structures editor so that any selected item can be deleted instead of only the last one
+Removed: Copying files from CustomCampaignData to game folder when launching a map. Not needed anymore.
+Added: Zooming in art previews
+Added: Customizable side names in mission ini directly, removed players.ini files
+Added: Load last open map on start setting in Preferences
+Changed: Reworked some keyboard shortcuts, F1-F4 are used for Mission launcher, Tileset editor, Resource editor and
+         Preferences
+Changed: Structures editor is renamed to Resources editor.
+Added: Ability to edit TILEDATA.BIN, UI+Mouse graphics, UIBB.R16, COLOURS.BIN within Resources editor.
+Added: Ability to show shadow-only units
+Fixed: Power calculation formula is now same as game's, editor now shows correct power percentage
+Added: Save remap structures ini file feature
+Added: Mirror modes for tile painting
+Added: Highlighting of rules and AI values different from default
+Added: Import rules from other mission feature
+Added: Help for rules
+Added: Map size and mission preview image into mission launcher
+Added: Resources editor and Mission settings windows are resizable
+Added: Default AI Template setting in Preferences
+Fixed: Auto-smooth with block presets containing holes
+Added: AI building build order calculation feature
+Added: Updated existing AI templates and added some new
+Added: Sync building count from map feature for AI
+Removed: TILEDATA.BIN and COLOURS.BIN file is no longer shipped with the editor. Editor now contains no game files.
+Changed: Random paint maps are now in its own "random_maps" folder instead of tilesets folder
+
+
 Version 2.3 (Released 2025-06-16)
 ---------------------------------
 Added: Remap Structures feature
