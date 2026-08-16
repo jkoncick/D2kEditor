@@ -135,11 +135,12 @@ object EventDialog: TEventDialog
       Width = 312
       Height = 288
       Align = alLeft
-      ColCount = 3
+      ColCount = 4
       DefaultRowHeight = 18
       RowCount = 2
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowSelect, goThumbTracking]
       PopupMenu = ConditionGridPopupMenu
+      ScrollBars = ssVertical
       TabOrder = 0
       OnDblClick = ConditionGridDblClick
       OnDrawCell = ConditionGridDrawCell

@@ -518,7 +518,9 @@ begin
   ConditionGrid.Cells[1,0] := 'Condition type';
   ConditionGrid.ColWidths[1] := 84;
   ConditionGrid.Cells[2,0] := 'Contents';
-  ConditionGrid.ColWidths[2] := 180;
+  ConditionGrid.ColWidths[2] := 222;
+  ConditionGrid.Cells[3,0] := 'Note';
+  ConditionGrid.ColWidths[3] := 240;
   StringList := TStringList.Create;
   // Initialize music names
   if FindFirst(Settings.GamePath + '\Data\Music\*.AUD', 0, SR) = 0 then
@@ -580,16 +582,18 @@ end;
 
 procedure TEventDialog.FormResize(Sender: TObject);
 begin
-  if ClientWidth >= (pnConditionTypeList.Left + pnConditionTypeList.Width + pnConditionFilter.Width) then
+  if ClientWidth >= (ConditionGrid.Left + 312 + + ConditionPropertiesPanel.Width + pnConditionTypeList.Width + pnConditionFilter.Width) then
   begin
     pnConditionFilter.Parent := LowerPanel;
     pnConditionFilter.Top := 0;
     pnConditionFilter.Left := pnConditionTypeList.Left + pnConditionTypeList.Width;
+    ConditionGrid.Width := Max(LowerPanel.Width - EventPropertiesPanel.Width - EventDataPanel.Width - EventConditionListPanel.Width - ConditionPropertiesPanel.Width - pnConditionTypeList.Width - pnConditionFilter.Width - 4, 312);
   end else
   begin
     pnConditionFilter.Parent := EventDialog;
     pnConditionFilter.Top := Splitter1.Top - pnConditionFilter.Height;
     pnConditionFilter.Left := ClientWidth - pnConditionFilter.Width;
+    ConditionGrid.Width := Max(LowerPanel.Width - EventPropertiesPanel.Width - EventDataPanel.Width - EventConditionListPanel.Width - ConditionPropertiesPanel.Width - pnConditionTypeList.Width - 4, 312);
   end;
   SelectVariablePanel.Height := EventGrid.Height;
   lbSelectVariableList.Height := SelectVariablePanel.Height - pnSelectVariableBottomPanel.Height - lbSelectVariableList.Top - 4;
@@ -663,6 +667,7 @@ begin
       select_event(newpos)
     else
       EventGrid.Row := newpos + 1;
+    EventGrid.SetFocus;
   end;
 end;
 
@@ -3032,6 +3037,8 @@ begin
   ConditionGrid.Cells[1,row] := ct.name;
   // Contents
   ConditionGrid.Cells[2,row] := Mission.get_condition_contents(index, false);
+  // Note
+  ConditionGrid.Cells[3,row] := MissionIni.condition_notes[index];
 end;
 
 procedure TEventDialog.select_condition(index: integer);

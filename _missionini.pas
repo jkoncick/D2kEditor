@@ -66,8 +66,8 @@ type
     procedure reset_mission_ini_data;
     procedure reset_rules_to_defaults;
     // Export and import
-    procedure export_events(first_event, last_event: integer; filename: string);
-    procedure import_events(first_event: integer; filename: string);
+    procedure export_events(first_event, last_event: integer; condition_used: array of boolean; condition_mapping: array of byte; filename: string);
+    procedure import_events(first_event, first_condition: integer; filename: string);
     procedure import_rules(filename: string);
     // Custom text related procedures
     function get_custom_text(index: integer; var text: String): boolean;
@@ -380,7 +380,7 @@ begin
   tmp_strings.Destroy;
 end;
 
-procedure TMissionIni.export_events(first_event, last_event: integer; filename: string);
+procedure TMissionIni.export_events(first_event, last_event: integer; condition_used: array of boolean; condition_mapping: array of byte; filename: string);
 var
   tmp_filename: string;
   i, j: integer;
@@ -426,6 +426,9 @@ begin
   for i := first_event to last_event do
     if event_notes[i] <> '' then
       ini.WriteString('Notes', 'event'+inttostr(i - first_event), event_notes[i]);
+  for i := 0 to MAX_CONDITIONS - 1 do
+    if condition_used[i] and (condition_notes[i] <> '') then
+      ini.WriteString('Notes', 'condition'+inttostr(condition_mapping[i]), condition_notes[i]);
 
   // Find out which variables are used in selected events
   FillChar(variable_used[0], sizeof(variable_used), 0);
@@ -489,7 +492,7 @@ begin
   ini.Destroy;
 end;
 
-procedure TMissionIni.import_events(first_event: integer; filename: string);
+procedure TMissionIni.import_events(first_event, first_condition: integer; filename: string);
 var
   tmp_filename: string;
   i: integer;
@@ -527,9 +530,18 @@ begin
   ini.ReadSection('Notes', tmp_strings);
   for i := 0 to tmp_strings.Count - 1 do
   begin
-    num := StrToInt(Copy(tmp_strings[i], 6, Length(tmp_strings[i]) - 5)) + first_event;
-    if num < Length(event_notes) then
-      event_notes[num] := ini.ReadString('Notes', tmp_strings[i], '');
+    if AnsiStartsText('event', tmp_strings[i]) then
+    begin
+      num := StrToInt(Copy(tmp_strings[i], 6, Length(tmp_strings[i]) - 5)) + first_event;
+      if num < Length(event_notes) then
+        event_notes[num] := ini.ReadString('Notes', tmp_strings[i], '');
+    end
+    else if AnsiStartsText('condition', tmp_strings[i]) then
+    begin
+      num := StrToInt(Copy(tmp_strings[i], 10, Length(tmp_strings[i]) - 9)) + first_condition;
+      if num < Length(condition_notes) then
+        condition_notes[num] := ini.ReadString('Notes', tmp_strings[i], '');
+    end
   end;
   // Load Variables section
   tmp_strings.Clear;

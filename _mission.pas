@@ -1635,7 +1635,7 @@ begin
   // Clean up
   SetLength(event_buffer, 0);
   // Process extra data in mission ini file
-  MissionIni.export_events(first_event, last_event, filename);
+  MissionIni.export_events(first_event, last_event, condition_used, condition_mapping, filename);
 end;
 
 procedure TMission.import_events(filename: string);
@@ -1645,7 +1645,7 @@ var
   exp_num_events, exp_num_conditions: integer;
   i, j: integer;
   f: file of byte;
-  first_event: integer;
+  first_event, first_condition: integer;
 begin
   // Load data from file
   AssignFile(f, filename);
@@ -1695,6 +1695,7 @@ begin
     end;
     condition_data[num_conditions + i] := condition_buffer[i];
   end;
+  first_condition := num_conditions;
   num_conditions := Min(num_conditions + exp_num_conditions, MAX_CONDITIONS);
   // Compute event indentation
   compute_event_indentation;
@@ -1704,7 +1705,7 @@ begin
   // Register events in dispatcher
   Dispatcher.register_event(evMisEventsImport);
   // Process extra data in mission ini file
-  MissionIni.import_events(first_event, filename);
+  MissionIni.import_events(first_event, first_condition, filename);
 end;
 
 procedure TMission.compute_event_indentation;
