@@ -153,6 +153,7 @@ begin
   load_window_position(MissionDialog);
   MissionDialog.StringValueList.Height := load_control_property_int(MissionDialog.StringValueList, 'Height', MissionDialog.StringValueList.Height);
   load_window_position(EventDialog);
+  EventDialog.pnEventBookmarkList.Width := load_control_property_int(EventDialog.pnEventBookmarkList, 'Width', EventDialog.pnEventBookmarkList.Width);
   EventDialog.LowerPanel.Height := load_control_property_int(EventDialog.LowerPanel, 'Height', EventDialog.LowerPanel.Height);
   for i := EventDialog.EventGrid.FixedCols to EventDialog.EventGrid.ColCount - 1 do
     EventDialog.EventGrid.ColWidths[i] := load_control_property_int(EventDialog.EventGrid, Format('ColWidths[%d]', [i]), EventDialog.EventGrid.ColWidths[i]);
@@ -256,6 +257,7 @@ begin
   save_window_position(MissionDialog);
   save_control_property_int(MissionDialog.StringValueList, 'Height', MissionDialog.StringValueList.Height);
   save_window_position(EventDialog);
+  save_control_property_int(EventDialog.pnEventBookmarkList, 'Width', EventDialog.pnEventBookmarkList.Width);
   save_control_property_int(EventDialog.LowerPanel, 'Height', EventDialog.LowerPanel.Height);
   for i := EventDialog.EventGrid.FixedCols to EventDialog.EventGrid.ColCount - 1 do
     save_control_property_int(EventDialog.EventGrid, Format('ColWidths[%d]', [i]), EventDialog.EventGrid.ColWidths[i]);

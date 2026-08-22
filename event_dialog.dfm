@@ -46,10 +46,17 @@ object EventDialog: TEventDialog
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    object Splitter2: TSplitter
+      Left = 1181
+      Top = 0
+      Width = 4
+      Height = 401
+      Align = alRight
+    end
     object EventGrid: TStringGrid
       Left = 168
       Top = 0
-      Width = 1202
+      Width = 1013
       Height = 401
       Align = alClient
       ColCount = 6
@@ -71,6 +78,7 @@ object EventDialog: TEventDialog
       OnMouseWheelDown = EventGridMouseWheelDown
       OnMouseWheelUp = EventGridMouseWheelUp
       OnSelectCell = EventGridSelectCell
+      OnTopLeftChanged = EventGridTopLeftChanged
       RowHeights = (
         18
         18)
@@ -116,6 +124,42 @@ object EventDialog: TEventDialog
           Height = 21
           TabOrder = 0
           OnChange = edEventTypeFilterChange
+        end
+      end
+    end
+    object pnEventBookmarkList: TPanel
+      Left = 1185
+      Top = 0
+      Width = 185
+      Height = 401
+      Align = alRight
+      BevelOuter = bvNone
+      TabOrder = 2
+      object lbEventBookmarkList: TListBox
+        Left = 0
+        Top = 21
+        Width = 185
+        Height = 380
+        Align = alClient
+        ItemHeight = 13
+        TabOrder = 0
+        OnClick = lbEventBookmarkListClick
+        OnDblClick = lbEventBookmarkListDblClick
+      end
+      object pnEventBookmarkLabel: TPanel
+        Left = 0
+        Top = 0
+        Width = 185
+        Height = 21
+        Align = alTop
+        BevelOuter = bvNone
+        TabOrder = 1
+        object lblEventBookmarkLabel: TLabel
+          Left = 4
+          Top = 4
+          Width = 86
+          Height = 13
+          Caption = 'Event bookmarks:'
         end
       end
     end
@@ -1320,6 +1364,11 @@ object EventDialog: TEventDialog
       Caption = '(Un)block event(s)'
       ShortCut = 16450
       OnClick = Unblockevents1Click
+    end
+    object Unbookmarkevent1: TMenuItem
+      Caption = '(Un)bookmark event'
+      ShortCut = 16468
+      OnClick = Unbookmarkevent1Click
     end
     object Exportevents1: TMenuItem
       Caption = 'Export events'

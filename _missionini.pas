@@ -449,7 +449,7 @@ begin
       if ((event.arg_var_flags and (1 shl j)) <> 0) or ((event_type.args[j].arg_type = atVariable) and evaluate_show_if(Addr(event_type.args[j].show_if), event, Addr(event_args_struct_members[0]))) then
         variable_used[get_integer_struct_member(event, Addr(event_args_struct_members[0]), j)] := true;
     // Variables used in object filter
-    if ((Ord(event_type.event_data) >= Ord(edUnitFilter)) and ((event.event_flags and 8) = 0)) or ((event_type.event_data = edCondExpr) and (event.amount > 0)) then
+    if ((Ord(event_type.event_data) >= Ord(edUnitFilter)) and ((event.event_flags and EVENTFLAG_FILTER_INDEX) = 0)) or ((event_type.event_data = edCondExpr) and (event.amount > 0)) then
     begin
       filter := Addr(event.data[1]);
       for j := 0 to Length(filter.criteria_value) - 1 do
@@ -476,9 +476,9 @@ begin
         if event.data[5 + j] > 0 then
           variable_used[event.data[13 + j]] := true;
     // Variable used in object index or filter skip
-    if (event.event_flags and 24) <> 0 then
+    if (event.event_flags and (EVENTFLAG_FILTER_SKIP_VAR or EVENTFLAG_FILTER_INDEX)) <> 0 then
        variable_used[event.filter_skip] := true;
-    if ((event.event_flags and 32) <> 0) and ((event.event_flags and 8) = 0) then
+    if ((event.event_flags and EVENTFLAG_FILTER_LIMIT_VAR) <> 0) and ((event.event_flags and EVENTFLAG_FILTER_INDEX) = 0) then
        variable_used[event.data[0]] := true;
   end;
   // Save Variables section

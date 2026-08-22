@@ -692,7 +692,7 @@ begin
             (IfThen(et.coords[0].coord_type = ctPointAndSize, event.coord_x[0], 1) + event.coord_x[1] - cnv_left) * 32,
             (IfThen(et.coords[0].coord_type = ctPointAndSize, event.coord_y[0], 1) + event.coord_y[1] - cnv_top) * 32);
         end
-        else if (et.event_data >= edUnitFilter) and (et.event_data <= edTileFilter) and ((event.event_flags and 8) = 0) and ((filter.pos_and_var_flags and 241) = 1) then
+        else if (et.event_data >= edUnitFilter) and (et.event_data <= edTileFilter) and ((event.event_flags and EVENTFLAG_FILTER_INDEX) = 0) and ((filter.pos_and_var_flags and 241) = 1) then
         begin
           if filter.pos_and_var_flags and 2 <> 0 then
             cnv_target.Pen.Style := psDot

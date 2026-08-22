@@ -238,6 +238,12 @@ type
     edpString: TPanel;
     edEventString: TEdit;
     lblEventString: TLabel;
+    pnEventBookmarkList: TPanel;
+    Splitter2: TSplitter;
+    lbEventBookmarkList: TListBox;
+    pnEventBookmarkLabel: TPanel;
+    lblEventBookmarkLabel: TLabel;
+    Unbookmarkevent1: TMenuItem;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -256,15 +262,20 @@ type
     procedure EventGridMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure EventGridMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure EventGridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+    procedure EventGridTopLeftChanged(Sender: TObject);
     procedure Duplicateevent1Click(Sender: TObject);
     procedure Deleteselectedevent1Click(Sender: TObject);
     procedure MoveUp1Click(Sender: TObject);
     procedure MoveDown1Click(Sender: TObject);
     procedure Unautoblockevents1Click(Sender: TObject);
     procedure Unblockevents1Click(Sender: TObject);
+    procedure Unbookmarkevent1Click(Sender: TObject);
     procedure Exportevents1Click(Sender: TObject);
     procedure Importevents1Click(Sender: TObject);
     procedure MarkEventsClick(Sender: TObject);
+    // Event bookmark list actions
+    procedure lbEventBookmarkListClick(Sender: TObject);
+    procedure lbEventBookmarkListDblClick(Sender: TObject);
     // Event properties panel actions
     procedure cbxEventTypeChange(Sender: TObject);
     procedure EventFlagsClick(Sender: TObject);
@@ -433,6 +444,7 @@ type
     procedure fill_event_type_list;
     procedure fill_event_grid_row(index: integer);
     procedure select_event(index: integer);
+    procedure set_event_bookmark_list_index(selected_row: integer);
     procedure fill_event_ui;
     function  get_event_arg_def(et: TEventTypeDefinitionPtr; arg_num: integer): TArgDefinitionPtr;
     procedure fill_event_gamestruct_member_combo(et: TEventTypeDefinitionPtr; var panel_top: integer);
@@ -687,6 +699,7 @@ begin
       EventGrid.Invalidate;
     select_event(ARow-1);
   end;
+  set_event_bookmark_list_index(ARow);
 end;
 
 procedure TEventDialog.EventGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -752,7 +765,7 @@ begin
       end else
         is_separator := false;
     end;
-  if ((Mission.event_data[ARow - 1].event_flags and 2) <> 0) and is_separator then
+  if ((Mission.event_data[ARow - 1].event_flags and EVENTFLAG_BLOCKED) <> 0) and is_separator then
   begin
     EventGrid.Canvas.Brush.Color := ((separator_color and $ff) shl 16) or (separator_color and $ff00) or ((separator_color and $ff0000) shr 16);
     EventGrid.Canvas.FillRect(Rect);
@@ -784,6 +797,11 @@ begin
     exit;
   EventGrid.Canvas.FillRect(Rect);
   EventGrid.Canvas.TextRect(Rect,Rect.Left+2,Rect.Top+2,EventGrid.Cells[ACol,ARow]);
+end;
+
+procedure TEventDialog.EventGridTopLeftChanged(Sender: TObject);
+begin
+  set_event_bookmark_list_index(EventGrid.Row);
 end;
 
 procedure TEventDialog.Duplicateevent1Click(Sender: TObject);
@@ -893,12 +911,12 @@ begin
   last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
   if (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
-  is_blocked := (Mission.event_data[first_event].event_flags and 1) = 1;
+  is_blocked := (Mission.event_data[first_event].event_flags and EVENTFLAG_AUTOBLOCK) = EVENTFLAG_AUTOBLOCK;
   for i := first_event to last_event do
     if is_blocked then
-      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not 1)
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not EVENTFLAG_AUTOBLOCK)
     else
-      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or 1;
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or EVENTFLAG_AUTOBLOCK;
   fill_grids;
   select_event(selected_event);
 end;
@@ -913,12 +931,30 @@ begin
   last_event := Min(EventGrid.Selection.Bottom - 1, Mission.num_events - 1);
   if (first_event = Mission.num_events) or (Mission.num_events = 0) then
     exit;
-  is_blocked := (Mission.event_data[first_event].event_flags and 2) = 2;
+  is_blocked := (Mission.event_data[first_event].event_flags and EVENTFLAG_BLOCKED) = EVENTFLAG_BLOCKED;
   for i := first_event to last_event do
     if is_blocked then
-      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not 2)
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags and (not EVENTFLAG_BLOCKED)
     else
-      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or 2;
+      Mission.event_data[i].event_flags := Mission.event_data[i].event_flags or EVENTFLAG_BLOCKED;
+  fill_grids;
+  select_event(selected_event);
+end;
+
+procedure TEventDialog.Unbookmarkevent1Click(Sender: TObject);
+var
+  first_event: integer;
+  is_bookmark: boolean;
+begin
+  first_event := EventGrid.Row - 1;
+  if (first_event = Mission.num_events) or (Mission.num_events = 0) then
+    exit;
+  is_bookmark := (Mission.event_data[first_event].event_flags and EVENTFLAG_BOOKMARK) = EVENTFLAG_BOOKMARK;
+  if is_bookmark then
+    Mission.event_data[first_event].event_flags := Mission.event_data[first_event].event_flags and (not EVENTFLAG_BOOKMARK)
+  else
+    Mission.event_data[first_event].event_flags := Mission.event_data[first_event].event_flags or EVENTFLAG_BOOKMARK;
+  Mission.compute_event_bookmarks;
   fill_grids;
   select_event(selected_event);
 end;
@@ -947,6 +983,23 @@ begin
   EventGrid.Invalidate;
 end;
 
+procedure TEventDialog.lbEventBookmarkListClick(Sender: TObject);
+var
+  event_num: integer;
+begin
+  event_num := Mission.event_bookmarks[lbEventBookmarkList.ItemIndex];
+  EventGrid.TopRow := Max(event_num - 3, 1);
+end;
+
+procedure TEventDialog.lbEventBookmarkListDblClick(Sender: TObject);
+var
+  event_num: integer;
+begin
+  event_num := Mission.event_bookmarks[lbEventBookmarkList.ItemIndex];
+  EventGrid.Row := event_num + 1;
+  EventGrid.SetFocus;
+end;
+
 procedure TEventDialog.cbxEventTypeChange(Sender: TObject);
 begin
   change_event_type(EventConfig.event_type_mapping[cbxEventType.ItemIndex]);
@@ -956,13 +1009,13 @@ procedure TEventDialog.EventFlagsClick(Sender: TObject);
 begin
   if loading then
     exit;
-  tmp_event.event_flags := tmp_event.event_flags and (not 7);
+  tmp_event.event_flags := tmp_event.event_flags and (not (EVENTFLAG_AUTOBLOCK or EVENTFLAG_BLOCKED or EVENTFLAG_CONDITIONS_OR));
   if cbEventAutoBlock.Checked then
-    tmp_event.event_flags := tmp_event.event_flags or 1;
+    tmp_event.event_flags := tmp_event.event_flags or EVENTFLAG_AUTOBLOCK;
   if cbEventBlocked.Checked then
-    tmp_event.event_flags := tmp_event.event_flags or 2;
+    tmp_event.event_flags := tmp_event.event_flags or EVENTFLAG_BLOCKED;
   if rbEventConditionsOr.Checked then
-    tmp_event.event_flags := tmp_event.event_flags or 4;
+    tmp_event.event_flags := tmp_event.event_flags or EVENTFLAG_CONDITIONS_OR;
 end;
 
 procedure TEventDialog.sbShowEventHelpClick(Sender: TObject);
@@ -1367,11 +1420,11 @@ end;
 
 procedure TEventDialog.btnEventFilterSkipVarToggleClick(Sender: TObject);
 begin
-  if (tmp_event.event_flags and 16) = 0 then
+  if (tmp_event.event_flags and EVENTFLAG_FILTER_SKIP_VAR) = 0 then
     start_variable_selection(vsEventFilterSkip, 0, 0, true)
   else
   begin
-    tmp_event.event_flags := tmp_event.event_flags and (not 16);
+    tmp_event.event_flags := tmp_event.event_flags and (not EVENTFLAG_FILTER_SKIP_VAR);
     tmp_event.filter_skip := 0;
     fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
   end;
@@ -1379,11 +1432,11 @@ end;
 
 procedure TEventDialog.btnEventFilterLimitVarToggleClick(Sender: TObject);
 begin
-  if (tmp_event.event_flags and 32) = 0 then
+  if (tmp_event.event_flags and EVENTFLAG_FILTER_LIMIT_VAR) = 0 then
     start_variable_selection(vsEventFilterLimit, 0, 0, true)
   else
   begin
-    tmp_event.event_flags := tmp_event.event_flags and (not 32);
+    tmp_event.event_flags := tmp_event.event_flags and (not EVENTFLAG_FILTER_LIMIT_VAR);
     tmp_event.data[0] := 0;
     fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
   end;
@@ -1401,10 +1454,10 @@ end;
 
 procedure TEventDialog.btnEventFilterIndexToggleClick(Sender: TObject);
 begin
-  tmp_event.event_flags := (tmp_event.event_flags and (not 8)) or ((not (tmp_event.event_flags and 8)) and 8);
+  tmp_event.event_flags := (tmp_event.event_flags and (not EVENTFLAG_FILTER_INDEX)) or ((not (tmp_event.event_flags and EVENTFLAG_FILTER_INDEX)) and EVENTFLAG_FILTER_INDEX);
   tmp_event.filter_skip := 0;
   fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
-  if (tmp_event.event_flags and 8) <> 0 then
+  if (tmp_event.event_flags and EVENTFLAG_FILTER_INDEX) <> 0 then
     start_variable_selection(vsEventObjectIndex, 0, 0, true);
 end;
 
@@ -2302,12 +2355,20 @@ end;
 procedure TEventDialog.fill_grids;
 var
   i: integer;
+  tmp_strings: TStringList;
 begin
   loading := true;
   // Fill events
   EventGrid.RowCount := Min(Mission.num_events + IfThen(Settings.EventGridShowEmptyLines, EventGrid.Height div EventGrid.RowHeights[1], 2), MAX_EVENTS + 1);
   for i := 0 to EventGrid.RowCount - 2 do
     fill_event_grid_row(i);
+  // Fill event bookmarks
+  tmp_strings := TStringList.Create;
+  for i := 0 to Mission.event_bookmarks_count - 1 do
+    tmp_strings.Add(IntToStr(Mission.event_bookmarks[i]) + ' - ' + MissionIni.event_notes[Mission.event_bookmarks[i]]);
+  lbEventBookmarkList.Items := tmp_strings;
+  EventGridTopLeftChanged(self);
+  tmp_strings.Destroy;
   // Fill conditions
   ConditionGrid.RowCount := Min(Mission.num_conditions + IfThen(Settings.EventGridShowEmptyLines, ConditionGrid.Height div ConditionGrid.RowHeights[1], 2), MAX_CONDITIONS + 1);
   for i := 0 to ConditionGrid.RowCount - 2 do
@@ -2389,7 +2450,7 @@ begin
   et := Addr(EventConfig.event_types[event.event_type]);
   EventGrid.Cells[0,row] := inttostr(index);
   // Basic information
-  EventGrid.Cells[1,row] := IfThen((event.event_flags and 1) = 1, 'A', '') + IfThen((event.event_flags and 2) = 2, 'B', '');
+  EventGrid.Cells[1,row] := IfThen((event.event_flags and EVENTFLAG_AUTOBLOCK) = EVENTFLAG_AUTOBLOCK, 'A', '') + IfThen((event.event_flags and EVENTFLAG_BLOCKED) = EVENTFLAG_BLOCKED, 'B', '');
   indent := '';
   for i := 0 to Mission.event_indentation[index].indent - 1 do
     indent := indent + '  ';
@@ -2422,15 +2483,33 @@ begin
   cbxEventType.ItemIndex := item_index;
   cbxEventType.Enabled := event_valid;
   loading := true;
-  cbEventAutoBlock.Checked := event_valid and ((tmp_event.event_flags and 1) = 1);
-  cbEventBlocked.Checked := event_valid and ((tmp_event.event_flags and 2) = 2);
-  rbEventConditionsOr.Checked := event_valid and ((tmp_event.event_flags and 4) = 4);
+  cbEventAutoBlock.Checked := event_valid and ((tmp_event.event_flags and EVENTFLAG_AUTOBLOCK) = EVENTFLAG_AUTOBLOCK);
+  cbEventBlocked.Checked := event_valid and ((tmp_event.event_flags and EVENTFLAG_BLOCKED) = EVENTFLAG_BLOCKED);
+  rbEventConditionsOr.Checked := event_valid and ((tmp_event.event_flags and EVENTFLAG_CONDITIONS_OR) = EVENTFLAG_CONDITIONS_OR);
   rbEventConditionsAnd.Checked := not rbEventConditionsOr.Checked;
   loading := false;
   edEventNote.Enabled := event_valid;
   fill_event_ui;
   fill_event_help_text;
   selected_event_had_counterpart := event_valid and (Mission.event_indentation[index].counterpart_event <> -1);
+end;
+
+procedure TEventDialog.set_event_bookmark_list_index(selected_row: integer);
+var
+  current_row: integer;
+  bookmark_index: integer;
+  i: integer;
+begin
+  if (selected_row >= EventGrid.TopRow) and (selected_row < EventGrid.TopRow + EventGrid.VisibleRowCount) then
+    current_row := selected_row - 1
+  else
+    current_row := EventGrid.TopRow + 3;
+  bookmark_index := -1;
+  for i := 0 to Mission.event_bookmarks_count - 1 do
+    if current_row >= Mission.event_bookmarks[i] then
+      bookmark_index := i;
+  if lbEventBookmarkList.ItemIndex <> bookmark_index then
+    lbEventBookmarkList.ItemIndex := bookmark_index;
 end;
 
 procedure TEventDialog.fill_event_ui;
@@ -2682,7 +2761,7 @@ begin
   if panel = edpFilter then
   begin
     btnEventFilterIndexToggle.Visible := EventConfig.event_types[tmp_event.event_type].allow_obj_index;
-    if (tmp_event.event_flags and 8) <> 0 then
+    if (tmp_event.event_flags and EVENTFLAG_FILTER_INDEX) <> 0 then
     begin
       btnEventFilterIndexToggle.Caption := 'Filter';
       pnEventFilterBody.Visible := False;
@@ -2697,7 +2776,7 @@ begin
       pnEventFilterLimitSkip.Visible := object_type < 7;
       edEventFilterIndexVar.Visible := False;
       lblEventFilterIndexVar.Visible := False;
-      if (tmp_event.event_flags and 16) <> 0 then
+      if (tmp_event.event_flags and EVENTFLAG_FILTER_SKIP_VAR) <> 0 then
       begin
         seEventFilterSkip.Visible := False;
         edEventFilterSkipVar.Visible := True;
@@ -2710,7 +2789,7 @@ begin
         edEventFilterSkipVar.Visible := False;
         btnEventFilterSkipVarToggle.Caption := 'V';
       end;
-      if (tmp_event.event_flags and 32) <> 0 then
+      if (tmp_event.event_flags and EVENTFLAG_FILTER_LIMIT_VAR) <> 0 then
       begin
         seEventFilterLimit.Visible := False;
         edEventFilterLimitVar.Visible := True;
@@ -3882,13 +3961,13 @@ begin
       end;
     vsEventFilterSkip:
       begin
-        tmp_event.event_flags := tmp_event.event_flags or 16;
+        tmp_event.event_flags := tmp_event.event_flags or EVENTFLAG_FILTER_SKIP_VAR;
         tmp_event.filter_skip := lbSelectVariableList.ItemIndex;
         fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
       end;
     vsEventFilterLimit:
       begin
-        tmp_event.event_flags := tmp_event.event_flags or 32;
+        tmp_event.event_flags := tmp_event.event_flags or EVENTFLAG_FILTER_LIMIT_VAR;
         tmp_event.data[0] := lbSelectVariableList.ItemIndex;
         fill_event_data_panel(edpFilter, true, fcgs[0].object_type);
       end;

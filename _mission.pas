@@ -14,6 +14,14 @@ const message_var_data_type: array[0..18] of string = ('', 'Num', 'Tim', 'Hex', 
 // *****************************************************************************
 // Event definition
 // *****************************************************************************
+const EVENTFLAG_AUTOBLOCK =         1;
+const EVENTFLAG_BLOCKED =           2;
+const EVENTFLAG_CONDITIONS_OR =     4;
+const EVENTFLAG_FILTER_INDEX =      8;
+const EVENTFLAG_FILTER_SKIP_VAR =   16;
+const EVENTFLAG_FILTER_LIMIT_VAR =  32;
+const EVENTFLAG_BOOKMARK =          64;
+
 type
   TEvent = packed record
     coord_x: array[0..3] of byte;          // 0
@@ -188,6 +196,8 @@ type
     event_indentation: array[0..MAX_EVENTS-1] of TEventIndentationData;
     event_markers: array[0..max_map_width-1, 0..max_map_height-1] of TEventMarker;
     event_areas: array[0..max_map_width-1, 0..max_map_height-1] of TEventArea;
+    event_bookmarks: array[0..MAX_EVENTS-1] of word;
+    event_bookmarks_count: integer;
 
   public
     procedure init;
@@ -228,6 +238,7 @@ type
     procedure compute_event_indentation;
     function compute_event_indentation_step(first_event: integer; indent: integer; inside_block, inside_if, inside_loop: boolean): integer;
     procedure adjust_event_positions(shift_x: integer; shift_y: integer);
+    procedure compute_event_bookmarks;
     function check_errors: String;
     function get_side_house_id(side: integer): integer;
     procedure remap_filter_criteria(filename: string);
@@ -316,8 +327,9 @@ begin
   MissionIni.load_mission_ini(map_filename);
   // Change tileset according to mission's tileset
   Tileset.change_tileset_by_name(tileset_name, tileatr_name);
-  // Compute event indentation
+  // Compute event indentation and bookmarks
   compute_event_indentation;
+  compute_event_bookmarks;
   // Do needed actions
   Dispatcher.register_event(evMisLoad);
 end;
@@ -441,6 +453,8 @@ begin
     end;
   // Time limit
   time_limit := -1;
+  // Compute event bookmarks
+  compute_event_bookmarks;
   // Clear mofication flag
   mis_modified := false;
 end;
@@ -591,7 +605,7 @@ begin
         y := event.coord_y[0];
         marker := et.coords[0].marker;
       end
-      else if (et.event_data >= edUnitFilter) and (et.event_data <= edTileFilter) and ((event.event_flags and 8) = 0) and ((filter.pos_and_var_flags and 241) = 1) then
+      else if (et.event_data >= edUnitFilter) and (et.event_data <= edTileFilter) and ((event.event_flags and EVENTFLAG_FILTER_INDEX) = 0) and ((filter.pos_and_var_flags and 241) = 1) then
       begin
         x := filter.pos_values[0];
         y := filter.pos_values[1];
@@ -788,7 +802,7 @@ var
   i: integer;
 begin
   event := Addr(event_data[index]);
-  conditions := IfThen((event.event_flags and 4) = 0, '&  ', 'o  ');
+  conditions := IfThen((event.event_flags and EVENTFLAG_CONDITIONS_OR) = 0, '&  ', 'o  ');
   for i := 0 to event.num_conditions - 1 do
   begin
     if i > 0 then
@@ -1101,25 +1115,25 @@ begin
   end;
   if et.event_data >= edUnitFilter then
   begin
-    if (event.event_flags and 8) <> 0 then
+    if (event.event_flags and EVENTFLAG_FILTER_INDEX) <> 0 then
     begin
       contents := 'Object index: ' + get_variable_name(event.filter_skip, 1, event_id);
     end else
     begin
       contents := 'Filter: ';
-      if (event.filter_skip > 0) or ((event.event_flags and 16) <> 0) then
+      if (event.filter_skip > 0) or ((event.event_flags and EVENTFLAG_FILTER_SKIP_VAR) <> 0) then
       begin
         contents := contents + 'Skip(';
-        if (event.event_flags and 16) <> 0 then
+        if (event.event_flags and EVENTFLAG_FILTER_SKIP_VAR) <> 0 then
           contents := contents +  get_variable_name(event.filter_skip, 1, event_id)
         else
           contents := contents + IntToStr(event.filter_skip);
         contents := contents + ') ';
       end;
-      if (event.data[0] > 0) or ((event.event_flags and 32) <> 0) then
+      if (event.data[0] > 0) or ((event.event_flags and EVENTFLAG_FILTER_LIMIT_VAR) <> 0) then
       begin
         contents := contents + 'Limit(';
-        if (event.event_flags and 32) <> 0 then
+        if (event.event_flags and EVENTFLAG_FILTER_LIMIT_VAR) <> 0 then
           contents := contents + get_variable_name(event.data[0], 1, event_id)
         else
           contents := contents + IntToStr(event.data[0]);
@@ -1267,6 +1281,7 @@ begin
   begin
     event_data[position] := event_data[copy_from_event];
     MissionIni.event_notes[position] := MissionIni.event_notes[copy_from_event];
+    event_data[position].event_flags := event_data[position].event_flags and (not EVENTFLAG_BOOKMARK);
   end;
   // Go through all events and update event references
   for i := 0 to num_events do
@@ -1287,8 +1302,9 @@ begin
   end;
   // Increase number of events
   inc(num_events);
-  // Compute event indentation
+  // Compute event indentation and bookmarks
   compute_event_indentation;
+  compute_event_bookmarks;
   // Finalize
   mis_modified := true;
   result := position;
@@ -1366,8 +1382,9 @@ begin
   end;
   // Decrease number of events
   dec(num_events);
-  // Compute event indentation
+  // Compute event indentation and bookmarks
   compute_event_indentation;
+  compute_event_bookmarks;
   // Finalize
   mis_modified := true;
   // Update event markers on map if event had position
@@ -1502,8 +1519,9 @@ begin
       end;
     end;
   end;
-  // Compute event indentation
+  // Compute event indentation and bookmarks
   compute_event_indentation;
+  compute_event_bookmarks;
   // Update event markers on map if event had position
   if (EventConfig.event_types[event_data[e1].event_type].has_map_pos) or (EventConfig.event_types[event_data[e2].event_type].has_map_pos) then
     Dispatcher.register_event(evMisEventPositionChange);
@@ -1697,8 +1715,9 @@ begin
   end;
   first_condition := num_conditions;
   num_conditions := Min(num_conditions + exp_num_conditions, MAX_CONDITIONS);
-  // Compute event indentation
+  // Compute event indentation and bookmarks
   compute_event_indentation;
+  compute_event_bookmarks;
   // Clean up
   SetLength(event_buffer, 0);
   SetLength(condition_buffer, 0);
@@ -1883,6 +1902,20 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TMission.compute_event_bookmarks;
+var
+  i: integer;
+begin
+  FillChar(event_bookmarks, sizeof(event_bookmarks), 0);
+  event_bookmarks_count := 0;
+  for i := 0 to num_events - 1 do
+    if (event_data[i].event_flags and EVENTFLAG_BOOKMARK) = EVENTFLAG_BOOKMARK then
+    begin
+      event_bookmarks[event_bookmarks_count] := i;
+      Inc(event_bookmarks_count);
+    end;
 end;
 
 function TMission.check_errors: String;
