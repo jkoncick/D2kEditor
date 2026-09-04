@@ -17,6 +17,13 @@ type
     is_first: boolean;
   end;
 
+type
+  TBlockPresetCoverageEntry = record
+    times_used: byte;
+    key: byte;
+    variant: byte;
+  end;
+
 const atr_colors_game: array[0..31] of cardinal = (
   $000800, // Building/Unit owner side (bit1)
   $001000, // Building/Unit owner side (bit2)
@@ -356,7 +363,7 @@ type
     block_preset_tiles: array[0..15] of word;
 
     // Block preset coverage
-    block_preset_coverage: array[0..max_tileset_tiles-1] of byte;
+    block_preset_coverage: array[0..max_tileset_tiles-1] of TBlockPresetCoverageEntry;
 
     // Undo variables
     undo_history: array[0..max_undo_steps] of TUndoEntry;
@@ -542,7 +549,11 @@ begin
     Close;
   if key = 13 then
   begin
-    if (PageControl.ActivePage = PageColors) then
+    if (PageControl.ActivePage = PageImage) and (ActiveControl = seNumberOfTiles) then
+      btnNumberOfTilesApplyClick(Sender)
+    else if (PageControl.ActivePage = PageAttributes) and ((ActiveControl = edTileAtrValue) or (ActiveControl = edTileAtrNotValue)) then
+      btnTileAtrValueApplyClick(Sender)
+    else if (PageControl.ActivePage = PageColors) then
       btnMinimapColorRuleApplyClick(Sender)
     else if (PageControl.ActivePage = PageFillArea) then
       btnFillAreaRuleApplyClick(Sender)
@@ -551,7 +562,7 @@ begin
     else if (PageControl.ActivePage = PagePresets) then
       btnBlockPresetGroupApplyClick(Sender);
   end;
-  if (ActiveControl is TEdit) or (ActiveControl is TValueListEditor) then
+  if (ActiveControl is TEdit) or (ActiveControl is TSpinEdit) or (ActiveControl is TValueListEditor) then
     exit;
   // Global shortcuts
   case key of
@@ -562,8 +573,6 @@ begin
   if (PageControl.ActivePage = PageImage) then
   begin
     // Image page shortcuts
-    if (ActiveControl = seNumberOfTiles) and (Key = 13) then
-      btnNumberOfTilesApplyClick(Sender);
     case key of
       ord('I'): btnImportTilesetPortionClick(Sender);
       ord('E'): btnExportTilesetPortionClick(Sender);
@@ -573,8 +582,6 @@ begin
   else if (PageControl.ActivePage = PageAttributes) then
   begin
     // Attributes page shortcuts
-    if ((ActiveControl = edTileAtrValue) or (ActiveControl = edTileAtrNotValue)) and (Key = 13) then
-      btnTileAtrValueApplyClick(Sender);
     case key of
       ord('M'): cbMarkSelection.Checked := not cbMarkSelection.Checked;
       ord('E'): cbDrawEditorAttributes.Checked := not cbDrawEditorAttributes.Checked;
@@ -980,7 +987,7 @@ begin
   else if PageControl.ActivePage = PageColors then
   begin
     color := Tileset.get_tile_color(tile_index, 0, rule_index);
-    hint_str := 'Rule ' + inttostr(rule_index) + ': $' + inttohex(color, 6);
+    hint_str := 'Rule ' + inttostr(rule_index) + ' (' + Tileset.minimap_color_rules[rule_index].name + '): $' + inttohex(color, 6);
     show_hint := true;
   end
   else if PageControl.ActivePage = PageFillArea then
@@ -1000,7 +1007,7 @@ begin
   end
   else if PageControl.ActivePage = PagePresets then
   begin
-    hint_str := inttostr(block_preset_coverage[tile_index]) + ' occurences';
+    hint_str := inttostr(block_preset_coverage[tile_index].times_used) + ' occurences';
     tile_paint_group := Tileset.get_tile_paint_group(tile_index);
     if tile_paint_group <> -128 then
       hint_str := hint_str + #13'Paint group: ' + Tileset.paint_tile_groups[tile_paint_group].name;
@@ -1965,7 +1972,7 @@ begin
   tile_x := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].tile_index mod 20;
   tile_y := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].tile_index div 20;
   imgPaintTileGroupButtonImage.Canvas.CopyRect(Rect(0,0,32,32), Tileset.tileimage.Canvas, Rect(tile_x*32, tile_y*32, tile_x*32+32, tile_y*32+32));
-  imgPaintTileGroupButtonImage.Hint := 'Tile index: ' + IntToStr(Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].tile_index);
+  imgPaintTileGroupButtonImage.Hint := 'Tile index: ' + IntToStr(Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].tile_index) + #13'Middle-click a tile from tileset to set button image.';
   edPaintTileGroupName.Text := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].name;
   edPaintTileGroupRestrictionRule.Text := Tileset.rule_to_string(Addr(Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].restriction_rule));
   cbxPaintTileGroupSmoothPresetGroup.ItemIndex := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].smooth_preset_group + 1;
@@ -2295,7 +2302,7 @@ begin
         else if PageControl.ActivePage = PagePresets then
         begin
           tile_paint_group := Tileset.get_tile_paint_group(tile_index);
-          if (block_preset_coverage[tile_index] > 0) or ((tile_paint_group <> -128) and (not cbMarkSelectedItem.Checked)) then
+          if (block_preset_coverage[tile_index].times_used > 0) or ((tile_paint_group <> -128) and (not cbMarkSelectedItem.Checked)) then
           begin
             mark_tile := true;
             color := $000000;
@@ -2304,9 +2311,13 @@ begin
               color := $D00000;
               tile_text := Tileset.get_paint_tile_group_char(tile_paint_group);
             end;
-            if block_preset_coverage[tile_index] = 1 then
-              color := color or $00A000
-            else if block_preset_coverage[tile_index] > 1 then
+            if block_preset_coverage[tile_index].times_used = 1 then
+            begin
+              color := color or $00A000;
+              if cbMarkSelectedItem.Checked then
+                tile_text := block_preset_keys[block_preset_coverage[tile_index].key] + ' ' + IntToStr(block_preset_coverage[tile_index].variant);
+            end
+            else if block_preset_coverage[tile_index].times_used > 1 then
               color := color or $0000D0;
           end;
         end;
@@ -2424,7 +2435,11 @@ begin
         for l := 0 to Tileset.block_presets[preset_index].width * Tileset.block_presets[preset_index].height - 1 do
         begin
           if (not cbMarkSelectedItem.Checked) or (i = sgBlockPresetGroups.Tag - 1) then
-            Inc(block_preset_coverage[Tileset.block_preset_tiles[tile_index]]);
+          begin
+            Inc(block_preset_coverage[Tileset.block_preset_tiles[tile_index]].times_used);
+            block_preset_coverage[Tileset.block_preset_tiles[tile_index]].key := j;
+            block_preset_coverage[Tileset.block_preset_tiles[tile_index]].variant := k;
+          end;
           Inc(tile_index);
         end;
         Inc(preset_index);

@@ -95,6 +95,15 @@ type
   end;
 
 type
+  TTileProperties = record
+    attributes: cardinal;
+    attributes_extra: cardinal;
+    tile_hint_text: integer;
+    restrictions: cardinal;
+    armour_type: byte;
+  end;
+
+type
   TTileAtrRule = record
     attr: int64;
     not_attr: int64;
@@ -1357,6 +1366,11 @@ var
   PNG: TPNGObject;
   ext: String;
   error: String;
+  size_x, size_y: integer;
+  tile_properties: array of TTileProperties;
+  tile_properties_filename: String;
+  i, j: integer;
+  src_index, dest_index: integer;
 begin
   error := '';
   // Check for file existence
@@ -1391,11 +1405,31 @@ begin
     tmp_bitmap.Destroy;
     exit;
   end;
+  size_x := tmp_bitmap.Width div 32;
+  size_y := tmp_bitmap.Height div 32;
   // Copy contents to tileimage
   tileimage.Canvas.CopyRect(Rect(pos_x * 32, pos_y * 32, pos_x * 32 + tmp_bitmap.Width, pos_y * 32 + tmp_bitmap.Height), tmp_bitmap.Canvas, Rect(0, 0, tmp_bitmap.Width, tmp_bitmap.Height));
   tileimage_modified := true;
   Dispatcher.register_event(evTilesetImageChange);
   tmp_bitmap.Destroy;
+  // Import tile properties
+  tile_properties_filename := ChangeFileExt(filename, '.tlspart');
+  if not FileExists(tile_properties_filename) then
+    exit;
+  SetLength(tile_properties, size_x * size_y);
+  load_binary_file(tile_properties_filename, tile_properties[0], Length(tile_properties) * sizeof(tile_properties[0]));
+  for i := 0 to size_y - 1 do
+    for j := 0 to size_x - 1 do
+    begin
+      src_index := (i + pos_y) * 20 + (j + pos_x);
+      dest_index := i * size_x + j;
+      attributes[src_index] := tile_properties[dest_index].attributes;
+      attributes_extra[src_index] := tile_properties[dest_index].attributes_extra;
+      tile_hint_text[src_index] := tile_properties[dest_index].tile_hint_text;
+      restrictions[src_index] := tile_properties[dest_index].restrictions;
+      armour_types[src_index] := tile_properties[dest_index].armour_type;
+    end;
+  SetLength(tile_properties, 0);
 end;
 
 procedure TTileset.export_tileimage_portion_to_file(filename: String; pos_x, pos_y, size_x, size_y: integer);
@@ -1403,6 +1437,9 @@ var
   tmp_bitmap: TBitmap;
   PNG: TPNGObject;
   ext: String;
+  tile_properties: array of TTileProperties;
+  i, j: integer;
+  src_index, dest_index: integer;
 begin
   // Prepare the portion
   tmp_bitmap := TBitmap.Create;
@@ -1423,9 +1460,28 @@ begin
   end;
   // Clean up
   tmp_bitmap.Destroy;
+  // Export tile properties
+  SetLength(tile_properties, size_x * size_y);
+  for i := 0 to size_y - 1 do
+    for j := 0 to size_x - 1 do
+    begin
+      src_index := (i + pos_y) * 20 + (j + pos_x);
+      dest_index := i * size_x + j;
+      tile_properties[dest_index].attributes := attributes[src_index];
+      tile_properties[dest_index].attributes_extra := attributes_extra[src_index];
+      tile_properties[dest_index].tile_hint_text := tile_hint_text[src_index];
+      tile_properties[dest_index].restrictions := restrictions[src_index];
+      tile_properties[dest_index].armour_type := armour_types[src_index];
+    end;
+  save_binary_file(ChangeFileExt(filename, '.tlspart'), tile_properties[0], Length(tile_properties) * sizeof(tile_properties[0]));
+  SetLength(tile_properties, 0);
 end;
 
 procedure TTileset.copy_tileimage_portion(src_x, src_y, dest_x, dest_y, size_x, size_y: integer);
+var
+  tile_properties: array of TTileProperties;
+  i, j: integer;
+  src_index, dest_index: integer;
 begin
   tileimage.Canvas.CopyRect(
     Rect(dest_x * 32, dest_y * 32, (dest_x + size_x) * 32, (dest_y + size_y) * 32),
@@ -1434,11 +1490,42 @@ begin
   );
   tileimage_modified := true;
   Dispatcher.register_event(evTilesetImageChange);
+  // Copy tile properties
+  SetLength(tile_properties, size_x * size_y);
+  for i := 0 to size_y - 1 do
+    for j := 0 to size_x - 1 do
+    begin
+      src_index := (i + src_y) * 20 + (j + src_x);
+      dest_index := i * size_x + j;
+      tile_properties[dest_index].attributes := attributes[src_index];
+      tile_properties[dest_index].attributes_extra := attributes_extra[src_index];
+      tile_properties[dest_index].tile_hint_text := tile_hint_text[src_index];
+      tile_properties[dest_index].restrictions := restrictions[src_index];
+      tile_properties[dest_index].armour_type := armour_types[src_index];
+    end;
+  for i := 0 to size_y - 1 do
+    for j := 0 to size_x - 1 do
+    begin
+      src_index := (i + dest_y) * 20 + (j + dest_x);
+      if src_index >= cnt_tiles then
+        continue;
+      dest_index := i * size_x + j;
+      attributes[src_index] := tile_properties[dest_index].attributes;
+      attributes_extra[src_index] := tile_properties[dest_index].attributes_extra;
+      tile_hint_text[src_index] := tile_properties[dest_index].tile_hint_text;
+      restrictions[src_index] := tile_properties[dest_index].restrictions;
+      armour_types[src_index] := tile_properties[dest_index].armour_type;
+    end;
+  SetLength(tile_properties, 0);
 end;
 
 procedure TTileset.swap_tileimage_portion(src_x, src_y, dest_x, dest_y, size_x, size_y: integer);
 var
   tmp_bitmap: TBitmap;
+  tile_properties1, tile_properties2: array of TTileProperties;
+  i, j: integer;
+  src_index1, src_index2, dest_index: integer;
+  tile_mapping: array of word;
 begin
   tmp_bitmap := TBitmap.Create;
   tmp_bitmap.Width := size_x * 32;
@@ -1461,9 +1548,65 @@ begin
   );
   tileimage_modified := true;
   Dispatcher.register_event(evTilesetImageChange);
+  // Copy tile properties and remap preset tiles
+  SetLength(tile_properties1, size_x * size_y);
+  SetLength(tile_properties2, size_x * size_y);
+  SetLength(tile_mapping, max_tileset_tiles);
+  for i := 0 to Length(tile_mapping) - 1 do
+    tile_mapping[i] := i;
+  for i := 0 to size_y - 1 do
+    for j := 0 to size_x - 1 do
+    begin
+      dest_index := i * size_x + j;
+      src_index1 := (i + src_y) * 20 + (j + src_x);
+      tile_properties1[dest_index].attributes := attributes[src_index1];
+      tile_properties1[dest_index].attributes_extra := attributes_extra[src_index1];
+      tile_properties1[dest_index].tile_hint_text := tile_hint_text[src_index1];
+      tile_properties1[dest_index].restrictions := restrictions[src_index1];
+      tile_properties1[dest_index].armour_type := armour_types[src_index1];
+      src_index2 := (i + dest_y) * 20 + (j + dest_x);
+      if src_index2 >= cnt_tiles then
+        continue;
+      tile_properties2[dest_index].attributes := attributes[src_index2];
+      tile_properties2[dest_index].attributes_extra := attributes_extra[src_index2];
+      tile_properties2[dest_index].tile_hint_text := tile_hint_text[src_index2];
+      tile_properties2[dest_index].restrictions := restrictions[src_index2];
+      tile_properties2[dest_index].armour_type := armour_types[src_index2];
+      tile_mapping[src_index1] := src_index2;
+      tile_mapping[src_index2] := src_index1;
+    end;
+  for i := 0 to size_y - 1 do
+    for j := 0 to size_x - 1 do
+    begin
+      dest_index := i * size_x + j;
+      src_index1 := (i + src_y) * 20 + (j + src_x);
+      attributes[src_index1] := tile_properties2[dest_index].attributes;
+      attributes_extra[src_index1] := tile_properties2[dest_index].attributes_extra;
+      tile_hint_text[src_index1] := tile_properties2[dest_index].tile_hint_text;
+      restrictions[src_index1] := tile_properties2[dest_index].restrictions;
+      armour_types[src_index1] := tile_properties2[dest_index].armour_type;
+      src_index2 := (i + dest_y) * 20 + (j + dest_x);
+      if src_index2 >= cnt_tiles then
+        continue;
+      attributes[src_index2] := tile_properties1[dest_index].attributes;
+      attributes_extra[src_index2] := tile_properties1[dest_index].attributes_extra;
+      tile_hint_text[src_index2] := tile_properties1[dest_index].tile_hint_text;
+      restrictions[src_index2] := tile_properties1[dest_index].restrictions;
+      armour_types[src_index2] := tile_properties1[dest_index].armour_type;
+    end;
+  for i := 0 to block_preset_tiles_used - 1 do
+    block_preset_tiles[i] := tile_mapping[block_preset_tiles[i]];
+  for i := -4 to cnt_paint_tile_groups - 1 do
+    paint_tile_groups[i].tile_index := tile_mapping[paint_tile_groups[i].tile_index];
+  SetLength(tile_properties1, 0);
+  SetLength(tile_properties2, 0);
+  SetLength(tile_mapping, 0);
 end;
 
 procedure TTileset.erase_tileimage_portion(pos_x, pos_y, size_x, size_y: integer);
+var
+  i, j: integer;
+  src_index: integer;
 begin
   tileimage.Canvas.Pen.Color := clBlack;
   tileimage.Canvas.Brush.Color := clBlack;
@@ -1471,6 +1614,17 @@ begin
   tileimage.Canvas.Rectangle(pos_x * 32, pos_y * 32, (pos_x + size_x) * 32, (pos_y + size_y) * 32);
   tileimage_modified := true;
   Dispatcher.register_event(evTilesetImageChange);
+  // Erase tile properties
+  for i := 0 to size_y - 1 do
+    for j := 0 to size_x - 1 do
+    begin
+      src_index := (i + pos_y) * 20 + (j + pos_x);
+      attributes[src_index] := 0;
+      attributes_extra[src_index] := 0;
+      tile_hint_text[src_index] := -1;
+      restrictions[src_index] := 0;
+      armour_types[src_index] := 0;
+    end;
 end;
 
 procedure TTileset.resize_tileset(new_cnt_tiles: integer);
@@ -1499,7 +1653,7 @@ begin
     attributes[i] := 0;
     attributes_extra[i] := 0;
     tile_hint_text[i] := -1;
-    FillChar(restrictions[i], sizeof(restrictions[i]), 0);
+    restrictions[i] := 0;
     armour_types[i] := 0;
   end;
   tileimage_modified := true;

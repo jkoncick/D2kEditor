@@ -162,7 +162,7 @@ begin
   if num_variants > 1 then
   begin
     variants_current[key_index] := (variants_current[key_index] + 1) mod num_variants;
-    draw_block_preset(key_index);
+    draw_all;
   end;
 end;
 
@@ -197,6 +197,8 @@ var
   tile_attr: Cardinal;
   side: integer;
   num_variants: integer;
+  text: string;
+  text_width: integer;
 begin
   row := key_index div block_preset_cols;
   col := key_index mod block_preset_cols;
@@ -248,7 +250,11 @@ begin
 
   num_variants := Tileset.block_preset_key_variants[MainWindow.block_preset_group, key_index];
   if num_variants > 1 then
-    BlockPresetImage.Canvas.TextOut(col * 96 + 64, row * 96 + 81, inttostr(variants_current[key_index] + 1) + ' of ' + inttostr(num_variants));
+  begin
+    text := inttostr(variants_current[key_index] + 1) + ' of ' + inttostr(num_variants);
+    text_width := BlockPresetImage.Canvas.TextWidth(text);
+    BlockPresetImage.Canvas.TextOut(col * 96 + 92 - text_width, row * 96 + 81, text);
+  end;
   if render_letters then
     BlockPresetImage.Canvas.TextOut(col * 96 + 4, row * 96 + 2, block_preset_keys[key_index]);
 
