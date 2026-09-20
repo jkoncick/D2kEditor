@@ -340,7 +340,16 @@ object TilesetEditor: TTilesetEditor
         Top = 485
         Width = 172
         Height = 21
+        Hint = 
+          'From here you can copy the rule and use it on Colors, Fill Area ' +
+          'or Paint tab.'#13'A rule consists of one or two hex numbers (split b' +
+          'y a semicolon).'#13'The first number defines attributes which must b' +
+          'e set,'#13'positive number means all attributes must be set,'#13'negativ' +
+          'e number means at least one attribute must be set.'#13'The second nu' +
+          'mber defines attributes which must NOT be set.'
+        ParentShowHint = False
         ReadOnly = True
+        ShowHint = True
         TabOrder = 0
         OnChange = edRuleChange
       end
@@ -409,10 +418,7 @@ object TilesetEditor: TTilesetEditor
         Top = 2
         Width = 41
         Height = 21
-        Hint = 'Keyboard shortcut: C'
         Caption = 'Clear'
-        ParentShowHint = False
-        ShowHint = True
         TabOrder = 6
         OnClick = btnClearAttributesClick
       end
@@ -525,12 +531,56 @@ object TilesetEditor: TTilesetEditor
       object edExtraAttributeName: TEdit
         Left = 892
         Top = 192
-        Width = 193
+        Width = 201
         Height = 21
         Enabled = False
         MaxLength = 31
         TabOrder = 16
         OnChange = edExtraAttributeNameChange
+      end
+      object cbCopyMode: TCheckBox
+        Left = 1016
+        Top = 220
+        Width = 77
+        Height = 17
+        Hint = 
+          'Keyboard shortcut: C'#13'First select a block (holding Shift key) yo' +
+          'u want to copy attributes from.'#13'Then click into tileset where yo' +
+          'u want to paste the attributes.'
+        Caption = 'Copy mode'
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 17
+        OnClick = cbOptionClick
+      end
+    end
+    object PageTerrain: TTabSheet
+      Caption = 'Terrain      '
+      ImageIndex = 9
+      object imgTerrainTypeColors: TImage
+        Left = 682
+        Top = 4
+        Width = 13
+        Height = 104
+      end
+      object lblPageTerrainMouseActions: TLabel
+        Left = 680
+        Top = 116
+        Width = 286
+        Height = 78
+        Caption = 
+          'Mouse actions:'#13'Left = Set terrain type'#13'Right = Select tile'#13'Hold ' +
+          'Shift+Left to make a selection'#13#13'This modifies last three tile at' +
+          'tributes (Terrain type bits 1, 2, 3)'
+      end
+      object lbTerrainTypeList: TListBox
+        Left = 697
+        Top = 2
+        Width = 396
+        Height = 109
+        ItemHeight = 13
+        TabOrder = 0
+        OnClick = lbTerrainTypeListClick
       end
     end
     object PageHints: TTabSheet
@@ -898,15 +948,15 @@ object TilesetEditor: TTilesetEditor
       Caption = 'Paint         '
       ImageIndex = 6
       object lblPaintTileGroupButtonImage: TLabel
-        Left = 680
-        Top = 248
+        Left = 960
+        Top = 392
         Width = 65
         Height = 13
         Caption = 'Button image:'
       end
       object imgPaintTileGroupButtonImage: TImage
-        Left = 752
-        Top = 248
+        Left = 1032
+        Top = 392
         Width = 32
         Height = 32
         ParentShowHint = False
@@ -914,59 +964,66 @@ object TilesetEditor: TTilesetEditor
       end
       object lblPaintTileGroupName: TLabel
         Left = 680
-        Top = 288
+        Top = 392
         Width = 31
         Height = 13
         Caption = 'Name:'
       end
       object lblPaintTileGroupRestrictionRule: TLabel
         Left = 680
-        Top = 312
+        Top = 416
         Width = 73
         Height = 13
         Caption = 'Restriction rule:'
       end
       object lblPaintTileGroupSmoothPresetGroup: TLabel
         Left = 680
-        Top = 336
+        Top = 440
         Width = 124
         Height = 13
         Caption = 'Auto-smooth preset group:'
       end
       object lblPaintTileGroupSmoothPresets: TLabel
         Left = 680
-        Top = 360
+        Top = 464
         Width = 99
         Height = 13
         Caption = 'Auto-smooth presets:'
       end
       object lblPaintTileGroupRandomMapName: TLabel
         Left = 680
-        Top = 384
+        Top = 512
         Width = 82
         Height = 13
         Caption = 'Random tile map:'
       end
       object Label1: TLabel
-        Left = 680
-        Top = 440
-        Width = 197
+        Left = 784
+        Top = 536
+        Width = 161
         Height = 57
         AutoSize = False
         Caption = 
           'Mouse actions:'#13'Left = Add tile'#13'Right = Remove tile'#13'Middle = Sele' +
           'ct button image tile'
       end
+      object lblPaintTileGroupSmoothAttribute: TLabel
+        Left = 680
+        Top = 488
+        Width = 103
+        Height = 13
+        Caption = 'Auto-smooth attribute:'
+      end
       object sgPaintTileGroups: TStringGrid
         Tag = 1
         Left = 680
         Top = 2
         Width = 409
-        Height = 237
+        Height = 381
         ColCount = 6
         DefaultColWidth = 66
         DefaultRowHeight = 17
-        RowCount = 13
+        RowCount = 21
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
         TabOrder = 0
         OnDrawCell = sgPaintTileGroupsDrawCell
@@ -976,7 +1033,7 @@ object TilesetEditor: TTilesetEditor
       end
       object edPaintTileGroupName: TEdit
         Left = 760
-        Top = 288
+        Top = 392
         Width = 193
         Height = 21
         MaxLength = 31
@@ -984,81 +1041,120 @@ object TilesetEditor: TTilesetEditor
       end
       object edPaintTileGroupRestrictionRule: TEdit
         Left = 760
-        Top = 312
+        Top = 416
         Width = 193
         Height = 21
         TabOrder = 2
       end
       object cbxPaintTileGroupSmoothPresetGroup: TComboBox
         Left = 808
-        Top = 336
+        Top = 440
         Width = 145
         Height = 21
+        Hint = 
+          'Block preset group which contains blocks, that will be used by a' +
+          'uto-smooth feature.'
         Style = csDropDownList
         ItemHeight = 13
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 3
       end
       object edPaintTileGroupSmoothPresets: TEdit
-        Left = 784
-        Top = 360
-        Width = 169
+        Left = 792
+        Top = 464
+        Width = 161
         Height = 21
+        Hint = 
+          'List of block preset keys (characters), which will be used by au' +
+          'to-smooth feature.'#13'The list can have either 12 or 14 or 20 chara' +
+          'cters.'#13'The first 12 characters define the basic 1x1 tile presets' +
+          ':'#13'- First 4 characters define left, up, right and down edge'#13'- Ne' +
+          'xt 4 characters define outer corners'#13'- Next 4 characters define ' +
+          'inner turns'#13'If 14 characters are used, the two additional charac' +
+          'ters are corner joint tiles.'#13'If 20 characters are used, the 8 ad' +
+          'ditional characters define 2x2 S-curves.'
         MaxLength = 20
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 4
       end
       object edPaintTileGroupRandomMapName: TEdit
-        Left = 784
-        Top = 384
-        Width = 169
+        Left = 792
+        Top = 512
+        Width = 161
         Height = 21
         MaxLength = 31
         TabOrder = 5
       end
       object btnPaintTileGroupApply: TButton
         Left = 680
-        Top = 408
+        Top = 536
         Width = 75
         Height = 25
         Caption = 'Apply'
         TabOrder = 6
         OnClick = btnPaintTileGroupApplyClick
       end
+      object cbxPaintTileGroupSmoothAttribute: TComboBox
+        Left = 792
+        Top = 488
+        Width = 161
+        Height = 21
+        Hint = 
+          'Tiles having this attribute will be considered part of terrain y' +
+          'ou are smoothing.'#13'Auto-smooth will link the edges with such tile' +
+          's.'
+        Style = csDropDownList
+        ItemHeight = 13
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 7
+      end
     end
     object PagePresets: TTabSheet
       Caption = 'Presets     '
       ImageIndex = 5
       object lblBlockPresetGroupName: TLabel
-        Left = 680
-        Top = 176
+        Left = 936
+        Top = 4
         Width = 31
         Height = 13
         Caption = 'Name:'
       end
       object lblBlockPresetGroupPaintGroup: TLabel
-        Left = 680
-        Top = 200
-        Width = 57
+        Left = 936
+        Top = 28
+        Width = 27
         Height = 13
-        Caption = 'Paint group:'
+        Caption = 'Paint:'
       end
       object imgBlockPresetKeys: TImage
         Left = 680
-        Top = 232
+        Top = 320
         Width = 321
         Height = 129
         OnMouseDown = imgBlockPresetKeysMouseDown
+      end
+      object lblPagePresetsMouseActions: TLabel
+        Left = 1006
+        Top = 320
+        Width = 93
+        Height = 41
+        AutoSize = False
+        Caption = 'Mouse actions:'#13'Left=Select preset'#13'Right=Select tile'
       end
       object sgBlockPresetGroups: TStringGrid
         Tag = 1
         Left = 680
         Top = 2
-        Width = 409
-        Height = 165
+        Width = 251
+        Height = 309
         ColCount = 4
-        DefaultColWidth = 66
+        DefaultColWidth = 50
         DefaultRowHeight = 17
-        RowCount = 9
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
+        RowCount = 25
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goThumbTracking]
         TabOrder = 0
         OnMouseWheelDown = sgBlockPresetGroupsMouseWheelDown
         OnMouseWheelUp = sgBlockPresetGroupsMouseWheelUp
@@ -1072,97 +1168,88 @@ object TilesetEditor: TTilesetEditor
           17
           17
           17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
+          17
           17)
       end
       object edBlockPresetGroupName: TEdit
-        Left = 744
-        Top = 176
-        Width = 193
+        Left = 972
+        Top = 4
+        Width = 117
         Height = 21
         MaxLength = 31
         TabOrder = 1
       end
       object cbxBlockPresetGroupPaintGroup: TComboBox
-        Left = 744
-        Top = 200
-        Width = 145
+        Left = 972
+        Top = 28
+        Width = 117
         Height = 21
         Style = csDropDownList
         ItemHeight = 13
         TabOrder = 2
       end
       object btnBlockPresetGroupApply: TButton
-        Left = 944
-        Top = 196
-        Width = 75
+        Left = 936
+        Top = 56
+        Width = 57
         Height = 25
         Caption = 'Apply'
         TabOrder = 3
         OnClick = btnBlockPresetGroupApplyClick
       end
-      object btnBlockPresetAddPreset: TButton
-        Left = 1008
-        Top = 336
-        Width = 81
-        Height = 25
-        Caption = 'Add preset...'
+      object gbBlockPreset: TGroupBox
+        Left = 936
+        Top = 94
+        Width = 153
+        Height = 217
+        Caption = 'Block preset'
         TabOrder = 4
-        OnClick = btnBlockPresetAddPresetClick
-      end
-      object pnBlockPreset: TPanel
-        Left = 680
-        Top = 2
-        Width = 409
-        Height = 223
-        TabOrder = 5
-        Visible = False
         object imgBlockPreset: TImage
-          Left = 16
-          Top = 16
+          Left = 12
+          Top = 49
           Width = 128
           Height = 128
-          Hint = 'Left button = select tile'#13'Right button = erase tile'
+          Hint = 'Left click = select tile'#13'Right click = erase tile'
           ParentShowHint = False
           ShowHint = True
           OnMouseDown = imgBlockPresetMouseDown
         end
-        object lblBlockPresetWidth: TLabel
-          Left = 160
-          Top = 16
-          Width = 31
+        object lblBlockPresetSize: TLabel
+          Left = 12
+          Top = 22
+          Width = 81
           Height = 13
-          Caption = 'Width:'
-        end
-        object lblBlockPresetHeight: TLabel
-          Left = 160
-          Top = 40
-          Width = 34
-          Height = 13
-          Caption = 'Height:'
-        end
-        object lblBlockPresetHint: TLabel
-          Left = 16
-          Top = 160
-          Width = 309
-          Height = 26
-          Caption = 
-            'Click into tileset image to select a single tile.'#13'Hold shift and' +
-            ' make a selection (up to 4*4) to select whole preset.'
+          Caption = 'Size:                 X'
         end
         object seBlockPresetWidth: TSpinEdit
-          Left = 200
-          Top = 16
+          Left = 40
+          Top = 19
           Width = 41
           Height = 22
-          MaxValue = 4
+          MaxValue = 6
           MinValue = 1
           TabOrder = 0
           Value = 1
           OnChange = seBlockPresetSizeChange
         end
         object seBlockPresetHeight: TSpinEdit
-          Left = 200
-          Top = 40
+          Left = 98
+          Top = 19
           Width = 41
           Height = 22
           MaxValue = 4
@@ -1172,23 +1259,41 @@ object TilesetEditor: TTilesetEditor
           OnChange = seBlockPresetSizeChange
         end
         object btnBlockPresetAdd: TButton
-          Left = 160
-          Top = 120
-          Width = 75
+          Left = 12
+          Top = 184
+          Width = 128
           Height = 25
-          Caption = 'Add'
+          Hint = 'Keyboard shortcut: Enter'
+          Caption = 'Add preset'
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           OnClick = btnBlockPresetAddClick
         end
-        object btnBlockPresetClose: TButton
-          Left = 240
-          Top = 120
-          Width = 75
-          Height = 25
-          Caption = 'Close'
-          TabOrder = 3
-          OnClick = btnBlockPresetCloseClick
-        end
+      end
+      object btnBlockPresetGroupMoveDown: TButton
+        Left = 996
+        Top = 56
+        Width = 45
+        Height = 25
+        Hint = 'Move block preset group down'
+        Caption = 'Down'
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 5
+        OnClick = btnBlockPresetGroupMoveDownClick
+      end
+      object btnBlockPresetGroupMoveUp: TButton
+        Left = 1044
+        Top = 56
+        Width = 45
+        Height = 25
+        Hint = 'Move block preset group up'
+        Caption = 'Up'
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 6
+        OnClick = btnBlockPresetGroupMoveUpClick
       end
     end
   end
@@ -1267,7 +1372,7 @@ object TilesetEditor: TTilesetEditor
     OnClick = cbOptionClick
   end
   object MainMenu: TMainMenu
-    Left = 560
+    Left = 712
     object Newtileset1: TMenuItem
       Caption = 'New tileset (Ctrl+N)'
       ShortCut = 16462
@@ -1322,7 +1427,7 @@ object TilesetEditor: TTilesetEditor
       '*.R8)|*.R8|BMP image (*.bmp)|*.bmp|PNG image (*.png)|*.png'
     InitialDir = '.\tilesets'
     Title = 'Import tileset image'
-    Left = 584
+    Left = 736
   end
   object TilesetImageSaveDialog: TSaveDialog
     DefaultExt = 'png'
@@ -1331,7 +1436,7 @@ object TilesetEditor: TTilesetEditor
       ')|*.R16'
     FilterIndex = 2
     Title = 'Export tileset image'
-    Left = 608
+    Left = 760
   end
   object TilesetPortionOpenDialog: TOpenDialog
     DefaultExt = 'png'
@@ -1340,13 +1445,13 @@ object TilesetEditor: TTilesetEditor
       'p|PNG image (*.png)|*.png'
     InitialDir = '.\tilesets'
     Title = 'Import tileset portion'
-    Left = 632
+    Left = 784
   end
   object TilesetPortionSaveDialog: TSaveDialog
     DefaultExt = 'png'
     Filter = 'BMP Image (*.bmp)|*.bmp|PNG Image (*.png)|*.png'
     FilterIndex = 2
     Title = 'Export tileset portion'
-    Left = 656
+    Left = 808
   end
 end

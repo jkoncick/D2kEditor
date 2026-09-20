@@ -1058,16 +1058,9 @@ object MainWindow: TMainWindow
       object PageTerrain: TTabSheet
         Caption = 'Terrain            '
         ImageIndex = 1
-        object LbBrushSize: TLabel
-          Left = 4
-          Top = 6
-          Width = 51
-          Height = 13
-          Caption = 'Brush size:'
-        end
         object BlockFrame: TBevel
           Left = 14
-          Top = 290
+          Top = 218
           Width = 132
           Height = 132
           Shape = bsFrame
@@ -1075,37 +1068,37 @@ object MainWindow: TMainWindow
         end
         object BlockImage: TImage
           Left = 16
-          Top = 292
+          Top = 220
           Width = 128
           Height = 128
           OnClick = BlockImageClick
         end
         object Bevel1: TBevel
           Left = 2
-          Top = 196
+          Top = 124
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
         object Bevel2: TBevel
           Left = 2
-          Top = 252
+          Top = 180
           Width = 152
           Height = 4
           Shape = bsBottomLine
         end
-        object LbPaintTileGroupName: TLabel
-          Left = 80
-          Top = 61
-          Width = 3
-          Height = 13
-        end
         object lbSelectAreaType: TLabel
           Left = 4
-          Top = 232
+          Top = 160
           Width = 25
           Height = 13
           Caption = 'Area:'
+        end
+        object LbPaintTileGroupName: TLabel
+          Left = 80
+          Top = 59
+          Width = 3
+          Height = 13
         end
         object lblMirrorMode: TLabel
           Left = 4
@@ -1114,9 +1107,16 @@ object MainWindow: TMainWindow
           Height = 13
           Caption = 'Mirror mode:'
         end
+        object LbBrushSize: TLabel
+          Left = 4
+          Top = 6
+          Width = 51
+          Height = 13
+          Caption = 'Brush size:'
+        end
         object RbBlockMode: TRadioButton
           Left = 4
-          Top = 264
+          Top = 192
           Width = 77
           Height = 17
           Caption = 'Block mode'
@@ -1125,36 +1125,27 @@ object MainWindow: TMainWindow
           TabStop = True
           OnClick = RbTerrainModeClick
         end
-        object RbPaintMode: TRadioButton
-          Left = 4
-          Top = 60
-          Width = 77
-          Height = 17
-          Caption = 'Paint mode'
-          TabOrder = 1
-          OnClick = RbTerrainModeClick
-        end
         object OpenTileset: TButton
           Left = 88
-          Top = 260
+          Top = 188
           Width = 65
           Height = 25
           Caption = 'Open tileset'
-          TabOrder = 2
+          TabOrder = 1
           OnClick = OpenTilesetClick
         end
         object RbSelectMode: TRadioButton
           Left = 4
-          Top = 206
+          Top = 134
           Width = 81
           Height = 17
           Caption = 'Select mode'
-          TabOrder = 3
+          TabOrder = 2
           OnClick = RbTerrainModeClick
         end
         object CbSelectStructures: TCheckBox
           Left = 90
-          Top = 206
+          Top = 134
           Width = 97
           Height = 17
           Hint = 
@@ -1166,27 +1157,16 @@ object MainWindow: TMainWindow
           ParentShowHint = False
           ShowHint = True
           State = cbChecked
-          TabOrder = 4
+          TabOrder = 3
         end
         object cbSelectAreaType: TComboBox
           Left = 32
-          Top = 228
+          Top = 156
           Width = 121
           Height = 21
           Style = csDropDownList
           ItemHeight = 13
-          TabOrder = 5
-        end
-        object cbxConcreteSide: TComboBox
-          Left = 48
-          Top = 58
-          Width = 105
-          Height = 21
-          Style = csDropDownList
-          ItemHeight = 13
-          TabOrder = 6
-          Visible = False
-          OnChange = SideSelectChange
+          TabOrder = 4
         end
         object tbBrushSize: TTrackBar
           Left = 75
@@ -1197,8 +1177,17 @@ object MainWindow: TMainWindow
           Min = 1
           PageSize = 1
           Position = 1
-          TabOrder = 7
+          TabOrder = 6
           ThumbLength = 16
+        end
+        object RbPaintMode: TRadioButton
+          Left = 4
+          Top = 58
+          Width = 77
+          Height = 17
+          Caption = 'Paint mode'
+          TabOrder = 7
+          OnClick = RbTerrainModeClick
         end
         object cbxMirrorMode: TComboBox
           Left = 80
@@ -1220,6 +1209,25 @@ object MainWindow: TMainWindow
             '4x normal'
             '4x inverse'
             '4x diagonal')
+        end
+        object cbxConcreteSide: TComboBox
+          Left = 48
+          Top = 56
+          Width = 105
+          Height = 21
+          Style = csDropDownList
+          ItemHeight = 13
+          TabOrder = 5
+          Visible = False
+          OnChange = SideSelectChange
+        end
+        object pnBlockPresetGroups: TPanel
+          Left = 0
+          Top = 360
+          Width = 158
+          Height = 240
+          BevelOuter = bvNone
+          TabOrder = 9
         end
       end
     end

@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls, _tileset;
+  Dialogs, ExtCtrls, _tileset, Buttons;
 
 type
   TBlockPresetDialog = class(TForm)
@@ -13,8 +13,13 @@ type
     procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+    procedure FormMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure CMDialogKey(var AMessage: TCMDialogKey); message CM_DIALOGKEY;
     procedure BlockPresetImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure BlockPresetGroupButtonClick(Sender: TObject);
+  public
+    block_preset_group_buttons: array[0..cnt_block_preset_groups-1] of TSpeedButton;
   private
     variants_current: array[0..cnt_block_preset_keys-1] of integer;
     render_letters: boolean;
@@ -43,9 +48,27 @@ uses _settings, _resourcefile, _colours, main, tileset_dialog;
 {$R *.dfm}
 
 procedure TBlockPresetDialog.FormCreate(Sender: TObject);
+var
+  i: integer;
+  btn: TSpeedButton;
 begin
   ClientWidth := 960;
-  ClientHeight := 384;
+  ClientHeight := 424;
+  for i := 0 to cnt_block_preset_groups - 1 do
+  begin
+    btn := TSpeedButton.Create(self);
+    btn.Tag := i;
+    btn.GroupIndex := 1;
+    btn.Width := 80;
+    btn.Height := 20;
+    btn.Left := (i mod 12) * 80;
+    btn.Top := (i div 12) * 20;
+    btn.Flat := True;
+    btn.OnClick := BlockPresetGroupButtonClick;
+    btn.Parent := self;
+    block_preset_group_buttons[i] := btn;
+  end;
+  block_preset_group_buttons[0].Down := True;
   init_presets;
 end;
 
@@ -94,6 +117,44 @@ begin
   end;
 end;
 
+procedure TBlockPresetDialog.FormMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+var
+  i: integer;
+  found: boolean;
+begin
+  found := false;
+  for i := 0 to cnt_block_preset_groups - 1 do
+  begin
+    if block_preset_group_buttons[i].Down then
+      found := true
+    else if found and (Tileset.block_preset_groups[i].name <> '') then
+    begin
+      BlockPresetGroupButtonClick(block_preset_group_buttons[i]);
+      break;
+    end;
+  end;
+  Handled := true;
+end;
+
+procedure TBlockPresetDialog.FormMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+var
+  i: integer;
+  found: boolean;
+begin
+  found := false;
+  for i := cnt_block_preset_groups - 1 downto 0 do
+  begin
+    if block_preset_group_buttons[i].Down then
+      found := true
+    else if found and (Tileset.block_preset_groups[i].name <> '') then
+    begin
+      BlockPresetGroupButtonClick(block_preset_group_buttons[i]);
+      break;
+    end;
+  end;
+  Handled := true;
+end;
+
 procedure TBlockPresetDialog.CMDialogKey(var AMessage: TCMDialogKey);
 begin
   if AMessage.CharCode = VK_TAB then
@@ -125,7 +186,15 @@ begin
   end;
 end;
 
+procedure TBlockPresetDialog.BlockPresetGroupButtonClick(Sender: TObject);
+begin
+  MainWindow.block_preset_select[(Sender as TSpeedButton).Tag].Down := True;
+  MainWindow.BlockPresetGroupSelectClick(Sender);
+end;
+
 procedure TBlockPresetDialog.update_tileset;
+var
+  i: integer;
 begin
   if not Visible then
   begin
@@ -133,6 +202,11 @@ begin
     exit;
   end;
   pending_update_tileset := false;
+  for i := 0 to cnt_block_preset_groups - 1 do
+  begin
+    block_preset_group_buttons[i].Caption := Tileset.block_preset_groups[i].name;
+    block_preset_group_buttons[i].Enabled := Tileset.block_preset_groups[i].name <> '';
+  end;
   init_presets;
 end;
 

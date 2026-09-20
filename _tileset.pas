@@ -9,14 +9,14 @@ const min_tileset_tiles = 800;
 const max_tileset_tiles = 4000;
 const max_minimap_color_rules = 32;
 const max_fill_area_rules = 16;
-const cnt_paint_tile_groups = 8;
-const cnt_block_preset_groups = 8;
-const max_block_presets = 1024;
-const max_block_preset_tiles = 4096;
-const max_connection_points = 2048;     // Used for random map generator
+const cnt_paint_tile_groups = 16;
+const cnt_block_preset_groups = 24;
+const max_block_presets = 2048;
+const max_block_preset_tiles = 8192;
+const max_connection_points = 4096;     // Used for random map generator
 const cnt_connection_point_types = 16;  // Used for random map generator
 const cnt_block_groups = 512;           // Used for random map generator
-const max_paint_tiles = 32;
+const max_paint_tiles = 48;
 
 // Constants for get_block_preset function
 const bpNext = -1;
@@ -53,6 +53,7 @@ const taSand = $10000;
 
 // Version constant
 const CURRENT_TILESET_CONFIG_VERSION = 1;
+const CURRENT_TLS_VERSION = 2;
 
 // Tileset type definitions
 type
@@ -79,14 +80,14 @@ type
 
 type
   TTilesetHeader = record
-    version_major: integer;
-    version_minor: integer;
+    version: integer;
     reserved1: integer;
     reserved2: integer;
+    reserved3: integer;
     custom_minimap_colors_allowed: byte;
     default_paint_group: shortint;
-    reserved3: byte;
     reserved4: byte;
+    reserved5: byte;
     rule_do_not_draw_rock_craters: byte;
     rule_do_not_draw_sand_craters: byte;
     reserved_rules: array[0..13] of byte;
@@ -129,6 +130,7 @@ type
   TPaintTileGroup = record
     name: array[0..31] of char;
     tile_index: word;
+    smooth_attribute: byte;
     restriction_rule: TTileAtrRule;
     smooth_preset_group: shortint;
     smooth_presets: array[0..31] of char;
@@ -273,6 +275,9 @@ type
     procedure load_tileatr(p_tileatr_name: string; force: boolean);
     // Load ini configuration
     procedure load_ini(p_tileset_name: string; force: boolean);
+    // Tileset version conversion
+    procedure convert_rule(rule: TTileAtrRulePtr);
+    procedure convert_tileset_version;
     // Process internal data
     procedure process_internal_data;
     procedure process_paint_tile_lists;
@@ -292,8 +297,9 @@ type
     // Editing block presets
     procedure add_block_preset(group: integer; key_index: integer; width, height: integer; tiles: array of word);
     procedure delete_block_preset(preset_index: integer);
+    procedure swap_block_preset_groups(group: integer);
     // Miscellaneous functions
-    function get_paint_tile_group_char(group: integer): char;
+    function get_paint_tile_group_char(group: integer): string;
     function get_tile_attributes(tile, special: word; use_internal_attributes: boolean): Int64;
     function get_tile_type(tile: word): TileType;
     function get_tile_color(tile, special: word; var rule_index: integer): Cardinal;
@@ -469,8 +475,7 @@ begin
   tileimage_modified := true;
   // Initialize header
   FillChar(header, sizeof(header), 0);
-  header.version_major := 1;
-  header.version_minor := 0;
+  header.version := CURRENT_TLS_VERSION;
   // Initialize attributes and hints
   FillChar(attributes, sizeof(attributes), 0);
   FillChar(attributes_extra, sizeof(attributes_extra), 0);
@@ -792,6 +797,7 @@ var
   tmp_filename: string;
   tileset_file: file of byte;
   file_size: integer;
+  i: integer;
 begin
   result := true;
   // Try to find TLS file
@@ -809,7 +815,7 @@ begin
   AssignFile(tileset_file, tmp_filename);
   Reset(tileset_file);
   file_size := filesize(tileset_file);
-  if not ((file_size = 89600) or (file_size = 93600) or (file_size = 94624)) then
+  if not ((file_size = 89600) or (file_size = 93600) or (file_size = 94624) or (file_size = 96256) or (file_size = 115296)) then
   begin
     Dispatcher.register_error('Error loading tileset file', 'The file ' + tmp_filename + ' has incorrect size (' + IntToStr(file_size) + ' bytes)');
     CloseFile(tileset_file);
@@ -833,15 +839,50 @@ begin
   BlockRead(tileset_file, minimap_color_rules,        sizeof(minimap_color_rules));
   BlockRead(tileset_file, fill_area_rules_used,       sizeof(fill_area_rules_used));
   BlockRead(tileset_file, fill_area_rules,            sizeof(fill_area_rules));
-  BlockRead(tileset_file, paint_tile_groups,          sizeof(paint_tile_groups));
-  BlockRead(tileset_file, block_preset_groups,        sizeof(block_preset_groups));
-  BlockRead(tileset_file, block_preset_key_variants,  sizeof(block_preset_key_variants));
-  BlockRead(tileset_file, block_presets,              sizeof(block_presets));
-  BlockRead(tileset_file, block_preset_tiles,         sizeof(block_preset_tiles));
-  BlockRead(tileset_file, connection_points,          sizeof(connection_points));
+  if header.version >= 2 then
+  begin
+    BlockRead(tileset_file, paint_tile_groups,          sizeof(paint_tile_groups));
+    if file_size > 96256 then
+    begin
+      BlockRead(tileset_file, block_preset_groups,        sizeof(block_preset_groups));
+      BlockRead(tileset_file, block_preset_key_variants,  sizeof(block_preset_key_variants));
+    end else
+    begin
+      BlockRead(tileset_file, block_preset_groups,        sizeof(block_preset_groups[0]) * 16);
+      FillChar(block_preset_groups[16],                   sizeof(block_preset_groups[0]) * (cnt_block_preset_groups - 16), 0);
+      BlockRead(tileset_file, block_preset_key_variants,  sizeof(block_preset_key_variants[0]) * 16);
+      FillChar(block_preset_key_variants[16],             sizeof(block_preset_key_variants[0]) * (cnt_block_preset_groups - 16), 0);
+    end;
+  end else
+  begin
+    BlockRead(tileset_file, paint_tile_groups,          sizeof(paint_tile_groups[0]) * 8);
+    FillChar(paint_tile_groups[8], sizeof(paint_tile_groups[0]) * (cnt_paint_tile_groups - 8), 0);
+    for i := 8 to cnt_paint_tile_groups - 1 do
+      paint_tile_groups[i].smooth_preset_group := -1;
+    BlockRead(tileset_file, block_preset_groups,        sizeof(block_preset_groups[0]) * 8);
+    FillChar(block_preset_groups[8],                    sizeof(block_preset_groups[0]) * (cnt_block_preset_groups - 8), 0);
+    BlockRead(tileset_file, block_preset_key_variants,  sizeof(block_preset_key_variants[0]) * 8);
+    FillChar(block_preset_key_variants[8],              sizeof(block_preset_key_variants[0]) * (cnt_block_preset_groups - 8), 0);
+  end;
+  if file_size > 96256 then
+  begin
+    BlockRead(tileset_file, block_presets,              sizeof(block_presets));
+    BlockRead(tileset_file, block_preset_tiles,         sizeof(block_preset_tiles));
+    BlockRead(tileset_file, connection_points,          sizeof(connection_points));
+  end else
+  begin
+    BlockRead(tileset_file, block_presets,              sizeof(block_presets[0]) * 1024);
+    FillChar(block_presets[1024],                       sizeof(block_presets[0]) * (max_block_presets - 1024), 0);
+    BlockRead(tileset_file, block_preset_tiles,         sizeof(block_preset_tiles[0]) * 4096);
+    FillChar(block_preset_tiles[4096],                  sizeof(block_preset_tiles[0]) * (max_block_preset_tiles - 4096), 0);
+    BlockRead(tileset_file, connection_points,          sizeof(connection_points[0]) * 2048);
+    FillChar(connection_points[2048],                   sizeof(connection_points[0]) * (max_connection_points - 2048), 0);
+  end;
   BlockRead(tileset_file, connection_point_types,     sizeof(connection_point_types));
   BlockRead(tileset_file, block_groups,               sizeof(block_groups));
   CloseFile(tileset_file);
+  // Convert tileset version
+  convert_tileset_version;
   // Process internal data
   process_internal_data;
   // Update filename
@@ -965,8 +1006,7 @@ begin
   decoder2.Delimiter := '.';
   // Load basic information
   FillChar(header, sizeof(header), 0);
-  header.version_major := 1;
-  header.version_minor := 0;
+  header.version := 1;
   header.default_paint_group := ini.ReadInteger('Basic', 'default_paint_group', 1) - 1;
   store_c_string(ini.ReadString('Basic', 'name', ''), Addr(header.tileset_fancy_name), Length(header.tileset_fancy_name));
   store_c_string(ini.ReadString('Basic', 'author', ''), Addr(header.author_name), Length(header.author_name));
@@ -1200,9 +1240,49 @@ begin
   decoder.Destroy;
   decoder2.Destroy;
 
+  convert_tileset_version;
   process_internal_data;
   // Register event in dispatcher
   Dispatcher.register_event(evFLTilesetIni);
+end;
+
+procedure TTileset.convert_rule(rule: TTileAtrRulePtr);
+var
+  mask: int64;
+begin
+  mask := $000F0000;
+  mask := mask shl 32;
+  if rule.attr < 0 then
+  begin
+    rule.attr := rule.attr * -1;
+    rule.attr := (rule.attr and (not mask)) or ((rule.attr and mask) shl 8);
+    rule.attr := rule.attr * -1;
+  end else
+    rule.attr := (rule.attr and (not mask)) or ((rule.attr and mask) shl 8);
+  rule.not_attr := (rule.not_attr and (not mask)) or ((rule.not_attr and mask) shl 8);
+end;
+
+procedure TTileset.convert_tileset_version;
+var
+  i: integer;
+begin
+  if header.version < 2 then
+  begin
+    // Process minimap color rules
+    for i := 0 to minimap_color_rules_used - 1 do
+      convert_rule(Addr(minimap_color_rules[i].rule));
+    // Process fill area rules
+    for i := 0 to fill_area_rules_used - 1 do
+      convert_rule(Addr(fill_area_rules[i].rule));
+    // Process paint tile groups
+    for i := -4 to 8 - 1 do
+    begin
+      convert_rule(Addr(paint_tile_groups[i].restriction_rule));
+      if i >= 0 then
+        paint_tile_groups[i].smooth_attribute := i;
+    end;
+  end;
+  header.version := CURRENT_TLS_VERSION;
 end;
 
 procedure TTileset.process_internal_data;
@@ -1595,7 +1675,8 @@ begin
       armour_types[src_index2] := tile_properties1[dest_index].armour_type;
     end;
   for i := 0 to block_preset_tiles_used - 1 do
-    block_preset_tiles[i] := tile_mapping[block_preset_tiles[i]];
+    if block_preset_tiles[i] <> 65535 then
+      block_preset_tiles[i] := tile_mapping[block_preset_tiles[i]];
   for i := -4 to cnt_paint_tile_groups - 1 do
     paint_tile_groups[i].tile_index := tile_mapping[paint_tile_groups[i].tile_index];
   SetLength(tile_properties1, 0);
@@ -1726,10 +1807,80 @@ begin
   Dispatcher.register_event(evTilesetBlockPresetsChange);
 end;
 
-function TTileset.get_paint_tile_group_char(group: integer): char;
+procedure TTileset.swap_block_preset_groups(group: integer);
+var
+  tmp_block_preset_group: TBlockPresetGroup;
+  tmp_block_preset_key_variants: array[0..cnt_block_preset_keys-1] of byte;
+  tmp_block_presets1, tmp_block_presets2: array of TBlockPreset;
+  block_presets_used1, block_presets_used2: integer;
+  tmp_block_preset_tiles1, tmp_block_preset_tiles2: array of word;
+  block_preset_tiles_used1, block_preset_tiles_used2: integer;
+  i, j: integer;
+  preset_index: integer;
+begin
+  // Compute number of used presets and tiles
+  block_presets_used1 := 0;
+  block_presets_used2 := 0;
+  block_preset_tiles_used1 := 0;
+  block_preset_tiles_used2 := 0;
+  for i := 0 to cnt_block_preset_keys - 1 do
+  begin
+    Inc(block_presets_used1, block_preset_key_variants[group, i]);
+    for j := 0 to block_preset_key_variants[group, i] - 1 do
+    begin
+      preset_index := block_preset_key_variant_first_preset_indexes[group,i] + j;
+      Inc(block_preset_tiles_used1, block_presets[preset_index].width * block_presets[preset_index].height);
+    end;
+    Inc(block_presets_used2, block_preset_key_variants[group+1, i]);
+    for j := 0 to block_preset_key_variants[group+1, i] - 1 do
+    begin
+      preset_index := block_preset_key_variant_first_preset_indexes[group+1,i] + j;
+      Inc(block_preset_tiles_used2, block_presets[preset_index].width * block_presets[preset_index].height);
+    end;
+  end;
+  // Swap block preset tiles
+  SetLength(tmp_block_preset_tiles1, block_preset_tiles_used1);
+  SetLength(tmp_block_preset_tiles2, block_preset_tiles_used2);
+  Move(block_preset_tiles[block_preset_first_tile_indexes[block_preset_key_variant_first_preset_indexes[group,0]]], tmp_block_preset_tiles1[0], block_preset_tiles_used1 * sizeof(word));
+  Move(block_preset_tiles[block_preset_first_tile_indexes[block_preset_key_variant_first_preset_indexes[group+1,0]]], tmp_block_preset_tiles2[0], block_preset_tiles_used2 * sizeof(word));
+  Move(tmp_block_preset_tiles1[0], block_preset_tiles[block_preset_first_tile_indexes[block_preset_key_variant_first_preset_indexes[group,0]] + block_preset_tiles_used2], block_preset_tiles_used1 * sizeof(word));
+  Move(tmp_block_preset_tiles2[0], block_preset_tiles[block_preset_first_tile_indexes[block_preset_key_variant_first_preset_indexes[group,0]]], block_preset_tiles_used2 * sizeof(word));
+  SetLength(tmp_block_preset_tiles1, 0);
+  SetLength(tmp_block_preset_tiles2, 0);
+  // Swap block presets
+  SetLength(tmp_block_presets1, block_presets_used1);
+  SetLength(tmp_block_presets2, block_presets_used2);
+  Move(block_presets[block_preset_key_variant_first_preset_indexes[group,0]], tmp_block_presets1[0], block_presets_used1 * sizeof(TBlockPreset));
+  Move(block_presets[block_preset_key_variant_first_preset_indexes[group+1,0]], tmp_block_presets2[0], block_presets_used2 * sizeof(TBlockPreset));
+  Move(tmp_block_presets1[0], block_presets[block_preset_key_variant_first_preset_indexes[group,0] + block_presets_used2], block_presets_used1 * sizeof(TBlockPreset));
+  Move(tmp_block_presets2[0], block_presets[block_preset_key_variant_first_preset_indexes[group,0]], block_presets_used2 * sizeof(TBlockPreset));
+  SetLength(tmp_block_presets1, 0);
+  SetLength(tmp_block_presets2, 0);
+  // Swap block preset key variants
+  Move(block_preset_key_variants[group,0], tmp_block_preset_key_variants[0], sizeof(tmp_block_preset_key_variants));
+  Move(block_preset_key_variants[group+1,0], block_preset_key_variants[group,0], sizeof(tmp_block_preset_key_variants));
+  Move(tmp_block_preset_key_variants[0], block_preset_key_variants[group+1,0], sizeof(tmp_block_preset_key_variants));
+  // Swap block preset group
+  tmp_block_preset_group := block_preset_groups[group];
+  block_preset_groups[group] := block_preset_groups[group+1];
+  block_preset_groups[group+1] := tmp_block_preset_group;
+  // Swap paint groups smooth preset groups
+  for i := 0 to cnt_paint_tile_groups - 1 do
+  begin
+    if paint_tile_groups[i].smooth_preset_group = group then
+      paint_tile_groups[i].smooth_preset_group := group + 1
+    else if paint_tile_groups[i].smooth_preset_group = group + 1 then
+      paint_tile_groups[i].smooth_preset_group := group;
+  end;
+  // Recompute stuff
+  process_block_presets;
+  Dispatcher.register_event(evTilesetBlockPresetsChange);
+end;
+
+function TTileset.get_paint_tile_group_char(group: integer): string;
 begin
   if group >= 0 then
-    result := chr(ord('1') + group)
+    result := IntToStr(group + 1)
   else
     result := chr(ord('E') + group);
 end;
@@ -1748,18 +1899,18 @@ begin
     // Void attribute
     void_attribute := 0;
     if (tile and $0FFF) = paint_tile_groups[-1].tile_index then
-      void_attribute := $00080000;
+      void_attribute := $08000000;
     void_attribute := void_attribute shl 32;
     result := result or void_attribute;
     // Thin spice, thick spice, concrete
     spice_amount := IfThen((tile and $1000) = 0, (tile shr 13) and 7, 0);
     tile_property_attributes := 0;
     if (special = 1) or (spice_amount = 1) or (spice_amount = 2) then
-      tile_property_attributes := $00010000;
+      tile_property_attributes := $01000000;
     if (special = 2) or (spice_amount >= 3) then
-      tile_property_attributes := $00020000;
+      tile_property_attributes := $02000000;
     if ((tile and $1000) <> 0) then
-      tile_property_attributes := $00040000;
+      tile_property_attributes := $04000000;
     tile_property_attributes := tile_property_attributes shl 32;
     result := result or tile_property_attributes;
   end;

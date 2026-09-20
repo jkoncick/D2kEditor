@@ -3,7 +3,7 @@ object BlockPresetDialog: TBlockPresetDialog
   Top = 114
   BorderStyle = bsDialog
   Caption = 'Block preset selection'
-  ClientHeight = 384
+  ClientHeight = 424
   ClientWidth = 960
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -17,12 +17,14 @@ object BlockPresetDialog: TBlockPresetDialog
   OnCreate = FormCreate
   OnHide = FormHide
   OnKeyDown = FormKeyDown
+  OnMouseWheelDown = FormMouseWheelDown
+  OnMouseWheelUp = FormMouseWheelUp
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object BlockPresetImage: TImage
     Left = 0
-    Top = 0
+    Top = 40
     Width = 960
     Height = 384
     OnMouseDown = BlockPresetImageMouseDown

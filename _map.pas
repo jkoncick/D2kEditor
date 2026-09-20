@@ -641,7 +641,7 @@ begin
   if not exact then
   begin
     if (tmp_paint_tile_group >= 0) then
-      result := result or ((Tileset.attributes_extra[map_data[x,y].tile] and (1 shl tmp_paint_tile_group)) <> 0)
+      result := result or ((Tileset.attributes_extra[map_data[x,y].tile] and (1 shl Tileset.paint_tile_groups[tmp_paint_tile_group].smooth_attribute)) <> 0)
     else
       result := result or (Tileset.attributes_extra[map_data[x,y].tile] = 0);
   end;

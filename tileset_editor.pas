@@ -233,16 +233,11 @@ type
     cbxBlockPresetGroupPaintGroup: TComboBox;
     btnBlockPresetGroupApply: TButton;
     imgBlockPresetKeys: TImage;
-    btnBlockPresetAddPreset: TButton;
-    pnBlockPreset: TPanel;
     imgBlockPreset: TImage;
     seBlockPresetWidth: TSpinEdit;
     seBlockPresetHeight: TSpinEdit;
-    lblBlockPresetWidth: TLabel;
-    lblBlockPresetHeight: TLabel;
+    lblBlockPresetSize: TLabel;
     btnBlockPresetAdd: TButton;
-    btnBlockPresetClose: TButton;
-    lblBlockPresetHint: TLabel;
     lblTileimageModified: TLabel;
     gbTilesetRules: TGroupBox;
     cbRuleDoNotDrawRockCraters: TCheckBox;
@@ -255,6 +250,17 @@ type
     lbArmourTypeList: TListBox;
     imgArmourTypeColors: TImage;
     vleTileHintCustomStrings: TValueListEditor;
+    gbBlockPreset: TGroupBox;
+    lblPagePresetsMouseActions: TLabel;
+    lblPaintTileGroupSmoothAttribute: TLabel;
+    cbxPaintTileGroupSmoothAttribute: TComboBox;
+    btnBlockPresetGroupMoveDown: TButton;
+    btnBlockPresetGroupMoveUp: TButton;
+    PageTerrain: TTabSheet;
+    lbTerrainTypeList: TListBox;
+    imgTerrainTypeColors: TImage;
+    lblPageTerrainMouseActions: TLabel;
+    cbCopyMode: TCheckBox;
     // Form actions
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -301,6 +307,8 @@ type
     procedure rgFilterModeClick(Sender: TObject);
     procedure cbAnyOfClick(Sender: TObject);
     procedure edRuleChange(Sender: TObject);
+    // Terrain page actions
+    procedure lbTerrainTypeListClick(Sender: TObject);
     // Hints page actions
     procedure lbTileHintTextClick(Sender: TObject);
     procedure vleTileHintCustomStringsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
@@ -338,13 +346,13 @@ type
     procedure sgBlockPresetGroupsMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
     procedure sgBlockPresetGroupsSelectCell(Sender: TObject; ACol, ARow: Integer; var CanSelect: Boolean);
     procedure btnBlockPresetGroupApplyClick(Sender: TObject);
+    procedure btnBlockPresetGroupMoveDownClick(Sender: TObject);
+    procedure btnBlockPresetGroupMoveUpClick(Sender: TObject);
     procedure imgBlockPresetKeysMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure BlockPresetImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure btnBlockPresetAddPresetClick(Sender: TObject);
     procedure imgBlockPresetMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure seBlockPresetSizeChange(Sender: TObject);
     procedure btnBlockPresetAddClick(Sender: TObject);
-    procedure btnBlockPresetCloseClick(Sender: TObject);
   private
     // Configutarion variables
     block_preset_images: array of TImage;
@@ -360,7 +368,7 @@ type
     block_preset_width: integer;
     block_preset_height: integer;
     block_preset_selected_tile: integer;
-    block_preset_tiles: array[0..15] of word;
+    block_preset_tiles: array[0..23] of word;
 
     // Block preset coverage
     block_preset_coverage: array[0..max_tileset_tiles-1] of TBlockPresetCoverageEntry;
@@ -395,8 +403,10 @@ type
     procedure update_armour_list;
     procedure update_speed_modifiers;
   private
+    procedure fill_speed_modifier_label;
     procedure fill_paint_tile_group_combo_boxes;
     procedure fill_block_preset_group_combo_boxes;
+    procedure fill_extra_attribute_combo_boxes;
     procedure fill_minimap_color_rules_grid;
     procedure fill_minimap_color_rule_ui;
     procedure fill_fill_area_rules_grid;
@@ -455,6 +465,14 @@ begin
     p.ParentBackground := false;
     p.Parent := PageAttributes;
   end;
+  // Create terrain types color panels
+  imgTerrainTypeColors.Canvas.Brush.Style := bsSolid;
+  for i := 0 to 7 do
+  begin
+    imgTerrainTypeColors.Canvas.Pen.Color := fill_area_group_colors[i];
+    imgTerrainTypeColors.Canvas.Brush.Color := fill_area_group_colors[i];
+    imgTerrainTypeColors.Canvas.Rectangle(0, i * 13, 13, i * 13 + 13);
+  end;
   // Create armour types color panels
   imgArmourTypeColors.Canvas.Brush.Style := bsSolid;
   for i := 0 to MAX_ARMOUR_TYPES-1 do
@@ -494,8 +512,8 @@ begin
     sgPaintTileGroups.Cells[0,i+4+1] := Tileset.get_paint_tile_group_char(i);
   // Initialize block preset groups grid
   sgBlockPresetGroups.ColWidths[0] := 20;
-  sgBlockPresetGroups.ColWidths[1] := 96;
-  sgBlockPresetGroups.ColWidths[2] := 48;
+  sgBlockPresetGroups.ColWidths[1] := 88;
+  sgBlockPresetGroups.ColWidths[2] := 40;
   sgBlockPresetGroups.ColWidths[3] := 80;
   sgBlockPresetGroups.Cells[1,0] := 'Group name';
   sgBlockPresetGroups.Cells[2,0] := 'Presets';
@@ -544,6 +562,8 @@ begin
 end;
 
 procedure TTilesetEditor.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  i: integer;
 begin
   if key = 27 then
     Close;
@@ -564,6 +584,28 @@ begin
   end;
   if (ActiveControl is TEdit) or (ActiveControl is TSpinEdit) or (ActiveControl is TValueListEditor) then
     exit;
+  // Block preset keys
+  if (pagecontrol.ActivePage = PagePresets) and (((key >= ord('0')) and (key <= ord('9'))) or ((key >= ord('A')) and (key <= ord('Z'))) or (key = 186) or (key = 188) or (key = 190) or (key = 191)) then
+  begin
+    if key = 188 then
+      key := ord('<');
+    if key = 190 then
+      key := ord('>');
+    if key = 186 then
+      key := ord(':');
+    if key = 191 then
+      key := ord('?');
+    for i := 0 to cnt_block_preset_keys - 1 do
+      if ord(block_preset_keys[i]) = key then
+      begin
+        block_preset_selected_key := i;
+        draw_block_preset_keys;
+        draw_block_preset_images;
+        btnBlockPresetAdd.SetFocus;
+        break;
+      end;
+    exit;
+  end;
   // Global shortcuts
   case key of
     ord('T'): cbMarkSelectedItem.Checked := not cbMarkSelectedItem.Checked;
@@ -585,10 +627,10 @@ begin
     case key of
       ord('M'): cbMarkSelection.Checked := not cbMarkSelection.Checked;
       ord('E'): cbDrawEditorAttributes.Checked := not cbDrawEditorAttributes.Checked;
+      ord('C'): cbCopyMode.Checked := not cbCopyMode.Checked;
       ord('S'): rgOperation.ItemIndex := 0;
       ord('A'): rgOperation.ItemIndex := 1;
       ord('R'): rgOperation.ItemIndex := 2;
-      ord('C'): btnClearAttributesClick(nil);
     end;
   end;
 end;
@@ -668,6 +710,10 @@ begin
   cbMarkSelectedItem.Visible := (PageControl.ActivePage <> PageImage) and (PageControl.ActivePage <> PageAttributes);
   sbCopySelectionTo.Down := False;
   sbSwapSelectionWith.Down := False;
+  if (PageControl.ActivePage = PageAttributes) and (cbCopyMode.Checked) then
+    TilesetImage.Cursor := crDrag
+  else
+    TilesetImage.Cursor := crDefault;
   render_tileset;
 end;
 
@@ -675,6 +721,10 @@ procedure TTilesetEditor.cbOptionClick(Sender: TObject);
 begin
   if (Sender = cbMarkSelectedItem) then
     compute_block_preset_coverage;
+  if (PageControl.ActivePage = PageAttributes) and (cbCopyMode.Checked) then
+    TilesetImage.Cursor := crDrag
+  else
+    TilesetImage.Cursor := crDefault;
   render_tileset;
 end;
 
@@ -704,7 +754,7 @@ var
   tile_index: integer;
   tile_value: int64;
   min_x, min_y, max_x, max_y, size_x, size_y: integer;
-  i: integer;
+  i, j: integer;
   restrictions: byte;
   subtile: integer;
 begin
@@ -722,6 +772,8 @@ begin
       set_tile_attribute_rule(tile_value, 0);
       active_tile_on_attributes := tile_index;
     end
+    else if PageControl.ActivePage = PageTerrain then
+      lbTerrainTypeList.ItemIndex := Tileset.attributes[tile_index] shr 29
     else if PageControl.ActivePage = PageHints then
       Tileset.tile_hint_text[tile_index] := -1
     else if PageControl.ActivePage = PageRestrictions then
@@ -750,6 +802,15 @@ begin
         Tileset.process_paint_tile_lists;
         fill_paint_tile_groups_grid;
       end;
+    end
+    else if PageControl.ActivePage = PagePresets then
+    begin
+      block_preset_tiles[block_preset_selected_tile] := tile_index;
+      Inc(block_preset_selected_tile);
+      if block_preset_selected_tile = (block_preset_width * block_preset_height) then
+        block_preset_selected_tile := 0;
+      draw_block_preset;
+      btnBlockPresetAdd.SetFocus;
     end;
   end
   // Left button
@@ -764,14 +825,14 @@ begin
       max_y := max(select_start_y, select_end_y);
       size_x := max_x - min_x + 1;
       size_y := max_y - min_y + 1;
-      if sbCopySelectionTo.Down or (ssCtrl in Shift) then
+      if (sbCopySelectionTo.Down or (ssCtrl in Shift)) and (min_x <> -1) and (min_y <> -1) then
         Tileset.copy_tileimage_portion(min_x, min_y, pos_x, pos_y, size_x, size_y)
-      else if sbSwapSelectionWith.Down or (ssShift in Shift) then
+      else if (sbSwapSelectionWith.Down or (ssShift in Shift)) and (min_x <> -1) and (min_y <> -1) then
         Tileset.swap_tileimage_portion(min_x, min_y, pos_x, pos_y, size_x, size_y);
       sbCopySelectionTo.Down := false;
       sbSwapSelectionWith.Down := false;
     end
-    else if (ssShift in Shift) or (PageControl.ActivePage = PageImage) then
+    else if (ssShift in Shift) or (PageControl.ActivePage = PageImage) or (PageControl.ActivePage = PagePresets) then
     begin
       // Handle selection start
       select_started := true;
@@ -783,7 +844,29 @@ begin
     begin
       // Handle mouse click
       if PageControl.ActivePage = PageAttributes then
-        set_tile_attributes(tile_index, true)
+      begin
+        if cbCopyMode.Checked then
+        begin
+          min_x := min(select_start_x, select_end_x);
+          max_x := max(select_start_x, select_end_x);
+          min_y := min(select_start_y, select_end_y);
+          max_y := max(select_start_y, select_end_y);
+          if (min_x <> -1) and (min_y <> -1) then
+          begin
+            for j := 0 to max_y - min_y do
+              for i := 0 to max_x - min_x do
+              begin
+                Tileset.attributes[(pos_y + j) * 20 + pos_x + i] := Tileset.attributes[(min_y + j) * 20 + min_x + i];
+                Tileset.attributes_extra[(pos_y + j) * 20 + pos_x + i] := Tileset.attributes_extra[(min_y + j) * 20 + min_x + i];
+              end;
+          end;
+        end else
+          set_tile_attributes(tile_index, true);
+      end
+      else if PageControl.ActivePage = PageTerrain then
+      begin
+        Tileset.attributes[tile_index] := (Tileset.attributes[tile_index] and $1FFFFFFF) or (Cardinal(lbTerrainTypeList.ItemIndex) shl 29);
+      end
       else if PageControl.ActivePage = PageHints then
       begin
         if (lbTileHintText.ItemIndex <> -1) or (lbTileHintText.Focused) then
@@ -839,14 +922,6 @@ begin
           Tileset.process_paint_tile_lists;
           fill_paint_tile_groups_grid;
         end;
-      end
-      else if (PageControl.ActivePage = PagePresets) and pnBlockPreset.Visible then
-      begin
-        block_preset_tiles[block_preset_selected_tile] := tile_index;
-        Inc(block_preset_selected_tile);
-        if block_preset_selected_tile = (block_preset_width * block_preset_height) then
-          block_preset_selected_tile := 0;
-        draw_block_preset;
       end;
     end;
     TilesetImage.ShowHint := false;
@@ -909,6 +984,7 @@ var
   rule_index: integer;
   tile_paint_group: integer;
   num_restrictions: integer;
+  terrain_type: integer;
 begin
   pos_x := X div 32;
   pos_y := Y div 32 + tileset_top;
@@ -948,6 +1024,12 @@ begin
       end;
     end;
     hint_str := copy(hint_str, 1, Length(hint_str) - 1);
+    show_hint := true;
+  end
+  else if PageControl.ActivePage = PageTerrain then
+  begin
+    terrain_type := Tileset.attributes[tile_index] shr 29;
+    hint_str := lbTerrainTypeList.Items[terrain_type];
     show_hint := true;
   end
   else if PageControl.ActivePage = PageHints then
@@ -1028,6 +1110,7 @@ var
   min_x, min_y, max_x, max_y: integer;
   select_width, select_height: integer;
   xx, yy: integer;
+  tile_index: integer;
 begin
   if select_started then
   begin
@@ -1040,16 +1123,19 @@ begin
     for yy := min_y to max_y do
       for xx:= min_x to max_x do
         begin
-          if PageControl.ActivePage = PageAttributes then
-            set_tile_attributes(xx + yy*20, false)
+          tile_index := xx + yy*20;
+          if (PageControl.ActivePage = PageAttributes) and (not cbCopyMode.Checked) then
+            set_tile_attributes(tile_index, false)
+          else if PageControl.ActivePage = PageTerrain then
+            Tileset.attributes[tile_index] := (Tileset.attributes[tile_index] and $1FFFFFFF) or (Cardinal(lbTerrainTypeList.ItemIndex) shl 29)
           else if PageControl.ActivePage = PageHints then
-            Tileset.tile_hint_text[xx + yy*20] := lbTileHintText.ItemIndex
+            Tileset.tile_hint_text[tile_index] := lbTileHintText.ItemIndex
         end;
-    if (PageControl.ActivePage = PagePresets) and pnBlockPreset.Visible then
+    if PageControl.ActivePage = PagePresets then
     begin
       select_width := max_x - min_x + 1;
       select_height := max_y - min_y + 1;
-      if (select_width <= 4) and (select_height <= 4) then
+      if (select_width <= 6) and (select_height <= 4) then
       begin
         block_preset_width := select_width;
         block_preset_height := select_height;
@@ -1057,11 +1143,12 @@ begin
           for xx:= 0 to select_width - 1 do
             block_preset_tiles[yy * select_width + xx] := (yy + min_y) * 20 + (xx + min_x);
         draw_block_preset;
+        btnBlockPresetAdd.SetFocus;
       end;
     end;
     render_tileset;
     TilesetImage.ShowHint := false;
-    if PageControl.ActivePage <> PageImage then
+    if (PageControl.ActivePage <> PageImage) and not ((PageControl.ActivePage = PageAttributes) and cbCopyMode.Checked) then
     begin
       select_start_x := -1;
       select_start_y := -1;
@@ -1220,6 +1307,7 @@ begin
     exit;
   clbTileAtrListEditor.Items[clbTileAtrListEditor.ItemIndex] := edExtraAttributeName.Text;
   store_c_string(edExtraAttributeName.Text, Addr(Tileset.extra_attribute_names[clbTileAtrListEditor.ItemIndex]), Length(Tileset.extra_attribute_names[clbTileAtrListEditor.ItemIndex]));
+  fill_extra_attribute_combo_boxes;
 end;
 
 procedure TTilesetEditor.btnTileAtrValueApplyClick(Sender: TObject);
@@ -1294,6 +1382,12 @@ begin
     render_tileset;
   end else
     edRule.Font.Color := clRed;
+end;
+
+procedure TTilesetEditor.lbTerrainTypeListClick(Sender: TObject);
+begin
+  if cbMarkSelectedItem.Checked then
+    render_tileset;
 end;
 
 procedure TTilesetEditor.lbTileHintTextClick(Sender: TObject);
@@ -1535,7 +1629,7 @@ var
 begin
   if (ACol <> 1) or (ARow < 4) then
     exit;
-  color := fill_area_group_colors[ARow - 1];
+  color := fill_area_group_colors[ARow - 4];
   sgPaintTileGroups.Canvas.Brush.Color := color;
   sgPaintTileGroups.Canvas.FillRect(Rect);
 end;
@@ -1575,6 +1669,7 @@ begin
   Tileset.paint_tile_groups[sgPaintTileGroups.Row-5].smooth_preset_group := cbxPaintTileGroupSmoothPresetGroup.ItemIndex - 1;
   if cbxPaintTileGroupSmoothPresetGroup.ItemIndex > 0 then
     store_c_string(edPaintTileGroupSmoothPresets.Text, Addr(Tileset.paint_tile_groups[sgPaintTileGroups.Row-5].smooth_presets), Length(Tileset.paint_tile_groups[sgPaintTileGroups.Row-5].smooth_presets));
+  Tileset.paint_tile_groups[sgPaintTileGroups.Row-5].smooth_attribute := cbxPaintTileGroupSmoothAttribute.ItemIndex;
   store_c_string(edPaintTileGroupRandomMapName.Text, Addr(Tileset.paint_tile_groups[sgPaintTileGroups.Row-5].random_map_name), Length(Tileset.paint_tile_groups[sgPaintTileGroups.Row-5].random_map_name));
   fill_paint_tile_groups_grid;
   fill_block_preset_groups_grid;
@@ -1615,6 +1710,28 @@ begin
   Dispatcher.register_event(evTilesetBlockPresetsChange);
 end;
 
+procedure TTilesetEditor.btnBlockPresetGroupMoveDownClick(Sender: TObject);
+begin
+  if sgBlockPresetGroups.Row = cnt_block_preset_groups then
+    exit;
+  Tileset.swap_block_preset_groups(sgBlockPresetGroups.Row - 1);
+  fill_block_preset_groups_grid;
+  fill_block_preset_group_combo_boxes;
+  sgBlockPresetGroups.Row := sgBlockPresetGroups.Row + 1;
+  render_tileset;
+end;
+
+procedure TTilesetEditor.btnBlockPresetGroupMoveUpClick(Sender: TObject);
+begin
+  if sgBlockPresetGroups.Row = 1 then
+    exit;
+  Tileset.swap_block_preset_groups(sgBlockPresetGroups.Row - 2);
+  fill_block_preset_groups_grid;
+  fill_block_preset_group_combo_boxes;
+  sgBlockPresetGroups.Row := sgBlockPresetGroups.Row - 1;
+  render_tileset;
+end;
+
 procedure TTilesetEditor.imgBlockPresetKeysMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   if Button <> mbLeft then
@@ -1624,6 +1741,7 @@ begin
   block_preset_selected_key := (Y div 32) * 10 + (X div 32);
   draw_block_preset_keys;
   draw_block_preset_images;
+  btnBlockPresetAdd.SetFocus;
 end;
 
 procedure TTilesetEditor.BlockPresetImageMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -1632,14 +1750,14 @@ var
   i: integer;
 begin
   preset_index := (Sender as TImage).Tag;
-  if ssShift in Shift then
+  if Button = mbLeft then
   begin
     block_preset_width := Tileset.block_presets[preset_index].width;
     block_preset_height := Tileset.block_presets[preset_index].height;
     for i := 0 to block_preset_width * block_preset_height - 1 do
       block_preset_tiles[i] := Tileset.block_preset_tiles[Tileset.block_preset_first_tile_indexes[preset_index] + i];
-    btnBlockPresetAddPresetClick(Sender);
     draw_block_preset;
+    btnBlockPresetAdd.SetFocus;
   end;
   if Button = mbRight then
   begin
@@ -1649,12 +1767,6 @@ begin
     fill_block_preset_groups_grid;
     fill_block_preset_group_ui;
   end;
-end;
-
-procedure TTilesetEditor.btnBlockPresetAddPresetClick(Sender: TObject);
-begin
-  pnBlockPreset.Visible := true;
-  btnBlockPresetAddPreset.Enabled := false;
 end;
 
 procedure TTilesetEditor.imgBlockPresetMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -1673,6 +1785,7 @@ begin
     block_preset_tiles[tile_y * block_preset_width + tile_x] := 65535;
     draw_block_preset;
   end;
+  btnBlockPresetAdd.SetFocus;
 end;
 
 procedure TTilesetEditor.seBlockPresetSizeChange(Sender: TObject);
@@ -1713,12 +1826,6 @@ begin
   fill_block_preset_group_ui;
 end;
 
-procedure TTilesetEditor.btnBlockPresetCloseClick(Sender: TObject);
-begin
-  pnBlockPreset.Visible := false;
-  btnBlockPresetAddPreset.Enabled := true;
-end;
-
 procedure TTilesetEditor.update_game_lists;
 begin
   clbTileAtrList.Items := GameLists.get_list_ref('TileAtr');
@@ -1742,6 +1849,7 @@ begin
   // Fill combo boxes
   fill_paint_tile_group_combo_boxes;
   fill_block_preset_group_combo_boxes;
+  fill_extra_attribute_combo_boxes;
   // Fill basic tileset data
   edTilesetFancyName.Text := Tileset.header.tileset_fancy_name;
   edAuthorName.Text := Tileset.header.author_name;
@@ -1851,16 +1959,38 @@ end;
 
 procedure TTilesetEditor.update_speed_modifiers;
 var
+  tmp_strings: TStringList;
+  item_index: integer;
+  str: string;
+  i, j: integer;
+begin
+  tmp_strings := TStringList.Create;
+  for i := 0 to Length(Structures.speed.Values) - 1 do
+  begin
+    str := 'Type ' + IntToStr(i) + ': ';
+    for j := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
+      str := str + Format('%s = %.3f  ', [Structures.speed.SpeedNameStrings[j], Round(Structures.speed.values[i, j] * 100)/100]);
+    tmp_strings.Add(str);
+  end;
+  item_index := lbTerrainTypeList.ItemIndex;
+  lbTerrainTypeList.Items := tmp_strings;
+  lbTerrainTypeList.ItemIndex := Max(item_index, 0);
+  tmp_strings.Destroy;
+  fill_speed_modifier_label;
+end;
+
+procedure TTilesetEditor.fill_speed_modifier_label;
+var
   value: int64;
-  speed_modifier: integer;
+  terrain_type: integer;
   str: string;
   i: integer;
 begin
   value := StrToInt64('$' + edTileAtrValue.Text);
-  speed_modifier := (value shr 29) and 7;
-  str := 'Terrain type ' + inttostr(speed_modifier) + ': ';
+  terrain_type := (value shr 29) and 7;
+  str := 'Terrain type ' + inttostr(terrain_type) + ': ';
   for i := 0 to Length(Structures.speed.SpeedNameStrings) - 1 do
-    str := str + Format('%s = %.3f  ', [Structures.speed.SpeedNameStrings[i], Round(Structures.speed.values[speed_modifier, i] * 100)/100]);
+    str := str + Format('%s = %.3f  ', [Structures.speed.SpeedNameStrings[i], Round(Structures.speed.values[terrain_type, i] * 100)/100]);
   stSpeedModifier.Caption := str;
 end;
 
@@ -1896,6 +2026,21 @@ begin
   old_item_index := cbxPaintTileGroupSmoothPresetGroup.ItemIndex;
   cbxPaintTileGroupSmoothPresetGroup.Items := tmp_strings;
   cbxPaintTileGroupSmoothPresetGroup.ItemIndex := old_item_index;
+  tmp_strings.Destroy;
+end;
+
+procedure TTilesetEditor.fill_extra_attribute_combo_boxes;
+var
+  tmp_strings: TStringList;
+  i: integer;
+  old_item_index: integer;
+begin
+  tmp_strings := TStringList.Create;
+  for i := 0 to Length(Tileset.extra_attribute_names) - 1 do
+    tmp_strings.Add(IntToStr(i+1) + ' - ' + Tileset.extra_attribute_names[i]);
+  old_item_index := cbxPaintTileGroupSmoothAttribute.ItemIndex;
+  cbxPaintTileGroupSmoothAttribute.Items := tmp_strings;
+  cbxPaintTileGroupSmoothAttribute.ItemIndex := old_item_index;
   tmp_strings.Destroy;
 end;
 
@@ -1977,12 +2122,15 @@ begin
   edPaintTileGroupRestrictionRule.Text := Tileset.rule_to_string(Addr(Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].restriction_rule));
   cbxPaintTileGroupSmoothPresetGroup.ItemIndex := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].smooth_preset_group + 1;
   edPaintTileGroupSmoothPresets.Text := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].smooth_presets;
+  cbxPaintTileGroupSmoothAttribute.ItemIndex := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].smooth_attribute;
   edPaintTileGroupRandomMapName.Text := Tileset.paint_tile_groups[sgPaintTileGroups.Tag - 5].random_map_name;
   show_controls := sgPaintTileGroups.Tag >= 5;
   lblPaintTileGroupSmoothPresetGroup.Visible := show_controls;
   cbxPaintTileGroupSmoothPresetGroup.Visible := show_controls;
   lblPaintTileGroupSmoothPresets.Visible := show_controls;
   edPaintTileGroupSmoothPresets.Visible := show_controls;
+  lblPaintTileGroupSmoothAttribute.Visible := show_controls;
+  cbxPaintTileGroupSmoothAttribute.Visible := show_controls;
   lblPaintTileGroupRandomMapName.Visible := show_controls;
   edPaintTileGroupRandomMapName.Visible := show_controls;
 end;
@@ -2076,7 +2224,7 @@ begin
     end;
   end;
   pos_x := 680;
-  pos_y := 368;
+  pos_y := 456;
   max_height := 0;
   for i := 0 to num_variants - 1 do
   begin
@@ -2084,7 +2232,7 @@ begin
     preset := Addr(Tileset.block_presets[preset_index]);
     block_preset_images[i].Visible := true;
     block_preset_images[i].Tag := preset_index;
-    block_preset_images[i].Hint := 'Preset ' + IntToStr(preset_index) + #13'Shift + click = copy preset'#13'Right click = delete preset';
+    block_preset_images[i].Hint := 'Preset ' + IntToStr(preset_index) + #13'Left click = select preset'#13'Right click = delete preset';
     block_preset_images[i].Width := preset.width * 32;
     block_preset_images[i].Picture.Bitmap.Width := preset.width * 32;
     block_preset_images[i].Height := preset.height * 32;
@@ -2172,6 +2320,7 @@ var
   t1, t2: Int64;
   rule_index: integer;
   tile_paint_group: integer;
+  terrain_type: integer;
 begin
   if Tileset.tileimage = nil then
     exit;
@@ -2227,6 +2376,12 @@ begin
           // Get color
           if mark_tile then
             color := get_tile_attribute_color(tile_value);
+        end
+        else if PageControl.ActivePage = PageTerrain then
+        begin
+          terrain_type := Tileset.attributes[tile_index] shr 29;
+          color := fill_area_group_colors[terrain_type];
+          mark_tile := (not cbMarkSelectedItem.Checked) or (lbTerrainTypeList.ItemIndex = terrain_type);
         end
         else if PageControl.ActivePage = PageHints then
         begin
@@ -2297,7 +2452,7 @@ begin
           if cbMarkSelectedItem.Checked then
             mark_tile := tile_paint_group = sgPaintTileGroups.Tag - 5;
           if mark_tile then
-            color := fill_area_group_colors[tile_paint_group + 4];
+            color := fill_area_group_colors[tile_paint_group + 1];
         end
         else if PageControl.ActivePage = PagePresets then
         begin
@@ -2400,7 +2555,7 @@ begin
       end;
   end;
   // Mark selection
-  if select_started or (PageControl.ActivePage = PageImage) then
+  if select_started or (PageControl.ActivePage = PageImage) or ((PageControl.ActivePage = PageAttributes) and (cbCopyMode.Checked)) then
   begin
     TilesetImage.Canvas.Brush.Style := bsClear;
     TilesetImage.Canvas.Pen.Width := 2;
@@ -2434,7 +2589,7 @@ begin
       begin
         for l := 0 to Tileset.block_presets[preset_index].width * Tileset.block_presets[preset_index].height - 1 do
         begin
-          if (not cbMarkSelectedItem.Checked) or (i = sgBlockPresetGroups.Tag - 1) then
+          if ((not cbMarkSelectedItem.Checked) or (i = sgBlockPresetGroups.Tag - 1)) and (Tileset.block_preset_tiles[tile_index] <> 65535) then
           begin
             Inc(block_preset_coverage[Tileset.block_preset_tiles[tile_index]].times_used);
             block_preset_coverage[Tileset.block_preset_tiles[tile_index]].key := j;
@@ -2532,7 +2687,7 @@ begin
   unknown_owner := (value shr 25) and 7;
   stSideBitValues.Caption := Format('Owner: %d  Conc: %d  Spice: %d  SecOwner: %d', [building_unit_owner, concrete_owner, spice_amount, unknown_owner]);
   // Set speed modifier label
-  update_speed_modifiers;
+  fill_speed_modifier_label;
 end;
 
 procedure TTilesetEditor.set_tile_attribute_rule(value, not_value: int64);

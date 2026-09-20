@@ -214,6 +214,7 @@ type
     Showmap1: TMenuItem;
     lblMirrorMode: TLabel;
     cbxMirrorMode: TComboBox;
+    pnBlockPresetGroups: TPanel;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -453,13 +454,11 @@ begin
     btn := TSpeedButton.Create(self);
     btn.Tag := i;
     btn.GroupIndex := 2;
-    btn.Top := 428 + 20 * (i mod (cnt_block_preset_groups div 2));
-    btn.Left := 2 + 76 * (i div (cnt_block_preset_groups div 2));
     btn.Width := 76;
     btn.Height := 20;
     btn.OnClick := BlockPresetGroupSelectClick;
     btn.OnDblClick := BlockImageClick;
-    btn.Parent := PageTerrain;
+    btn.Parent := pnBlockPresetGroups;
     block_preset_select[i] := btn;
   end;
   block_preset_select[0].Down := True;
@@ -1788,6 +1787,7 @@ begin
   block_preset_group := (Sender as TSpeedButton).Tag;
   if BlockPresetDialog.Visible then
     BlockPresetDialog.Show;
+  BlockPresetDialog.block_preset_group_buttons[(Sender as TSpeedButton).Tag].Down := True;
   BlockPresetDialog.init_presets;
 end;
 
@@ -1906,8 +1906,11 @@ procedure TMainWindow.update_paint_tile_groups;
 var
   i: integer;
   tile_x, tile_y: integer;
+  visible_rows: integer;
+  top_pos: integer;
 begin
   // Draw glyphs on paint tile group buttons in terrain editing GUI
+  visible_rows := 0;
   for i := -4 to cnt_paint_tile_groups-1 do
   begin
     if Tileset.paint_tile_groups[i].name <> '' then
@@ -1922,23 +1925,54 @@ begin
       paint_tile_select[i].Glyph.Canvas.Brush.Style := bsSolid;
       paint_tile_select[i].Glyph.Canvas.Rectangle(0, 0, paint_tile_select[i].Glyph.Width, paint_tile_select[i].Glyph.Height);
     end;
-    paint_tile_select[i].Enabled := Tileset.paint_tile_groups[i].name <> '';
+    paint_tile_select[i].Visible := Tileset.paint_tile_groups[i].name <> '';
     paint_tile_select[i].Hint := Tileset.paint_tile_groups[i].name;
+    if (i >= 0) and (Tileset.paint_tile_groups[i].name <> '') and ((i div 4 + 1) > visible_rows) then
+      visible_rows := i div 4 + 1;
   end;
   // Update paint tile group label
   if (paint_tile_select_active <> nil) and RbPaintMode.Checked then
     LbPaintTileGroupName.Caption := paint_tile_select_active.Hint;
+  // Update positions of controls below paint tile group buttons
+  top_pos := 120 + visible_rows * 38;
+  Bevel1.Top := top_pos;
+  RbSelectMode.Top := top_pos + 10;
+  CbSelectStructures.Top := top_pos + 10;
+  lbSelectAreaType.Top := top_pos + 36;
+  cbSelectAreaType.Top := top_pos + 32;
+  Bevel2.Top := top_pos + 56;
+  RbBlockMode.Top := top_pos + 68;
+  OpenTileset.Top := top_pos + 64;
+  BlockFrame.Top := top_pos + 94;
+  BlockImage.Top := top_pos + 96;
+  pnBlockPresetGroups.Top := top_pos + 232;
 end;
 
 procedure TMainWindow.update_block_preset_groups;
 var
   i: integer;
+  visible_rows: integer;
 begin
   // Set text on block preset group buttons
-  for i := 0 to cnt_block_preset_groups-1 do
+  visible_rows := 0;
+  for i := 0 to cnt_block_preset_groups - 1 do
   begin
     block_preset_select[i].Enabled := Tileset.block_preset_groups[i].name <> '';
     block_preset_select[i].Caption := Tileset.block_preset_groups[i].name;
+    if (Tileset.block_preset_groups[i].name <> '') and ((i div 2 + 1) > visible_rows) then
+      visible_rows := i div 2 + 1;
+  end;
+  // Organize controls according to number of visible rows
+  for i := 0 to cnt_block_preset_groups - 1 do
+  begin
+    if (i div 2 >= visible_rows) then
+      block_preset_select[i].Visible := false
+    else
+    begin
+      block_preset_select[i].Visible := true;
+      block_preset_select[i].Top := 20 * (i mod visible_rows);
+      block_preset_select[i].Left := 2 + 76 * (i div visible_rows);
+    end;
   end;
 end;
 
