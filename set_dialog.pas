@@ -60,7 +60,7 @@ var
 implementation
 
 uses
-  Math, _settings, _map, _tileset;
+  Math, _settings, _map, _mission, _tileset;
 
 {$R *.dfm}
 
@@ -216,7 +216,7 @@ begin
     Tileset_List.Cells[3, i+1] := IntToStr(Tileset.tileset_list[index].num_tiles);
     Tileset_List.Cells[4, i+1] := Tileset.tileset_list[index].attributes;
     Tileset_List.Cells[5, i+1] := Tileset.tileset_list[index].location;
-    if Tileset.tileset_list[index].name = Settings.DefaultTilesetName then
+    if (Mission.mis_assigned and (Tileset.tileset_list[index].name = Mission.tileset_name)) or ((not Mission.mis_assigned) and (Tileset.tileset_list[index].name = Settings.DefaultTilesetName)) then
       Tileset_List.Row := i + 1;
   end;
 end;

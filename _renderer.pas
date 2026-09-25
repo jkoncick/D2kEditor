@@ -86,12 +86,14 @@ type
       data: TMapDataPtr; data_width, data_height: word;
       o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
       o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_crate_markers,
+      o_show_terrain_types, o_show_tile_restrictions, o_show_tile_minimap_colors, o_mark_tiles_of_selected_area,
       o_use_house_id_colors, o_show_unknown_specials,
-      o_rendering_optimization: boolean);
+      o_rendering_optimization: boolean; area_type: integer);
     function get_spice(var tile: TMapTile): integer;
     procedure draw_structure_image(cnv_target: TCanvas; dest_x, dest_y, min_x, min_y, max_x, max_y: integer; structure_image: TStructureImagePtr);
     //--procedure render_randomgen_data(cnv_target: TCanvas; cnv_left, cnv_top, x, y: word);
     procedure draw_cross(cnv_target: TCanvas; x1, x2, y1, y2: word; color: TColor; width: integer);
+    procedure draw_rectangle(cnv_target: TCanvas; x, y: word; color: TColor);
     procedure draw_ellipse(cnv_target: TCanvas; x1, y1, x2, y2: word; pcolor, bcolor: TColor; width: integer; text: String);
     procedure draw_point(cnv_target: TCanvas; x, y: word; color: TColor);
 
@@ -158,8 +160,9 @@ procedure TRenderer.render_map_contents(cnv_target: TCanvas; cnv_left, cnv_top, 
   data: TMapDataPtr; data_width, data_height: word;
   o_show_grid, o_mark_impassable, o_mark_buildable, o_mark_owner_side,
   o_show_event_markers, o_show_event_areas, o_mark_defence_areas, o_show_crate_markers,
+  o_show_terrain_types, o_show_tile_restrictions, o_show_tile_minimap_colors, o_mark_tiles_of_selected_area,
   o_use_house_id_colors, o_show_unknown_specials,
-  o_rendering_optimization: boolean);
+  o_rendering_optimization: boolean; area_type: integer);
 var
   min_x, min_y, max_x, max_y: integer;
   shift_count: word;
@@ -199,6 +202,10 @@ var
   event_area: ^TEventArea;
   filter: TObjectFilterPtr;
   amount: integer;
+  terrain_type: integer;
+  color: Cardinal;
+  dummy: integer;
+  attributes: int64;
 begin
   if not Map.loaded then
     exit;
@@ -343,7 +350,7 @@ begin
       // Draw tile markers
       if o_mark_impassable or o_mark_buildable or o_mark_owner_side then
       begin
-        tile := data[x + cnv_left, y + cnv_top].tile;
+        tile := data[xx, yy].tile;
         tile_type := Tileset.get_tile_type(tile);
         tile_attr := Tileset.attributes[tile and $0FFF];
         // Draw impassable/buildable tile marker
@@ -370,6 +377,47 @@ begin
           cnv_target.Ellipse(x * 32 + 8, y * 32 + 8, x * 32 + 24, y * 32 + 24);
           cnv_target.Brush.Style := bsClear;
         end;
+      end;
+      // Draw terrain types
+      if o_show_terrain_types then
+      begin
+        tile := data[xx, yy].tile;
+        terrain_type := Tileset.attributes[tile and $0FFF] shr 29;
+        if terrain_type <> 0 then
+          draw_rectangle(cnv_target, x, y, fill_area_group_colors[terrain_type]);
+      end;
+      // Draw minimap colors
+      if o_show_tile_minimap_colors then
+      begin
+        color := Tileset.get_tile_color(data[xx, yy].tile, data[xx, yy].special, dummy);
+        color := ((color and $FF0000) shr 16) or (color and $00FF00) or ((color and $0000FF) shl 16);
+        draw_rectangle(cnv_target, x, y, color);
+      end;
+      // Draw tile restrictions
+      if o_show_tile_restrictions then
+      begin
+        tile := data[xx, yy].tile;
+        for i := 0 to 7 do
+        begin
+          color := 0;
+          for j := 0 to 3 do
+            if (Tileset.restrictions[tile] and (1 shl (j + 4 * i))) <> 0 then
+              color := color or restriction_colors[j];
+          if color <> 0 then
+          begin
+            cnv_target.Brush.Style := bsClear;
+            cnv_target.Pen.Color := color;
+            cnv_target.Pen.Width := 2;
+            cnv_target.Rectangle(x * 32 + restriction_rects[i].Left + 2, y * 32 + restriction_rects[i].Top + 2, x * 32 + restriction_rects[i].Right + 1, y * 32 + restriction_rects[i].Bottom + 1);
+          end;
+        end;
+      end;
+      // Mark tiles of selected area type
+      if o_mark_tiles_of_selected_area then
+      begin
+        attributes := Tileset.get_tile_attributes(data[xx, yy].tile, data[xx, yy].special, true);
+        if (area_type >= 0) and Tileset.evaluate_rule(attributes, Addr(Tileset.fill_area_rules[area_type].rule)) then
+          draw_cross(cnv_target, x*32, x*32+31, y*32, y*32+31, clBlue, 2);
       end;
       //--render_randomgen_data(cnv_target, cnv_left, cnv_top, x, y);
     end;
@@ -980,6 +1028,15 @@ begin
   cnv_target.LineTo(x2, y2);
   cnv_target.MoveTo(x2, y1);
   cnv_target.LineTo(x1, y2);
+end;
+
+procedure TRenderer.draw_rectangle(cnv_target: TCanvas; x, y: word; color: TColor);
+begin
+  cnv_target.Brush.Style := bsClear;
+  cnv_target.pen.Width := 1;
+  cnv_target.Pen.Color := color;
+  cnv_target.Rectangle(x*32+1, y*32+1, x*32+31, y*32+31);
+  cnv_target.Rectangle(x*32+2, y*32+2, x*32+30, y*32+30);
 end;
 
 procedure TRenderer.draw_ellipse(cnv_target: TCanvas; x1, y1, x2, y2: word; pcolor, bcolor: TColor; width: integer; text: String);

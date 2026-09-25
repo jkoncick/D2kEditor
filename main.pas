@@ -215,6 +215,10 @@ type
     lblMirrorMode: TLabel;
     cbxMirrorMode: TComboBox;
     pnBlockPresetGroups: TPanel;
+    sbShowTerrainTypes: TSpeedButton;
+    sbShowTileRestrictions: TSpeedButton;
+    sbShowTileMinimapColors: TSpeedButton;
+    sbMarkTilesOfSelectedArea: TSpeedButton;
     // Main form events
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -499,6 +503,10 @@ begin
   sbShowEventAreas.Down := Settings.ShowEventAreas;
   sbMarkDefenceAreas.Down := Settings.MarkDefenceAreas;
   sbShowCrateMarkers.Down := Settings.ShowCrateMarkers;
+  sbShowTerrainTypes.Down := Settings.ShowTerrainTypes;
+  sbShowTileRestrictions.Down := Settings.ShowTileRestrictions;
+  sbShowTileMinimapColors.Down := Settings.ShowTileMinimapColors;
+  sbMarkTilesOfSelectedArea.Down := Settings.MarkTilesOfSelectedArea;
   // Initialize settings menu items
   Usehouseidcolors1.Checked := Settings.UseHouseIDColors;
   Showunknownspecials1.Checked := Settings.ShowUnknownSpecials;
@@ -555,7 +563,7 @@ begin
   resize_map_canvas;
   EditorMenu.Left := ClientWidth - 168;
   EditorMenu.Height := ClientHeight - StatusBar.Height;
-  EditorPages.Height := EditorMenu.Height - 192;
+  EditorPages.Height := EditorMenu.Height - 212;
   StructPages.Height := EditorPages.Height - 54;
   tmp_height := StructPages.Height - 208;
   lbBuildingGroup.Height := tmp_height div 2;
@@ -897,8 +905,9 @@ begin
       Addr(Map.data), Map.width, Map.height,
       sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
       sbShowEventMarkers.Down, sbShowEventAreas.Down, sbMarkDefenceAreas.Down, sbShowCrateMarkers.Down,
+      sbShowTerrainTypes.Down, sbShowTileRestrictions.Down, sbShowTileMinimapColors.Down, sbMarkTilesOfSelectedArea.Down,
       Usehouseidcolors1.Checked, Showunknownspecials1.Checked,
-      false);
+      false, cbSelectAreaType.ItemIndex - 1);
     if CompareText(ExtractFileExt(MapImageSaveDialog.FileName), '.PNG') = 0 then
     begin
       PNG := TPNGObject.Create;
@@ -1021,17 +1030,21 @@ end;
 procedure TMainWindow.SettingChange(Sender: TObject);
 begin
   case (Sender as TComponent).Tag of
-  0: begin Settings.ShowGrid            := sbShowGrid.Down;               render_map; end;
-  1: begin Settings.MarkImpassableTiles := sbMarkImpassableTiles.Down;    render_map; end;
-  2: begin Settings.MarkBuildableTiles  := sbMarkBuildableTiles.Down;     render_map; end;
-  3: begin Settings.MarkOwnerSide       := sbMarkOwnerSide.Down;          render_map; render_cursor_image; end;
-  4: begin Settings.ShowEventMarkers    := sbShowEventMarkers.Down;       render_map; end;
-  5: begin Settings.ShowEventAreas      := sbShowEventAreas.Down;         render_map; end;
-  6: begin Settings.MarkDefenceAreas    := sbMarkDefenceAreas.Down;       render_map; end;
-  7: begin Settings.ShowCrateMarkers    := sbShowCrateMarkers.Down;       render_map; render_cursor_image; end;
-  8: begin Settings.UseHouseIDColors    := Usehouseidcolors1.Checked;     render_map; render_cursor_image; render_minimap; end;
-  9: begin Settings.ShowUnknownSpecials := Showunknownspecials1.Checked;  render_map; render_cursor_image; end;
-  10:
+  0: begin Settings.ShowGrid                  := sbShowGrid.Down;                 render_map; end;
+  1: begin Settings.MarkImpassableTiles       := sbMarkImpassableTiles.Down;      render_map; end;
+  2: begin Settings.MarkBuildableTiles        := sbMarkBuildableTiles.Down;       render_map; end;
+  3: begin Settings.MarkOwnerSide             := sbMarkOwnerSide.Down;            render_map; render_cursor_image; end;
+  4: begin Settings.ShowEventMarkers          := sbShowEventMarkers.Down;         render_map; end;
+  5: begin Settings.ShowEventAreas            := sbShowEventAreas.Down;           render_map; end;
+  6: begin Settings.MarkDefenceAreas          := sbMarkDefenceAreas.Down;         render_map; end;
+  7: begin Settings.ShowCrateMarkers          := sbShowCrateMarkers.Down;         render_map; render_cursor_image; end;
+  8: begin Settings.ShowTerrainTypes          := sbShowTerrainTypes.Down;         render_map; end;
+  9: begin Settings.ShowTileRestrictions      := sbShowTileRestrictions.Down;     render_map; end;
+  10: begin Settings.ShowTileMinimapColors    := sbShowTileMinimapColors.Down;    render_map; end;
+  11: begin Settings.MarkTilesOfSelectedArea  := sbMarkTilesOfSelectedArea.Down;  render_map; end;
+  12: begin Settings.UseHouseIDColors         := Usehouseidcolors1.Checked;       render_map; render_cursor_image; render_minimap; end;
+  13: begin Settings.ShowUnknownSpecials      := Showunknownspecials1.Checked;    render_map; render_cursor_image; end;
+  14:
     begin
       if GridColorDialog.Execute then
       begin
@@ -2221,8 +2234,9 @@ begin
     Addr(Map.data), Map.width, Map.height,
     sbShowGrid.Down, sbMarkImpassableTiles.Down, sbMarkBuildableTiles.Down, sbMarkOwnerSide.Down,
     sbShowEventMarkers.Down, sbShowEventAreas.Down, sbMarkDefenceAreas.Down, sbShowCrateMarkers.Down,
+    sbShowTerrainTypes.Down, sbShowTileRestrictions.Down, sbShowTileMinimapColors.Down, sbMarkTilesOfSelectedArea.Down,
     Usehouseidcolors1.Checked, Showunknownspecials1.Checked,
-    true);
+    true, cbSelectAreaType.ItemIndex - 1);
   if Settings.Debug_ShowRenderTime then
   begin
     QueryPerformanceCounter(t2);
@@ -2371,8 +2385,9 @@ begin
     Addr(block_data), block_width, block_height,
     false, false, false, sbMarkOwnerSide.Down,
     false, false, false, sbShowCrateMarkers.Down,
+    false, false, false, false,
     Usehouseidcolors1.Checked, Showunknownspecials1.Checked,
-    false);
+    false, 0);
   CursorImage.Canvas.Pen.Color := clBlue;
   CursorImage.Canvas.Brush.Style := bsClear;
   CursorImage.Canvas.Rectangle(0, 0, block_width * 32 + 1, block_height * 32 + 1);

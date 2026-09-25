@@ -55,6 +55,47 @@ const taSand = $10000;
 const CURRENT_TILESET_CONFIG_VERSION = 1;
 const CURRENT_TLS_VERSION = 2;
 
+// Restrictions constants
+const restriction_rects: array[0..7] of TRect = (
+    (Left: 10; Top:  0; Right: 15; Bottom: 10),
+    (Left: 16; Top:  0; Right: 21; Bottom: 10),
+    (Left: 21; Top: 10; Right: 31; Bottom: 15),
+    (Left: 21; Top: 16; Right: 31; Bottom: 21),
+    (Left: 10; Top: 21; Right: 15; Bottom: 31),
+    (Left: 16; Top: 21; Right: 21; Bottom: 31),
+    (Left:  0; Top: 10; Right: 10; Bottom: 15),
+    (Left:  0; Top: 16; Right: 10; Bottom: 21)
+  );
+
+const restriction_directions: array[0..7] of String = ('Up L', 'Up R', 'Right U', 'Right D', 'Down L', 'Down R', 'Left U', 'Left D');
+
+const restriction_colors: array[0..3] of cardinal = (
+  $0000A0,
+  $00A000,
+  $A00000,
+  $505050
+  );
+
+// Color definitions
+const fill_area_group_colors: array[0..max_fill_area_rules-1] of cardinal = (
+  $808080,
+  $C00000,
+  $C000C0,
+  $0000C0,
+  $C0C000,
+  $00C0C0,
+  $E00080,
+  $0080E0,
+  $80E000,
+  $8000E0,
+  $00E080,
+  $E08000,
+  $E06060,
+  $60E060,
+  $6060E0,
+  $00C000
+  );
+
 // Tileset type definitions
 type
   TileType = (ttPassable, ttImpassable, ttInfantryOnly, ttBuildable);
@@ -855,7 +896,7 @@ begin
     end;
   end else
   begin
-    BlockRead(tileset_file, paint_tile_groups,          sizeof(paint_tile_groups[0]) * 8);
+    BlockRead(tileset_file, paint_tile_groups,          sizeof(paint_tile_groups[0]) * 12);
     FillChar(paint_tile_groups[8], sizeof(paint_tile_groups[0]) * (cnt_paint_tile_groups - 8), 0);
     for i := 8 to cnt_paint_tile_groups - 1 do
       paint_tile_groups[i].smooth_preset_group := -1;

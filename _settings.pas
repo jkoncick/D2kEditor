@@ -34,6 +34,10 @@ type
     ShowEventAreas: boolean;
     MarkDefenceAreas: boolean;
     ShowCrateMarkers: boolean;
+    ShowTerrainTypes: boolean;
+    ShowTileRestrictions: boolean;
+    ShowTileMinimapColors: boolean;
+    MarkTilesOfSelectedArea: boolean;
     // Preferences - Settings menu
     UseHouseIDColors: boolean;
     ShowUnknownSpecials: boolean;
@@ -118,6 +122,10 @@ begin
   ShowEventAreas          := ini.ReadBool   ('Preferences', 'ShowEventAreas',           false);
   MarkDefenceAreas        := ini.ReadBool   ('Preferences', 'MarkDefenceAreas',         false);
   ShowCrateMarkers        := ini.ReadBool   ('Preferences', 'ShowCrateMarkers',         false);
+  ShowTerrainTypes        := ini.ReadBool   ('Preferences', 'ShowTerrainTypes',         false);
+  ShowTileRestrictions    := ini.ReadBool   ('Preferences', 'ShowTileRestrictions',     false);
+  ShowTileMinimapColors   := ini.ReadBool   ('Preferences', 'ShowTileMinimapColors',    false);
+  MarkTilesOfSelectedArea := ini.ReadBool   ('Preferences', 'MarkTilesOfSelectedArea',  false);
   // Preferences - Settings menu
   UseHouseIDColors        := ini.ReadBool   ('Preferences', 'UseHouseIDColors',         false);
   ShowUnknownSpecials     := ini.ReadBool   ('Preferences', 'ShowUnknownSpecials',      false);
@@ -226,6 +234,10 @@ begin
   ini.WriteBool   ('Preferences', 'ShowEventAreas', ShowEventAreas);
   ini.WriteBool   ('Preferences', 'MarkDefenceAreas', MarkDefenceAreas);
   ini.WriteBool   ('Preferences', 'ShowCrateMarkers', ShowCrateMarkers);
+  ini.WriteBool   ('Preferences', 'ShowTerrainTypes', ShowTerrainTypes);
+  ini.WriteBool   ('Preferences', 'ShowTileRestrictions', ShowTileRestrictions);
+  ini.WriteBool   ('Preferences', 'ShowTileMinimapColors', ShowTileMinimapColors);
+  ini.WriteBool   ('Preferences', 'MarkTilesOfSelectedArea', MarkTilesOfSelectedArea);
   // Preferences - Settings menu
   ini.WriteBool   ('Preferences', 'UseHouseIDColors', UseHouseIDColors);
   ini.WriteBool   ('Preferences', 'ShowUnknownSpecials', ShowUnknownSpecials);

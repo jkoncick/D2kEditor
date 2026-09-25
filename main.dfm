@@ -206,7 +206,7 @@ object MainWindow: TMainWindow
       Hint = 'Show event areas (Ctrl+H)'
       AllowAllUp = True
       GroupIndex = 6
-      Caption = 'Area'
+      Caption = 'EArea'
       ParentShowHint = False
       ShowHint = True
       OnClick = SettingChange
@@ -220,7 +220,7 @@ object MainWindow: TMainWindow
       Hint = 'Show defence areas (Ctrl+D)'
       AllowAllUp = True
       GroupIndex = 7
-      Caption = 'Def'
+      Caption = 'DefA'
       ParentShowHint = False
       ShowHint = True
       OnClick = SettingChange
@@ -239,11 +239,67 @@ object MainWindow: TMainWindow
       ShowHint = True
       OnClick = SettingChange
     end
+    object sbShowTerrainTypes: TSpeedButton
+      Tag = 8
+      Left = 8
+      Top = 184
+      Width = 38
+      Height = 22
+      Hint = 'Show terrain types other than 0'
+      AllowAllUp = True
+      GroupIndex = 9
+      Caption = 'Terr'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbShowTileRestrictions: TSpeedButton
+      Tag = 9
+      Left = 46
+      Top = 184
+      Width = 38
+      Height = 22
+      Hint = 'Show tile restrictions'
+      AllowAllUp = True
+      GroupIndex = 10
+      Caption = 'Restr'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbShowTileMinimapColors: TSpeedButton
+      Tag = 10
+      Left = 84
+      Top = 184
+      Width = 38
+      Height = 22
+      Hint = 'Show tile minimap colors'
+      AllowAllUp = True
+      GroupIndex = 11
+      Caption = 'Color'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
+    object sbMarkTilesOfSelectedArea: TSpeedButton
+      Tag = 11
+      Left = 122
+      Top = 184
+      Width = 38
+      Height = 22
+      Hint = 'Mark tiles of selected area type'
+      AllowAllUp = True
+      GroupIndex = 12
+      Caption = 'Area'
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = SettingChange
+    end
     object EditorPages: TPageControl
       Left = 1
-      Top = 192
+      Top = 212
       Width = 166
-      Height = 440
+      Height = 420
       ActivePage = PageStructures
       Align = alBottom
       TabOrder = 0
@@ -283,7 +339,7 @@ object MainWindow: TMainWindow
           Left = 0
           Top = 32
           Width = 158
-          Height = 380
+          Height = 360
           ActivePage = PageStructBasic
           Align = alBottom
           TabOrder = 2
@@ -377,7 +433,7 @@ object MainWindow: TMainWindow
               Left = 0
               Top = 0
               Width = 150
-              Height = 352
+              Height = 332
               ActivePage = PageStructBuildings
               Align = alClient
               MultiLine = True
@@ -1160,6 +1216,7 @@ object MainWindow: TMainWindow
           TabOrder = 3
         end
         object cbSelectAreaType: TComboBox
+          Tag = 11
           Left = 32
           Top = 156
           Width = 121
@@ -1167,6 +1224,7 @@ object MainWindow: TMainWindow
           Style = csDropDownList
           ItemHeight = 13
           TabOrder = 4
+          OnChange = SettingChange
         end
         object tbBrushSize: TTrackBar
           Left = 75
@@ -1355,21 +1413,21 @@ object MainWindow: TMainWindow
     object Settings1: TMenuItem
       Caption = 'Settings'
       object Usehouseidcolors1: TMenuItem
-        Tag = 8
+        Tag = 12
         AutoCheck = True
         Caption = 'Use house ID colors'
         ShortCut = 16457
         OnClick = SettingChange
       end
       object Showunknownspecials1: TMenuItem
-        Tag = 9
+        Tag = 13
         AutoCheck = True
         Caption = 'Show unknown specials'
         ShortCut = 16469
         OnClick = SettingChange
       end
       object Gridcolor1: TMenuItem
-        Tag = 10
+        Tag = 14
         Caption = 'Grid / Event areas color...'
         OnClick = SettingChange
       end
